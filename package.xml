@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>predictive_control</name>
+  <version>0.6.14</version>
+  <description>The predictive_control package</description>
+  
+  <maintainer email="bfb-mp@ipa.fraunhofer.de">Mayank Patel</maintainer>
+  <license>IPA</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roslint</build_depend>
+
+  <depend>boost</depend>
+  <depend>cmake_modules</depend>
+  <depend>cob_control_msgs</depend>
+  <depend>cob_srvs</depend>
+  <depend>dynamic_reconfigure</depend>
+  <depend>eigen_conversions</depend>
+  <depend>eigen</depend>
+  <depend>geometry_msgs</depend>
+  <depend>kdl_conversions</depend>
+  <depend>kdl_parser</depend>
+  <depend>nav_msgs</depend>
+  <depend>orocos_kdl</depend>
+  <depend>pluginlib</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf</depend>
+  <depend>tf_conversions</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>urdf</depend>
+  <depend>visualization_msgs</depend>
+
+  <exec_depend>cob_frame_tracker</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>topic_tools</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+</package>

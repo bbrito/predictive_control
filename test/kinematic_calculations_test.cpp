@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 
 		kin_solver.print_data_memebers();
 		kin_solver.print_fk_and_jacobian_matrix();
-
+		kin_solver.print_kdl_fk_and_jacobian_matrix();
 	}
 return 0;
 }

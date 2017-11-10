@@ -49,7 +49,7 @@ target_link_libraries(predictive_control_node predictive_controller ${catkin_LIB
 ### Test Case ####
 add_executable(kinematic_calculations_test test/kinematic_calculations_test.cpp)
 add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${libacado})
+target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} ${libacado})
 
 ### INSTALL ###
 install(TARGETS kinematic_calculations predictive_trajectory_generator predictive_controller

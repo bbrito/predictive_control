@@ -8,12 +8,12 @@
 #include <tf/transform_listener.h>
 #include <tf2_kdl/tf2_kdl.h>
 
+#include <Eigen/Core>
+
 //KDL kinematic
 #include <urdf/model.h>
 #include <kdl_parser/kdl_parser.hpp>
-#include <kdl/jntarray.hpp>
 #include <kdl/frames.hpp>
-#include <kdl_conversions/kdl_msg.h>
 #include <kdl/chainfksolver.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
@@ -26,6 +26,8 @@
 
 //ACADO
 #include <acado_optimal_control.hpp>
+
+
 
 #define _DEBUG_  false
 
@@ -56,7 +58,7 @@ class Kinematic_calculations
 
 		std::vector<KDL::Frame> jnt_fk_mat;	//ff_mat
 		KDL::Frame fk_mat;
-		Eigen::Matrix<double, 6, 7> JacobianMatrix;	//Jacobian Matrix
+		Eigen::Matrix<double, 6, 7> JacobianMatrix;	//Jacobian Matrix	todo: change 7 with dof
 
 
 		void create_transformation_matrix(const uint16_t& segment_number, const double& roll,const double& pitch, const double& yaw);
@@ -106,6 +108,7 @@ class Kinematic_calculations
 		// Debug function for kinematic calculation class
 		void print_data_memebers(void);
 		void print_fk_and_jacobian_matrix(void);
+		void print_kdl_fk_and_jacobian_matrix(void);
 
 
 	};

@@ -18,41 +18,91 @@
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
 
+//C++
+#include <iostream>
+#include <map>
+#include <string>
+
+//ACADO
+#include <acado_optimal_control.hpp>
+
+#define _DEBUG_  false
+
 class Kinematic_calculations
-{
-private:
+	{
+	private:
 
-	//---------------------------------- DATA MEMBER ---------------------------
-	unsigned int segments_;					//< Number of segment in kinematic chain
-	unsigned int dof_;						//< Number of joints/dof in kinematic chain
+		unsigned int segments;
+		unsigned int dof;
 
-	std::string chain_base_link_;			//< Base link of kinematic chain, not neccessary same as root frame
-	std::string chain_tip_link_;			//< Tip/End-effector link of kinematic chain
-	std::string root_frame_;				//< Root frame of kinematic chain, first frame/segment of kinematic chain
+		std::string chain_base_link;
+		std::string chain_tip_link;
+		std::string root_frame;
 
-	std::vector<KDL::Joint>	jnts_;			//< Joint information
-	std::vector<KDL::Frame>	trans_mat_;		//<	Transformation matrix at each joint
-	std::vector<KDL::Frame>	homo_mat_;		//<	Homo matrix at each joint,
+		std::vector<KDL::Vector> jnt_rot_axis;
+		//Eigen::MatrixXi axis_of_rotation;	//todo: replace kdl::vector with Eigen vector
 
-	KDL::Chain	kinematic_chain_;			//< kinematic chain of given robot
-	Eigen::Matrix<double, 6, 7> jac_mat_;	//< Jacobian Matrix
+		KDL::Chain	kinematic_chain;
+		std::vector<KDL::Frame>	frames;
+		std::vector<KDL::Joint>	jnts;
+		std::vector<KDL::Frame>	jnt_homo_mat;	//homo matrix of each frame with prevoius joint
 
-public:
+		std::vector<double> jnt_pos_min_limit;
+		std::vector<double> jnt_pos_max_limit;
+		std::vector<double> jnt_vel_limit;
+		std::vector<std::string> frame_names;
+		std::vector<std::string> jnts_name;
 
-	// Default constructor of class
-	Kinematic_calculations():
-		dof_(0),
-		segments_(0),
-		chain_base_link_("arm_1_link"),
-		chain_tip_link_("arm_7_link"),
-		root_frame_("world")
-		{
-			jac_mat_.setZero();
-		};
+		std::vector<KDL::Frame> jnt_fk_mat;	//ff_mat
+		KDL::Frame fk_mat;
+		Eigen::Matrix<double, 6, 7> JacobianMatrix;	//Jacobian Matrix
 
-	bool initialize(const std::string& rbt_description, const std::string& base_link, const std::string& tip_link, const std::string& root_frame);
+		void printDataMemebers(void);
 
-};
+		void create_transformation_matrix(const uint16_t& segment_number, const double& roll,const double& pitch, const double& yaw);
 
+		void createRoatationMatrix(const double& angle, const std::vector<unsigned int>& rot_axis, KDL::Frame& lcl_homo_mat);
+
+		void clear_data_member();
+
+		//void convert_kdl_vec_to_Eigen_vec(const KDL::Vector& kdl_vec, Eigen::VectorXd& egn_mat);
+
+	public:
+
+		//Kinematics(const std::string rbt_description = "/robot_description", const std::string& chain_base_link="arm_base_link", const std::string& chain_tip_link="arm_7_link", const std::string& root_frame="world");
+
+		Kinematic_calculations();
+		~Kinematic_calculations();
+
+		bool initialize(const std::string rbt_description_param = "/robot_description", const std::string& base_link_param="arm_base_link", const std::string& tip_link_param="arm_7_link", const std::string& root_frame_param="arm_base_link");
+
+		void forward_kinematics(const KDL::JntArray& jnt_angels);
+		void compute_jacobian(const KDL::JntArray& jnt_angels);
+
+		void kdl_forward_kinematics(const KDL::JntArray& jnt_angels);
+		void kdl_compute_jacobian(const KDL::JntArray& jnt_angels);
+
+		// Get functions
+		void get_forward_kinematics(KDL::Frame& fk_mat);
+		void get_forward_kinematics(Eigen::MatrixXd& fk_mat);
+		KDL::Frame get_forward_kinematics(void);
+
+		void get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat);
+		Eigen::MatrixXd get_jacobian(const KDL::JntArray& jnt_angles);
+
+		// Get position, velocity joint limits
+		void get_joint_limits(const std::string& name_of_limit, std::vector<double>& limit_vec);
+		void get_min_joint_position_limits( std::vector<double>& limit_vec);
+		void get_max_joint_position_limits( std::vector<double>& limit_vec);
+		void get_joint_velocity_limits( std::vector<double>& limit_vec );
+
+		// Set functions
+		void set_joint_names(std::vector<std::string>& jnt_names_param);
+		void set_joint_limits(const std::string& name_of_limit, const std::vector<double>& limit_vec);
+		void set_min_joint_position_limits( const std::vector<double>& limit_vec);
+		void set_max_joint_position_limits( const std::vector<double>& limit_vec);
+		void set_joint_velocity_limits( const std::vector<double>& limit_vec );
+
+	};
 
 #endif //PREDICTIVE_CONTROL_KINEMATIC_CALCULATIONS_H_

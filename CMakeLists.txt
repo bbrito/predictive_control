@@ -30,14 +30,14 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${oroco
 
 add_library(kinematic_calculations src/kinematic_calculations.cpp)
 add_dependencies(kinematic_calculations ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(kinematic_calculations ${catkin_LIBRARIES})
+target_link_libraries(kinematic_calculations ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES}) 
 
 FIND_LIBRARY(libacado libacado_toolkit_s.so ${ACADO_DIR}/build/lib)
 add_library(predictive_trajectory_generator src/predictive_trajectory_generator.cpp)
 add_dependencies(predictive_trajectory_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(predictive_trajectory_generator ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES} ${libacado})
 
-add_library(predictive_controller src/predicitve_controller.cpp)
+add_library(predictive_controller src/predictive_controller.cpp)
 add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(predictive_controller kinematic_calculations  predictive_trajectory_generator ${catkin_LIBRARIES})
 
@@ -47,9 +47,9 @@ target_link_libraries(predictive_control_node predictive_controller ${catkin_LIB
 #target_link_libraries(predictive_control_node ${catkin_LIBRARIES})
 
 ### Test Case ####
-#add_executable(kinematic_calculations_test test/kinematic_calculations_test.cpp)
-#add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(kinematic_calculations_test predictive_controller ${catkin_LIBRARIES})
+add_executable(kinematic_calculations_test test/kinematic_calculations_test.cpp)
+add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${libacado})
 
 ### INSTALL ###
 install(TARGETS kinematic_calculations predictive_trajectory_generator predictive_controller

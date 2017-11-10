@@ -124,9 +124,7 @@ void Kinematic_calculations::convert_kdl_vec_to_Eigen_vec(const KDL::Vector& kdl
 
 
 void Kinematic_calculations::create_transformation_matrix(const uint16_t& segment_number, const double& roll,const double& pitch, const double& yaw)
-
 {
-
 	//x-axis rotation
 	if ( (this->jnt_rot_axis.at(segment_number).x() == 1 || this->jnt_rot_axis.at(segment_number).x() == -1) && this->jnt_rot_axis.at(segment_number).y() == 0 && this->jnt_rot_axis.at(segment_number).z() == 0 )
 	{
@@ -261,6 +259,8 @@ void Kinematic_calculations::forward_kinematics(const KDL::JntArray& jnt_angels)
 		jnt_fk_mat.push_back(fk_mat);
 	}
 
+	// Make sure every time, FK_mat initialize to I
+	this->fk_mat = KDL::Frame::Identity();
 	this->fk_mat = fk_mat;
 
 }
@@ -314,6 +314,9 @@ void Kinematic_calculations::kdl_forward_kinematics(const KDL::JntArray& jnt_ang
 void Kinematic_calculations::compute_jacobian(const KDL::JntArray& jnt_angels)
 {
 	//todo: change dimension of matrix (means 7) accord to dof
+
+	// Make sure every time, Jacobian Matrix should be first initialize with zero
+	JacobianMatrix.Constant(0.0);
 
 	typedef Eigen::Matrix<double, 3, 1>       Cart3Vector;
 	Cart3Vector p(0,0,0);	Cart3Vector z_0(0,0,1); 	Cart3Vector p_0(0,0,0);
@@ -382,6 +385,12 @@ void Kinematic_calculations::compute_jacobian(const KDL::JntArray& jnt_angels)
 		JacobianMatrix(0,i) = J_v(0);	JacobianMatrix(1,i) = J_v(1);	JacobianMatrix(2,i) = J_v(2);
 		JacobianMatrix(3,i) = J_o(0);	JacobianMatrix(4,i) = J_o(1);	JacobianMatrix(5,i) = J_o(2);
 	}
+
+	// Cross check of computation of Jacobian matrix
+	if (JacobianMatrix.isZero())
+	{
+		ROS_WARN("Computed of Jacobian is not correct, recompute again");
+	}
 }
 
 void Kinematic_calculations::kdl_compute_jacobian(const KDL::JntArray& jnt_angels)
@@ -398,7 +407,6 @@ void Kinematic_calculations::kdl_compute_jacobian(const KDL::JntArray& jnt_angel
 
 	// Create object of KDL::Jacobian, initialize all elements with zeros
 	KDL::Jacobian j_kdl = KDL::Jacobian(this->dof);
-	//j_kdl.data.Constant(0.0);
 
 	// FK solver
 	int jacobian_state = jacobi_solver.JntToJac(jnt_angels, j_kdl);
@@ -471,15 +479,24 @@ void Kinematic_calculations::get_forward_kinematics(KDL::Frame& fk_mat)
 
 Eigen::MatrixXd Kinematic_calculations::get_jacobian(const KDL::JntArray& jnt_angles)
 {
-	this->compute_jacobian(jnt_angles);
-
 	return this->JacobianMatrix;
 }
 
 void Kinematic_calculations::get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat)
 {
-	this->compute_jacobian(jnt_angles);
 	j_mat = this->JacobianMatrix;
+}
+
+void Kinematic_calculations::compute_and_get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat)
+{
+	compute_jacobian( jnt_angles );
+
+	if (JacobianMatrix.isZero())
+	{
+		ROS_WARN("Computed of Jacobian is not correct");
+	}
+
+	j_mat = JacobianMatrix;
 }
 
 void Kinematic_calculations::get_joint_limits(const std::string& name_of_limit, std::vector<double>& limit_vec)
@@ -617,10 +634,11 @@ void Kinematic_calculations::print_data_memebers(void)
 		std::cout<<"\n \n";
 }
 
-void Kinematic_calculations::print_fk_and_jacobian_matrix()
+void Kinematic_calculations::print_fk_and_jacobian_matrix(const KDL::JntArray& jnt_angles)
 {
+	/*
 	KDL::JntArray jnt_angles = KDL::JntArray(dof);
-	jnt_angles(0) = 1.57;	jnt_angles(1) = 1.57;	jnt_angles(2) = 1.57;	jnt_angles(3) = 1.57;
+	jnt_angles(0) = 1.57;	jnt_angles(1) = 1.57;	jnt_angles(2) = 1.57;	jnt_angles(3) = 1.57;*/
 	//forward_kinematics(jnt_angles);
 	compute_jacobian(jnt_angles);
 
@@ -645,11 +663,12 @@ void Kinematic_calculations::print_fk_and_jacobian_matrix()
 
 }
 
-void Kinematic_calculations::print_kdl_fk_and_jacobian_matrix()
+void Kinematic_calculations::print_kdl_fk_and_jacobian_matrix(const KDL::JntArray& jnt_angles)
 {
+/*
 	KDL::JntArray jnt_angles = KDL::JntArray(dof);
 	jnt_angles(0) = 1.57;	jnt_angles(1) = 1.57;	jnt_angles(2) = 1.57;	jnt_angles(3) = 1.57;
-
+*/
 	kdl_forward_kinematics(jnt_angles);
 	kdl_compute_jacobian(jnt_angles);
 
@@ -657,7 +676,7 @@ void Kinematic_calculations::print_kdl_fk_and_jacobian_matrix()
 	Eigen::Matrix4d egn_mat;
 	convert_kdl_frame_to_Eigen_matrix(fk_mat, egn_mat);
 
-	std::cout<<"\033[95m"<<"Forward_kinematics in the form of Eigen Matrix: \n"	<<"\033[36;0m" << egn_mat <<std::endl;
-	std::cout<<"\033[95m"<<"Jacobian Matrix: \n"	<<"\033[36;0m" << JacobianMatrix <<std::endl;
+	std::cout<<"\033[95m"<<"Forward_kinematics using KDL in the form of Eigen Matrix: \n"	<<"\033[36;0m" << egn_mat <<std::endl;
+	std::cout<<"\033[95m"<<"KDL Jacobian Matrix: \n"	<<"\033[36;0m" << JacobianMatrix <<std::endl;
 
 }

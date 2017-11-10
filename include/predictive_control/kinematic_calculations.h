@@ -89,6 +89,7 @@ class Kinematic_calculations
 		KDL::Frame get_forward_kinematics(void);
 
 		void get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat);
+		void compute_and_get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat);
 		Eigen::MatrixXd get_jacobian(const KDL::JntArray& jnt_angles);
 
 		// Get position, velocity joint limits
@@ -106,8 +107,8 @@ class Kinematic_calculations
 
 		// Debug function for kinematic calculation class
 		void print_data_memebers(void);
-		void print_fk_and_jacobian_matrix(void);
-		void print_kdl_fk_and_jacobian_matrix(void);
+		void print_fk_and_jacobian_matrix(const KDL::JntArray& jnt_angles);
+		void print_kdl_fk_and_jacobian_matrix(const KDL::JntArray& jnt_angles);
 
 
 	};

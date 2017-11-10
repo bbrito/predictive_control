@@ -35,14 +35,14 @@ class Kinematic_calculations
 		unsigned int segments;
 		unsigned int dof;
 
-		std::string chain_base_link;
-		std::string chain_tip_link;
+		std::string base_link;
+		std::string tip_link;
 		std::string root_frame;
 
 		std::vector<KDL::Vector> jnt_rot_axis;
 		//Eigen::MatrixXi axis_of_rotation;	//todo: replace kdl::vector with Eigen vector
 
-		KDL::Chain	kinematic_chain;
+		KDL::Chain	chain;
 		std::vector<KDL::Frame>	frames;
 		std::vector<KDL::Joint>	jnts;
 		std::vector<KDL::Frame>	jnt_homo_mat;	//homo matrix of each frame with prevoius joint
@@ -57,28 +57,27 @@ class Kinematic_calculations
 		KDL::Frame fk_mat;
 		Eigen::Matrix<double, 6, 7> JacobianMatrix;	//Jacobian Matrix
 
-		void printDataMemebers(void);
 
 		void create_transformation_matrix(const uint16_t& segment_number, const double& roll,const double& pitch, const double& yaw);
-
 		void createRoatationMatrix(const double& angle, const std::vector<unsigned int>& rot_axis, KDL::Frame& lcl_homo_mat);
-
 		void clear_data_member();
-
+		void convert_kdl_frame_to_Eigen_matrix(const KDL::Frame& kdl_frame, Eigen::Matrix4d& egn_mat);
 		//void convert_kdl_vec_to_Eigen_vec(const KDL::Vector& kdl_vec, Eigen::VectorXd& egn_mat);
 
 	public:
 
-		//Kinematics(const std::string rbt_description = "/robot_description", const std::string& chain_base_link="arm_base_link", const std::string& chain_tip_link="arm_7_link", const std::string& root_frame="world");
+		//Kinematics(const std::string rbt_description = "/robot_description", const std::string& base_link="arm_base_link", const std::string& tip_link="arm_7_link", const std::string& root_frame="world");
 
 		Kinematic_calculations();
 		~Kinematic_calculations();
 
-		bool initialize(const std::string rbt_description_param = "/robot_description", const std::string& base_link_param="arm_base_link", const std::string& tip_link_param="arm_7_link", const std::string& root_frame_param="arm_base_link");
+		bool initialize(const std::string rbt_description_param = "/robot_description", const std::string& base_link_param="arm_base_link", const std::string& tip_link_param="arm_7_link", const std::string& root_frame_param="world");
 
+		// Computation of forward kinematic, jacobian matrix
 		void forward_kinematics(const KDL::JntArray& jnt_angels);
 		void compute_jacobian(const KDL::JntArray& jnt_angels);
 
+		// Computation of forward kinematic, jacobian matrix using kdl library
 		void kdl_forward_kinematics(const KDL::JntArray& jnt_angels);
 		void kdl_compute_jacobian(const KDL::JntArray& jnt_angels);
 
@@ -102,6 +101,11 @@ class Kinematic_calculations
 		void set_min_joint_position_limits( const std::vector<double>& limit_vec);
 		void set_max_joint_position_limits( const std::vector<double>& limit_vec);
 		void set_joint_velocity_limits( const std::vector<double>& limit_vec );
+
+		// Debug function for kinematic calculation class
+		void print_data_memebers(void);
+		void print_fk_matrix(void);
+
 
 	};
 

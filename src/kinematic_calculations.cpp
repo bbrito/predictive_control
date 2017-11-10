@@ -6,8 +6,8 @@ Kinematic_calculations::Kinematic_calculations()
 {
 	dof = 7;
 	segments = 7;
-	chain_base_link = "arm_1_link";
-	chain_tip_link = "arm_7_link";
+	base_link = "arm_1_link";
+	tip_link = "arm_7_link";
 	root_frame = "world";
 
 	clear_data_member();
@@ -38,8 +38,8 @@ void Kinematic_calculations::clear_data_member()
 
 bool Kinematic_calculations::initialize(const std::string rbt_description_param, const std::string& base_link_param, const std::string& tip_link_param, const std::string& root_frame_param)
 {
-	chain_base_link = base_link_param;
-	chain_tip_link = tip_link_param;
+	base_link = base_link_param;
+	tip_link = tip_link_param;
 	root_frame = root_frame_param;
 
 	// Generate KDL chain and urdf model by parse robot description
@@ -50,15 +50,15 @@ bool Kinematic_calculations::initialize(const std::string rbt_description_param,
         return false;
     }
 
-    kdl_tree.getChain( chain_base_link, chain_tip_link, kinematic_chain );
-    if ( kinematic_chain.getNrOfJoints() == 0 || kinematic_chain.getNrOfSegments() == 0)
+    kdl_tree.getChain( base_link, tip_link, chain );
+    if ( chain.getNrOfJoints() == 0 || chain.getNrOfSegments() == 0)
     {
         ROS_ERROR("Failed to initialize kinematic chain");
         return false;
     }
 
-    dof = kinematic_chain.getNrOfJoints();
-    segments = kinematic_chain.getNrOfSegments();
+    dof = chain.getNrOfJoints();
+    segments = chain.getNrOfSegments();
 
     // Set joint position and velocity limits
     urdf::Model model;
@@ -73,23 +73,23 @@ bool Kinematic_calculations::initialize(const std::string rbt_description_param,
     jnts_name.clear();
     for (uint16_t i = 0; i < segments; ++i)
     {
-    	frame_names.push_back(kinematic_chain.getSegment(i).getName());
-    	jnts_name.push_back(kinematic_chain.getSegment(i).getJoint().getName());
+    	frame_names.push_back(chain.getSegment(i).getName());
+    	jnts_name.push_back(chain.getSegment(i).getJoint().getName());
     }
 
     // Set joint axis, angle, Create transformation matrix
     for (uint16_t i = 0; i < segments; ++i)
     {
-    	jnts.push_back( this->kinematic_chain.getSegment(i).getJoint());
-    	frames.push_back( this->kinematic_chain.getSegment(i).getFrameToTip() );
+    	jnts.push_back( this->chain.getSegment(i).getJoint());
+    	frames.push_back( this->chain.getSegment(i).getFrameToTip() );
 
     	// Joint angle
     	double roll,pitch,yaw;
-    	kinematic_chain.getSegment(i).getFrameToTip().M.GetRPY(roll,pitch,yaw);
+    	chain.getSegment(i).getFrameToTip().M.GetRPY(roll,pitch,yaw);
 
     	// Axis of rotation
     	KDL::Vector rot;
-    	kinematic_chain.getSegment(i).getFrameToTip().M.GetRotAngle(rot);
+    	chain.getSegment(i).getFrameToTip().M.GetRotAngle(rot);
     	jnt_rot_axis.push_back(rot);
 
     	jnt_homo_mat.push_back(this->frames.at(i));
@@ -121,6 +121,7 @@ void Kinematic_calculations::convert_kdl_vec_to_Eigen_vec(const KDL::Vector& kdl
 
 }
 */
+
 
 void Kinematic_calculations::create_transformation_matrix(const uint16_t& segment_number, const double& roll,const double& pitch, const double& yaw)
 
@@ -204,56 +205,6 @@ void Kinematic_calculations::createRoatationMatrix(const double& angle, const st
 	}
 }
 
-void Kinematic_calculations::printDataMemebers(void)
-{
-		std::cout<<"\033[92m"<<"###########  Check constructor values ######### "	<<"\033[0m"<<std::endl;
-		std::cout<<"\033[36;1m"<<"Chain_base_link_: "	<< this->chain_base_link 	<<"\033[36;0m"<<std::endl;
-		std::cout<<"\033[36;1m"<<"Chain_tip_link_: "	<< this->chain_tip_link 	<<"\033[36;0m"<<std::endl;
-		std::cout<<"\033[36;1m"<<"Root frame: "			<< this->root_frame 		<<"\033[36;0m"<<std::endl;
-		std::cout<<"\033[36;1m"<<"DOF: "				<< this->dof 				<<"\033[36;0m"<<std::endl;
-		std::cout<<"\033[36;1m"<<"Nr_segments: "		<< this-> segments 			<<"\033[36;0m"<<std::endl;
-
-		std::cout<<"\033[36;1m"<<"Joints name: "	<<"\033[36;0m"<<std::endl;
-		for (uint16_t i = 0; i < this->kinematic_chain.getNrOfJoints(); ++i)
-		{
-			std::cout<<"\033[70;1m"	<< this->jnts.at(i).getName() <<"\033[70;0m"	<<std::endl;
-		}
-
-
-
-		std::cout<<"\033[36;1m"<<"Joints: "	<<"\033[36;0m"<<std::endl;
-		for (std::vector<KDL::Joint>::const_iterator it = this->jnts.begin(); it!= jnts.end(); ++it)
-		{
-			std::cout<<"\033[30;1m"	<<" joint axis: "	<< it->JointAxis().x() << " "<< it->JointAxis().y() << " "<< it->JointAxis().z()
-									<<", jnt name: "	<< it->getName()
-									<<", jnt type: "	<< it->getType()
-									<<", jnt name: "	<< it->getTypeName()
-									<<" jnt origin: "	<< it->JointOrigin().x()<< " "<< it->JointOrigin().y() << " "<< it->JointOrigin().z()
-
-					<<"\033[30;0m"<<std::endl;
-		}
-
-		std::cout<<"\033[36;1m"<<"Joints frames: "	<<"\033[36;0m"<<std::endl;
-		for (std::vector<KDL::Frame>::const_iterator it = this->jnt_homo_mat.begin(); it!= jnt_homo_mat.end(); ++it)
-		{
-			KDL::Rotation rot_mat = it->M;
-			KDL::Vector pos_mat = it->p;
-
-			//for (unsigned int i = 0; i < it->)
-			std::cout<<"\033[32;1m"	<<" joint axis: "	<<	" rxx "<< rot_mat(0,0) <<	" rxy "<< rot_mat(0,1) <<	" rxz "<< rot_mat(0,2)
-														<<	" ryx "<< rot_mat(1,0) <<	" ryy "<< rot_mat(1,1) <<	" ryz "<< rot_mat(1,2)
-														<<	" rzx "<< rot_mat(2,0) <<	" rzy "<< rot_mat(2,1) <<	" rzz "<< rot_mat(2,2)
-														<<	" px "<< pos_mat.x() <<	" py "<< pos_mat.y() <<	" pz "<< pos_mat.z()
-					<<"\033[32;0m"<<std::endl;
-		}
-
-/*
-		std::vector<double> jnt_angels;
-		jnt_angels.resize( 6, 0.0 );
-		this->forward_kinematics(jnt_angels);
-*/
-}
-
 //todo: here hard-coded rot_axis, set proper way
 void Kinematic_calculations::forward_kinematics(const KDL::JntArray& jnt_angels)
 {
@@ -261,23 +212,30 @@ void Kinematic_calculations::forward_kinematics(const KDL::JntArray& jnt_angels)
 	std::vector<unsigned int> rot_axis{0,0,1};
 	unsigned int cnt = 0;
 
-	//Find transformation between chain_base_link & root frame if different
+	//Print on consol about joint angles
+	ROS_INFO("FK with Joint angles:");
+	for (uint8_t i = 0; i < jnts_name.size(); ++i)
+	{
+		ROS_INFO_STREAM(jnts_name.at(i) << " : " << jnt_angels(i));
+	}
+
+	//Find transformation between base_link & root frame if different
 	//----------------------------------------------------------------------
-	if (this->root_frame != this->chain_base_link)
+	if (this->root_frame != this->base_link)
 	{
 		tf::TransformListener listener;
 		tf::StampedTransform transform;
 		try
 		{	//world arm_1_link
-			listener.waitForTransform(this->root_frame,this->chain_base_link, ros::Time(0), ros::Duration(5.0));	//link2,3 = 3.0,link4,5 = 4.0, link6,7 = 5.0
-			listener.lookupTransform(this->root_frame, this->chain_base_link, ros::Time(0), transform);
+			listener.waitForTransform(this->root_frame,this->base_link, ros::Time(0), ros::Duration(5.0));	//link2,3 = 3.0,link4,5 = 4.0, link6,7 = 5.0
+			listener.lookupTransform(this->root_frame, this->base_link, ros::Time(0), transform);
 
 			geometry_msgs::TransformStamped msg;
 			tf::transformStampedTFToMsg(transform,  msg);
 			fk_mat = tf2::transformToKDL(msg);
 
 		}
-		catch (tf::TransformException ex)
+		catch (tf::TransformException& ex)
 		{
 		      ROS_ERROR("%s",ex.what());
 		      ros::Duration(1.0).sleep();
@@ -298,24 +256,13 @@ void Kinematic_calculations::forward_kinematics(const KDL::JntArray& jnt_angels)
 			jnt_homo_mat[i] = jnt_homo_mat[i] * lcl_homo_mat;
 			cnt++;
 		}
+
 		fk_mat = fk_mat * jnt_homo_mat[i];
 		jnt_fk_mat.push_back(fk_mat);
 	}
 
 	this->fk_mat = fk_mat;
 
-	if (_DEBUG_)
-	{
-		KDL::Rotation rot_mat = this->fk_mat.M;
-		KDL::Vector pos_mat = this->fk_mat.p;
-
-			//for (unsigned int i = 0; i < it->)
-			std::cout<<"\033[32;1m"	<<	" rxx "<< rot_mat(0,0) <<	" rxy "<< rot_mat(0,1) <<	" rxz "<< rot_mat(0,2)	<< "\n"
-									<<	" ryx "<< rot_mat(1,0) <<	" ryy "<< rot_mat(1,1) <<	" ryz "<< rot_mat(1,2)	<< "\n"
-									<<	" rzx "<< rot_mat(2,0) <<	" rzy "<< rot_mat(2,1) <<	" rzz "<< rot_mat(2,2)	<< "\n"
-									<<	" px "<< pos_mat.x() <<	" py "<< pos_mat.y() <<	" pz "<< pos_mat.z()
-					<<"\033[32;0m"<<std::endl;
-	}
 }
 
 //todo: can not find fk from root frame
@@ -323,19 +270,19 @@ void Kinematic_calculations::kdl_forward_kinematics(const KDL::JntArray& jnt_ang
 {
 	using namespace KDL;
 	KDL::Frame fk_mat = KDL::Frame::Identity();
-	ChainFkSolverPos_recursive fksolver = ChainFkSolverPos_recursive(this->kinematic_chain);
+	ChainFkSolverPos_recursive fksolver = ChainFkSolverPos_recursive(this->chain);
 
 
-	//Find transformation between chain_base_link & root frame if different
+	//Find transformation between base_link & root frame if different
 	//----------------------------------------------------------------------
-	if (this->root_frame != this->chain_base_link)
+	if (this->root_frame != this->base_link)
 	{
 		tf::TransformListener listener;
 		tf::StampedTransform transform;
 		try
 		{	//world arm_1_link
-			listener.waitForTransform( root_frame, chain_base_link, ros::Time(0), ros::Duration(5.0));	//link2,3 = 3.0,link4,5 = 4.0, link6,7 = 5.0
-			listener.lookupTransform( root_frame, chain_base_link, ros::Time(0), transform);
+			listener.waitForTransform( root_frame, base_link, ros::Time(0), ros::Duration(5.0));	//link2,3 = 3.0,link4,5 = 4.0, link6,7 = 5.0
+			listener.lookupTransform( root_frame, base_link, ros::Time(0), transform);
 
 			geometry_msgs::TransformStamped msg;
 			tf::transformStampedTFToMsg(transform,  msg);
@@ -459,7 +406,7 @@ void Kinematic_calculations::compute_jacobian(const KDL::JntArray& jnt_angels)
 void Kinematic_calculations::kdl_compute_jacobian(const KDL::JntArray& jnt_angels)
 {
 
-	KDL::ChainJntToJacSolver jacobi_solver = KDL::ChainJntToJacSolver(this->kinematic_chain);
+	KDL::ChainJntToJacSolver jacobi_solver = KDL::ChainJntToJacSolver(this->chain);
 
 		KDL::Jacobian j_kdl = KDL::Jacobian(this->dof);
 		int jacobian_state = jacobi_solver.JntToJac(jnt_angels, j_kdl);
@@ -589,4 +536,128 @@ void Kinematic_calculations::get_joint_velocity_limits( std::vector<double>& lim
 {
 	limit_vec = jnt_vel_limit;
 }
+
+void Kinematic_calculations::convert_kdl_frame_to_Eigen_matrix(const KDL::Frame& kdl_frame, Eigen::Matrix4d& egn_mat)
+{
+	egn_mat.Constant(0.0);
+	KDL::Rotation rot_mat = kdl_frame.M;
+	KDL::Vector pos_mat = kdl_frame.p;
+
+	egn_mat(0,0) = rot_mat(0,0);	egn_mat(0,1) = rot_mat(0,1);	egn_mat(0,2) = rot_mat(0,2);	egn_mat(0,3) = pos_mat(0);
+	egn_mat(1,0) = rot_mat(1,0);	egn_mat(1,1) = rot_mat(1,1);	egn_mat(1,2) = rot_mat(1,2);	egn_mat(1,3) = pos_mat(1);
+	egn_mat(2,0) = rot_mat(2,0);	egn_mat(2,1) = rot_mat(2,1);	egn_mat(2,2) = rot_mat(0,2);	egn_mat(2,3) = pos_mat(2);
+	egn_mat(3,0) = 0;				egn_mat(3,1) = 0;				egn_mat(3,2) = 0;				egn_mat(3,3) = 1;
+
+}
+
+
+void Kinematic_calculations::print_data_memebers(void)
+{
+		std::cout<<"\n \n";
+		std::cout<<"\033[95m"<<"############################################ "	<<"\033[0m"<<std::endl;
+		std::cout<<"\033[95m"<<" Kinematic calculation "	<<"\033[0m"<<std::endl;
+		std::cout<<"\033[95m"<<"############################################ "	<<"\033[0m"<<std::endl;
+
+		std::cout<<"\033[36;1m"<<"base_link_: "			<< this->base_link 		<<"\033[36;0m"<<std::endl;
+		std::cout<<"\033[36;1m"<<"tip_link_: "			<< this->tip_link 		<<"\033[36;0m"<<std::endl;
+		std::cout<<"\033[36;1m"<<"Root frame: "			<< this->root_frame 	<<"\033[36;0m"<<std::endl;
+		std::cout<<"\033[36;1m"<<"DOF: "				<< this->dof 			<<"\033[36;0m"<<std::endl;
+		std::cout<<"\033[36;1m"<<"Number_segments: "	<< this-> segments 		<<"\033[36;0m"<<std::endl;
+
+		// Print joint information
+		std::cout<<"\033[95m"<<"Joints: "	<<"\033[36;0m"<<std::endl;
+		for (std::vector<KDL::Joint>::const_iterator it = this->jnts.begin(); it!= jnts.end(); ++it)
+		{
+			std::cout<<"\033[30;1m"	<<"\t joint axis: "	<< it->JointAxis().x() << " "<< it->JointAxis().y() << " "<< it->JointAxis().z()
+									<<", jnt name: "	<< it->getName()
+									<<", jnt type: "	<< it->getType()
+									<<", jnt name: "	<< it->getTypeName()
+									<<" jnt origin: "	<< it->JointOrigin().x()<< " "<< it->JointOrigin().y() << " "<< it->JointOrigin().z()
+
+					<<"\033[30;0m"<<std::endl;
+		}
+
+		// Print frame name
+		std::cout<<"\033[95m"<<"Frame name: "	<<"\033[36;0m"<<std::endl;
+		for (uint16_t i = 0; i < frame_names.size(); ++i)
+		{
+			std::cout<<"\033[70;1m" << frame_names.at(i) << " , ";
+		}
+		std::cout <<"\033[70;0m"	<<std::endl;
+
+		// Print joint name
+		std::cout<<"\033[95m"<<"Joints name: "	<<"\033[36;0m"<<std::endl;
+		for (uint16_t i = 0; i < jnts_name.size(); ++i)
+		{
+			std::cout<<"\033[70;1m" << jnts_name.at(i) <<" , ";
+		}
+		std::cout <<"\033[70;0m"	<<std::endl;
+
+
+		// Print joint position, velocity limit
+		std::cout<<"\033[95m"<<"Min joint position limit: "	<<"\033[36;0m"<<std::endl;
+		for (auto it = jnt_pos_min_limit.begin(); it != jnt_pos_min_limit.end(); ++it)
+		{
+			std::cout<<"\033[0;33m" << *it << " , ";
+		}
+		std::cout <<"\033[70;0m"	<<std::endl;
+
+		std::cout<<"\033[95m"<<"Max joint position limit: "	<<"\033[36;0m"<<std::endl;
+		for (auto it = jnt_pos_max_limit.begin(); it != jnt_pos_max_limit.end(); ++it)
+		{
+			std::cout<<"\033[0;31m" << *it << " , ";
+		}
+		std::cout <<"\033[70;0m"	<<std::endl;
+
+		std::cout<<"\033[95m"<<"Joint velocity limit: "	<<"\033[36;0m"<<std::endl;
+		for (auto it = jnt_vel_limit.begin(); it != jnt_vel_limit.end(); ++it)
+		{
+			std::cout<<"\033[0;32m" << *it << " , ";
+		}
+		std::cout <<"\033[70;0m"	<<std::endl;
+
+		// Print Homogenous matrix
+		std::cout<<"\033[95m"<<"Homo matrix: "	<<"\033[36;0m"<<std::endl;
+		for (std::vector<KDL::Frame>::const_iterator it = this->jnt_homo_mat.begin(); it!= jnt_homo_mat.end(); ++it)
+		{
+			KDL::Rotation rot_mat = it->M;
+			KDL::Vector pos_mat = it->p;
+
+			//for (unsigned int i = 0; i < it->)
+			std::cout<<"\033[32;1m"	<<"\t  "	<<	" rxx "<< rot_mat(0,0) <<	" rxy "<< rot_mat(0,1) <<	" rxz "<< rot_mat(0,2) << "\n"
+									<<"\t  "	<<	" ryx "<< rot_mat(1,0) <<	" ryy "<< rot_mat(1,1) <<	" ryz "<< rot_mat(1,2) << "\n"
+									<<"\t  "	<<	" rzx "<< rot_mat(2,0) <<	" rzy "<< rot_mat(2,1) <<	" rzz "<< rot_mat(2,2) << "\n"
+									<<"\t  "	<<	" px "<< pos_mat.x() <<	" py "<< pos_mat.y() <<	" pz "<< pos_mat.z() << "\n"
+					<<"\033[32;0m"<<std::endl;
+		}
+
+		std::cout<<"\033[95m"<<"############################################ "	<<"\033[0m"<<std::endl;
+		std::cout<<"\033[95m"<<"############################################ "	<<"\033[0m"<<std::endl;
+		std::cout<<"\n \n";
+}
+
+void Kinematic_calculations::print_fk_matrix()
+{
+	KDL::JntArray jnt_angles = KDL::JntArray(dof);
+	//jnt_angles(0) = 1.57;	jnt_angles(1) = 1.57;	jnt_angles(2) = 1.57;	jnt_angles(3) = 1.57;
+	forward_kinematics(jnt_angles);
+
+
+	KDL::Rotation rot_mat = this->fk_mat.M;
+	KDL::Vector pos_mat = this->fk_mat.p;
+
+	std::cout<<"\033[95m"<<"FK matrix: "	<<"\033[36;0m"<<std::endl;
+	std::cout<<"\033[32;1m"	<<	" rxx "<< rot_mat(0,0) 	<<	" rxy "<< rot_mat(0,1) 	<<	" rxz "<< rot_mat(0,2)	<< "\n"
+							<<	" ryx "<< rot_mat(1,0) 	<<	" ryy "<< rot_mat(1,1) 	<<	" ryz "<< rot_mat(1,2)	<< "\n"
+							<<	" rzx "<< rot_mat(2,0) 	<<	" rzy "<< rot_mat(2,1) 	<<	" rzz "<< rot_mat(2,2)	<< "\n"
+							<<	" px "<< pos_mat.x() 	<<	" py "<< pos_mat.y() 	<<	" pz "<< pos_mat.z()
+			<<"\033[32;0m"<<std::endl;
+
+	Eigen::Matrix4d egn_mat;
+	convert_kdl_frame_to_Eigen_matrix(fk_mat, egn_mat);
+
+	std::cout << " Forward_kinematics Eigen Matrix: \n "<< egn_mat << std::endl;
+
+}
+
 

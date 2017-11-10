@@ -13,6 +13,9 @@ int main(int argc, char **argv)
 		Kinematic_calculations kin_solver;
 		kin_solver.initialize();
 
+		kin_solver.print_data_memebers();
+		kin_solver.print_fk_matrix();
+
 		/*
 		std::vector<double> lmt_vec;
 		kin_solver.get_joint_limits("pose_max_limit", lmt_vec);

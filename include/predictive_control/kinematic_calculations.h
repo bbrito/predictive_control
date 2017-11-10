@@ -8,7 +8,6 @@
 #include <tf/transform_listener.h>
 #include <tf2_kdl/tf2_kdl.h>
 
-#include <Eigen/Core>
 
 //KDL kinematic
 #include <urdf/model.h>

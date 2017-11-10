@@ -398,7 +398,7 @@ void Kinematic_calculations::kdl_compute_jacobian(const KDL::JntArray& jnt_angel
 
 	// Create object of KDL::Jacobian, initialize all elements with zeros
 	KDL::Jacobian j_kdl = KDL::Jacobian(this->dof);
-	j_kdl.data.Constant(0.0);
+	//j_kdl.data.Constant(0.0);
 
 	// FK solver
 	int jacobian_state = jacobi_solver.JntToJac(jnt_angels, j_kdl);

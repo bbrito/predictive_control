@@ -636,13 +636,14 @@ void Kinematic_calculations::print_data_memebers(void)
 		std::cout<<"\n \n";
 }
 
-void Kinematic_calculations::print_fk_matrix()
+void Kinematic_calculations::print_fk_and_jacobian_matrix()
 {
 	KDL::JntArray jnt_angles = KDL::JntArray(dof);
-	//jnt_angles(0) = 1.57;	jnt_angles(1) = 1.57;	jnt_angles(2) = 1.57;	jnt_angles(3) = 1.57;
-	forward_kinematics(jnt_angles);
+	jnt_angles(0) = 1.57;	jnt_angles(1) = 1.57;	jnt_angles(2) = 1.57;	jnt_angles(3) = 1.57;
+	//forward_kinematics(jnt_angles);
+	compute_jacobian(jnt_angles);
 
-
+/*
 	KDL::Rotation rot_mat = this->fk_mat.M;
 	KDL::Vector pos_mat = this->fk_mat.p;
 
@@ -652,11 +653,14 @@ void Kinematic_calculations::print_fk_matrix()
 							<<	" rzx "<< rot_mat(2,0) 	<<	" rzy "<< rot_mat(2,1) 	<<	" rzz "<< rot_mat(2,2)	<< "\n"
 							<<	" px "<< pos_mat.x() 	<<	" py "<< pos_mat.y() 	<<	" pz "<< pos_mat.z()
 			<<"\033[32;0m"<<std::endl;
-
+*/
 	Eigen::Matrix4d egn_mat;
 	convert_kdl_frame_to_Eigen_matrix(fk_mat, egn_mat);
 
-	std::cout << " Forward_kinematics Eigen Matrix: \n "<< egn_mat << std::endl;
+	std::cout<<"\033[95m"<<"Forward_kinematics in the form of Eigen Matrix: \n"	<<"\033[36;0m" << egn_mat <<std::endl;
+	std::cout<<"\033[95m"<<"Jacobian Matrix: \n"	<<"\033[36;0m" << JacobianMatrix <<std::endl;
+//	ROS_INFO_STREAM(" Forward_kinematics Eigen Matrix: \n " << egn_mat);
+//	ROS_INFO_STREAM(" Jacobian Matrix: \n " << JacobianMatrix);
 
 }
 

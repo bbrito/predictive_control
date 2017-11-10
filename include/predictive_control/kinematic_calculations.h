@@ -22,6 +22,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+//#include <iomanip> std::setprecision(5)
 
 //ACADO
 #include <acado_optimal_control.hpp>
@@ -104,7 +105,7 @@ class Kinematic_calculations
 
 		// Debug function for kinematic calculation class
 		void print_data_memebers(void);
-		void print_fk_matrix(void);
+		void print_fk_and_jacobian_matrix(void);
 
 
 	};

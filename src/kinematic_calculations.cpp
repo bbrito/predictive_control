@@ -209,6 +209,7 @@ void Kinematic_calculations::forward_kinematics(const KDL::JntArray& jnt_angels)
 	KDL::Frame fk_mat = KDL::Frame::Identity();
 	std::vector<unsigned int> rot_axis{0,0,1};
 	unsigned int cnt = 0;
+	jnt_fk_mat.clear();
 
 	//Print on consol about joint angles
 	ROS_INFO("FK with Joint angles:");
@@ -250,12 +251,15 @@ void Kinematic_calculations::forward_kinematics(const KDL::JntArray& jnt_angels)
 		{
 
 			KDL::Frame lcl_homo_mat = KDL::Frame::Identity();
+
 			createRoatationMatrix( jnt_angels(cnt), rot_axis, lcl_homo_mat );
-			jnt_homo_mat[i] = jnt_homo_mat[i] * lcl_homo_mat;
+			//jnt_homo_mat[i] = jnt_homo_mat[i] * lcl_homo_mat;
+			fk_mat = fk_mat * (jnt_homo_mat[i] * lcl_homo_mat);		// FK_Mat = Fk_Mat_old * Homo_Mat; Joint_1: FK_Mat = I * Homo_Mat;
 			cnt++;
 		}
+		else if ( jnts.at(i).getType() == 8 )
+			fk_mat = fk_mat * jnt_homo_mat[i];
 
-		fk_mat = fk_mat * jnt_homo_mat[i];
 		jnt_fk_mat.push_back(fk_mat);
 	}
 
@@ -327,13 +331,7 @@ void Kinematic_calculations::compute_jacobian(const KDL::JntArray& jnt_angels)
 
 	// dist from end-effector to base-link
 	p(0) = fk_mat.p.x();	p(1) = fk_mat.p.y();	p(2) = fk_mat.p.z();
-
-	if (_DEBUG_)
-		{
-				std::cout<<"\033[94m"<<"End-effector pose vector relative to base link " <<"\033[0m"<<std::endl;
-				std::cout<<"\033[94m" << p  <<"\033[0m" <<std::endl;
-		}
-
+	ROS_INFO("End-effector Position w.r.t to base_link: [%f , %f, %f]", fk_mat.p.x(), fk_mat.p.y(), fk_mat.p.z());
 
 	//compute linear and angular velocity at each joint
 	for(uint16_t i = 0; i < this->segments; ++i)
@@ -422,6 +420,26 @@ void Kinematic_calculations::kdl_compute_jacobian(const KDL::JntArray& jnt_angel
 
 }
 
+
+void Kinematic_calculations::calculate_inverse_jacobian_bySVD( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv )
+{
+	Eigen::JacobiSVD<Eigen::MatrixXd> svd(jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+	//singular values lie on diagonal of matrix, easily invert
+	Eigen::VectorXd singularValues = svd.singularValues();
+	Eigen::VectorXd singularValuesInv = Eigen::VectorXd::Zero(singularValues.rows());
+
+	for (uint32_t i = 0; i < singularValues.rows(); ++i)
+	{
+		double denominator = singularValues(i) * singularValues(i);
+		//singularValuesInv(i) = 1.0 / singularValues(i);
+		singularValuesInv(i) = (singularValues(i) < 1e-6) ? 0.0 : singularValues(i) / denominator;
+	}
+
+	jacobianInv = svd.matrixV() * singularValuesInv.asDiagonal() * svd.matrixU().transpose();
+
+}
+
 void Kinematic_calculations::set_joint_names(std::vector<std::string>& jnt_names_param)
 {
 	jnts_name.clear();
@@ -489,6 +507,7 @@ void Kinematic_calculations::get_jacobian(const KDL::JntArray& jnt_angles, Eigen
 
 void Kinematic_calculations::compute_and_get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat)
 {
+	JacobianMatrix.Constant(0.0);
 	compute_jacobian( jnt_angles );
 
 	if (JacobianMatrix.isZero())
@@ -534,6 +553,16 @@ void Kinematic_calculations::get_max_joint_position_limits( std::vector<double>&
 void Kinematic_calculations::get_joint_velocity_limits( std::vector<double>& limit_vec)
 {
 	limit_vec = jnt_vel_limit;
+}
+
+void Kinematic_calculations::get_joints_name(std::vector<std::string>& jnts_name_param)
+{
+	jnts_name_param = jnts_name;
+}
+
+void Kinematic_calculations::get_joints_name(std::vector<std::string>& frame_names_param)
+{
+	frame_names_param = frame_names;
 }
 
 void Kinematic_calculations::convert_kdl_frame_to_Eigen_matrix(const KDL::Frame& kdl_frame, Eigen::Matrix4d& egn_mat)

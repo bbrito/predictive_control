@@ -2,14 +2,18 @@
 #ifndef PREDICTIVE_CONTROL_KINEMATIC_CALCULATIONS_H_
 #define PREDICTIVE_CONTROL_KINEMATIC_CALCULATIONS_H_
 
-//ROS
+// ros includes
 #include <ros/ros.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf2_kdl/tf2_kdl.h>
 
+// eigen includes
+#include <Eigen/Core>
+#include <Eigen/SVD>
+#include <Eigen/LU>
 
-//KDL kinematic
+// kdl includes
 #include <urdf/model.h>
 #include <kdl_parser/kdl_parser.hpp>
 #include <kdl/frames.hpp>
@@ -17,13 +21,13 @@
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
 
-//C++
+// c++ includes
 #include <iostream>
 #include <map>
 #include <string>
 //#include <iomanip> std::setprecision(5)
 
-//ACADO
+// acado includes
 #include <acado_optimal_control.hpp>
 
 
@@ -60,20 +64,12 @@ class Kinematic_calculations
 		Eigen::Matrix<double, 6, 7> JacobianMatrix;	//Jacobian Matrix	todo: change 7 with dof
 
 
-		void create_transformation_matrix(const uint16_t& segment_number, const double& roll,const double& pitch, const double& yaw);
-		void createRoatationMatrix(const double& angle, const std::vector<unsigned int>& rot_axis, KDL::Frame& lcl_homo_mat);
 		void clear_data_member();
 		void convert_kdl_frame_to_Eigen_matrix(const KDL::Frame& kdl_frame, Eigen::Matrix4d& egn_mat);
 		//void convert_kdl_vec_to_Eigen_vec(const KDL::Vector& kdl_vec, Eigen::VectorXd& egn_mat);
 
-	public:
-
-		//Kinematics(const std::string rbt_description = "/robot_description", const std::string& base_link="arm_base_link", const std::string& tip_link="arm_7_link", const std::string& root_frame="world");
-
-		Kinematic_calculations();
-		~Kinematic_calculations();
-
-		bool initialize(const std::string rbt_description_param = "/robot_description", const std::string& base_link_param="arm_base_link", const std::string& tip_link_param="arm_7_link", const std::string& root_frame_param="world");
+		void create_transformation_matrix(const uint16_t& segment_number, const double& roll,const double& pitch, const double& yaw);
+		void createRoatationMatrix(const double& angle, const std::vector<unsigned int>& rot_axis, KDL::Frame& lcl_homo_mat);
 
 		// Computation of forward kinematic, jacobian matrix
 		void forward_kinematics(const KDL::JntArray& jnt_angels);
@@ -83,11 +79,28 @@ class Kinematic_calculations
 		void kdl_forward_kinematics(const KDL::JntArray& jnt_angels);
 		void kdl_compute_jacobian(const KDL::JntArray& jnt_angels);
 
-		// Get functions
+
+		//void compute_interia_matrix();
+		//void compute_mass_matrix();
+	public:
+
+		//Kinematics(const std::string rbt_description = "/robot_description", const std::string& base_link="arm_base_link", const std::string& tip_link="arm_7_link", const std::string& root_frame="world");
+
+		Kinematic_calculations();
+		~Kinematic_calculations();
+
+		bool initialize(const std::string rbt_description_param = "/robot_description", const std::string& base_link_param="arm_base_link", const std::string& tip_link_param="arm_7_link", const std::string& root_frame_param="world");
+
+		// Calculate inverse of jacobian by using singular value decomposition (SVD), direct method
+		void calculate_inverse_jacobian_bySVD( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv );
+		void calculate_inverse_jacobian_byDirect( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv );
+
+		// Get FK matrix
 		void get_forward_kinematics(KDL::Frame& fk_mat);
 		void get_forward_kinematics(Eigen::MatrixXd& fk_mat);
 		KDL::Frame get_forward_kinematics(void);
 
+		// Get Jacobian matrix
 		void get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat);
 		void compute_and_get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat);
 		Eigen::MatrixXd get_jacobian(const KDL::JntArray& jnt_angles);
@@ -98,9 +111,15 @@ class Kinematic_calculations
 		void get_max_joint_position_limits( std::vector<double>& limit_vec);
 		void get_joint_velocity_limits( std::vector<double>& limit_vec );
 
-		// Set functions
+		// Get joint and frame names
+		void get_joints_name(std::vector<std::string>& jnts_name_param);
+		void get_frame_names(std::vector<std::string>& frame_names_param);
+
+		// Set joint and frame names
 		void set_joint_names(std::vector<std::string>& jnt_names_param);
 		void set_joint_limits(const std::string& name_of_limit, const std::vector<double>& limit_vec);
+
+		// Set position, velocity joint limits
 		void set_min_joint_position_limits( const std::vector<double>& limit_vec);
 		void set_max_joint_position_limits( const std::vector<double>& limit_vec);
 		void set_joint_velocity_limits( const std::vector<double>& limit_vec );
@@ -109,7 +128,6 @@ class Kinematic_calculations
 		void print_data_memebers(void);
 		void print_fk_and_jacobian_matrix(const KDL::JntArray& jnt_angles);
 		void print_kdl_fk_and_jacobian_matrix(const KDL::JntArray& jnt_angles);
-
 
 	};
 

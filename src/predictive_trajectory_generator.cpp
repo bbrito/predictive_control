@@ -102,7 +102,7 @@ bool predictive_config::check_position_tolerance_violation(double current_positi
 	ROS_DEBUG_STREAM("Difference value current (max limit + tol): " <<current_position - (max_position_limit + position_tolerance));
 
 	// Current position is below than minimum position limit + tolerance
-	if ( (current_position + (min_position_limit - position_tolerance)) < 0.0)
+	if ( ((min_position_limit-position_tolerance) >= current_position ))	//(current_position + (min_position_limit - position_tolerance)) < 0.0)
 	{
 		position_tolerance_violate = true;
 		ROS_WARN("Position tolerance violate with current position %f required position %f ... check_position_tolerance_violation",
@@ -111,7 +111,7 @@ bool predictive_config::check_position_tolerance_violation(double current_positi
 	}
 
 	// Current position is above than maximum position limit + tolerance
-	else if ( (current_position - (max_position_limit + position_tolerance)) >= 0.0)
+	else if ((max_position_limit+position_tolerance) <= current_position)	//( (current_position - (max_position_limit + position_tolerance)) >= 0.0)
 	{
 		position_tolerance_violate = true;
 		ROS_WARN("Position tolerance violate with current position %f required position %f ... check_position_tolerance_violation",
@@ -120,7 +120,7 @@ bool predictive_config::check_position_tolerance_violation(double current_positi
 	}
 
 	// Current position is within range of minimum and maximum position limit
-	else if (min_position_limit < current_position < max_position_limit)
+	else if ( ((min_position_limit - current_position) <= 0.0) && ((current_position - max_position_limit) <= 0.0) )
 	{
 		ROS_INFO("Current position is within range of minimum and maximum position limit ... predictive_config::check_position_tolerance_violation");
 	}
@@ -225,7 +225,7 @@ bool predictive_config::check_velocity_tolerance_violation(double current_veloci
 	ROS_DEBUG_STREAM("Difference value current (max limit + tol): " <<current_velocity - (max_velocity_limit + velocity_tolerance));
 
 	// Current velocity is below than minimum velocity limit + tolerance
-	if ( (current_velocity + (min_velocity_limit - velocity_tolerance)) < 0.0)
+	if ((min_velocity_limit-velocity_tolerance) >= current_velocity )	//( (current_velocity + (min_velocity_limit - velocity_tolerance)) < 0.0)
 	{
 		position_tolerance_violate = true;
 		ROS_WARN("Velocity tolerance violate with current position %f required position %f ... check_velocity_tolerance_violation",
@@ -234,7 +234,7 @@ bool predictive_config::check_velocity_tolerance_violation(double current_veloci
 	}
 
 	// Current velocity is above than maximum velocity limit + tolerance
-	else if ( (current_velocity - (max_velocity_limit + velocity_tolerance)) >= 0.0)
+	else if ((max_velocity_limit+velocity_tolerance) <= current_velocity)	//( (current_velocity - (max_velocity_limit + velocity_tolerance)) >= 0.0)
 	{
 		position_tolerance_violate = true;
 		ROS_WARN("Velocity tolerance violate with current position %f required position %f ... check_velocity_tolerance_violation",
@@ -243,7 +243,8 @@ bool predictive_config::check_velocity_tolerance_violation(double current_veloci
 	}
 
 	// Current velocity is within range of minimum and maximum velocity limit
-	else if (min_velocity_limit < current_velocity < max_velocity_limit)
+	else if ( ((min_velocity_limit-velocity_tolerance) - current_velocity <0.0)
+			&&  (current_velocity - (max_velocity_limit+velocity_tolerance) < 0.0))	//(min_velocity_limit < current_velocity < max_velocity_limit)
 	{
 		ROS_INFO("Current velocity is within range of minimum and maximum velocity limit ... predictive_config::check_velocity_tolerance_violation");
 	}

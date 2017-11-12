@@ -68,7 +68,10 @@ int main(int argc, char **argv)
 			double current_position = 3.00;
 			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_position_tolerance_violation(current_position));
 
-			double violate_current_position = 3.85;
+			double current_position1 = 3.04;
+			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_position_tolerance_violation(current_position1));
+
+			double violate_current_position = 3.26;
 			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_position_tolerance_violation(violate_current_position));
 
 			double violate_current_position1 = -3.85;

@@ -22,7 +22,7 @@ catkin_package(
   CATKIN_DEPENDS cob_control_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs
   DEPENDS Boost CERES ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_PACKAGES}
-  LIBRARIES  kinematic_calculations #predictive_trajectory_generator predictive_controller
+  LIBRARIES  kinematic_calculations predictive_trajectory_generator #predictive_controller 
 )
 
 ### BUILD ###
@@ -34,9 +34,9 @@ add_library(kinematic_calculations src/kinematic_calculations.cpp)
 add_dependencies(kinematic_calculations ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(kinematic_calculations ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES} ${libacado}) 
 
-#add_library(predictive_trajectory_generator src/predictive_trajectory_generator.cpp)
-#add_dependencies(predictive_trajectory_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(predictive_trajectory_generator ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES} ${libacado})
+add_library(predictive_trajectory_generator src/predictive_trajectory_generator.cpp)
+add_dependencies(predictive_trajectory_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(predictive_trajectory_generator ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES} ${libacado})
 
 #add_library(predictive_controller src/predictive_controller.cpp)
 #add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -52,8 +52,12 @@ add_executable(kinematic_calculations_test test/kinematic_calculations_test.cpp)
 add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} )
 
+add_executable(predictive_config_test test/predictive_config_test.cpp)
+add_dependencies(predictive_config_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(predictive_config_test predictive_trajectory_generator ${catkin_LIBRARIES} )
+
 ### INSTALL ###
-install(TARGETS kinematic_calculations #predictive_trajectory_generator predictive_controller
+install(TARGETS kinematic_calculations predictive_trajectory_generator #predictive_controller
  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -60,7 +60,19 @@ int main(int argc, char **argv)
 		{
 			predictive_config config;
 			read_predictive_parameters(config, node_handler);
+			config.update_config_parameters(config);
 			config.print_data_member();
+
+			// Check position tolerance violation function
+			double current_position = 3.00;
+			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_position_tolerance_violation(current_position));
+
+			double violate_current_position = 3.85;
+			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_position_tolerance_violation(violate_current_position));
+
+			double violate_current_position1 = -3.85;
+			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_position_tolerance_violation(violate_current_position1));
+
 		}
 
 		else

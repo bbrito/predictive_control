@@ -23,15 +23,17 @@
 class predictive_config
 {
 
-protected:
+public:
 
+	// Data members
+	//------------------------------------------------------------
 	ros::NodeHandle nh;
 
 	// Dubug info
 	bool activate_output;
 
 	// Kinematic solver config varible
-	uint8_t dof;
+	unsigned int dof;
 	std::string base_link;
 	std::string tip_link;
 	std::string root_frame;
@@ -53,8 +55,8 @@ protected:
 	int max_discretization_steps;
 	int discretization_steps;
 
-public:
-
+	// Function members
+	//----------------------------------------------------------------
 	predictive_config();
 	~predictive_config();
 
@@ -71,7 +73,6 @@ public:
 	bool check_velocity_tolerance_violation(double current_velocity);
 
 	void choose_discretization_steps();
-
 	void print_data_member();
 
 };

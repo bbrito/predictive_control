@@ -2,7 +2,7 @@
 //This file containts cost function intsert in to generated trajectory.
 
 #include <predictive_control/predictive_trajectory_generator.h>
-
+#include <iomanip>	//print false or true
 
 predictive_config::predictive_config()
 {
@@ -169,3 +169,48 @@ bool predictive_config::check_velocity_tolerance_violation(double current_veloci
 
 	return false;
 }
+
+void predictive_config::print_data_member()
+{
+	/*
+	ROS_INFO("DOF: %f", dof);
+	ROS_INFO("Base_link: %s", base_link);
+	ROS_INFO("Tip_link: %s", tip_link);
+	ROS_INFO("Root_frame: %s", root_frame);
+	ROS_INFO("Min_position_limit: %d", min_position_limit);
+	ROS_INFO("Max_position_limit: %d", max_position_limit);
+	ROS_INFO("Min_velocity_limit: %d", min_velocity_limit);
+	ROS_INFO("Max_velocity_limit: %d", max_velocity_limit);
+	ROS_INFO("Desired_velocity: %d", desired_velocity);
+	ROS_INFO("Position_tolerance: %d", position_tolerance);
+	ROS_INFO("Velocity_tolerance: %d", velocity_tolerance);
+	ROS_INFO("Min_discretization_steps: %u", min_discretization_steps);
+	ROS_INFO("Max_discretization_steps: %u", max_discretization_steps);
+	ROS_INFO("Discretization_steps: %u", discretization_steps);
+*/
+
+	ROS_INFO_STREAM("DOF: " << dof);
+	ROS_INFO_STREAM("Base_link: " << base_link);
+	ROS_INFO_STREAM("Tip_link: "<< tip_link);
+	ROS_INFO_STREAM("Root_frame: "<< root_frame);
+	ROS_INFO_STREAM("Min_position_limit: "<< min_position_limit);
+	ROS_INFO_STREAM("Max_position_limit: "<< max_position_limit);
+	ROS_INFO_STREAM("Min_velocity_limit: "<< min_velocity_limit);
+	ROS_INFO_STREAM("Max_velocity_limit: "<< max_velocity_limit);
+	ROS_INFO_STREAM("Desired_velocity: "<< desired_velocity);
+	ROS_INFO_STREAM("Position_tolerance: "<< position_tolerance);
+	ROS_INFO_STREAM("Velocity_tolerance: "<< velocity_tolerance);
+	ROS_INFO_STREAM("Min_discretization_steps: "<< min_discretization_steps);
+	ROS_INFO_STREAM("Max_discretization_steps: "<< max_discretization_steps);
+	ROS_INFO_STREAM("Discretization_steps: "<< discretization_steps);
+
+	std::cout << std::boolalpha;
+	std::cout << "Activation output: "<< activate_output << std::endl;
+
+	std::cout << std::boolalpha;
+	std::cout << "Position tolerance violation: "<< position_tolerance_violate << std::endl;
+
+	std::cout << std::boolalpha;
+	std::cout << "Velocity tolerance violation: " << velocity_tolerance_violate << std::endl;
+}
+

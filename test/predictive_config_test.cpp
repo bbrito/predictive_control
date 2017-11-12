@@ -63,6 +63,7 @@ int main(int argc, char **argv)
 			config.update_config_parameters(config);
 			config.print_data_member();
 
+			std::cout<<std::endl;
 			// Check position tolerance violation function
 			double current_position = 3.00;
 			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_position_tolerance_violation(current_position));
@@ -72,6 +73,44 @@ int main(int argc, char **argv)
 
 			double violate_current_position1 = -3.85;
 			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_position_tolerance_violation(violate_current_position1));
+
+			// Check enforce position limit function
+			double enforce_current_position = 3.00, corrected_position;
+			config.enforce_position_limit( enforce_current_position, corrected_position);
+			ROS_INFO("Test enforce position limit function with current position %f, enforced position %f", enforce_current_position, corrected_position );
+
+			double enforce_current_position1 = 3.26, corrected_position1;
+			config.enforce_position_limit( enforce_current_position1, corrected_position1);
+			ROS_INFO("Test enforce position limit function with current position %f, enforced position %f", enforce_current_position1, corrected_position1 );
+
+			double enforce_current_position2 = -3.85, corrected_position2;
+			config.enforce_position_limit( enforce_current_position2, corrected_position2);
+			ROS_INFO("Test enforce position limit function with current position %f, enforced position %f", enforce_current_position2, corrected_position2 );
+
+			std::cout<< "\n ------------------------------------------------------- \n"<<std::endl;
+
+			// Check velocity tolerance violation function
+			double current_velocity = 1.00;
+			ROS_INFO_STREAM("Test velocity tolerance violation function: " << std::boolalpha << config.check_velocity_tolerance_violation(current_velocity));
+
+			double violate_current_velocity = 2.85;
+			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_velocity_tolerance_violation(violate_current_velocity));
+
+			double violate_current_velocity1 = -0.85;
+			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_velocity_tolerance_violation(violate_current_velocity1));
+
+			// Check enforce velocity limit function
+			double enforce_current_velocity = 1.00, corrected_velocity;
+			config.enforce_velocity_limit( enforce_current_velocity, corrected_position);
+			ROS_INFO("Test enforce velocity limit function with current velocity %f, enforced velocity %f", enforce_current_velocity, corrected_velocity );
+
+			double enforce_current_velocity1 = 2.85, corrected_velocity1;
+			config.enforce_velocity_limit( enforce_current_position1, corrected_velocity1);
+			ROS_INFO("Test enforce velocity limit function with current velocity %f, enforced velocity %f", enforce_current_velocity1, corrected_velocity1 );
+
+			double enforce_current_velocity2 = -0.85, corrected_velocity2;
+			config.enforce_velocity_limit( enforce_current_velocity2, corrected_velocity2);
+			ROS_INFO("Test enforce velocity limit function with current velocity %f, enforced velocity %f", enforce_current_velocity2, corrected_velocity2 );
 
 		}
 

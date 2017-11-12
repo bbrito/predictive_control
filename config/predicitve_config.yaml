@@ -1,0 +1,29 @@
+
+### Kinematic configuration parameter
+
+# Debug mode
+activate_output = false
+
+# joint_names
+joint_names: [arm_1_joint, arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint]
+
+# Kinematic chain parameter
+chain_base_link: arm_base_link
+chain_tip_link: arm_7_link
+root_frame: world
+
+# limit parameter
+min_position_limit = -3.14
+max_position_limit =  3.14
+min_velocity_limit =  0.0
+max_velocity_limit =  2.0
+desired_velocity   =  1.5	
+
+position_tolerance = 1.0
+velocity_tolerance = 0.01
+
+# Discretization steps
+min_discretization_steps = 10
+max_discretization_steps = 20
+discretization_steps = 15
+

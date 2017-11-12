@@ -4,6 +4,7 @@
 # Kinematic_calculation:
 - Change Eigen vector hardcoded dimension ex. Jacobian matrix
 - Impliment compute_mass_matrix, compute_initeria_matrix. 
+- Improve compute_jacobian function.
 - Add comments.
 - Remove unneccessary private data members.
 - improve code structure but not priority.

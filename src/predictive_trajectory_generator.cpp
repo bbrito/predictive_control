@@ -98,19 +98,32 @@ void predictive_config::enforce_position_limit(double current_position, double& 
 
 bool predictive_config::check_position_tolerance_violation(double current_position)
 {
-	if ( current_position - (min_position_limit - position_tolerance) < 0)
+	ROS_DEBUG_STREAM("Current position: "<<current_position);
+	ROS_DEBUG_STREAM("Difference value current - (min limit - tol): " << current_position - (min_position_limit - position_tolerance));
+	ROS_DEBUG_STREAM("Difference value current (max limit + tol): " <<current_position - (max_position_limit + position_tolerance));
+
+	// Current position is below than minimum position limit + tolerance
+	if ( (current_position + (min_position_limit - position_tolerance)) < 0.0)
 	{
 		position_tolerance_violate = true;
 		ROS_WARN("Position tolerance violate with current position %f required position %f ... check_position_tolerance_violation",
 					current_position, (min_position_limit - position_tolerance) );
 		return true;
 	}
-	else if ( current_position - (max_position_limit + position_tolerance) > 0)
+
+	// Current position is above than maximum position limit + tolerance
+	else if ( (current_position - (max_position_limit + position_tolerance)) >= 0.0)
 	{
 		position_tolerance_violate = true;
 		ROS_WARN("Position tolerance violate with current position %f required position %f ... check_position_tolerance_violation",
 					current_position, (max_position_limit + position_tolerance) );
 		return true;
+	}
+
+	// Current position is within range of minimum and maximum position limit
+	else if (min_position_limit < current_position < max_position_limit)
+	{
+		ROS_INFO("Current position is within range of minimum and maximum position limit ... predictive_config::check_position_tolerance_violation");
 	}
 
 	return false;

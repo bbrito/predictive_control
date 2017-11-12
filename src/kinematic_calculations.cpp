@@ -1,6 +1,9 @@
 
 #include <predictive_control/kinematic_calculations.h>
 
+#include <Eigen/Core>
+#include <Eigen/SVD>
+
 
 Kinematic_calculations::Kinematic_calculations()
 {
@@ -420,7 +423,6 @@ void Kinematic_calculations::kdl_compute_jacobian(const KDL::JntArray& jnt_angel
 
 }
 
-
 void Kinematic_calculations::calculate_inverse_jacobian_bySVD( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv )
 {
 	Eigen::JacobiSVD<Eigen::MatrixXd> svd(jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -436,8 +438,28 @@ void Kinematic_calculations::calculate_inverse_jacobian_bySVD( const Eigen::Matr
 		singularValuesInv(i) = (singularValues(i) < 1e-6) ? 0.0 : singularValues(i) / denominator;
 	}
 
-	jacobianInv = svd.matrixV() * singularValuesInv.asDiagonal() * svd.matrixU().transpose();
+	Eigen::MatrixXd result  = svd.matrixV() * singularValuesInv.asDiagonal() * svd.matrixU().transpose();
+	jacobianInv = result;
+}
 
+
+void Kinematic_calculations::calculate_inverse_jacobian_byDirect( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv )
+{
+	Eigen::MatrixXd result;
+    Eigen::MatrixXd jac_t = jacobian.transpose();
+    uint32_t rows = jacobian.rows();
+    uint32_t cols = jacobian.cols();
+
+    if (cols >= rows)
+    {
+    	result = jac_t * (jacobian * jac_t).inverse();
+    }
+    else
+    {
+    	result = (jac_t * jacobian).inverse() * jac_t;
+    }
+
+    jacobianInv = result;
 }
 
 void Kinematic_calculations::set_joint_names(std::vector<std::string>& jnt_names_param)
@@ -450,16 +472,19 @@ void Kinematic_calculations::set_joint_limits(const std::string& name_of_limit, 
 {
 	if (name_of_limit == "jnt_pose_min_limit" || name_of_limit == "joint_pose_min_limit" || name_of_limit == "pose_min_limit")
 	{
+		jnt_pos_min_limit.clear();
 		jnt_pos_min_limit = limit_vec ;
 	}
 
 	else if (name_of_limit == "jnt_pose_max_limit" || name_of_limit == "joint_pose_max_limit" || name_of_limit == "pose_max_limit")
 	{
+		jnt_pos_max_limit.clear();
 		jnt_pos_max_limit = limit_vec ;
 	}
 
 	else if (name_of_limit == "jnt_vel_limit" || name_of_limit == "joint_velocity_limit" || name_of_limit == "vel_limit")
 	{
+		jnt_vel_limit.clear();
 		jnt_vel_limit = limit_vec;
 	}
 	else
@@ -470,16 +495,19 @@ void Kinematic_calculations::set_joint_limits(const std::string& name_of_limit, 
 
 void Kinematic_calculations::set_min_joint_position_limits( const std::vector<double>& limit_vec)
 {
+	jnt_pos_min_limit.clear();
 	jnt_pos_min_limit = limit_vec;
 }
 
 void Kinematic_calculations::set_max_joint_position_limits( const std::vector<double>& limit_vec)
 {
+	jnt_pos_max_limit.clear();
 	jnt_pos_max_limit = limit_vec;
 }
 
 void Kinematic_calculations::set_joint_velocity_limits( const std::vector<double>& limit_vec)
 {
+	jnt_vel_limit.clear();
 	jnt_vel_limit = limit_vec;
 }
 
@@ -560,7 +588,7 @@ void Kinematic_calculations::get_joints_name(std::vector<std::string>& jnts_name
 	jnts_name_param = jnts_name;
 }
 
-void Kinematic_calculations::get_joints_name(std::vector<std::string>& frame_names_param)
+void Kinematic_calculations::get_frame_names(std::vector<std::string>& frame_names_param)
 {
 	frame_names_param = frame_names;
 }

@@ -10,8 +10,8 @@
 
 // eigen includes
 #include <Eigen/Core>
-#include <Eigen/SVD>
-#include <Eigen/LU>
+#include <Eigen/LU>				//inverse of matrix
+#include <boost/shared_ptr.hpp>
 
 // kdl includes
 #include <urdf/model.h>

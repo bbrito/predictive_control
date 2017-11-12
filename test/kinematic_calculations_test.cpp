@@ -1,5 +1,6 @@
 
 #include <ros/ros.h>
+
 #include <predictive_control/kinematic_calculations.h>
 
 int main(int argc, char **argv)
@@ -34,6 +35,19 @@ int main(int argc, char **argv)
 			kin_solver.compute_and_get_jacobian(jnt_angles, J_Mat);
 			std::cout<<"\033[95m"<<"Compute and get Jacobian Matrix: \n"	<<"\033[36;0m" << J_Mat <<std::endl;
 
+			// Check Inverse jacobian calculation using 2*2 Jacobian matrix
+			Eigen::MatrixXd J_Inv_Mat_bySVD, J_Test(2,2);
+			J_Test(0,0) = 1;
+			J_Test(0,1) = 0;
+			J_Test(1,0) = 2;
+			J_Test(1,1) = 2;
+			kin_solver.calculate_inverse_jacobian_bySVD(J_Test, J_Inv_Mat_bySVD);
+			std::cout<<"\033[95m"<<"Inverse Jacobian Matrix by using SVD: \n"	<<"\033[36;0m" << J_Inv_Mat_bySVD <<std::endl;
+
+			// Check Inverse jacobian calculation using 2*2 Jacobian matrix
+			Eigen::MatrixXd J_Inv_Mat_byDirect;
+			kin_solver.calculate_inverse_jacobian_bySVD(J_Test, J_Inv_Mat_byDirect);
+			std::cout<<"\033[95m"<<"Inverse Jacobian Matrix by using Direct: \n"	<<"\033[36;0m" << J_Inv_Mat_byDirect <<std::endl;
 
 		}
 

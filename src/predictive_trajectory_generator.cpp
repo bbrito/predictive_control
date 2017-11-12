@@ -189,6 +189,7 @@ void predictive_config::print_data_member()
 	ROS_INFO("Discretization_steps: %u", discretization_steps);
 */
 
+	std::cout<< " ------------------------------------------------------- \n"<<std::endl;
 	ROS_INFO_STREAM("DOF: " << dof);
 	ROS_INFO_STREAM("Base_link: " << base_link);
 	ROS_INFO_STREAM("Tip_link: "<< tip_link);
@@ -203,14 +204,9 @@ void predictive_config::print_data_member()
 	ROS_INFO_STREAM("Min_discretization_steps: "<< min_discretization_steps);
 	ROS_INFO_STREAM("Max_discretization_steps: "<< max_discretization_steps);
 	ROS_INFO_STREAM("Discretization_steps: "<< discretization_steps);
-
-	std::cout << std::boolalpha;
-	std::cout << "Activation output: "<< activate_output << std::endl;
-
-	std::cout << std::boolalpha;
-	std::cout << "Position tolerance violation: "<< position_tolerance_violate << std::endl;
-
-	std::cout << std::boolalpha;
-	std::cout << "Velocity tolerance violation: " << velocity_tolerance_violate << std::endl;
+	ROS_INFO_STREAM("Activation output: " << std::boolalpha << activate_output);
+	ROS_INFO_STREAM("Position tolerance violation: " << std::boolalpha << position_tolerance_violate);
+	ROS_INFO_STREAM("Velocity tolerance violation: " << std::boolalpha << velocity_tolerance_violate);
+	std::cout<< " \n ------------------------------------------------------- "<<std::endl;
 }
 

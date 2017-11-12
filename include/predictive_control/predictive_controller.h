@@ -17,36 +17,22 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-// kdl includes
-#include <urdf/model.h>
-#include <kdl_parser/kdl_parser.hpp>
-#include <kdl/frames.hpp>
+#include <predictive_control/predictive_trajectory_generator.h>
 
-
-class predictive_config
+class predictive_control_node
 {
-
-protected:
+private:
 
 	ros::NodeHandle nh;
 
-	// Kinematic solver config varible
-	uint8_t dof;
-	std::string base_link;
-	std::string tip_link;
-	std::string root_frame;
-	std::vector<std::string> jnts_name;
-
-	double limits_tolerance;
-
-
 public:
 
-	predictive_config();
-	~predictive_config();
+	predictive_control_node();
+	~predictive_control_node();
 
-	bool initializeParam(void);
+	void read_predictive_parameters(predictive_config& new_param);
 
+	void main_predictive_control(void);
 
 };
 

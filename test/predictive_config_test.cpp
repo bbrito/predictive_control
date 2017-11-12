@@ -64,6 +64,7 @@ int main(int argc, char **argv)
 			config.print_data_member();
 
 			std::cout<<std::endl;
+
 			// Check position tolerance violation function
 			double current_position = 3.00;
 			ROS_INFO_STREAM("Test position tolerance violation function: " << std::boolalpha << config.check_position_tolerance_violation(current_position));
@@ -114,6 +115,14 @@ int main(int argc, char **argv)
 			double enforce_current_velocity2 = -0.85, corrected_velocity2;
 			config.enforce_velocity_limit( enforce_current_velocity2, corrected_velocity2);
 			ROS_INFO("Test enforce velocity limit function with current velocity %f, enforced velocity %f", enforce_current_velocity2, corrected_velocity2 );
+
+			std::cout<< "\n ------------------------------------------------------- \n"<<std::endl;
+
+			// Check choose_discretization_steps function
+			config.discretization_steps = 0.0;
+			config.max_discretization_steps = 15;
+			config.choose_discretization_steps();
+			ROS_INFO("Discretization step choose using arithmatic mean: %u", config.discretization_steps);
 
 		}
 

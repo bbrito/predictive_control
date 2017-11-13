@@ -6,7 +6,7 @@
 
 predictive_control_node::predictive_control_node()
 {
-	nh = ("predictive_control");
+	nh = ("predictive_control_node");
 }
 
 void predictive_control_node::read_predictive_parameters(predictive_config& new_param)

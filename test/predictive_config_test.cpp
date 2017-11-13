@@ -21,6 +21,11 @@ void read_predictive_parameters(predictive_config& new_param, ros::NodeHandle& n
 			ROS_WARN(" Parameter 'root_frame' not set on %s node " , ros::this_node::getName().c_str());
 		}
 
+		if (!nh.getParam ("target_frame", new_param.target_frame) )
+		{
+			ROS_WARN(" Parameter 'target_frame' not set on %s node " , ros::this_node::getName().c_str());
+		}
+
 		//Get joint names
 		if (!nh.getParam ("joint_names", new_param.jnts_name) )
 		{

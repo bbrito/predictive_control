@@ -24,6 +24,6 @@
 		<arg name="robot" value="$(arg robot)"/>
 	</include> 
      
-	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find mpc_controller)/config/test_description.rviz" /> 	
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find predictive_control)/rviz_config/test_description.rviz" /> 	
 		
 </launch>  

@@ -25,7 +25,6 @@
 
 // predicitve includes
 #include <predictive_control/predictive_trajectory_generator.h>
-#include <cob_srvs/SetString.h>	//Frame tracking
 
 class predictive_control_node
 {
@@ -33,9 +32,6 @@ private:
 
 	ros::NodeHandle nh;
 	ros::Subscriber joint_state_sub;
-    ros::ServiceClient start_tracking;
-    ros::ServiceClient stop_tracking;
-    bool tracking;
 
 	predictive_config new_config;
 
@@ -43,7 +39,6 @@ private:
 	std::vector<double> current_velocity;
 
 	void spin_node();
-	bool start_tracking_client();
 
 public:
 

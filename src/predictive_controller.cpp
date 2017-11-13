@@ -81,12 +81,6 @@ void predictive_control_node::read_predictive_parameters(predictive_config& new_
 	// Initialize ROS interfaces
 	joint_state_sub = nh.subscribe("/joint_states", 1, &predictive_control_node::joint_state_callBack, this);
 
-	// Initialize frame tracking clients, todo: change /arm/... service name with generic name, for all node it should work
-	start_tracking = nh.serviceClient<cob_srvs::SetString>("/arm/frame_tracker/start_tracking");
-    stop_tracking = nh.serviceClient<std_srvs::Trigger>("/arm/frame_tracker/stop");
-    start_tracking.waitForExistence();
-    stop_tracking.waitForExistence();
-    tracking = false;
 }
 
 void predictive_control_node::joint_state_callBack(const sensor_msgs::JointState::ConstPtr& msg)
@@ -143,48 +137,11 @@ void predictive_control_node::joint_state_callBack(const sensor_msgs::JointState
 }
 
 
-bool predictive_control_node::start_tracking_client()
-{
-	   bool success = false;
-	    cob_srvs::SetString start;
-	    start.request.data = new_config.target_frame;
-	    if (!tracking)
-	    {
-	        success = start_tracking.call(start);
-
-	        if (success)
-	        {
-	            success = start.response.success;
-	            if (success)
-	            {
-	                ROS_INFO("Response 'start_tracking': succeded");
-	                tracking = true;
-	            }
-	            else
-	            {
-	                ROS_ERROR("Response 'start_tracking': failed");
-	            }
-	        }
-	        else
-	        {
-	            ROS_ERROR("Failed to call service 'start_tracking'");
-	        }
-	    }
-	    else
-	    {
-	        ROS_WARN("Already tracking");
-	    }
-
-	    return success;
-}
-
-
 void predictive_control_node::main_predictive_control()
 {
 	// Check ROS node start correctly.
 	if (ros::ok())
 	{
-		start_tracking_client();
 		spin_node();
 
 	}

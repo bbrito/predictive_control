@@ -38,6 +38,7 @@ public:
 	std::string base_link;
 	std::string tip_link;
 	std::string root_frame;
+	std::string target_frame;
 	std::vector<std::string> jnts_name;
 
 	// Minimum and maximum position limits

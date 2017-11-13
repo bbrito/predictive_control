@@ -15,6 +15,7 @@ predictive_config::predictive_config()
 	base_link = "arm_base_link";
 	tip_link = "arm_7_link";
 	root_frame = "arm_base_link";
+	target_frame = "target";
 
 	position_tolerance_violate = false;
 	velocity_tolerance_violate = false;
@@ -39,6 +40,7 @@ void predictive_config::update_config_parameters(predictive_config& new_param)
 	base_link = new_param.base_link;
 	tip_link = new_param.tip_link;
 	root_frame = new_param.root_frame;
+	target_frame = new_param.target_frame;
 	jnts_name = new_param.jnts_name;
 
 	min_position_limit = new_param.min_position_limit;
@@ -276,6 +278,7 @@ void predictive_config::print_data_member()
 	ROS_INFO_STREAM("Base_link: " << base_link);
 	ROS_INFO_STREAM("Tip_link: "<< tip_link);
 	ROS_INFO_STREAM("Root_frame: "<< root_frame);
+	ROS_INFO_STREAM("Target_frame: "<< target_frame);
 	ROS_INFO_STREAM("Min_position_limit: "<< min_position_limit);
 	ROS_INFO_STREAM("Max_position_limit: "<< max_position_limit);
 	ROS_INFO_STREAM("Min_velocity_limit: "<< min_velocity_limit);

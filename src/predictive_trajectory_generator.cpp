@@ -289,6 +289,13 @@ void predictive_config::print_data_member()
 	ROS_INFO_STREAM("Activation output: " << std::boolalpha << activate_output);
 	ROS_INFO_STREAM("Position tolerance violation: " << std::boolalpha << position_tolerance_violate);
 	ROS_INFO_STREAM("Velocity tolerance violation: " << std::boolalpha << velocity_tolerance_violate);
+
+	std::cout << "Joint names: [";
+	for_each(jnts_name.begin(), jnts_name.end(), [](std::string& str)
+												{ std::cout << str << ", " ; }
+	);
+	std::cout<<"]"<<std::endl;
+
 	std::cout<< " \n ------------------------------------------------------- "<<std::endl;
 }
 

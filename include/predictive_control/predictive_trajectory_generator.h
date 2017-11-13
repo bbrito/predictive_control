@@ -12,6 +12,7 @@
 // std includes
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 // boost includes
 #include <boost/shared_ptr.hpp>

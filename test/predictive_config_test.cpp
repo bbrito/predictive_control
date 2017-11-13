@@ -58,6 +58,7 @@ int main(int argc, char **argv)
 
 		if (node_handler.hasParam("/robot_description"))
 		{
+			// Read and update data member of predicitve_config class.
 			predictive_config config;
 			read_predictive_parameters(config, node_handler);
 			config.update_config_parameters(config);

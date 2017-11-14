@@ -81,6 +81,13 @@ void predictive_control_node::read_predictive_parameters(predictive_config& new_
 	// Initialize ROS interfaces
 	joint_state_sub = nh.subscribe("/joint_states", 1, &predictive_control_node::joint_state_callBack, this);
 
+    ROS_WARN("Waiting for 'Frame tracking Services' ...");
+    start_tracking_client = nh.serviceClient<cob_srvs::SetString>("/arm/frame_tracker/start_tracking");
+    stop_tracking_client = nh.serviceClient<std_srvs::Trigger>("/arm/frame_tracker/stop");
+    start_tracking_client.waitForExistence();
+    stop_tracking_client.waitForExistence();
+    tracking = false;
+
 }
 
 void predictive_control_node::joint_state_callBack(const sensor_msgs::JointState::ConstPtr& msg)
@@ -136,6 +143,68 @@ void predictive_control_node::joint_state_callBack(const sensor_msgs::JointState
 	}
 }
 
+// ToDo: Use the ActionInterface of the FrameTracker instead in order to be able to consider TrackingConstraints
+bool predictive_control_node::startTracking()
+{
+    bool success = false;
+    cob_srvs::SetString start;
+    start.request.data = new_config.target_frame;
+    if (!tracking)
+    {
+        success = start_tracking_client.call(start);
+
+        if (success)
+        {
+            success = start.response.success;
+            if (success)
+            {
+                ROS_INFO("Response 'start_tracking': succeded");
+                tracking = true;
+            }
+            else
+            {
+                ROS_ERROR("Response 'start_tracking': failed");
+            }
+        }
+        else
+        {
+            ROS_ERROR("Failed to call service 'start_tracking'");
+        }
+    }
+    else
+    {
+        ROS_WARN("Already tracking");
+    }
+
+    return success;
+}
+
+// ToDo:: If we use the ActionInterface of the FrameTracker, here that action should be cancled()
+bool predictive_control_node::stopTracking()
+{
+    bool success = false;
+    std_srvs::Trigger stop;
+    if (tracking)
+    {
+        success = stop_tracking_client.call(stop);
+
+        if (success)
+        {
+            ROS_INFO("Service 'stop' succeded!");
+            tracking = false;
+        }
+        else
+        {
+            ROS_ERROR("Failed to call service 'stop_tracking'");
+        }
+    }
+    else
+    {
+        ROS_WARN("Have not been tracking");
+    }
+
+    return success;
+}
 
 void predictive_control_node::main_predictive_control()
 {

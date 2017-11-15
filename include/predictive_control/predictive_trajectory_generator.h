@@ -5,9 +5,12 @@
 #define PREDICTIVE_CONTROL_PREDICITVE_TRAJECTORY_GENERATOR_H
 
 // ros includes
+#include <pluginlib/class_loader.h>
+#include <ros/package.h>
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <tf/tf.h>
+#include <tf/transform_listener.h>
 
 // std includes
 #include <iostream>
@@ -20,6 +23,9 @@
 // yaml parsing
 #include <fstream>
 #include <yaml-cpp/yaml.h>
+
+#include <predictive_control/GetFrameTrackingInfo.h>
+
 
 class predictive_config
 {
@@ -77,6 +83,67 @@ public:
 	void choose_discretization_steps();
 	void print_data_member();
 
+};
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+class pd_frame_tracker
+{
+	private:
+		ros::NodeHandle nh;
+
+	    double update_rate_;
+	    ros::Timer timer_;
+
+	    bool tracking_;
+	    bool tracking_goal_;
+
+		// Dubug info
+		bool activate_output_;
+
+		// Kinematic config varible
+		unsigned int dof;
+		std::string base_link_;
+		std::string tip_link_;
+		std::string root_frame_;
+	    std::string tracking_frame_;    // the frame tracking the target (i.e. chain_tip or lookat_focus)
+	    std::string target_frame_;      // the frame to be tracked
+
+	    tf::TransformListener tf_listener_;
+
+	    ros::Subscriber jointstate_sub_;
+	    ros::Publisher twist_pub_;
+
+	    ros::ServiceServer start_tracking_server_;
+	    ros::ServiceServer stop_server_;
+
+	    bool stop_on_goal_;
+	    double tracking_duration_;
+	    ros::Time tracking_start_time_;
+
+	    // Minimum and maximum position limits
+		double min_position_limit;
+		double max_position_limit;
+		double min_velocity_limit;
+		double max_velocity_limit;
+		double desired_velocity;
+		double position_tolerance;
+		double velocity_tolerance;
+		bool position_tolerance_violate;
+		bool velocity_tolerance_violate;
+
+		void run_node(const ros::TimerEvent& event);
+
+		void publish_zero_Twist();
+
+	public:
+
+		pd_frame_tracker(){};
+		~pd_frame_tracker(){};
+
+		void update_config_parameters(predictive_config pd_config);
+		bool start_tracking_callBack(predictive_control::GetFrameTrackingInfo::Request& request, predictive_control::GetFrameTrackingInfo::Response& response);
+		bool stop_tracking_callBack(predictive_control::GetFrameTrackingInfo::Request& request, predictive_control::GetFrameTrackingInfo::Response& response);
 };
 
 

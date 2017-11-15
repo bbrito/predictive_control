@@ -18,6 +18,23 @@ find_package(orocos_kdl REQUIRED)
 SET(ACADO_DIR /home/bfb-ws/ACADOtoolkit/)
 SET(ACADO_INCLUDE_PACKAGES ${ACADO_DIR} ${ACADO_DIR}/acado ${ACADO_DIR}/external_packages)
 
+## Generate services in the 'srv' folder
+add_service_files(
+	DIRECTORY 
+		srvs
+	FILES
+		GetFrameTrackingInfo.srv
+)
+
+# Generate added messages and services with any dependencies listed here
+generate_messages(
+	DEPENDENCIES
+		actionlib_msgs
+		geometry_msgs
+		sensor_msgs
+		std_msgs
+)
+
 catkin_package(
   CATKIN_DEPENDS cob_control_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs
   DEPENDS Boost CERES ACADO

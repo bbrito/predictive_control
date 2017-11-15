@@ -302,3 +302,121 @@ void predictive_config::print_data_member()
 	std::cout<< " \n ------------------------------------------------------- "<<std::endl;
 }
 
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void pd_frame_tracker::update_config_parameters(predictive_config pd_config)
+{
+	base_link_ = pd_config.base_link;
+	tip_link_ = pd_config.tip_link;
+	root_frame_ = pd_config.root_frame;
+	tracking_frame_ = pd_config.tip_link;
+	target_frame_ = pd_config.target_frame;
+
+    tracking_ = false;
+    tracking_goal_ = false;
+
+    twist_pub_ = nh.advertise<geometry_msgs::TwistStamped> ("pd_frame_tracking", 1);
+    //twist_pub_ = nh.advertise<geometry_msgs::TwistStamped> ("command_twist_stamped", 1);
+    start_tracking_server_ = nh.advertiseService("start_tracking", &pd_frame_tracker::start_tracking_callBack, this);
+    stop_server_ = nh.advertiseService("stop", &pd_frame_tracker::stop_tracking_callBack, this);
+
+    timer_ = nh.createTimer(ros::Duration(1/update_rate_), &pd_frame_tracker::run_node, this);
+    timer_.start();
+}
+
+void pd_frame_tracker::run_node(const ros::TimerEvent& event)
+{
+	ros::Duration period = event.current_real - event.last_real;
+
+	 if (tracking_ || tracking_goal_)
+	 {
+
+	 }
+;
+}
+
+bool pd_frame_tracker::start_tracking_callBack(predictive_control::GetFrameTrackingInfo::Request& request, predictive_control::GetFrameTrackingInfo::Response& response)
+{
+	if (tracking_)
+	{
+		std::string msg("pd_frame_tracker: Start_traking is already active");
+		ROS_ERROR_STREAM(msg);
+		response.success = false;
+		response.message = msg;
+	}
+
+	else
+	{
+		// check whether given target frame exists
+		if (!tf_listener_.frameExists(request.data))
+		{
+			std::string msg("pd_frame_tracker: Start tracking not possible because target frame " + request.data + " does not exist");
+			ROS_ERROR_STREAM(msg);
+			response.success = false;
+			response.message = msg;
+		}
+		else
+		{
+			std::string msg = "pd_frame_tracker: Start Tracking started";
+			ROS_INFO_STREAM(msg);
+			response.success = true;
+			response.message = msg;
+			tracking_ = true;
+			tracking_goal_ = false;
+			tracking_frame_ = tip_link_;
+			target_frame_ = request.data;
+		}
+	}
+	return true;
+}
+
+bool pd_frame_tracker::stop_tracking_callBack(predictive_control::GetFrameTrackingInfo::Request& request, predictive_control::GetFrameTrackingInfo::Response& response)
+{
+	if (!tracking_)
+	{
+		std::string msg("pd_frame_tracker: Stop tracking is already active");
+		ROS_ERROR_STREAM(msg);
+		response.success = false;
+		response.message = msg;
+	}
+
+	else
+	{
+		/*
+		// check whether given target frame exists
+		if (!tf_listener_.frameExists(request.data))
+		{
+			std::string msg("pd_frame_tracker: Start tracking not possible because target frame " + request.data + " does not exist");
+			ROS_ERROR_STREAM(msg);
+			response.success = false;
+			response.message = msg;
+		}
+		else
+		{*/
+			std::string msg = "pd_frame_tracker: Stop Tracking successfully";
+			ROS_INFO_STREAM(msg);
+			response.success = true;
+			response.message = msg;
+
+			tracking_ = false;
+			tracking_goal_ = false;
+			tracking_frame_ = tip_link_;
+			target_frame_ = request.data;
+		//}
+	}
+	return true;
+}
+
+void pd_frame_tracker::publish_zero_Twist()
+{
+    // publish zero Twist for stopping
+    geometry_msgs::TwistStamped twist_msg;
+    twist_msg.header.frame_id = tracking_frame_;
+    twist_pub_.publish(twist_msg);
+}
+
+
+

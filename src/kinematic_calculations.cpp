@@ -549,7 +549,6 @@ void Kinematic_calculations::compute_and_get_jacobian(const KDL::JntArray& jnt_a
 
 void Kinematic_calculations::compute_and_get_jacobian(const Eigen::VectorXd& jnt_angles, Eigen::MatrixXd& j_mat)
 {
-
 	KDL::JntArray jnt_angles_lcl;
 	jnt_angles_lcl.data = jnt_angles;
 

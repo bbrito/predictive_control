@@ -313,7 +313,11 @@ void Kinematic_calculations::kdl_forward_kinematics(const KDL::JntArray& jnt_ang
 
 	// Compute fk from chain base_link to chain tip link, think with dof
 	//-------------------------------------------------------------------------
-	bool kinematic_status = fksolver.JntToCart(jnt_angels, fk_mat);
+	//bool kinematic_status = fksolver.JntToCart(jnt_angels, fk_mat);
+	jntToCartSolver_pos_.reset(new KDL::ChainFkSolverPos_recursive(chain));
+	int jacobian_state = jntToCartSolver_pos_->JntToCart(jnt_angels, fk_mat);
+
+	this->fk_mat = fk_mat;
 
 }
 
@@ -408,10 +412,10 @@ void Kinematic_calculations::kdl_compute_jacobian(const KDL::JntArray& jnt_angel
 
 	// Create object of KDL::Jacobian, initialize all elements with zeros
 	KDL::Jacobian j_kdl = KDL::Jacobian(this->dof);
-
 	// FK solver
-	int jacobian_state = jacobi_solver.JntToJac(jnt_angels, j_kdl);
-
+	//int jacobian_state = jacobi_solver.JntToJac(jnt_angels, j_kdl);
+	jntToJacSolver_.reset(new KDL::ChainJntToJacSolver(chain));
+	unsigned int solver_state = jntToJacSolver_->JntToJac(jnt_angels, j_kdl );
 	// Conversion from KDL::Jacobian to Eigen::MatrixXd, Here Jacobian Matrix has 6 rows, columns are same as dof
 	for (unsigned int i = 0; i < 6; ++i)
 	{
@@ -542,7 +546,8 @@ void Kinematic_calculations::compute_and_get_gripper_pose(const Eigen::VectorXd&
 	KDL::JntArray jnt_angles_lcl;
 	jnt_angles_lcl.data = jnt_angles;
 
-	forward_kinematics(jnt_angles_lcl);
+	//forward_kinematics(jnt_angles_lcl);
+	kdl_forward_kinematics(jnt_angles_lcl);
 
 	double r,p,y;
 	fk_mat.M.GetRPY(r,p,y);
@@ -582,7 +587,8 @@ void Kinematic_calculations::compute_and_get_jacobian(const Eigen::VectorXd& jnt
 	jnt_angles_lcl.data = jnt_angles;
 
 	JacobianMatrix.Constant(0.0);
-	compute_jacobian( jnt_angles_lcl );
+	//compute_jacobian( jnt_angles_lcl );
+	kdl_compute_jacobian(jnt_angles_lcl);
 
 	if (JacobianMatrix.isZero())
 	{

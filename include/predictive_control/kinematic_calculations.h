@@ -18,6 +18,8 @@
 #include <kdl_parser/kdl_parser.hpp>
 #include <kdl/frames.hpp>
 #include <kdl/chainfksolver.hpp>
+#include <kdl/chainiksolvervel_pinv.hpp>
+#include <kdl/chainfksolvervel_recursive.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
 
@@ -61,6 +63,9 @@ class Kinematic_calculations
 		KDL::Frame fk_mat;
 		Eigen::Matrix<double, 6, 7> JacobianMatrix;	//Jacobian Matrix	todo: change 7 with dof
 
+	    boost::shared_ptr<KDL::ChainFkSolverVel_recursive> jntToCartSolver_vel_;
+	    boost::shared_ptr<KDL::ChainJntToJacSolver> jntToJacSolver_;
+	    boost::shared_ptr<KDL::ChainFkSolverPos_recursive> jntToCartSolver_pos_;
 
 		void clear_data_member();
 		void convert_kdl_frame_to_Eigen_matrix(const KDL::Frame& kdl_frame, Eigen::Matrix4d& egn_mat);

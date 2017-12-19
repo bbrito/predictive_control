@@ -535,6 +535,7 @@ void Kinematic_calculations::get_jacobian(const KDL::JntArray& jnt_angles, Eigen
 
 void Kinematic_calculations::compute_and_get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat)
 {
+
 	JacobianMatrix.Constant(0.0);
 	compute_jacobian( jnt_angles );
 
@@ -545,6 +546,24 @@ void Kinematic_calculations::compute_and_get_jacobian(const KDL::JntArray& jnt_a
 
 	j_mat = JacobianMatrix;
 }
+
+void Kinematic_calculations::compute_and_get_jacobian(const Eigen::VectorXd& jnt_angles, Eigen::MatrixXd& j_mat)
+{
+
+	KDL::JntArray jnt_angles_lcl;
+	jnt_angles_lcl.data = jnt_angles;
+
+	JacobianMatrix.Constant(0.0);
+	compute_jacobian( jnt_angles_lcl );
+
+	if (JacobianMatrix.isZero())
+	{
+		ROS_WARN("Computed of Jacobian is not correct");
+	}
+
+	j_mat = JacobianMatrix;
+}
+
 
 void Kinematic_calculations::get_joint_limits(const std::string& name_of_limit, std::vector<double>& limit_vec)
 {

@@ -101,6 +101,7 @@ class Kinematic_calculations
 		// Get Jacobian matrix
 		void get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat);
 		void compute_and_get_jacobian(const KDL::JntArray& jnt_angles, Eigen::MatrixXd& j_mat);
+		void compute_and_get_jacobian(const Eigen::VectorXd& jnt_angles, Eigen::MatrixXd& j_mat);
 		Eigen::MatrixXd get_jacobian(const KDL::JntArray& jnt_angles);
 
 		// Get position, velocity joint limits

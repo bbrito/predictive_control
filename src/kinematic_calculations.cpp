@@ -546,8 +546,7 @@ void Kinematic_calculations::compute_and_get_gripper_pose(const Eigen::VectorXd&
 	KDL::JntArray jnt_angles_lcl;
 	jnt_angles_lcl.data = jnt_angles;
 
-	//forward_kinematics(jnt_angles_lcl);
-	kdl_forward_kinematics(jnt_angles_lcl);
+	forward_kinematics(jnt_angles_lcl);
 
 	double r,p,y;
 	fk_mat.M.GetRPY(r,p,y);
@@ -587,8 +586,7 @@ void Kinematic_calculations::compute_and_get_jacobian(const Eigen::VectorXd& jnt
 	jnt_angles_lcl.data = jnt_angles;
 
 	JacobianMatrix.Constant(0.0);
-	//compute_jacobian( jnt_angles_lcl );
-	kdl_compute_jacobian(jnt_angles_lcl);
+	compute_jacobian( jnt_angles_lcl );
 
 	if (JacobianMatrix.isZero())
 	{

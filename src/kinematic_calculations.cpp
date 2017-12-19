@@ -522,6 +522,36 @@ void Kinematic_calculations::get_forward_kinematics(KDL::Frame& fk_mat)
 	fk_mat = this->fk_mat;
 }
 
+void Kinematic_calculations::compute_and_get_FK(const Eigen::VectorXd& jnt_angles, Eigen::Matrix4d& FK_Mat)
+{
+	KDL::JntArray jnt_angles_lcl;
+	jnt_angles_lcl.data = jnt_angles;
+
+	forward_kinematics(jnt_angles_lcl);
+
+	FK_Mat(0,0) = fk_mat.M(0,0);	FK_Mat(0,1) = fk_mat.M(0,1);	FK_Mat(0,2) = fk_mat.M(0,2);	FK_Mat(0,3) = fk_mat.p(0);
+	FK_Mat(1,0) = fk_mat.M(1,0);	FK_Mat(1,1) = fk_mat.M(1,1);	FK_Mat(1,2) = fk_mat.M(1,2);	FK_Mat(1,3) = fk_mat.p(1);
+	FK_Mat(2,0) = fk_mat.M(2,0);	FK_Mat(2,1) = fk_mat.M(2,1);	FK_Mat(2,2) = fk_mat.M(2,2);	FK_Mat(2,3) = fk_mat.p(2);
+	FK_Mat(3,0) = 0.0;				FK_Mat(3,1) = 0.0;				FK_Mat(3,2) = 0.0;				FK_Mat(3,3) = 1.0;
+
+	//std::cout << FK_Mat << std::endl;
+}
+
+void Kinematic_calculations::compute_and_get_gripper_pose(const Eigen::VectorXd& jnt_angles, Eigen::VectorXd& gripper_pose)
+{
+	KDL::JntArray jnt_angles_lcl;
+	jnt_angles_lcl.data = jnt_angles;
+
+	forward_kinematics(jnt_angles_lcl);
+
+	double r,p,y;
+	fk_mat.M.GetRPY(r,p,y);
+
+	gripper_pose.setZero(6,0.0);
+	gripper_pose(0) = fk_mat.p(0);		gripper_pose(1) = fk_mat.p(1);		gripper_pose(2) = fk_mat.p(2);
+	gripper_pose(3) = r;				gripper_pose(4) = p;				gripper_pose(5) = y;
+	//std::cout << FK_Mat << std::endl;
+}
 
 Eigen::MatrixXd Kinematic_calculations::get_jacobian(const KDL::JntArray& jnt_angles)
 {

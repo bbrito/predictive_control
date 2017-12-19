@@ -96,6 +96,8 @@ class Kinematic_calculations
 		// Get FK matrix
 		void get_forward_kinematics(KDL::Frame& fk_mat);
 		void get_forward_kinematics(Eigen::MatrixXd& fk_mat);
+		void compute_and_get_FK(const Eigen::VectorXd& jnt_angles, Eigen::Matrix4d& FK_Mat);
+		void compute_and_get_gripper_pose(const Eigen::VectorXd& jnt_angles, Eigen::VectorXd& gripper_pose);
 		KDL::Frame get_forward_kinematics(void);
 
 		// Get Jacobian matrix

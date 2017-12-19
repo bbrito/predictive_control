@@ -10,9 +10,6 @@ predictive_control_node::predictive_control_node()
 
 	nh = ros::this_node::getName();
 
-	read_predictive_parameters(new_config);
-	if (new_config.activate_output) new_config.print_data_member();
-
 }
 
 predictive_control_node::~predictive_control_node()
@@ -78,9 +75,6 @@ void predictive_control_node::read_predictive_parameters(predictive_config& new_
 	//current_position.resize(new_param.dof, 0.0);
 	//current_velocity.resize(new_param.dof, 0.0);
 
-	// Initialize ROS interfaces
-	joint_state_sub = nh.subscribe("/joint_states", 1, &predictive_control_node::joint_state_callBack, this);
-
 }
 
 void predictive_control_node::joint_state_callBack(const sensor_msgs::JointState::ConstPtr& msg)
@@ -136,14 +130,21 @@ void predictive_control_node::joint_state_callBack(const sensor_msgs::JointState
 	}
 }
 
-
 void predictive_control_node::main_predictive_control()
 {
 	// Check ROS node start correctly.
 	if (ros::ok())
 	{
+		// read data from parameter server
+		read_predictive_parameters(new_config);
+		if (new_config.activate_output) new_config.print_data_member();
+
+		// update configuration parameter
+		new_config.update_config_parameters(new_config);
+
+		// Initialize ROS interfaces
+		joint_state_sub = nh.subscribe("/joint_states", 1, &predictive_control_node::joint_state_callBack, this);
+
 		spin_node();
-
 	}
-
 }

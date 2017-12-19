@@ -25,6 +25,8 @@
 
 // predicitve includes
 #include <predictive_control/predictive_trajectory_generator.h>
+#include <predictive_control/kinematic_calculations.h>
+
 
 class predictive_control_node
 {

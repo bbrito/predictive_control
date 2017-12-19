@@ -3,7 +3,7 @@
 
 # Debug mode
 activate_output: false
-
+update_rate: 50
 # joint_names
 joint_names: [arm_1_joint, arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint]
 
@@ -11,7 +11,8 @@ joint_names: [arm_1_joint, arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, a
 chain_base_link: arm_base_link
 chain_tip_link: arm_7_link
 root_frame: world
-target_frame: arm_7_link
+target_frame: arm_7_target
+
 
 # limit parameter
 min_position_limit: -3.14

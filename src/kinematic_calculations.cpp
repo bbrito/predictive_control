@@ -547,7 +547,6 @@ void Kinematic_calculations::compute_and_get_gripper_pose(const Eigen::VectorXd&
 	double r,p,y;
 	fk_mat.M.GetRPY(r,p,y);
 
-	gripper_pose.setZero(6,0.0);
 	gripper_pose(0) = fk_mat.p(0);		gripper_pose(1) = fk_mat.p(1);		gripper_pose(2) = fk_mat.p(2);
 	gripper_pose(3) = r;				gripper_pose(4) = p;				gripper_pose(5) = y;
 	//std::cout << FK_Mat << std::endl;

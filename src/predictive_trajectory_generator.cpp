@@ -328,7 +328,7 @@ void pd_frame_tracker::solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::
 
     tf::StampedTransform transform_tf, target_frame_TO_root_frame;
     bool success = this->getTransform(tracking_frame_, target_frame_, transform_tf); //target_frame_
-    bool success1 = this->getTransform("/world", target_frame_, target_frame_TO_root_frame); //target_frame_
+    bool success1 = this->getTransform("/arm_podest_link", target_frame_, target_frame_TO_root_frame); //target_frame_
 
     std::cout << jacobian_mat << std::endl;
     DMatrix Jac_Mat = jacobian_mat;
@@ -352,12 +352,8 @@ void pd_frame_tracker::solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::
 	c_init(0) = updated_vel.data[0];	c_init(1) = updated_vel.data[1];	c_init(2) = updated_vel.data[2];
 	c_init(3) = updated_vel.data[3];	c_init(4) = updated_vel.data[4];	c_init(5) = updated_vel.data[5];	c_init(6) = updated_vel.data[6];
 
-	std::cout << "*************** pose of end-effector: \n"<< current_endeffector_pose << std::endl;
-    ROS_WARN_STREAM("*************** target_frame_TO_root_frame: "<< target_frame_TO_root_frame.getOrigin().x()<<"  " << target_frame_TO_root_frame.getOrigin().y()
-    																<<"  "<<target_frame_TO_root_frame.getOrigin().z());
-
 	OCP ocp_problem(0.0, 1.0, 4);
-    ocp_problem.minimizeMayerTerm( (v.transpose()*v) + 10.0*(( (x(0)-target_frame_TO_root_frame.getOrigin().x())  * (x(0)-target_frame_TO_root_frame.getOrigin().x()) ) +
+    ocp_problem.minimizeMayerTerm( 2.0*(v.transpose()*v) + 10.0*(( (x(0)-target_frame_TO_root_frame.getOrigin().x())  * (x(0)-target_frame_TO_root_frame.getOrigin().x()) ) +
     							   ( (x(1)-target_frame_TO_root_frame.getOrigin().y())  * (x(1)-target_frame_TO_root_frame.getOrigin().y()) ) +
     							   ( (x(2)-target_frame_TO_root_frame.getOrigin().z())  * (x(2)-target_frame_TO_root_frame.getOrigin().z()) )
     							   ));

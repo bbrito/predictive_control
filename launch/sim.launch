@@ -11,7 +11,7 @@
 	<arg name="ipa_sim" default="true"/>
 	<arg name="paused" default="false"/>
 	
-	<rosparam command="load" file="$(find predictive_control)/config/predicitve_config.yaml" />
+	<rosparam command="load" file="$(find frame_tracker)/config/frame_tracker.yaml" />
 	
 	<!-- Simulation -->
 	<include file="$(find cob_bringup_sim)/launch/robot.launch" if="$(arg ipa_sim)">

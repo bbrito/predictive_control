@@ -30,8 +30,6 @@
 // acado includes
 #include <acado_optimal_control.hpp>
 
-
-
 #define _DEBUG_  false
 
 class Kinematic_calculations

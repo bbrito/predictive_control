@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /RobotModel1
+        - /InteractiveMarkers1
       Splitter Ratio: 0.634667
     Tree Height: 921
   - Class: rviz/Selection
@@ -132,6 +133,8 @@ Visualization Manager:
           Value: true
         arm_7_link:
           Value: true
+        arm_7_target:
+          Value: true
         arm_base_link:
           Value: true
         arm_podest_link:
@@ -145,6 +148,8 @@ Visualization Manager:
       Show Names: false
       Tree:
         world:
+          arm_7_target:
+            {}
           arm_podest_link:
             arm_base_link:
               arm_1_link:
@@ -156,6 +161,15 @@ Visualization Manager:
                           arm_7_link:
                             {}
       Update Interval: 0
+      Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /arm/marker_server/update
       Value: true
   Enabled: true
   Global Options:
@@ -181,7 +195,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.39656
+      Distance: 2.6074
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -193,10 +207,10 @@ Visualization Manager:
         Z: 0.583252
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.270398
+      Pitch: 0.225398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.685382
+      Yaw: 0.0403838
     Saved: ~
 Window Geometry:
   Displays:

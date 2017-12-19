@@ -28,7 +28,7 @@
 	<include file="$(find cob_bringup)/controllers/generic_controller.launch">
 		<arg name="robot" value="lwa4p_extended"/>
 		<arg name="component_name" value="arm"/>
-		<arg name="pkg_hardware_config" value="$(find schunk_lwa4p_extended)"/>
+		<arg name="pkg_hardware_config" value="$(find cob_hardware_config)/robots/lwa4p_extended"/>
 	</include>
 	
 	<node ns="arm" name="joint_states_relay" pkg="topic_tools" type="relay" args="joint_states /joint_states" cwd="node" respawn="true" output="screen"/>
@@ -37,7 +37,7 @@
     <arg name="component_name" value="arm" />
     <arg name="robot" value="lwa4p_extended" />
     <!--arg name="nmpc_control" value="true"/-->
-    <arg name="pkg_hardware_config" value="$(find schunk_lwa4p_extended)"/>
+    <arg name="pkg_hardware_config" value="$(find cob_hardware_config)/robots/lwa4p_extended"/>
   </include>
   
   <!--remap from="/arm/frame_tracker/start_tracking" to="/frame_tracker/start_tracking"/>

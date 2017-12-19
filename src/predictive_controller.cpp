@@ -151,6 +151,7 @@ void predictive_control_node::main_predictive_control()
 
 		// initialize helper classes
 		kinematic_solver_.reset(new Kinematic_calculations());
+		kinematic_solver_->initialize();
 		pd_frame_tracker_.reset(new pd_frame_tracker());
 		pd_frame_tracker_->initialization(new_config);
 
@@ -181,11 +182,12 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	Eigen::VectorXd current_eigen_position;
 	convert_std_To_Eigen_vector(current_position, current_eigen_position);
 
-
-	Eigen::MatrixXd J_Mat;
-	kinematic_solver_->compute_and_get_jacobian(current_eigen_position, J_Mat);
-	std::cout << J_Mat << std::endl;
-
+	if (!current_position.empty())
+	{
+		Eigen::MatrixXd J_Mat;
+		kinematic_solver_->compute_and_get_jacobian(current_eigen_position, J_Mat);
+		std::cout << J_Mat << std::endl;
+	}
 }
 
 void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec)

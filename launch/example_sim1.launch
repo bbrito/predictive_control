@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="paused" default="false"/>
+  <arg name="gui" default="false"/>
+
+  <!-- start gazebo with empty world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="paused" value="$(arg paused)" />
+    <arg name="gui" value="$(arg gui)" />
+  </include>
+
+  <!-- send lwa4p_extended urdf to param server -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find schunk_lwa4p_extended)/urdf/robot.urdf.xacro'" />
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model lwa4p_extended -z 0.01 " respawn="false" output="screen" />
+
+  <!-- robot state publisher -->
+  <node ns="arm" pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="50.0" />
+      <param name="tf_prefix" type="string" value="" />
+  </node>
+	
+	<!-- fake Calibration and HW-Services -->
+  	<node pkg="rostopic" type="rostopic" name="fake_joint_calibration" args="pub /calibrated std_msgs/Bool true" />
+  	<node ns="arm" pkg="cob_helper_tools" type="fake_driver.py" name="fake_driver" cwd="node" respawn="false" output="screen"/>
+  	
+	<include file="$(find cob_bringup)/controllers/generic_controller.launch">
+		<arg name="robot" value="lwa4p_extended"/>
+		<arg name="component_name" value="arm"/>
+		<arg name="pkg_hardware_config" value="$(find schunk_lwa4p_extended)"/>
+	</include>
+	
+	<node ns="arm" name="joint_states_relay" pkg="topic_tools" type="relay" args="joint_states /joint_states" cwd="node" respawn="true" output="screen"/>
+
+  <include file="$(find cob_bringup)/controllers/generic_cartesian_controller.launch">
+    <arg name="component_name" value="arm" />
+    <arg name="robot" value="lwa4p_extended" />
+    <!--arg name="nmpc_control" value="true"/-->
+    <arg name="pkg_hardware_config" value="$(find schunk_lwa4p_extended)"/>
+  </include>
+  
+  <!--remap from="/arm/frame_tracker/start_tracking" to="/frame_tracker/start_tracking"/>
+  <remap from="/arm/frame_tracker/stop" to="/frame_tracker/stop"/>
+  <remap from="/arm/frame_tracker/start_lookat" to="/frame_tracker/start_lookat"/-->
+  
+  <!-- Configuration files for predictive control node -->
+  <rosparam command="load" file="$(find predictive_control)/config/predicitve_config.yaml" />
+  
+  <!-- RViz configuration -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find predictive_control)/rviz_config/test_description.rviz" />
+  
+</launch>

@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- Debug Info -->
+    <arg name="debug" default="false" />
+    <arg unless="$(arg debug)" name="launch_prefix" value="" />
+    <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+    <arg name="robot" default="lwa4p_extended"/>
+    <arg name="robot_env" default="empty"/>
+    <arg name="component_name" value="arm"/>
+    <arg name="pkg_hardware_config" default="$(find cob_hardware_config)"/>
+
+    <!-- This configuration file will use for predictive control -->
+    <!--rosparam command="load" file="$(find frame_tracker)/config/frame_tracker.yaml" /-->
+
+    <group ns="$(arg component_name)">
+
+        <!-- load Cartesian controller config -->
+        <rosparam command="load" file="$(arg pkg_hardware_config)/robots/$(arg robot)/config/$(arg component_name)_cartesian_controller.yaml"/>
+        <rosparam command="load" file="$(arg pkg_hardware_config)/robots/$(arg robot)/config/$(arg component_name)_self_collision.yaml"/>
+
+        <!-- Cartesian(twist) controllers -->
+        <!--node pkg="cob_twist_controller" type="cob_twist_controller_node" name="twist_controller" cwd="node" respawn="false" output="screen">
+                <remap from="base/odometry" to="/base/odometry_controller/odometry"/>
+                <remap from="base/command" to="/base/twist_mux/command_syncmm"/>
+        </node-->
+
+		<!-- frame tracker and interactive marker -->
+        <node pkg="frame_tracker" type="frame_tracker_node" name="frame_tracker" cwd="node" respawn="false" output="screen"/>
+        <node pkg="cob_frame_tracker" type="interactive_frame_target_node" name="interactive_target" cwd="node" respawn="false" output="screen"/>
+
+        <node pkg="cob_obstacle_distance" type="cob_obstacle_distance" name="obstacle_distance" cwd="node" respawn="false" output="screen"/>
+
+    </group>
+
+</launch>

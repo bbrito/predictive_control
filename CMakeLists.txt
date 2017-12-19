@@ -59,9 +59,9 @@ add_library(predictive_controller src/predictive_controller.cpp)
 add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(predictive_controller kinematic_calculations  predictive_trajectory_generator ${catkin_LIBRARIES})
 
-#add_executable(predictive_control_node src/predictive_control_node.cpp)
-#add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(predictive_control_node predictive_controller ${catkin_LIBRARIES})
+add_executable(predictive_control_node src/predictive_control_node.cpp)
+add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(predictive_control_node predictive_controller ${catkin_LIBRARIES})
 
 ### Test Case ####
 add_executable(kinematic_calculations_test test/kinematic_calculations_test.cpp)

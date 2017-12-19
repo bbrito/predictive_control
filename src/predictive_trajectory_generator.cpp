@@ -315,24 +315,11 @@ bool pd_frame_tracker::initialization(const predictive_config& pd_config)
 	tracking_frame_ = pd_config.tip_link;
 	target_frame_ = pd_config.target_frame;
 
-    tracking_ = false;
-    tracking_goal_ = false;
 
-
-    timer_ = nh.createTimer(ros::Duration(1/update_rate_), &pd_frame_tracker::run_node, this);
-    timer_.start();
+	ROS_WARN("pd_frame_tracker INTIALIZED!!");
+	return true;
 }
 
-void pd_frame_tracker::run_node(const ros::TimerEvent& event)
-{
-	ros::Duration period = event.current_real - event.last_real;
-
-	 if (tracking_ || tracking_goal_)
-	 {
-
-	 }
-;
-}
 
 
 

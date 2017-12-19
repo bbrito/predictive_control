@@ -11,6 +11,8 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include <std_msgs/String.h>
+#include <std_msgs/Float64MultiArray.h>
 
 // std includes
 #include <iostream>
@@ -92,12 +94,6 @@ class pd_frame_tracker
 	private:
 		ros::NodeHandle nh;
 
-	    double update_rate_;
-	    ros::Timer timer_;
-
-	    bool tracking_;
-	    bool tracking_goal_;
-
 		// Dubug info
 		bool activate_output_;
 
@@ -109,14 +105,9 @@ class pd_frame_tracker
 	    std::string tracking_frame_;    // the frame tracking the target (i.e. chain_tip or lookat_focus)
 	    std::string target_frame_;      // the frame to be tracked
 
-
+	    double cart_distance;
 
 	    tf::TransformListener tf_listener_;
-
-	    // ROS interface
-	    ros::Subscriber jointstate_sub_;
-
-		void run_node(const ros::TimerEvent& event);
 
 		void publish_zero_joint_velocity();
 
@@ -127,6 +118,7 @@ class pd_frame_tracker
 
 		bool initialization(const predictive_config& pd_config);
 
+		//std_msgs::Float64MultiArray solve(const Eigen::MatrixXd& jacobian_mat);
 };
 
 

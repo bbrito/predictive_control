@@ -20,7 +20,8 @@
 
     <!-- This configuration file will use for predictive control -->
     <!--rosparam command="load" file="$(find frame_tracker)/config/frame_tracker.yaml" /-->
-
+	<rosparam command="load" file="$(find predictive_control)/config/predicitve_config.yaml"/>
+	
     <!-- start gazebo with empty world -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
       <arg name="paused" value="$(arg paused)" />
@@ -70,7 +71,7 @@
         # load Cartesian controller config 
         <rosparam command="load" file="$(arg pkg_hardware_config)/robots/$(arg robot)/config/$(arg component_name)_cartesian_controller.yaml"/>
         <rosparam command="load" file="$(arg pkg_hardware_config)/robots/$(arg robot)/config/$(arg component_name)_self_collision.yaml"/>
-
+		
         #Cartesian(twist) controllers
         <!-- 
         <node pkg="cob_twist_controller" type="cob_twist_controller_node" name="twist_controller" cwd="node" respawn="false" output="screen">
@@ -85,6 +86,7 @@
 		<node pkg="cob_frame_tracker" type="interactive_frame_target_node" name="interactive_target" cwd="node" respawn="false" output="screen"/>
         
         <node pkg="cob_obstacle_distance" type="cob_obstacle_distance" name="obstacle_distance" cwd="node" respawn="false" output="screen"/>
+        <node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/>
         
 <!--
         <node pkg="cob_cartesian_controller" type="cartesian_controller_node" name="cartesian_controller"  cwd="node" respawn="false" output="screen">

@@ -9,10 +9,13 @@
 #include <ros/package.h>
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <tf/tf.h>
-#include <tf/transform_listener.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
+#include <angles/angles.h>
 
 // std includes
 #include <iostream>
@@ -26,8 +29,15 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-#include <predictive_control/GetFrameTrackingInfo.h>
+#include <Eigen/Dense>
+#include <Eigen/Core>
 
+//adado includes
+#include <acado/acado_toolkit.hpp>
+#include <acado/acado_optimal_control.hpp>
+#include <acado/bindings/acado_gnuplot/gnuplot_window.hpp>
+
+using namespace ACADO;
 
 class predictive_config
 {
@@ -40,6 +50,7 @@ public:
 
 	// Dubug info
 	bool activate_output;
+	double update_rate;
 
 	// Kinematic solver config varible
 	unsigned int dof;
@@ -91,6 +102,7 @@ public:
 
 class pd_frame_tracker
 {
+
 	private:
 		ros::NodeHandle nh;
 
@@ -111,6 +123,8 @@ class pd_frame_tracker
 
 		void publish_zero_joint_velocity();
 
+		bool getTransform(const std::string& from, const std::string& to, tf::StampedTransform& stamped_tf);
+
 	public:
 
 		pd_frame_tracker(){};
@@ -118,7 +132,7 @@ class pd_frame_tracker
 
 		bool initialization(const predictive_config& pd_config);
 
-		//std_msgs::Float64MultiArray solve(const Eigen::MatrixXd& jacobian_mat);
+		void solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::VectorXd& current_endeffector_pose, std_msgs::Float64MultiArray& updated_vel);
 };
 
 

@@ -36,6 +36,8 @@ predictive_config::~predictive_config()
 
 void predictive_config::update_config_parameters(predictive_config& new_param)
 {
+	activate_output = new_param.activate_output;
+	update_rate = new_param.update_rate;
 	dof = new_param.dof;
 	base_link = new_param.base_link;
 	tip_link = new_param.tip_link;
@@ -320,8 +322,123 @@ bool pd_frame_tracker::initialization(const predictive_config& pd_config)
 	return true;
 }
 
+void pd_frame_tracker::solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::VectorXd& current_endeffector_pose, std_msgs::Float64MultiArray& updated_vel)
+{
+	ROS_WARN("Solving OCP problem using ACADO Toolkit");
 
+    tf::StampedTransform transform_tf, target_frame_TO_root_frame;
+    bool success = this->getTransform(tracking_frame_, target_frame_, transform_tf); //target_frame_
+    bool success1 = this->getTransform("/world", target_frame_, target_frame_TO_root_frame); //target_frame_
 
+    std::cout << jacobian_mat << std::endl;
+    DMatrix Jac_Mat = jacobian_mat;
+    const unsigned int m = 6;  // rows of jacobian matrix, 6 with 3 lin and 3 angular velocity
+    const unsigned int n = 7;
+
+    DifferentialState x("",m,1);                // position
+    Control v("",n,1);                      // velocity
+
+    x.clearStaticCounters();
+    v.clearStaticCounters();
+
+    DifferentialEquation f;             // Define differential equation
+    f << dot(x) == Jac_Mat * v;
+
+	DVector c_init(7), s_init(6);
+	c_init.setAll(0.00);
+	s_init.setAll(0.00);
+	s_init(0) = current_endeffector_pose(0);		s_init(1) = current_endeffector_pose(1);		s_init(2) = current_endeffector_pose(2);
+	s_init(3) = current_endeffector_pose(3);		s_init(4) = current_endeffector_pose(4);		s_init(5) = current_endeffector_pose(5);
+	c_init(0) = updated_vel.data[0];	c_init(1) = updated_vel.data[1];	c_init(2) = updated_vel.data[2];
+	c_init(3) = updated_vel.data[3];	c_init(4) = updated_vel.data[4];	c_init(5) = updated_vel.data[5];	c_init(6) = updated_vel.data[6];
+
+	std::cout << "*************** pose of end-effector: \n"<< current_endeffector_pose << std::endl;
+    ROS_WARN_STREAM("*************** target_frame_TO_root_frame: "<< target_frame_TO_root_frame.getOrigin().x()<<"  " << target_frame_TO_root_frame.getOrigin().y()
+    																<<"  "<<target_frame_TO_root_frame.getOrigin().z());
+
+	OCP ocp_problem(0.0, 1.0, 4);
+    ocp_problem.minimizeMayerTerm( (v.transpose()*v) + 10.0*(( (x(0)-target_frame_TO_root_frame.getOrigin().x())  * (x(0)-target_frame_TO_root_frame.getOrigin().x()) ) +
+    							   ( (x(1)-target_frame_TO_root_frame.getOrigin().y())  * (x(1)-target_frame_TO_root_frame.getOrigin().y()) ) +
+    							   ( (x(2)-target_frame_TO_root_frame.getOrigin().z())  * (x(2)-target_frame_TO_root_frame.getOrigin().z()) )
+    							   ));
+    ocp_problem.subjectTo(f);
+    ocp_problem.subjectTo(-0.50 <= v <= 0.50);
+    //ocp_problem.subjectTo(AT_START, v == 1.0);
+    ocp_problem.subjectTo(AT_END , v == 0.0);
+
+    RealTimeAlgorithm alg(ocp_problem, 0.025);
+	alg.initializeControls(c_init);
+	alg.initializeDifferentialStates(s_init);
+    alg.set(MAX_NUM_ITERATIONS, 10);
+    alg.set(LEVENBERG_MARQUARDT, 1e-5);
+    alg.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
+    //alg.set( DISCRETIZATION_TYPE, COLLOCATION);
+    alg.set( DISCRETIZATION_TYPE, COLLOCATION);
+    alg.set(KKT_TOLERANCE, 1.000000E-06);
+
+    Controller controller(alg);
+
+    controller.init(0.0, s_init);
+    controller.step(0.0, s_init);
+
+    DVector cnt_jnt_vel;
+    controller.getU(cnt_jnt_vel);
+    cnt_jnt_vel.print();
+
+	double cart_distance = sqrt(transform_tf.getOrigin().x()*transform_tf.getOrigin().x() +
+								transform_tf.getOrigin().y()*transform_tf.getOrigin().y() +
+								transform_tf.getOrigin().z()*transform_tf.getOrigin().z()
+								);
+
+  //print data on to console
+	std::cout<<"\033[36;1m" // green console colour
+			<< "***********************"<<std::endl
+			<< "cartesian distance: " << cart_distance
+			<< "***********************"
+			<< "\033[0m\n" << std::endl;
+
+	if( cart_distance < 0.05 )
+	{
+		updated_vel.data.resize(7,0.0);
+		updated_vel.data[0] = 0;
+		updated_vel.data[1] = 0;
+		updated_vel.data[2] = 0;
+		updated_vel.data[3] = 0;
+		updated_vel.data[4] = 0;
+		updated_vel.data[5] = 0;
+		updated_vel.data[6] = 0;
+	}
+	else
+	{
+		updated_vel.data.resize(7,0.0);
+		updated_vel.data[0] = cnt_jnt_vel(0);
+		updated_vel.data[1] = cnt_jnt_vel(1);
+		updated_vel.data[2] = cnt_jnt_vel(2);
+		updated_vel.data[3] = cnt_jnt_vel(3);
+		updated_vel.data[4] = cnt_jnt_vel(4);
+		updated_vel.data[5] = cnt_jnt_vel(5);
+		updated_vel.data[6] = cnt_jnt_vel(6);
+	}
+
+}
+
+bool pd_frame_tracker::getTransform(const std::string& from, const std::string& to, tf::StampedTransform& stamped_tf)
+{
+    bool transform = false;
+
+    try
+    {
+        tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
+        tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
+        transform = true;
+    }
+    catch (tf::TransformException& ex)
+    {
+        ROS_ERROR("CobFrameTracker::getTransform: \n%s", ex.what());
+    }
+
+    return transform;
+}
 
 
 

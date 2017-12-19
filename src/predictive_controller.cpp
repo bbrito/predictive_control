@@ -61,6 +61,8 @@ void predictive_control_node::read_predictive_parameters(predictive_config& new_
 	// Get debug info, using active_output
 	nh.param("/activate_output", new_param.activate_output, bool(false));
 
+	nh.param("/update_rate", new_param.update_rate, double(50.0));	//hz
+
 	// Get limit parameters and tolerance
 	nh.param("/min_position_limit", new_param.min_position_limit, double(-3.14));
 	nh.param("/max_position_limit", new_param.max_position_limit, double( 3.14));
@@ -148,6 +150,8 @@ void predictive_control_node::main_predictive_control()
 		new_config.update_config_parameters(new_config);
 
 		dof = new_config.dof;
+		current_position.resize(dof,0.0);
+		current_velocity.resize(dof,0.0);
 
 		// initialize helper classes
 		kinematic_solver_.reset(new Kinematic_calculations());
@@ -166,7 +170,7 @@ void predictive_control_node::main_predictive_control()
 			joint_velocity_data.data[i] = current_velocity.at(i);
 		}
 
-	    timer_ = nh.createTimer(ros::Duration(1/1), &predictive_control_node::run_node, this);
+	    timer_ = nh.createTimer(ros::Duration(1/new_config.update_rate), &predictive_control_node::run_node, this);
 	    timer_.start();
 
 	    ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());
@@ -179,15 +183,25 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 {
 	ros::Duration period = event.current_real - event.last_real;
 
+	//current_position[0] = 1.57;	current_position[1] = 1.57;	current_position[2] = 1.57;	current_position[3] = 1.57;
+
 	Eigen::VectorXd current_eigen_position;
 	convert_std_To_Eigen_vector(current_position, current_eigen_position);
 
-	if (!current_position.empty())
-	{
-		Eigen::MatrixXd J_Mat;
-		kinematic_solver_->compute_and_get_jacobian(current_eigen_position, J_Mat);
-		std::cout << J_Mat << std::endl;
-	}
+	// pose of gripper using fk, orientation is in rpy
+	const int size = 6;
+	Eigen::VectorXd gripper_pose(size);
+	kinematic_solver_->compute_and_get_gripper_pose(current_eigen_position, gripper_pose);
+
+	//std::cout << gripper_pose << std::endl;
+
+	Eigen::MatrixXd J_Mat;
+	kinematic_solver_->compute_and_get_jacobian(current_eigen_position, J_Mat);
+	//std::cout << J_Mat << std::endl;
+
+	pd_frame_tracker_->solver(J_Mat, gripper_pose, joint_velocity_data);
+
+	joint_velocity_pub.publish(joint_velocity_data);
 }
 
 void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec)

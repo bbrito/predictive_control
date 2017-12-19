@@ -10,14 +10,23 @@
 #include <sensor_msgs/JointState.h>
 #include <std_srvs/Trigger.h>
 #include <tf/tf.h>
+#include <std_msgs/String.h>
+#include <std_msgs/Float64.h>
+#include <std_msgs/Float64MultiArray.h>
+#include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
 
 // std includes
-#include <iostream>
-#include <string>
 #include <assert.h>
+#include <string>
+#include <vector>
+#include <math.h>
+#include <algorithm>
+#include <iostream>
 
 // boost includes
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 
 // yaml parsing
 #include <fstream>
@@ -34,14 +43,34 @@ private:
 
 	ros::NodeHandle nh;
 	ros::Subscriber joint_state_sub;
+	ros::Publisher joint_velocity_pub;
 
+	// Timer
+    double update_rate_;
+    ros::Timer timer_;
+    unsigned int dof;
+
+	// predictive configuration parameter
 	predictive_config new_config;
 
+	// current position and velocity from joint state callback
 	std::vector<double> current_position;
 	std::vector<double> current_velocity;
 
+	// type of variable used to publish joint velocity
+	std_msgs::Float64MultiArray joint_velocity_data;
+
+	// kinematic calculation
+	boost::shared_ptr<Kinematic_calculations> kinematic_solver_;
+
+	// trajectory generator
+	boost::shared_ptr<pd_frame_tracker> pd_frame_tracker_;
+
 	void spin_node();
 
+	void run_node(const ros::TimerEvent& event);
+
+	void convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec);
 public:
 
 	predictive_control_node();

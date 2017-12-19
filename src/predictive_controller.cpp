@@ -8,7 +8,7 @@ predictive_control_node::predictive_control_node()
 {
 	//nh = "predictive_control_node";
 
-	nh = ros::this_node::getName();
+	//nh = ros::this_node::getName();
 
 }
 
@@ -26,20 +26,23 @@ void predictive_control_node::spin_node()
 
 void predictive_control_node::read_predictive_parameters(predictive_config& new_param)
 {
+
+	//ros::NodeHandle nh = std::string("arm");
+
 	// Get chain_base and chain tip links, root frame, traget frame
 	if (!nh.getParam ("/chain_base_link", new_param.base_link) )
 	{
-		ROS_WARN(" Parameter 'Chain_base_link' not set on %s node " , ros::this_node::getName().c_str());
+		ROS_WARN(" Parameter 'chain_base_link' not set on %s node " , ros::this_node::getName().c_str());
 	}
 
 	if (!nh.getParam ("/chain_tip_link", new_param.tip_link) )
 	{
-		ROS_WARN(" Parameter 'Chain_tip_link' not set on %s node " , ros::this_node::getName().c_str());
+		ROS_WARN(" Parameter 'chain_tip_link' not set on %s node " , ros::this_node::getName().c_str());
 	}
 
 	if (!nh.getParam ("/root_frame", new_param.root_frame) )
 	{
-		ROS_WARN(" Parameter 'Root_frame' not set on %s node " , ros::this_node::getName().c_str());
+		ROS_WARN(" Parameter 'root_frame' not set on %s node " , ros::this_node::getName().c_str());
 	}
 
 	if (!nh.getParam ("/target_frame", new_param.target_frame) )
@@ -50,7 +53,7 @@ void predictive_control_node::read_predictive_parameters(predictive_config& new_
 	//Get joint names
 	if (!nh.getParam ("/joint_names", new_param.jnts_name) )
 	{
-		ROS_WARN(" Parameter 'Joint names' not set on %s node " , ros::this_node::getName().c_str());
+		ROS_WARN(" Parameter 'joint names' not set on %s node " , ros::this_node::getName().c_str());
 	}
 
 	new_param.dof = new_param.jnts_name.size();
@@ -72,6 +75,7 @@ void predictive_control_node::read_predictive_parameters(predictive_config& new_
 	nh.param("/max_discretization_steps", new_param.max_discretization_steps, int(20));
 	nh.param("/discretization_steps", new_param.discretization_steps, int(15));
 
+	ROS_INFO("predictive_control_node:read_predictive_parameters ... is finished");
 	//current_position.resize(new_param.dof, 0.0);
 	//current_velocity.resize(new_param.dof, 0.0);
 
@@ -87,7 +91,7 @@ void predictive_control_node::joint_state_callBack(const sensor_msgs::JointState
 
 	ROS_DEBUG("Call joint_state_callBack function ... ");
 
-	for (unsigned int i = 0; i < new_config.dof; ++i)
+	for (unsigned int i = 0; i < dof; ++i)
 	{
 		for (unsigned int j = 0; j < msg->name.size(); ++j)
 		{
@@ -97,6 +101,7 @@ void predictive_control_node::joint_state_callBack(const sensor_msgs::JointState
 				current_position.push_back( msg->position[j] );
 				current_velocity.push_back( msg->velocity[j] );
 				count++;
+				break;
 			}
 		}
 	}
@@ -142,9 +147,53 @@ void predictive_control_node::main_predictive_control()
 		// update configuration parameter
 		new_config.update_config_parameters(new_config);
 
-		// Initialize ROS interfaces
-		joint_state_sub = nh.subscribe("/joint_states", 1, &predictive_control_node::joint_state_callBack, this);
+		dof = new_config.dof;
 
-		spin_node();
+		// initialize helper classes
+		kinematic_solver_.reset(new Kinematic_calculations());
+		pd_frame_tracker_.reset(new pd_frame_tracker());
+		pd_frame_tracker_->initialization(new_config);
+
+		// Initialize ROS interfaces
+		joint_state_sub = nh.subscribe("joint_states", 1, &predictive_control_node::joint_state_callBack, this);
+		joint_velocity_pub = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
+
+		// initialize publishing data members
+		joint_velocity_data.data.resize(dof, 0.0);
+		for (int i = 0u; i < dof && !current_velocity.empty(); ++i)
+		{
+			joint_velocity_data.data[i] = current_velocity.at(i);
+		}
+
+	    timer_ = nh.createTimer(ros::Duration(1/1), &predictive_control_node::run_node, this);
+	    timer_.start();
+
+	    ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());
+
+		//spin_node();
+	}
+}
+
+void predictive_control_node::run_node(const ros::TimerEvent& event)
+{
+	ros::Duration period = event.current_real - event.last_real;
+
+	Eigen::VectorXd current_eigen_position;
+	convert_std_To_Eigen_vector(current_position, current_eigen_position);
+
+
+	Eigen::MatrixXd J_Mat;
+	kinematic_solver_->compute_and_get_jacobian(current_eigen_position, J_Mat);
+	std::cout << J_Mat << std::endl;
+
+}
+
+void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec)
+{
+	//std::assert(("convert_std_To_Eigen_vector ... Should not be empty vector",std_vec.empty()));
+	eigen_vec.setZero(std_vec.size());
+	for (int i = 0u; i < std_vec.size(); ++i)
+	{
+		eigen_vec(i) = std_vec.at(i);
 	}
 }

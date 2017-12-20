@@ -186,7 +186,9 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	//current_position[0] = 1.57;	current_position[1] = 1.57;	current_position[2] = 1.57;	current_position[3] = 1.57;
 
 	Eigen::VectorXd current_eigen_position;
-	convert_std_To_Eigen_vector(current_position, current_eigen_position);
+	std::vector<double> current_pose;
+	current_pose = current_position;
+	convert_std_To_Eigen_vector(current_pose, current_eigen_position);
 
 	// pose of gripper using fk, orientation is in rpy
 	const int size = 6;

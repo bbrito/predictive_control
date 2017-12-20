@@ -45,8 +45,11 @@ private:
 	ros::Subscriber joint_state_sub;
 	ros::Publisher joint_velocity_pub;
 
+	 tf::TransformListener tf_listener_;
+
 	// Timer
     double update_rate_;
+    double cartesian_dist;
     ros::Timer timer_;
     unsigned int dof;
 
@@ -71,6 +74,9 @@ private:
 	void run_node(const ros::TimerEvent& event);
 
 	void convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec);
+
+	void publish_zero_jointVelocity();
+
 public:
 
 	predictive_control_node();

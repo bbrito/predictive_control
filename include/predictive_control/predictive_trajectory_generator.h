@@ -134,7 +134,11 @@ class pd_frame_tracker
 
 		void solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::VectorXd& current_endeffector_pose, std_msgs::Float64MultiArray& updated_vel);
 
-		void compute_quaternion_error(const double& r, const double& p, const double& y);
+		void compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist);
+
+		bool get_transform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose);
+
+		void quaternion_product(const geometry_msgs::Quaternion& quat_1, const geometry_msgs::Quaternion& quat_2, geometry_msgs::Quaternion& quat_resultant);
 };
 
 

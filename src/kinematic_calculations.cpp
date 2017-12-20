@@ -597,6 +597,24 @@ void Kinematic_calculations::compute_and_get_jacobian(const Eigen::VectorXd& jnt
 }
 
 
+void Kinematic_calculations::compute_and_get_currrent_quaternion(const Eigen::VectorXd& jnt_angles, geometry_msgs::Quaternion& current_quaternion)
+{
+	KDL::JntArray kdl_jnt_angles;
+	kdl_jnt_angles.data = jnt_angles;
+
+	// gives gripper position and rotation kdl frame matrix
+	forward_kinematics(kdl_jnt_angles);
+
+	//http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+	current_quaternion.w =  0.5 * sqrt(1.0 + fk_mat.M(0,0) + fk_mat.M(1,1) + fk_mat.M(2,2));
+	current_quaternion.x = ( fk_mat.M(2,1) - fk_mat.M(1,2) ) / (4.0 * current_quaternion.w);
+	current_quaternion.y = ( fk_mat.M(0,2) - fk_mat.M(2,0) ) / (4.0 * current_quaternion.w);
+	current_quaternion.z = ( fk_mat.M(1,0) - fk_mat.M(0,1) ) / (4.0 * current_quaternion.w);
+
+	ros::Duration(0.01).sleep();
+}
+
+
 void Kinematic_calculations::get_joint_limits(const std::string& name_of_limit, std::vector<double>& limit_vec)
 {
 	if (name_of_limit == "jnt_pose_min_limit" || name_of_limit == "joint_pose_min_limit" || name_of_limit == "pose_min_limit")

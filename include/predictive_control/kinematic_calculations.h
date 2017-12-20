@@ -130,6 +130,9 @@ class Kinematic_calculations
 		void set_max_joint_position_limits( const std::vector<double>& limit_vec);
 		void set_joint_velocity_limits( const std::vector<double>& limit_vec );
 
+		// compute current quaternion
+		void compute_and_get_currrent_quaternion(const Eigen::VectorXd& jnt_angles, geometry_msgs::Quaternion& current_quaternion);
+
 		// Debug function for kinematic calculation class
 		void print_data_memebers(void);
 		void print_fk_and_jacobian_matrix(const KDL::JntArray& jnt_angles);

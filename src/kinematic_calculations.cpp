@@ -597,7 +597,7 @@ void Kinematic_calculations::compute_and_get_jacobian(const Eigen::VectorXd& jnt
 }
 
 
-void Kinematic_calculations::compute_and_get_currrent_quaternion(const Eigen::VectorXd& jnt_angles, geometry_msgs::Quaternion& current_quaternion)
+void Kinematic_calculations::compute_and_get_currrent_gripper_poseStamped(const Eigen::VectorXd& jnt_angles, geometry_msgs::PoseStamped& current_gripper_poseStamped)
 {
 	KDL::JntArray kdl_jnt_angles;
 	kdl_jnt_angles.data = jnt_angles;
@@ -606,10 +606,18 @@ void Kinematic_calculations::compute_and_get_currrent_quaternion(const Eigen::Ve
 	forward_kinematics(kdl_jnt_angles);
 
 	//http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
-	current_quaternion.w =  0.5 * sqrt(1.0 + fk_mat.M(0,0) + fk_mat.M(1,1) + fk_mat.M(2,2));
-	current_quaternion.x = ( fk_mat.M(2,1) - fk_mat.M(1,2) ) / (4.0 * current_quaternion.w);
-	current_quaternion.y = ( fk_mat.M(0,2) - fk_mat.M(2,0) ) / (4.0 * current_quaternion.w);
-	current_quaternion.z = ( fk_mat.M(1,0) - fk_mat.M(0,1) ) / (4.0 * current_quaternion.w);
+	current_gripper_poseStamped.pose.orientation.w =  0.5 * sqrt(1.0 + fk_mat.M(0,0) + fk_mat.M(1,1) + fk_mat.M(2,2));
+	current_gripper_poseStamped.pose.orientation.x = ( fk_mat.M(2,1) - fk_mat.M(1,2) ) / (4.0 * current_gripper_poseStamped.pose.orientation.w);
+	current_gripper_poseStamped.pose.orientation.y = ( fk_mat.M(0,2) - fk_mat.M(2,0) ) / (4.0 * current_gripper_poseStamped.pose.orientation.w);
+	current_gripper_poseStamped.pose.orientation.z = ( fk_mat.M(1,0) - fk_mat.M(0,1) ) / (4.0 * current_gripper_poseStamped.pose.orientation.w);
+
+	// position of gripper
+	current_gripper_poseStamped.pose.position.x = fk_mat.p(0);
+	current_gripper_poseStamped.pose.position.y = fk_mat.p(1);
+	current_gripper_poseStamped.pose.position.z = fk_mat.p(2);
+
+	current_gripper_poseStamped.header.frame_id = root_frame;
+	current_gripper_poseStamped.header.stamp = ros::Time::now();
 
 	ros::Duration(0.01).sleep();
 }

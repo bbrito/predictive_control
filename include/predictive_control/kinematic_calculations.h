@@ -131,7 +131,7 @@ class Kinematic_calculations
 		void set_joint_velocity_limits( const std::vector<double>& limit_vec );
 
 		// compute current quaternion
-		void compute_and_get_currrent_quaternion(const Eigen::VectorXd& jnt_angles, geometry_msgs::Quaternion& current_quaternion);
+		void compute_and_get_currrent_gripper_poseStamped(const Eigen::VectorXd& jnt_angles, geometry_msgs::PoseStamped& current_quaternion);
 
 		// Debug function for kinematic calculation class
 		void print_data_memebers(void);

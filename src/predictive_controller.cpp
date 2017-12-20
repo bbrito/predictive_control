@@ -192,18 +192,41 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 
 	// pose of gripper using fk, orientation is in rpy
 	const int size = 6;
-	Eigen::VectorXd gripper_pose(size);
-	kinematic_solver_->compute_and_get_gripper_pose(current_eigen_position, gripper_pose);
+	Eigen::VectorXd current_gripper_pose(size);
+	kinematic_solver_->compute_and_get_gripper_pose(current_eigen_position, current_gripper_pose);
 
 	//std::cout << gripper_pose << std::endl;
 
+	// Compute Jacobian matrix
 	Eigen::MatrixXd J_Mat;
 	kinematic_solver_->compute_and_get_jacobian(current_eigen_position, J_Mat);
 	//std::cout << J_Mat << std::endl;
 
-	pd_frame_tracker_->solver(J_Mat, gripper_pose, joint_velocity_data);
+	// current poseStamped
+	geometry_msgs::PoseStamped current_gripper_poseStamped;
+	kinematic_solver_->compute_and_get_currrent_gripper_poseStamped(current_eigen_position, current_gripper_poseStamped);
 
-	joint_velocity_pub.publish(joint_velocity_data);
+	// target poseStamped
+	geometry_msgs::PoseStamped target_gripper_poseStamped;
+	pd_frame_tracker_->get_transform("/arm_podest_link", new_config.target_frame, target_gripper_poseStamped);
+
+	// error poseStamped
+	geometry_msgs::PoseStamped tip_Target_Frame_error_poseStamped;
+	pd_frame_tracker_->get_transform(new_config.tip_link, new_config.target_frame, tip_Target_Frame_error_poseStamped);
+
+	pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
+
+	// cartesian error
+	pd_frame_tracker_->compute_euclidean_distance(tip_Target_Frame_error_poseStamped.pose.position, cartesian_dist);
+
+	if (cartesian_dist < 0.05)
+	{
+		publish_zero_jointVelocity();
+	}
+	else
+	{
+		joint_velocity_pub.publish(joint_velocity_data);
+	}
 }
 
 void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec)
@@ -214,4 +237,10 @@ void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<doub
 	{
 		eigen_vec(i) = std_vec.at(i);
 	}
+}
+
+void predictive_control_node::publish_zero_jointVelocity()
+{
+	joint_velocity_data.data.resize(dof, 0.0);
+	joint_velocity_pub.publish(joint_velocity_data);
 }

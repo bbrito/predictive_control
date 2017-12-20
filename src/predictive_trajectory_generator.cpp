@@ -439,5 +439,63 @@ bool pd_frame_tracker::get_transform(const std::string& from, const std::string&
     return transform;
 }
 
+bool pd_frame_tracker::get_transform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
+{
+    bool transform = false;
+    tf::StampedTransform stamped_tf;
+
+    if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
+    {
+		try
+		{
+			tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
+			tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
+
+			stamped_pose.pose.orientation.w =  stamped_tf.getRotation().getW();
+			stamped_pose.pose.orientation.x =  stamped_tf.getRotation().getX();
+			stamped_pose.pose.orientation.y =  stamped_tf.getRotation().getY();
+			stamped_pose.pose.orientation.z =  stamped_tf.getRotation().getZ();
+
+			stamped_pose.pose.position.x = stamped_tf.getOrigin().x();
+			stamped_pose.pose.position.y = stamped_tf.getOrigin().y();
+			stamped_pose.pose.position.z = stamped_tf.getOrigin().z();
+
+			stamped_pose.header.frame_id = stamped_tf.frame_id_;
+			stamped_pose.header.stamp = stamped_tf.stamp_;
+
+			transform = true;
+		}
+		catch (tf::TransformException& ex)
+		{
+			ROS_ERROR("predictive_control_node::getTransform: \n%s", ex.what());
+		}
+    }
+
+    else
+    {
+    	ROS_WARN("%s or %s frame doesn't exist, pass existing frame", from.c_str(), to.c_str());
+    }
+
+    return transform;
+}
 
 
+void pd_frame_tracker::compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist)
+{
+	cart_dist = sqrt( point.x * point.x + point.y * point.y + point.z * point.z);
+}
+
+void pd_frame_tracker::quaternion_product(const geometry_msgs::Quaternion& quat_1, const geometry_msgs::Quaternion& quat_2, geometry_msgs::Quaternion& quat_resultant)
+{
+	Eigen::Vector3d quat_1_lcl(quat_1.x, quat_1.y, quat_1.z);
+	Eigen::Vector3d quat_2_lcl(quat_2.x, quat_2.y, quat_2.z);
+
+	Eigen::Vector3d cross_prod = quat_1_lcl.cross(quat_2_lcl);
+
+	quat_resultant.w = ( (quat_1.w * quat_2.w) - (quat_1_lcl.dot(quat_2_lcl)) );
+	quat_resultant.x = ( (quat_1.w * quat_2.x) + (quat_2.w * quat_1.x) + cross_prod(0) );
+	quat_resultant.y = ( (quat_1.w * quat_2.y) + (quat_2.w * quat_1.y) + cross_prod(1) );
+	quat_resultant.z = ( (quat_1.w * quat_2.z) + (quat_2.w * quat_1.z) + cross_prod(2) );
+
+	ros::Duration(0.01).sleep();
+}

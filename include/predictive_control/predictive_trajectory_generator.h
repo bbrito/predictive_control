@@ -123,7 +123,7 @@ class pd_frame_tracker
 
 		void publish_zero_joint_velocity();
 
-		bool getTransform(const std::string& from, const std::string& to, tf::StampedTransform& stamped_tf);
+		bool get_transform(const std::string& from, const std::string& to, tf::StampedTransform& stamped_tf);
 
 	public:
 
@@ -133,6 +133,8 @@ class pd_frame_tracker
 		bool initialization(const predictive_config& pd_config);
 
 		void solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::VectorXd& current_endeffector_pose, std_msgs::Float64MultiArray& updated_vel);
+
+		void compute_quaternion_error(const double& r, const double& p, const double& y);
 };
 
 

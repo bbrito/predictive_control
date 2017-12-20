@@ -327,8 +327,8 @@ void pd_frame_tracker::solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::
 	ROS_WARN("Solving OCP problem using ACADO Toolkit");
 
     tf::StampedTransform transform_tf, target_frame_TO_root_frame;
-    bool success = this->getTransform(tracking_frame_, target_frame_, transform_tf); //target_frame_
-    bool success1 = this->getTransform("/arm_podest_link", target_frame_, target_frame_TO_root_frame); //target_frame_
+    bool success = this->get_transform(tracking_frame_, target_frame_, transform_tf); //target_frame_
+    bool success1 = this->get_transform("/arm_podest_link", target_frame_, target_frame_TO_root_frame); //target_frame_
 
     std::cout << jacobian_mat << std::endl;
     DMatrix Jac_Mat = jacobian_mat;
@@ -421,7 +421,7 @@ void pd_frame_tracker::solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::
 
 }
 
-bool pd_frame_tracker::getTransform(const std::string& from, const std::string& to, tf::StampedTransform& stamped_tf)
+bool pd_frame_tracker::get_transform(const std::string& from, const std::string& to, tf::StampedTransform& stamped_tf)
 {
     bool transform = false;
 

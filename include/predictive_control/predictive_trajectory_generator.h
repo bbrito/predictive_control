@@ -117,12 +117,13 @@ class pd_frame_tracker
 	    std::string tracking_frame_;    // the frame tracking the target (i.e. chain_tip or lookat_focus)
 	    std::string target_frame_;      // the frame to be tracked
 
-	    double cart_distance;
-	    double rot_distance;
+
+	    //double cart_distance;
+	    //double rot_distance;
 
 	    tf::TransformListener tf_listener_;
 
-		void publish_zero_joint_velocity();
+		//void publish_zero_joint_velocity();
 
 		bool get_transform(const std::string& from, const std::string& to, tf::StampedTransform& stamped_tf);
 

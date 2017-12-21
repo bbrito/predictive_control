@@ -195,33 +195,48 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	Eigen::VectorXd current_gripper_pose(size);
 	kinematic_solver_->compute_and_get_gripper_pose(current_eigen_position, current_gripper_pose);
 
-	//std::cout << gripper_pose << std::endl;
+	// current poseStamped, just used for quaternion error calculation
+	geometry_msgs::PoseStamped current_gripper_pose_error_cal_quat;
+	kinematic_solver_->compute_and_get_currrent_gripper_poseStamped(current_eigen_position, current_gripper_pose_error_cal_quat);
 
+	//std::cout << gripper_pose << std::endl;
 	// Compute Jacobian matrix
 	Eigen::MatrixXd J_Mat;
 	kinematic_solver_->compute_and_get_jacobian(current_eigen_position, J_Mat);
 	//std::cout << J_Mat << std::endl;
 
-	// current poseStamped
-	geometry_msgs::PoseStamped current_gripper_poseStamped;
-	kinematic_solver_->compute_and_get_currrent_gripper_poseStamped(current_eigen_position, current_gripper_poseStamped);
-
 	// target poseStamped
 	geometry_msgs::PoseStamped target_gripper_poseStamped;
 	pd_frame_tracker_->get_transform("/arm_podest_link", new_config.target_frame, target_gripper_poseStamped);
 
-	// error poseStamped
+	// computation of error quaternion
+	// modelling and control of Robot Manipulator, Bruno Siciliano
+	// delta(Q) = Q_des * Q_cur_inv
+	//todo: convert two quat variable to one
+	geometry_msgs::Quaternion quat_inv, quat_prod;
+	pd_frame_tracker_->perform_quaternion_inverse(current_gripper_pose_error_cal_quat.pose.orientation, quat_inv);
+	pd_frame_tracker_->quaternion_product(target_gripper_poseStamped.pose.orientation, quat_inv, quat_prod);
+
+	// optimal problem solver
+	//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
+	pd_frame_tracker_->optimal_control_solver(J_Mat, current_gripper_pose, quat_prod, target_gripper_poseStamped, joint_velocity_data);
+
+	// error poseStamped, computation of euclidean distance error
 	geometry_msgs::PoseStamped tip_Target_Frame_error_poseStamped;
 	pd_frame_tracker_->get_transform(new_config.tip_link, new_config.target_frame, tip_Target_Frame_error_poseStamped);
 
-	pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
-
-	// cartesian error
 	pd_frame_tracker_->compute_euclidean_distance(tip_Target_Frame_error_poseStamped.pose.position, cartesian_dist);
 
-	if (cartesian_dist < 0.05)
+	double rot_dis = 0.0;
+	pd_frame_tracker_->compute_rotation_distance(quat_prod, rot_dis);
+
+	std::cout<<"\033[36;1m" << "***********************"<< "cartesian distance: " << cartesian_dist << "***********************" << std::endl
+							<< "***********************"<< "rotation distance: " << rot_dis << "***********************" << std::endl
+			<< "\033[0m\n" << std::endl;
+
+	if (cartesian_dist < 0.05 && rot_dis < 0.05)
 	{
-		publish_zero_jointVelocity();
+			publish_zero_jointVelocity();
 	}
 	else
 	{
@@ -242,5 +257,12 @@ void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<doub
 void predictive_control_node::publish_zero_jointVelocity()
 {
 	joint_velocity_data.data.resize(dof, 0.0);
+	joint_velocity_data.data[0] = 0.0;
+	joint_velocity_data.data[1] = 0.0;
+	joint_velocity_data.data[2] = 0.0;
+	joint_velocity_data.data[3] = 0.0;
+	joint_velocity_data.data[4] = 0.0;
+	joint_velocity_data.data[5] = 0.0;
+	joint_velocity_data.data[6] = 0.0;
 	joint_velocity_pub.publish(joint_velocity_data);
 }

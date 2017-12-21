@@ -505,14 +505,14 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 	ocp_problem.minimizeMayerTerm(10.0*( ( (x(0)-target_gripper_pose.pose.position.x)  * (x(0)-target_gripper_pose.pose.position.x) ) +
   	   	   	   	   	  ( (x(1)-target_gripper_pose.pose.position.y)  * (x(1)-target_gripper_pose.pose.position.y) ) +
   	   	   	   	   	  ( (x(2)-target_gripper_pose.pose.position.z)  * (x(2)-target_gripper_pose.pose.position.z) )) + 1.0 * ( ((x(3)- r) * (x(3)- r)) + ((x(4)- p) * (x(4)- p)) + ((x(5)- y) * (x(5)- y)) ) +
-						(v.transpose()*v));
+						10.0 * (v.transpose()*v));
 
     ocp_problem.subjectTo(f);
     ocp_problem.subjectTo(-0.50 <= v <= 0.50);
     //ocp_problem.subjectTo(AT_END, x == 0.0);
     ocp_problem.subjectTo(AT_END , v == 0.0);
 
-    RealTimeAlgorithm alg(ocp_problem, 0.025);
+    RealTimeAlgorithm alg(ocp_problem, 0.050);
 
 	alg.initializeControls(c_init);
 	alg.initializeDifferentialStates(s_init);

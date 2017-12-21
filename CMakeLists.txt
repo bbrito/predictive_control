@@ -19,12 +19,12 @@ SET(ACADO_DIR /home/bfb-ws/ACADOtoolkit/)
 SET(ACADO_INCLUDE_PACKAGES ${ACADO_DIR} ${ACADO_DIR}/acado ${ACADO_DIR}/external_packages)
 
 ## Generate services in the 'srv' folder
-add_service_files(
-	DIRECTORY 
-		srvs
-	FILES
-		GetFrameTrackingInfo.srv
-)
+#add_service_files(
+#	DIRECTORY 
+#		srvs
+#	FILES
+#		GetFrameTrackingInfo.srv
+#)
 
 # Generate added messages and services with any dependencies listed here
 generate_messages(

@@ -50,6 +50,8 @@ private:
 	// Timer
     double update_rate_;
     double cartesian_dist;
+	double rotation_dist = 0.0;
+
     ros::Timer timer_;
     unsigned int dof;
 
@@ -62,6 +64,9 @@ private:
 
 	// type of variable used to publish joint velocity
 	std_msgs::Float64MultiArray joint_velocity_data;
+	geometry_msgs::PoseStamped current_gripper_pose;
+	geometry_msgs::PoseStamped target_gripper_pose;
+	Eigen::MatrixXd Jacobian_Mat;
 
 	// kinematic calculation
 	boost::shared_ptr<Kinematic_calculations> kinematic_solver_;

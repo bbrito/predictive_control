@@ -152,6 +152,11 @@ void predictive_control_node::main_predictive_control()
 		dof = new_config.dof;
 		current_position.resize(dof,0.0);
 		current_velocity.resize(dof,0.0);
+		current_gripper_pose = geometry_msgs::PoseStamped();
+		target_gripper_pose = geometry_msgs::PoseStamped();
+		const int m = 6, n = dof;
+		Jacobian_Mat.resize(m,n);
+		Jacobian_Mat.setIdentity();
 
 		// initialize helper classes
 		kinematic_solver_.reset(new Kinematic_calculations());
@@ -183,58 +188,32 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 {
 	ros::Duration period = event.current_real - event.last_real;
 
-	//current_position[0] = 1.57;	current_position[1] = 1.57;	current_position[2] = 1.57;	current_position[3] = 1.57;
+	std::vector<double> current_position_vec_copy = current_position;
 
-	Eigen::VectorXd current_eigen_position;
-	std::vector<double> current_pose;
-	current_pose = current_position;
-	convert_std_To_Eigen_vector(current_pose, current_eigen_position);
+	// current pose of gripper using fk, jacobian matrix
+	kinematic_solver_->compute_gripper_pose_and_jacobian(current_position_vec_copy, current_gripper_pose, Jacobian_Mat);
 
-	// pose of gripper using fk, orientation is in rpy
-	const int size = 6;
-	Eigen::VectorXd current_gripper_pose(size);
-	kinematic_solver_->compute_and_get_gripper_pose(current_eigen_position, current_gripper_pose);
-
-	// current poseStamped, just used for quaternion error calculation
-	geometry_msgs::PoseStamped current_gripper_pose_error_cal_quat;
-	kinematic_solver_->compute_and_get_currrent_gripper_poseStamped(current_eigen_position, current_gripper_pose_error_cal_quat);
-
-	//std::cout << gripper_pose << std::endl;
-	// Compute Jacobian matrix
-	Eigen::MatrixXd J_Mat;
-	kinematic_solver_->compute_and_get_jacobian(current_eigen_position, J_Mat);
-	//std::cout << J_Mat << std::endl;
+	std::cout << Jacobian_Mat << std::endl;
 
 	// target poseStamped
-	geometry_msgs::PoseStamped target_gripper_poseStamped;
-	pd_frame_tracker_->get_transform("/arm_podest_link", new_config.target_frame, target_gripper_poseStamped);
-
-	// computation of error quaternion
-	// modelling and control of Robot Manipulator, Bruno Siciliano
-	// delta(Q) = Q_des * Q_cur_inv
-	//todo: convert two quat variable to one
-	geometry_msgs::Quaternion quat_inv, quat_prod;
-	pd_frame_tracker_->perform_quaternion_inverse(current_gripper_pose_error_cal_quat.pose.orientation, quat_inv);
-	pd_frame_tracker_->quaternion_product(target_gripper_poseStamped.pose.orientation, quat_inv, quat_prod);
+	pd_frame_tracker_->get_transform("/arm_podest_link", new_config.target_frame, target_gripper_pose);
 
 	// optimal problem solver
 	//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
-	pd_frame_tracker_->optimal_control_solver(J_Mat, current_gripper_pose, quat_prod, target_gripper_poseStamped, joint_velocity_data);
+	pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose, joint_velocity_data);
 
 	// error poseStamped, computation of euclidean distance error
-	geometry_msgs::PoseStamped tip_Target_Frame_error_poseStamped;
-	pd_frame_tracker_->get_transform(new_config.tip_link, new_config.target_frame, tip_Target_Frame_error_poseStamped);
+	geometry_msgs::PoseStamped tip_Target_Frame_error_stamped;
+	pd_frame_tracker_->get_transform(new_config.tip_link, new_config.target_frame, tip_Target_Frame_error_stamped);
 
-	pd_frame_tracker_->compute_euclidean_distance(tip_Target_Frame_error_poseStamped.pose.position, cartesian_dist);
-
-	double rot_dis = 0.0;
-	pd_frame_tracker_->compute_rotation_distance(quat_prod, rot_dis);
+	pd_frame_tracker_->compute_euclidean_distance(tip_Target_Frame_error_stamped.pose.position, cartesian_dist);
+	pd_frame_tracker_->compute_rotation_distance(tip_Target_Frame_error_stamped.pose.orientation, rotation_dist);
 
 	std::cout<<"\033[36;1m" << "***********************"<< "cartesian distance: " << cartesian_dist << "***********************" << std::endl
-							<< "***********************"<< "rotation distance: " << rot_dis << "***********************" << std::endl
+							<< "***********************"<< "rotation distance: " << rotation_dist << "***********************" << std::endl
 			<< "\033[0m\n" << std::endl;
 
-	if (cartesian_dist < 0.05 && rot_dis < 0.05)
+	if (cartesian_dist < 0.05 && rotation_dist < 0.05)
 	{
 			publish_zero_jointVelocity();
 	}

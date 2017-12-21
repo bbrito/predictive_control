@@ -139,6 +139,7 @@ void predictive_control_node::joint_state_callBack(const sensor_msgs::JointState
 
 void predictive_control_node::main_predictive_control()
 {
+	ros::NodeHandle nh_tracker("frame_tracker");
 	// Check ROS node start correctly.
 	if (ros::ok())
 	{
@@ -158,6 +159,9 @@ void predictive_control_node::main_predictive_control()
 		Jacobian_Mat.resize(m,n);
 		Jacobian_Mat.setIdentity();
 
+		tracking_ = false;
+		tracking_goal_ = false;
+
 		// initialize helper classes
 		kinematic_solver_.reset(new Kinematic_calculations());
 		kinematic_solver_->initialize();
@@ -168,12 +172,18 @@ void predictive_control_node::main_predictive_control()
 		joint_state_sub = nh.subscribe("joint_states", 1, &predictive_control_node::joint_state_callBack, this);
 		joint_velocity_pub = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
 
+		start_tracking_server_ = nh_tracker.advertiseService("start_tracking", &predictive_control_node::startTrackingCallback, this);
+		start_lookat_server_ = nh_tracker.advertiseService("start_lookat", &predictive_control_node::startLookatCallback, this);
+		stop_server_ = nh_tracker.advertiseService("stop", &predictive_control_node::stopCallback, this);
+
 		// initialize publishing data members
 		joint_velocity_data.data.resize(dof, 0.0);
 		for (int i = 0u; i < dof && !current_velocity.empty(); ++i)
 		{
 			joint_velocity_data.data[i] = current_velocity.at(i);
 		}
+
+		ros::Duration(2.0).sleep();
 
 	    timer_ = nh.createTimer(ros::Duration(1/new_config.update_rate), &predictive_control_node::run_node, this);
 	    timer_.start();
@@ -244,4 +254,82 @@ void predictive_control_node::publish_zero_jointVelocity()
 	joint_velocity_data.data[5] = 0.0;
 	joint_velocity_data.data[6] = 0.0;
 	joint_velocity_pub.publish(joint_velocity_data);
+}
+
+bool predictive_control_node::startTrackingCallback(cob_srvs::SetString::Request& request, cob_srvs::SetString::Response& response)
+{
+    if (tracking_)
+    {
+        std::string msg = "predictive_control_node: StartTracking denied because Tracking already active";
+        ROS_ERROR_STREAM(msg);
+        response.success = false;
+        response.message = msg;
+    }
+    else if (tracking_goal_)
+    {
+        std::string msg = "predictive_control_node: StartTracking denied because TrackingAction is active";
+        ROS_ERROR_STREAM(msg);
+        response.success = false;
+        response.message = msg;
+    }
+    else
+    {
+        // check whether given target frame exists
+        if (!tf_listener_.frameExists(request.data))
+        {
+            std::string msg = "predictive_control_node: StartTracking denied because target frame '" + request.data + "' does not exist";
+            ROS_ERROR_STREAM(msg);
+            response.success = false;
+            response.message = msg;
+        }
+        else
+        {
+            std::string msg = "predictive_control_node: StartTracking started with CART_DIST_SECURITY MONITORING enabled";
+            ROS_INFO_STREAM(msg);
+            response.success = true;
+            response.message = msg;
+
+            tracking_ = true;
+            tracking_goal_ = false;
+            new_config.target_frame = request.data;
+        }
+    }
+    return true;
+}
+
+bool predictive_control_node::stopCallback(std_srvs::Trigger::Request& request, std_srvs::Trigger::Response& response)
+{
+    if (tracking_goal_)
+    {
+        std::string msg = "predictive_control_node: Stop denied because TrackingAction is active";
+        ROS_ERROR_STREAM(msg);
+        response.success = false;
+        response.message = msg;
+    }
+    else if (tracking_)
+        {
+            std::string msg = "predictive_control_node: Stop successful";
+            ROS_INFO_STREAM(msg);
+            response.success = true;
+            response.message = msg;
+
+            tracking_ = false;
+            tracking_goal_ = false;
+            new_config.target_frame = new_config.tip_link;
+
+            publish_zero_jointVelocity();
+        }
+        else
+        {
+            std::string msg = "predictive_control_node: Stop failed because nothing was tracked";
+            ROS_ERROR_STREAM(msg);
+            response.success = false;
+            response.message = msg;
+        }
+        return true;
+}
+
+bool predictive_control_node::startLookatCallback(cob_srvs::SetString::Request& request, cob_srvs::SetString::Response& response)
+{
+;
 }

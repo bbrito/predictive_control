@@ -15,6 +15,7 @@
 #include <std_msgs/Float64MultiArray.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
+#include <std_srvs/Trigger.h>
 
 // std includes
 #include <assert.h>
@@ -35,7 +36,7 @@
 // predicitve includes
 #include <predictive_control/predictive_trajectory_generator.h>
 #include <predictive_control/kinematic_calculations.h>
-
+#include <cob_srvs/SetString.h>
 
 class predictive_control_node
 {
@@ -50,10 +51,18 @@ private:
 	// Timer
     double update_rate_;
     double cartesian_dist;
-	double rotation_dist = 0.0;
+	double rotation_dist;
 
     ros::Timer timer_;
     unsigned int dof;
+
+    bool tracking_;
+    bool tracking_goal_;
+
+    ros::ServiceServer start_tracking_server_;
+    ros::ServiceServer start_lookat_server_;
+    ros::ServiceServer stop_server_;
+
 
 	// predictive configuration parameter
 	predictive_config new_config;
@@ -95,6 +104,9 @@ public:
 
 	void main_predictive_control(void);
 
+	bool startTrackingCallback(cob_srvs::SetString::Request& request, cob_srvs::SetString::Response& response);
+	bool stopCallback(std_srvs::Trigger::Request& request, std_srvs::Trigger::Response& response);
+	bool startLookatCallback(cob_srvs::SetString::Request& request, cob_srvs::SetString::Response& response);
 };
 
 #endif

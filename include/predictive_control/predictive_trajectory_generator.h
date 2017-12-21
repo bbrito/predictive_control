@@ -126,6 +126,8 @@ class pd_frame_tracker
 
 		bool get_transform(const std::string& from, const std::string& to, tf::StampedTransform& stamped_tf);
 
+		void convert_quaternion_to_rpy(const geometry_msgs::Quaternion& quat, geometry_msgs::Vector3& rpy);
+
 	public:
 
 		pd_frame_tracker(){};
@@ -143,7 +145,7 @@ class pd_frame_tracker
 		 * @param target_gripper_pose Target gripper poseStamped where want to move gripper
 		 * @return updated_vel Initialize control states and filled with control joint velocity, want to publish it
 		 **/
-		void optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat, const Eigen::VectorXd& current_gripper_pose, const geometry_msgs::Quaternion& current_gripper_quternion,
+		void optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat, const geometry_msgs::PoseStamped& current_gripper_pose,
 									const geometry_msgs::PoseStamped& target_gripper_pose, std_msgs::Float64MultiArray& updated_vel);
 
 		void compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist);

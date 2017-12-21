@@ -422,17 +422,14 @@ void pd_frame_tracker::solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::
 
 }
 
-void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat, const Eigen::VectorXd& current_gripper_pose, const geometry_msgs::Quaternion& current_gripper_quternion,
+void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat, const geometry_msgs::PoseStamped& current_gripper_pose,
 									const geometry_msgs::PoseStamped& target_gripper_pose, std_msgs::Float64MultiArray& updated_vel)
 {
 	ROS_INFO("----------------------------------------");
 	ROS_WARN("pd_frame_tracker::optimal_control_solver");
 	ROS_INFO("----------------------------------------");
 
-    tf::StampedTransform  target_frame_TO_root_frame;
-	bool success1 = this->get_transform("/arm_podest_link", target_frame_, target_frame_TO_root_frame);
-	ROS_WARN_STREAM("Quaternion error: "<< current_gripper_quternion);
-	tf::Quaternion q(target_frame_TO_root_frame.getRotation().getX(),target_frame_TO_root_frame.getRotation().getY(),target_frame_TO_root_frame.getRotation().getZ(),target_frame_TO_root_frame.getRotation().getW());
+	tf::Quaternion q(target_gripper_pose.pose.orientation.x, target_gripper_pose.pose.orientation.y, target_gripper_pose.pose.orientation.z, target_gripper_pose.pose.orientation.w);
 	tf::Matrix3x3 quat_error(q);
 	double r,p,y;
 	quat_error.getRPY(r,p,y);
@@ -466,53 +463,39 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 	DVector c_init(7), s_init(6);
 	c_init.setAll(0.00);
 	s_init.setAll(0.00);
-	s_init(0) = current_gripper_pose(0);		s_init(1) = current_gripper_pose(1);		s_init(2) = current_gripper_pose(2);
-	s_init(3) = current_gripper_pose(3);		s_init(4) = current_gripper_pose(4);		s_init(5) = current_gripper_pose(5);
-	/*
-	if ( !isnan(r) && !isnan(p) && !isnan(y) )
+
+	geometry_msgs::Vector3 rpy_vec3;
+	this->convert_quaternion_to_rpy(current_gripper_pose.pose.orientation, rpy_vec3);
+
+	s_init(0) = current_gripper_pose.pose.position.x;		s_init(1) = current_gripper_pose.pose.position.y;		s_init(2) = current_gripper_pose.pose.position.y;
+
+	if (isnan(rpy_vec3.x) || isnan(r) || isnan(rpy_vec3.y) || isnan(p) || isnan(rpy_vec3.z) || isnan(y))
 	{
-		ROS_ERROR("Hello");
-		s_init(3) = float(r);		s_init(4) = float(p);		s_init(5) = float(y);
+		ROS_ERROR("Hello nan");
+		s_init(3) = 0.000;		s_init(4) = 0.0000;		s_init(5) = 0.0000;
+		r = 0.0; p=0.0; y=0.0;
 	}
 	else
 	{
-		s_init(3) = current_gripper_pose(3);		s_init(4) = current_gripper_pose(4);		s_init(5) = current_gripper_pose(5);
+		s_init(3) = rpy_vec3.x;		s_init(4) = rpy_vec3.y;		s_init(5) = rpy_vec3.z;
 	}
-*/
 	c_init(0) = updated_vel.data[0];	c_init(1) = updated_vel.data[1];	c_init(2) = updated_vel.data[2];
 	c_init(3) = updated_vel.data[3];	c_init(4) = updated_vel.data[4];	c_init(5) = updated_vel.data[5];	c_init(6) = updated_vel.data[6];
 
 
 	OCP ocp_problem(0.0, 1.0, 4);
-/*
-    ocp_problem.minimizeMayerTerm( 2.0*(v.transpose()*v) + 10.0*(( (x(0)-target_frame_TO_root_frame.getOrigin().x())  * (x(0)-target_frame_TO_root_frame.getOrigin().x()) ) +
-    							   ( (x(1)-target_frame_TO_root_frame.getOrigin().y())  * (x(1)-target_frame_TO_root_frame.getOrigin().y()) ) +
-    							   ( (x(2)-target_frame_TO_root_frame.getOrigin().z())  * (x(2)-target_frame_TO_root_frame.getOrigin().z()) )
-    							   ));*/
-
-/*
-    ocp_problem.minimizeMayerTerm( 1.0*(v.transpose()*v)+ ( ((r)*(r)) ) + 10.0*( ( (x(0)-target_gripper_pose.pose.position.x)  * (x(0)-target_gripper_pose.pose.position.x) ) +
-    							   	   	   	   	   	   	   	   	  ( (x(1)-target_gripper_pose.pose.position.y)  * (x(1)-target_gripper_pose.pose.position.y) ) +
-    							   	   	   	   	   	   	   	   	  ( (x(2)-target_gripper_pose.pose.position.z)  * (x(2)-target_gripper_pose.pose.position.z) ) /*+/*
-    							   	   	   	   	   	   	   	   	  (  current_gripper_quternion.w * current_gripper_quternion.w )	+
-    							   	   	   	   	   	   	   	   	  (  current_gripper_quternion.x * current_gripper_quternion.x )	+
-    							   	   	   	   	   	   	   	   	  (  current_gripper_quternion.y * current_gripper_quternion.y )	+
-    							   	   	   	   	   	   	   	   	  (  current_gripper_quternion.z * current_gripper_quternion.z )*/
-    															  //( r*r + p*p + p*p)
-
-    	//						  ));*/
-
-	ocp_problem.minimizeMayerTerm(10.0*( ( (x(0)-target_gripper_pose.pose.position.x)  * (x(0)-target_gripper_pose.pose.position.x) ) +
-  	   	   	   	   	  ( (x(1)-target_gripper_pose.pose.position.y)  * (x(1)-target_gripper_pose.pose.position.y) ) +
-  	   	   	   	   	  ( (x(2)-target_gripper_pose.pose.position.z)  * (x(2)-target_gripper_pose.pose.position.z) )) + 1.0 * ( ((x(3)- r) * (x(3)- r)) + ((x(4)- p) * (x(4)- p)) + ((x(5)- y) * (x(5)- y)) ) +
-						10.0 * (v.transpose()*v));
+	ocp_problem.minimizeMayerTerm( 10.0*( ( (x(0)-target_gripper_pose.pose.position.x)  * (x(0)-target_gripper_pose.pose.position.x) ) +
+  	   	   	   	   	  	  	  	  	  	  ( (x(1)-target_gripper_pose.pose.position.y)  * (x(1)-target_gripper_pose.pose.position.y) ) +
+  	   	   	   	   	  	  	  	  	  	  ( (x(2)-target_gripper_pose.pose.position.z)  * (x(2)-target_gripper_pose.pose.position.z) )) +
+								  //( 1.0 * ( ((x(3)- r) * (x(3)- r)) + ((x(4)- p) * (x(4)- p)) + ((x(5)- y) * (x(5)- y))) ) +
+								  (1.0 * (v.transpose()*v)) );
 
     ocp_problem.subjectTo(f);
     ocp_problem.subjectTo(-0.50 <= v <= 0.50);
     //ocp_problem.subjectTo(AT_END, x == 0.0);
     ocp_problem.subjectTo(AT_END , v == 0.0);
 
-    RealTimeAlgorithm alg(ocp_problem, 0.050);
+    RealTimeAlgorithm alg(ocp_problem, 0.025);
 
 	alg.initializeControls(c_init);
 	alg.initializeDifferentialStates(s_init);
@@ -531,8 +514,6 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
     controller.getU(u);
     u.print();
 
-    rot_distance = sqrt(r*r + p*p + y*y);
-
 	updated_vel.data.resize(7,0.0);
 	updated_vel.data[0] = u(0);
 	updated_vel.data[1] = u(1);
@@ -544,7 +525,18 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 }
 
 
+void pd_frame_tracker::convert_quaternion_to_rpy(const geometry_msgs::Quaternion& quat, geometry_msgs::Vector3& rpy)
+{
+	ROS_WARN_STREAM("convert_quaternion_to_rpy: ... given quaternion: "<< quat);
+	tf::Quaternion q( quat.x, quat.y, quat.z, quat.w);
+	tf::Matrix3x3 quat_new(q);
+	double r,p,y;
+	quat_new.getRPY(r,p,y);
+	std::cout<<"\033[39;1m" << "***********************"<< "r: " << r<< " p: " << p << " y: " << y << "***********************"<< "\033[0m\n" << std::endl;
 
+	rpy.x = r;	rpy.y = p;	rpy.z = y;
+
+}
 
 bool pd_frame_tracker::get_transform(const std::string& from, const std::string& to, tf::StampedTransform& stamped_tf)
 {
@@ -606,14 +598,9 @@ bool pd_frame_tracker::get_transform(const std::string& from, const std::string&
 
 void pd_frame_tracker::compute_rotation_distance(const geometry_msgs::Quaternion& quat, double& rot_distance)
 {
-	ROS_WARN_STREAM("compute_rotation_distance: ... Quaternion error: "<< quat);
-	tf::Quaternion q( quat.x, quat.y, quat.z, quat.w);
-	tf::Matrix3x3 quat_error(q);
-	double r,p,y;
-	quat_error.getRPY(r,p,y);
-	std::cout<<"\033[39;1m" << "***********************"<< "r: " << r<< " p: " << p << " y: " << y << "***********************"<< "\033[0m\n" << std::endl;
-
-	rot_distance = sqrt(r*r + p*p + y*y);
+	geometry_msgs::Vector3 rpy_vec3;
+	this->convert_quaternion_to_rpy(quat, rpy_vec3);
+	rot_distance = sqrt(rpy_vec3.x * rpy_vec3.x + rpy_vec3.y * rpy_vec3.y + rpy_vec3.z * rpy_vec3.z);
 }
 
 void pd_frame_tracker::compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist)

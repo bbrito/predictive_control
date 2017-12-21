@@ -196,7 +196,7 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	std::cout << Jacobian_Mat << std::endl;
 
 	// target poseStamped
-	pd_frame_tracker_->get_transform("/arm_podest_link", new_config.target_frame, target_gripper_pose);
+	pd_frame_tracker_->get_transform("/arm_base_link", new_config.target_frame, target_gripper_pose);
 
 	// optimal problem solver
 	//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);

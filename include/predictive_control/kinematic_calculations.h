@@ -133,6 +133,8 @@ class Kinematic_calculations
 		// compute current quaternion
 		void compute_and_get_currrent_gripper_poseStamped(const Eigen::VectorXd& jnt_angles, geometry_msgs::PoseStamped& current_quaternion);
 
+		void compute_gripper_pose_and_jacobian(const std::vector<double>& jnt_position, geometry_msgs::PoseStamped& gripper_pose, Eigen::MatrixXd& jacobian_mat);
+
 		// Debug function for kinematic calculation class
 		void print_data_memebers(void);
 		void print_fk_and_jacobian_matrix(const KDL::JntArray& jnt_angles);

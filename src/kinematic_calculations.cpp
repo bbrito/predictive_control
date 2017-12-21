@@ -622,6 +622,39 @@ void Kinematic_calculations::compute_and_get_currrent_gripper_poseStamped(const 
 	ros::Duration(0.01).sleep();
 }
 
+void Kinematic_calculations::compute_gripper_pose_and_jacobian(const std::vector<double>& jnt_position, geometry_msgs::PoseStamped& gripper_pose, Eigen::MatrixXd& jacobian_mat)
+{
+	KDL::JntArray kdl_jnt_angles = KDL::JntArray(jnt_position.size());
+
+	for (int i=0u; i < jnt_position.size(); ++i)
+	{
+		kdl_jnt_angles(i) = jnt_position.at(i);
+	}
+
+	JacobianMatrix.Constant(0.0);
+	compute_jacobian(kdl_jnt_angles);
+
+	ros::Duration(0.01).sleep();
+
+	//http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+	gripper_pose.pose.orientation.w =  0.5 * sqrt(1.0 + fk_mat.M(0,0) + fk_mat.M(1,1) + fk_mat.M(2,2));
+	gripper_pose.pose.orientation.x = ( fk_mat.M(2,1) - fk_mat.M(1,2) ) / (4.0 * gripper_pose.pose.orientation.w);
+	gripper_pose.pose.orientation.y = ( fk_mat.M(0,2) - fk_mat.M(2,0) ) / (4.0 * gripper_pose.pose.orientation.w);
+	gripper_pose.pose.orientation.z = ( fk_mat.M(1,0) - fk_mat.M(0,1) ) / (4.0 * gripper_pose.pose.orientation.w);
+
+	// position of gripper
+	gripper_pose.pose.position.x = fk_mat.p(0);
+	gripper_pose.pose.position.y = fk_mat.p(1);
+	gripper_pose.pose.position.z = fk_mat.p(2);
+
+	if (JacobianMatrix.isZero())
+	{
+		ROS_WARN("Computed of Jacobian is not correct");
+	}
+
+	jacobian_mat = JacobianMatrix;
+}
+
 
 void Kinematic_calculations::get_joint_limits(const std::string& name_of_limit, std::vector<double>& limit_vec)
 {

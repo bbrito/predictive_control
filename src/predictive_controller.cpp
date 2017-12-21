@@ -183,8 +183,6 @@ void predictive_control_node::main_predictive_control()
 			joint_velocity_data.data[i] = current_velocity.at(i);
 		}
 
-		ros::Duration(2.0).sleep();
-
 	    timer_ = nh.createTimer(ros::Duration(1/new_config.update_rate), &predictive_control_node::run_node, this);
 	    timer_.start();
 
@@ -198,39 +196,49 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 {
 	ros::Duration period = event.current_real - event.last_real;
 
-	std::vector<double> current_position_vec_copy = current_position;
-
-	// current pose of gripper using fk, jacobian matrix
-	kinematic_solver_->compute_gripper_pose_and_jacobian(current_position_vec_copy, current_gripper_pose, Jacobian_Mat);
-
-	std::cout << Jacobian_Mat << std::endl;
-
-	// target poseStamped
-	pd_frame_tracker_->get_transform("/arm_base_link", new_config.target_frame, target_gripper_pose);
-
-	// optimal problem solver
-	//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
-	pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose, joint_velocity_data);
-
-	// error poseStamped, computation of euclidean distance error
-	geometry_msgs::PoseStamped tip_Target_Frame_error_stamped;
-	pd_frame_tracker_->get_transform(new_config.tip_link, new_config.target_frame, tip_Target_Frame_error_stamped);
-
-	pd_frame_tracker_->compute_euclidean_distance(tip_Target_Frame_error_stamped.pose.position, cartesian_dist);
-	pd_frame_tracker_->compute_rotation_distance(tip_Target_Frame_error_stamped.pose.orientation, rotation_dist);
-
-	std::cout<<"\033[36;1m" << "***********************"<< "cartesian distance: " << cartesian_dist << "***********************" << std::endl
-							<< "***********************"<< "rotation distance: " << rotation_dist << "***********************" << std::endl
-			<< "\033[0m\n" << std::endl;
-
-	if (cartesian_dist < 0.05 && rotation_dist < 0.05)
+	if (tracking_)
 	{
-			publish_zero_jointVelocity();
+
+		std::vector<double> current_position_vec_copy = current_position;
+
+		// current pose of gripper using fk, jacobian matrix
+		kinematic_solver_->compute_gripper_pose_and_jacobian(current_position_vec_copy, current_gripper_pose, Jacobian_Mat);
+
+		std::cout << Jacobian_Mat << std::endl;
+
+		// target poseStamped
+		pd_frame_tracker_->get_transform("/arm_base_link", new_config.target_frame, target_gripper_pose);
+
+		// optimal problem solver
+		//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
+		pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose, joint_velocity_data);
+
+		// error poseStamped, computation of euclidean distance error
+		geometry_msgs::PoseStamped tip_Target_Frame_error_stamped;
+		pd_frame_tracker_->get_transform(new_config.tip_link, new_config.target_frame, tip_Target_Frame_error_stamped);
+
+		pd_frame_tracker_->compute_euclidean_distance(tip_Target_Frame_error_stamped.pose.position, cartesian_dist);
+		pd_frame_tracker_->compute_rotation_distance(tip_Target_Frame_error_stamped.pose.orientation, rotation_dist);
+
+		std::cout<<"\033[36;1m" << "***********************"<< "cartesian distance: " << cartesian_dist << "***********************" << std::endl
+								<< "***********************"<< "rotation distance: " << rotation_dist << "***********************" << std::endl
+				<< "\033[0m\n" << std::endl;
+
+		if (cartesian_dist < 0.05 && rotation_dist < 0.05)
+		{
+				publish_zero_jointVelocity();
+		}
+		else
+		{
+			joint_velocity_pub.publish(joint_velocity_data);
+		}
 	}
+
 	else
 	{
-		joint_velocity_pub.publish(joint_velocity_data);
+		publish_zero_jointVelocity();
 	}
+
 }
 
 void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec)

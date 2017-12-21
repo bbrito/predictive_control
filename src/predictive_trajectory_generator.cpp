@@ -467,7 +467,7 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 	geometry_msgs::Vector3 rpy_vec3;
 	this->convert_quaternion_to_rpy(current_gripper_pose.pose.orientation, rpy_vec3);
 
-	s_init(0) = current_gripper_pose.pose.position.x;		s_init(1) = current_gripper_pose.pose.position.y;		s_init(2) = current_gripper_pose.pose.position.y;
+	s_init(0) = current_gripper_pose.pose.position.x;		s_init(1) = current_gripper_pose.pose.position.y;		s_init(2) = current_gripper_pose.pose.position.z;
 
 	if (isnan(rpy_vec3.x) || isnan(r) || isnan(rpy_vec3.y) || isnan(p) || isnan(rpy_vec3.z) || isnan(y))
 	{
@@ -487,7 +487,7 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 	ocp_problem.minimizeMayerTerm( 10.0*( ( (x(0)-target_gripper_pose.pose.position.x)  * (x(0)-target_gripper_pose.pose.position.x) ) +
   	   	   	   	   	  	  	  	  	  	  ( (x(1)-target_gripper_pose.pose.position.y)  * (x(1)-target_gripper_pose.pose.position.y) ) +
   	   	   	   	   	  	  	  	  	  	  ( (x(2)-target_gripper_pose.pose.position.z)  * (x(2)-target_gripper_pose.pose.position.z) )) +
-								  //( 1.0 * ( ((x(3)- r) * (x(3)- r)) + ((x(4)- p) * (x(4)- p)) + ((x(5)- y) * (x(5)- y))) ) +
+								  ( 1.0 * ( ((x(3)- r) * (x(3)- r)) + ((x(4)- p) * (x(4)- p)) + ((x(5)- y) * (x(5)- y))) ) +
 								  (1.0 * (v.transpose()*v)) );
 
     ocp_problem.subjectTo(f);

@@ -421,6 +421,16 @@ void pd_frame_tracker::solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::
 
 }
 
+void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat, const Eigen::VectorXd& current_gripper_pose, const geometry_msgs::Quaternion& current_gripper_quternion,
+									const geometry_msgs::PoseStamped& target_gripper_pose, std_msgs::Float64MultiArray& updated_vel)
+{
+
+
+}
+
+
+
+
 bool pd_frame_tracker::get_transform(const std::string& from, const std::string& to, tf::StampedTransform& stamped_tf)
 {
     bool transform = false;
@@ -498,4 +508,13 @@ void pd_frame_tracker::quaternion_product(const geometry_msgs::Quaternion& quat_
 	quat_resultant.z = ( (quat_1.w * quat_2.z) + (quat_2.w * quat_1.z) + cross_prod(2) );
 
 	ros::Duration(0.01).sleep();
+}
+
+void pd_frame_tracker::perform_quaternion_inverse(const geometry_msgs::Quaternion& quat, geometry_msgs::Quaternion& quat_inv)
+{
+	quat_inv = geometry_msgs::Quaternion();
+	quat_inv.w = quat.w;
+	quat_inv.x = -quat.x;
+	quat_inv.y = -quat.y;
+	quat_inv.z = -quat.z;
 }

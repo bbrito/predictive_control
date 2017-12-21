@@ -134,11 +134,24 @@ class pd_frame_tracker
 
 		void solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::VectorXd& current_endeffector_pose, std_msgs::Float64MultiArray& updated_vel);
 
+		/**
+		 * @brief solve optimal control problem in the terms of model predictive control(MPC) using ACADO Toolkit
+		 * @param Jacobian_Mat Jacobian matrix with d(6*7) where rows are linear and angular velocity, columns are same as dof
+		 * @param current_gripper_pose Current position and rotation in the form of Euler angle(rpy) used to initialize differential states
+		 * @param current_gripper_quternion Current quaternion of gripper used to minimize quaternion error
+		 * @param target_gripper_pose Target gripper poseStamped where want to move gripper
+		 * @return updated_vel Initialize control states and filled with control joint velocity, want to publish it
+		 **/
+		void optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat, const Eigen::VectorXd& current_gripper_pose, const geometry_msgs::Quaternion& current_gripper_quternion,
+									const geometry_msgs::PoseStamped& target_gripper_pose, std_msgs::Float64MultiArray& updated_vel);
+
 		void compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist);
 
 		bool get_transform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose);
 
 		void quaternion_product(const geometry_msgs::Quaternion& quat_1, const geometry_msgs::Quaternion& quat_2, geometry_msgs::Quaternion& quat_resultant);
+
+		void perform_quaternion_inverse(const geometry_msgs::Quaternion& quat, geometry_msgs::Quaternion& quat_inv);
 };
 
 

@@ -118,6 +118,7 @@ class pd_frame_tracker
 	    std::string target_frame_;      // the frame to be tracked
 
 	    double cart_distance;
+	    double rot_distance;
 
 	    tf::TransformListener tf_listener_;
 
@@ -146,6 +147,8 @@ class pd_frame_tracker
 									const geometry_msgs::PoseStamped& target_gripper_pose, std_msgs::Float64MultiArray& updated_vel);
 
 		void compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist);
+
+		void compute_rotation_distance(const geometry_msgs::Quaternion& quat, double& rot_distance);
 
 		bool get_transform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose);
 

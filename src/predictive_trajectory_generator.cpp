@@ -3,6 +3,7 @@
 
 #include <predictive_control/predictive_trajectory_generator.h>
 #include <iomanip>	//print false or true
+#include <math.h>
 
 predictive_config::predictive_config()
 {
@@ -424,8 +425,122 @@ void pd_frame_tracker::solver(const Eigen::MatrixXd& jacobian_mat, const Eigen::
 void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat, const Eigen::VectorXd& current_gripper_pose, const geometry_msgs::Quaternion& current_gripper_quternion,
 									const geometry_msgs::PoseStamped& target_gripper_pose, std_msgs::Float64MultiArray& updated_vel)
 {
+	ROS_INFO("----------------------------------------");
+	ROS_WARN("pd_frame_tracker::optimal_control_solver");
+	ROS_INFO("----------------------------------------");
+
+    tf::StampedTransform  target_frame_TO_root_frame;
+	bool success1 = this->get_transform("/arm_podest_link", target_frame_, target_frame_TO_root_frame);
+	ROS_WARN_STREAM("Quaternion error: "<< current_gripper_quternion);
+	tf::Quaternion q(target_frame_TO_root_frame.getRotation().getX(),target_frame_TO_root_frame.getRotation().getY(),target_frame_TO_root_frame.getRotation().getZ(),target_frame_TO_root_frame.getRotation().getW());
+	tf::Matrix3x3 quat_error(q);
+	double r,p,y;
+	quat_error.getRPY(r,p,y);
+	std::cout<<"\033[36;1m" << "***********************"<< "r: " << r<< " p: " << p << " y: " << y << "***********************"<< "\033[0m\n" << std::endl;
 
 
+	DMatrix Jac_Mat = Jacobian_Mat;
+
+    const unsigned int m = 6;
+    const unsigned int n = 7;
+
+    DifferentialState x("",m,1);            // position of end effector
+    Control v("",n,1);                      // velocity of joints
+
+    x.clearStaticCounters();
+    v.clearStaticCounters();
+
+    DifferentialEquation f;             // Define differential equation
+    f << dot(x) == Jac_Mat * v;
+
+    /*
+	ROS_WARN_STREAM("Quaternion error: "<< current_gripper_quternion);
+	tf::Quaternion q(current_gripper_quternion.x,current_gripper_quternion.y,current_gripper_quternion.z,current_gripper_quternion.w);
+	tf::Matrix3x3 quat_error(q);
+	double r,p,y;
+	quat_error.getRPY(r,p,y);
+	std::cout<<"\033[36;1m" << "***********************"<< "r: " << r<< " p: " << p << " y: " << y << "***********************"<< "\033[0m\n" << std::endl;
+*/
+	ROS_WARN_STREAM("Gripper_pose: "<< current_gripper_pose);
+
+	DVector c_init(7), s_init(6);
+	c_init.setAll(0.00);
+	s_init.setAll(0.00);
+	s_init(0) = current_gripper_pose(0);		s_init(1) = current_gripper_pose(1);		s_init(2) = current_gripper_pose(2);
+	s_init(3) = current_gripper_pose(3);		s_init(4) = current_gripper_pose(4);		s_init(5) = current_gripper_pose(5);
+	/*
+	if ( !isnan(r) && !isnan(p) && !isnan(y) )
+	{
+		ROS_ERROR("Hello");
+		s_init(3) = float(r);		s_init(4) = float(p);		s_init(5) = float(y);
+	}
+	else
+	{
+		s_init(3) = current_gripper_pose(3);		s_init(4) = current_gripper_pose(4);		s_init(5) = current_gripper_pose(5);
+	}
+*/
+	c_init(0) = updated_vel.data[0];	c_init(1) = updated_vel.data[1];	c_init(2) = updated_vel.data[2];
+	c_init(3) = updated_vel.data[3];	c_init(4) = updated_vel.data[4];	c_init(5) = updated_vel.data[5];	c_init(6) = updated_vel.data[6];
+
+
+	OCP ocp_problem(0.0, 1.0, 4);
+/*
+    ocp_problem.minimizeMayerTerm( 2.0*(v.transpose()*v) + 10.0*(( (x(0)-target_frame_TO_root_frame.getOrigin().x())  * (x(0)-target_frame_TO_root_frame.getOrigin().x()) ) +
+    							   ( (x(1)-target_frame_TO_root_frame.getOrigin().y())  * (x(1)-target_frame_TO_root_frame.getOrigin().y()) ) +
+    							   ( (x(2)-target_frame_TO_root_frame.getOrigin().z())  * (x(2)-target_frame_TO_root_frame.getOrigin().z()) )
+    							   ));*/
+
+/*
+    ocp_problem.minimizeMayerTerm( 1.0*(v.transpose()*v)+ ( ((r)*(r)) ) + 10.0*( ( (x(0)-target_gripper_pose.pose.position.x)  * (x(0)-target_gripper_pose.pose.position.x) ) +
+    							   	   	   	   	   	   	   	   	  ( (x(1)-target_gripper_pose.pose.position.y)  * (x(1)-target_gripper_pose.pose.position.y) ) +
+    							   	   	   	   	   	   	   	   	  ( (x(2)-target_gripper_pose.pose.position.z)  * (x(2)-target_gripper_pose.pose.position.z) ) /*+/*
+    							   	   	   	   	   	   	   	   	  (  current_gripper_quternion.w * current_gripper_quternion.w )	+
+    							   	   	   	   	   	   	   	   	  (  current_gripper_quternion.x * current_gripper_quternion.x )	+
+    							   	   	   	   	   	   	   	   	  (  current_gripper_quternion.y * current_gripper_quternion.y )	+
+    							   	   	   	   	   	   	   	   	  (  current_gripper_quternion.z * current_gripper_quternion.z )*/
+    															  //( r*r + p*p + p*p)
+
+    	//						  ));*/
+
+	ocp_problem.minimizeMayerTerm(10.0*( ( (x(0)-target_gripper_pose.pose.position.x)  * (x(0)-target_gripper_pose.pose.position.x) ) +
+  	   	   	   	   	  ( (x(1)-target_gripper_pose.pose.position.y)  * (x(1)-target_gripper_pose.pose.position.y) ) +
+  	   	   	   	   	  ( (x(2)-target_gripper_pose.pose.position.z)  * (x(2)-target_gripper_pose.pose.position.z) )) + 1.0 * ( ((x(3)- r) * (x(3)- r)) + ((x(4)- p) * (x(4)- p)) + ((x(5)- y) * (x(5)- y)) ) +
+						(v.transpose()*v));
+
+    ocp_problem.subjectTo(f);
+    ocp_problem.subjectTo(-0.50 <= v <= 0.50);
+    //ocp_problem.subjectTo(AT_END, x == 0.0);
+    ocp_problem.subjectTo(AT_END , v == 0.0);
+
+    RealTimeAlgorithm alg(ocp_problem, 0.025);
+
+	alg.initializeControls(c_init);
+	alg.initializeDifferentialStates(s_init);
+
+	alg.set(MAX_NUM_ITERATIONS, 10);
+    alg.set(LEVENBERG_MARQUARDT, 1e-5);
+    alg.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
+    alg.set( DISCRETIZATION_TYPE, COLLOCATION);
+    alg.set(KKT_TOLERANCE, 1.000000E-06);
+
+    Controller controller(alg);
+    controller.init(0.0, s_init);
+    controller.step(0.0, s_init);
+
+    DVector u;
+    controller.getU(u);
+    u.print();
+
+    rot_distance = sqrt(r*r + p*p + y*y);
+
+	updated_vel.data.resize(7,0.0);
+	updated_vel.data[0] = u(0);
+	updated_vel.data[1] = u(1);
+	updated_vel.data[2] = u(2);
+	updated_vel.data[3] = u(3);
+	updated_vel.data[4] = u(4);
+	updated_vel.data[5] = u(5);
+	updated_vel.data[6] = u(6);
 }
 
 
@@ -470,8 +585,8 @@ bool pd_frame_tracker::get_transform(const std::string& from, const std::string&
 			stamped_pose.pose.position.y = stamped_tf.getOrigin().y();
 			stamped_pose.pose.position.z = stamped_tf.getOrigin().z();
 
-			stamped_pose.header.frame_id = stamped_tf.frame_id_;
-			stamped_pose.header.stamp = stamped_tf.stamp_;
+			stamped_pose.header.frame_id = target_frame_;
+			stamped_pose.header.stamp = ros::Time(0);
 
 			transform = true;
 		}
@@ -489,6 +604,17 @@ bool pd_frame_tracker::get_transform(const std::string& from, const std::string&
     return transform;
 }
 
+void pd_frame_tracker::compute_rotation_distance(const geometry_msgs::Quaternion& quat, double& rot_distance)
+{
+	ROS_WARN_STREAM("compute_rotation_distance: ... Quaternion error: "<< quat);
+	tf::Quaternion q( quat.x, quat.y, quat.z, quat.w);
+	tf::Matrix3x3 quat_error(q);
+	double r,p,y;
+	quat_error.getRPY(r,p,y);
+	std::cout<<"\033[39;1m" << "***********************"<< "r: " << r<< " p: " << p << " y: " << y << "***********************"<< "\033[0m\n" << std::endl;
+
+	rot_distance = sqrt(r*r + p*p + y*y);
+}
 
 void pd_frame_tracker::compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist)
 {

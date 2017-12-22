@@ -16,6 +16,8 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 #include <std_srvs/Trigger.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 // std includes
 #include <assert.h>
@@ -56,13 +58,8 @@ private:
     ros::Timer timer_;
     unsigned int dof;
 
-    bool tracking_;
-    bool tracking_goal_;
-
-    ros::ServiceServer start_tracking_server_;
-    ros::ServiceServer start_lookat_server_;
-    ros::ServiceServer stop_server_;
-
+    ros::Publisher marker_pub;
+    std::vector<geometry_msgs::PoseStamped> tranformation_matrix_stamped; 	// transformation matrix convert to poseStamped relative to root link
 
 	// predictive configuration parameter
 	predictive_config new_config;
@@ -104,9 +101,6 @@ public:
 
 	void main_predictive_control(void);
 
-	bool startTrackingCallback(cob_srvs::SetString::Request& request, cob_srvs::SetString::Response& response);
-	bool stopCallback(std_srvs::Trigger::Request& request, std_srvs::Trigger::Response& response);
-	bool startLookatCallback(cob_srvs::SetString::Request& request, cob_srvs::SetString::Response& response);
 };
 
 #endif

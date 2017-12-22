@@ -139,7 +139,7 @@ void predictive_control_node::joint_state_callBack(const sensor_msgs::JointState
 
 void predictive_control_node::main_predictive_control()
 {
-	ros::NodeHandle nh_tracker("frame_tracker");
+	ros::NodeHandle nh_tracker(ros::this_node::getName().c_str());
 	// Check ROS node start correctly.
 	if (ros::ok())
 	{
@@ -159,9 +159,6 @@ void predictive_control_node::main_predictive_control()
 		Jacobian_Mat.resize(m,n);
 		Jacobian_Mat.setIdentity();
 
-		tracking_ = false;
-		tracking_goal_ = false;
-
 		// initialize helper classes
 		kinematic_solver_.reset(new Kinematic_calculations());
 		kinematic_solver_->initialize();
@@ -172,9 +169,7 @@ void predictive_control_node::main_predictive_control()
 		joint_state_sub = nh.subscribe("joint_states", 1, &predictive_control_node::joint_state_callBack, this);
 		joint_velocity_pub = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
 
-		start_tracking_server_ = nh_tracker.advertiseService("start_tracking", &predictive_control_node::startTrackingCallback, this);
-		start_lookat_server_ = nh_tracker.advertiseService("start_lookat", &predictive_control_node::startLookatCallback, this);
-		stop_server_ = nh_tracker.advertiseService("stop", &predictive_control_node::stopCallback, this);
+		marker_pub = nh_tracker.advertise<visualization_msgs::MarkerArray>("self_collision_ball", 1);
 
 		// initialize publishing data members
 		joint_velocity_data.data.resize(dof, 0.0);
@@ -183,7 +178,7 @@ void predictive_control_node::main_predictive_control()
 			joint_velocity_data.data[i] = current_velocity.at(i);
 		}
 
-	    timer_ = nh.createTimer(ros::Duration(1/new_config.update_rate), &predictive_control_node::run_node, this);
+	    timer_ = nh.createTimer(ros::Duration(1/1), &predictive_control_node::run_node, this);
 	    timer_.start();
 
 	    ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());
@@ -196,49 +191,68 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 {
 	ros::Duration period = event.current_real - event.last_real;
 
-	if (tracking_)
+	std::vector<double> current_position_vec_copy = current_position;
+
+	// current pose of gripper using fk, jacobian matrix
+	kinematic_solver_->compute_gripper_pose_and_jacobian(current_position_vec_copy, current_gripper_pose, Jacobian_Mat);
+
+	std::vector<geometry_msgs::Vector3> link_length;
+	kinematic_solver_->compute_and_get_each_joint_pose(current_position_vec_copy, tranformation_matrix_stamped, link_length);
+
+	std::cout<<"\033[20;1m" << "############"<< "links " << tranformation_matrix_stamped.size() << "###########" << "\033[0m\n" << std::endl;
+	for (int i=0u; i < tranformation_matrix_stamped.size()-1; ++i)
 	{
+			//double link_length = 0.12;
+			ROS_INFO_STREAM("Joint_"<<i+1);
+			ROS_WARN_STREAM(tranformation_matrix_stamped.at(i));
 
-		std::vector<double> current_position_vec_copy = current_position;
+			//pd_frame_tracker_->create_collision_ball(tranformation_matrix_stamped.at(i), link_length.at(i).z, i);
 
-		// current pose of gripper using fk, jacobian matrix
-		kinematic_solver_->compute_gripper_pose_and_jacobian(current_position_vec_copy, current_gripper_pose, Jacobian_Mat);
 
-		std::cout << Jacobian_Mat << std::endl;
+			double offset = link_length.at(i).z;//(tranformation_matrix_stamped.at(i+1).pose.position.z - tranformation_matrix_stamped.at(i).pose.position.z);
+			if (offset > 0.10)
+			{
+				offset = offset / 2.0;
 
-		// target poseStamped
-		pd_frame_tracker_->get_transform("/arm_base_link", new_config.target_frame, target_gripper_pose);
-
-		// optimal problem solver
-		//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
-		pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose, joint_velocity_data);
-
-		// error poseStamped, computation of euclidean distance error
-		geometry_msgs::PoseStamped tip_Target_Frame_error_stamped;
-		pd_frame_tracker_->get_transform(new_config.tip_link, new_config.target_frame, tip_Target_Frame_error_stamped);
-
-		pd_frame_tracker_->compute_euclidean_distance(tip_Target_Frame_error_stamped.pose.position, cartesian_dist);
-		pd_frame_tracker_->compute_rotation_distance(tip_Target_Frame_error_stamped.pose.orientation, rotation_dist);
-
-		std::cout<<"\033[36;1m" << "***********************"<< "cartesian distance: " << cartesian_dist << "***********************" << std::endl
-								<< "***********************"<< "rotation distance: " << rotation_dist << "***********************" << std::endl
-				<< "\033[0m\n" << std::endl;
-
-		if (cartesian_dist < 0.05 && rotation_dist < 0.05)
-		{
-				publish_zero_jointVelocity();
-		}
-		else
-		{
-			joint_velocity_pub.publish(joint_velocity_data);
-		}
+				//tranformation_matrix_stamped[i].pose.position.z += offset;		// move frame to center of link
+				pd_frame_tracker_->create_collision_ball(tranformation_matrix_stamped.at(i), offset, i);
+				/*
+				tranformation_matrix_stamped[i].pose.position.z += offset;		// move frame to center of link
+				tranformation_matrix_stamped[i].pose.position.z *= -1;
+				pd_frame_tracker_->create_collision_ball(tranformation_matrix_stamped.at(i), offset, (i+1)*i);*/
+			}
 	}
 
+	marker_pub.publish(pd_frame_tracker_->get_collision_ball_marker());
+
+	/*
+	// target poseStamped
+	pd_frame_tracker_->get_transform("/arm_base_link", new_config.target_frame, target_gripper_pose);
+
+	// optimal problem solver
+	//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
+	pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose, joint_velocity_data);
+
+	// error poseStamped, computation of euclidean distance error
+	geometry_msgs::PoseStamped tip_Target_Frame_error_stamped;
+	pd_frame_tracker_->get_transform(new_config.tip_link, new_config.target_frame, tip_Target_Frame_error_stamped);
+
+	pd_frame_tracker_->compute_euclidean_distance(tip_Target_Frame_error_stamped.pose.position, cartesian_dist);
+	pd_frame_tracker_->compute_rotation_distance(tip_Target_Frame_error_stamped.pose.orientation, rotation_dist);
+
+	std::cout<<"\033[36;1m" << "***********************"<< "cartesian distance: " << cartesian_dist << "***********************" << std::endl
+							<< "***********************"<< "rotation distance: " << rotation_dist << "***********************" << std::endl
+			<< "\033[0m\n" << std::endl;
+
+	if (cartesian_dist < 0.05 && rotation_dist < 0.05)
+	{
+			publish_zero_jointVelocity();
+	}
 	else
 	{
-		publish_zero_jointVelocity();
+		joint_velocity_pub.publish(joint_velocity_data);
 	}
-
+	*/
 }
 
 void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec)
@@ -264,80 +278,3 @@ void predictive_control_node::publish_zero_jointVelocity()
 	joint_velocity_pub.publish(joint_velocity_data);
 }
 
-bool predictive_control_node::startTrackingCallback(cob_srvs::SetString::Request& request, cob_srvs::SetString::Response& response)
-{
-    if (tracking_)
-    {
-        std::string msg = "predictive_control_node: StartTracking denied because Tracking already active";
-        ROS_ERROR_STREAM(msg);
-        response.success = false;
-        response.message = msg;
-    }
-    else if (tracking_goal_)
-    {
-        std::string msg = "predictive_control_node: StartTracking denied because TrackingAction is active";
-        ROS_ERROR_STREAM(msg);
-        response.success = false;
-        response.message = msg;
-    }
-    else
-    {
-        // check whether given target frame exists
-        if (!tf_listener_.frameExists(request.data))
-        {
-            std::string msg = "predictive_control_node: StartTracking denied because target frame '" + request.data + "' does not exist";
-            ROS_ERROR_STREAM(msg);
-            response.success = false;
-            response.message = msg;
-        }
-        else
-        {
-            std::string msg = "predictive_control_node: StartTracking started with CART_DIST_SECURITY MONITORING enabled";
-            ROS_INFO_STREAM(msg);
-            response.success = true;
-            response.message = msg;
-
-            tracking_ = true;
-            tracking_goal_ = false;
-            new_config.target_frame = request.data;
-        }
-    }
-    return true;
-}
-
-bool predictive_control_node::stopCallback(std_srvs::Trigger::Request& request, std_srvs::Trigger::Response& response)
-{
-    if (tracking_goal_)
-    {
-        std::string msg = "predictive_control_node: Stop denied because TrackingAction is active";
-        ROS_ERROR_STREAM(msg);
-        response.success = false;
-        response.message = msg;
-    }
-    else if (tracking_)
-        {
-            std::string msg = "predictive_control_node: Stop successful";
-            ROS_INFO_STREAM(msg);
-            response.success = true;
-            response.message = msg;
-
-            tracking_ = false;
-            tracking_goal_ = false;
-            new_config.target_frame = new_config.tip_link;
-
-            publish_zero_jointVelocity();
-        }
-        else
-        {
-            std::string msg = "predictive_control_node: Stop failed because nothing was tracked";
-            ROS_ERROR_STREAM(msg);
-            response.success = false;
-            response.message = msg;
-        }
-        return true;
-}
-
-bool predictive_control_node::startLookatCallback(cob_srvs::SetString::Request& request, cob_srvs::SetString::Response& response)
-{
-;
-}

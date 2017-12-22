@@ -16,6 +16,8 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 #include <angles/angles.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 // std includes
 #include <iostream>
@@ -118,6 +120,8 @@ class pd_frame_tracker
 	    std::string target_frame_;      // the frame to be tracked
 
 
+	    visualization_msgs::MarkerArray collision_ball_marker_array;
+
 	    //double cart_distance;
 	    //double rot_distance;
 
@@ -158,6 +162,14 @@ class pd_frame_tracker
 		void quaternion_product(const geometry_msgs::Quaternion& quat_1, const geometry_msgs::Quaternion& quat_2, geometry_msgs::Quaternion& quat_resultant);
 
 		void perform_quaternion_inverse(const geometry_msgs::Quaternion& quat, geometry_msgs::Quaternion& quat_inv);
+
+		bool create_collision_ball(const geometry_msgs::Point& point, const double& ball_radius, const int& ball_id);
+
+		bool create_collision_ball(const geometry_msgs::PoseStamped& stamped, const double& ball_radius, const int& ball_id);
+
+		void get_collision_ball_marker(visualization_msgs::MarkerArray& collision_ball_marker_array);
+
+		visualization_msgs::MarkerArray get_collision_ball_marker();
 };
 
 

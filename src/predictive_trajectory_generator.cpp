@@ -318,8 +318,10 @@ bool pd_frame_tracker::initialization(const predictive_config& pd_config)
 	tracking_frame_ = pd_config.tip_link;
 	target_frame_ = pd_config.target_frame;
 
+	//collision_ball_marker.resize(pd_config.dof);	//usually links are -1 than dof(number of joints)
+	collision_ball_marker_array.markers.clear();
 
-	ROS_WARN("pd_frame_tracker INTIALIZED!!");
+	ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());
 	return true;
 }
 
@@ -630,4 +632,77 @@ void pd_frame_tracker::perform_quaternion_inverse(const geometry_msgs::Quaternio
 	quat_inv.x = -quat.x;
 	quat_inv.y = -quat.y;
 	quat_inv.z = -quat.z;
+}
+
+
+bool pd_frame_tracker::create_collision_ball(const geometry_msgs::Point& point, const double& ball_radius, const int& ball_id)
+{
+	visualization_msgs::Marker marker;
+	marker.type = visualization_msgs::Marker::SPHERE;
+	marker.lifetime = ros::Duration(10.0);
+	marker.action = visualization_msgs::Marker::ADD;
+	marker.ns = "preview";
+
+	// texture
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+    marker.color.a = 0.1;
+
+	// dimension
+	marker.scale.x = 2.0 * ball_radius;
+	marker.scale.y = 2.0 * ball_radius;
+	marker.scale.z = 2.0 * ball_radius;
+
+	marker.id = ball_id;
+	marker.header.frame_id = root_frame_;
+	marker.pose.position.x = point.x;
+	marker.pose.position.y = point.y;
+	marker.pose.position.z = point.z;
+
+	collision_ball_marker_array.markers.push_back(marker);
+	return true;
+}
+
+bool pd_frame_tracker::create_collision_ball(const geometry_msgs::PoseStamped& stamped, const double& ball_radius, const int& ball_id)
+{
+	visualization_msgs::Marker marker;
+	marker.type = visualization_msgs::Marker::SPHERE;
+	marker.action = visualization_msgs::Marker::ADD;
+	marker.ns = "preview";
+
+	// texture
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+    marker.color.a = 0.1;
+
+	// dimension
+	marker.scale.x = 2.0 * ball_radius;
+	marker.scale.y = 2.0 * ball_radius;
+	marker.scale.z = 2.0 * ball_radius;
+
+	marker.id = ball_id;
+	marker.lifetime = ros::Duration(10.0); //stamped.header.stamp;//;
+	marker.header.frame_id = stamped.header.frame_id;
+	marker.pose.position.x = stamped.pose.position.x;
+	marker.pose.position.y = stamped.pose.position.y;
+	marker.pose.position.z = stamped.pose.position.z;
+	marker.pose.orientation.w = stamped.pose.orientation.w;
+	marker.pose.orientation.x = stamped.pose.orientation.x;
+	marker.pose.orientation.y = stamped.pose.orientation.y;
+	marker.pose.orientation.z = stamped.pose.orientation.z;
+
+	collision_ball_marker_array.markers.push_back(marker);
+	return true;
+}
+
+void pd_frame_tracker::get_collision_ball_marker(visualization_msgs::MarkerArray& collision_ball_marker_array)
+{
+	collision_ball_marker_array = this->collision_ball_marker_array;
+}
+
+visualization_msgs::MarkerArray pd_frame_tracker::get_collision_ball_marker()
+{
+	return this->collision_ball_marker_array;
 }

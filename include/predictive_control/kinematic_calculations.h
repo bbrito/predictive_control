@@ -60,6 +60,7 @@ class Kinematic_calculations
 		std::vector<std::string> jnts_name;
 
 		std::vector<KDL::Frame> jnt_fk_mat;	//ff_mat
+		std::vector<KDL::Frame> transformation_matrix;
 		KDL::Frame fk_mat;
 		Eigen::Matrix<double, 6, 7> JacobianMatrix;	//Jacobian Matrix	todo: change 7 with dof
 
@@ -134,6 +135,11 @@ class Kinematic_calculations
 		void compute_and_get_currrent_gripper_poseStamped(const Eigen::VectorXd& jnt_angles, geometry_msgs::PoseStamped& current_quaternion);
 
 		void compute_gripper_pose_and_jacobian(const std::vector<double>& jnt_position, geometry_msgs::PoseStamped& gripper_pose, Eigen::MatrixXd& jacobian_mat);
+
+		/**
+		 * @brief using forward kinematic compute joint poseStamped relatice to root frame
+		 */
+		void compute_and_get_each_joint_pose(const std::vector<double>& jnt_position, std::vector<geometry_msgs::PoseStamped>& each_joint_stamped);
 
 		// Debug function for kinematic calculation class
 		void print_data_memebers(void);

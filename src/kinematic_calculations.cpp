@@ -210,6 +210,7 @@ void Kinematic_calculations::createRoatationMatrix(const double& angle, const st
 void Kinematic_calculations::forward_kinematics(const KDL::JntArray& jnt_angels)
 {
 	KDL::Frame fk_mat = KDL::Frame::Identity();
+	transformation_matrix.clear();
 	std::vector<unsigned int> rot_axis{0,0,1};
 	unsigned int cnt = 0;
 	jnt_fk_mat.clear();
@@ -257,12 +258,15 @@ void Kinematic_calculations::forward_kinematics(const KDL::JntArray& jnt_angels)
 
 			createRoatationMatrix( jnt_angels(cnt), rot_axis, lcl_homo_mat );
 			//jnt_homo_mat[i] = jnt_homo_mat[i] * lcl_homo_mat;
+			transformation_matrix.push_back(jnt_homo_mat[i] * lcl_homo_mat);
 			fk_mat = fk_mat * (jnt_homo_mat[i] * lcl_homo_mat);		// FK_Mat = Fk_Mat_old * Homo_Mat; Joint_1: FK_Mat = I * Homo_Mat;
 			cnt++;
 		}
 		else if ( jnts.at(i).getType() == 8 )
+		{
 			fk_mat = fk_mat * jnt_homo_mat[i];
-
+			transformation_matrix.push_back(jnt_homo_mat[i]);
+		}
 		jnt_fk_mat.push_back(fk_mat);
 	}
 
@@ -655,6 +659,52 @@ void Kinematic_calculations::compute_gripper_pose_and_jacobian(const std::vector
 	jacobian_mat = JacobianMatrix;
 }
 
+void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<double>& jnt_position, std::vector<geometry_msgs::PoseStamped>& each_joint_stamped)
+{
+	KDL::JntArray kdl_jnt_angles = KDL::JntArray(jnt_position.size());
+
+	// convert std vector to kdl vector
+	for (int i=0u; i < jnt_position.size(); ++i)
+	{
+		kdl_jnt_angles(i) = jnt_position.at(i);
+	}
+
+	// compute forward kinematics for joint transformation matrix relative to root frame
+	forward_kinematics(kdl_jnt_angles);
+
+	// fill poseStamed vector
+	/*for ( int i=0u; i < jnt_homo_mat.size()& jnt_fk_mat.size(); ++i )
+	{
+
+
+		geometry_msgs::PoseStamped stamped;
+		stamped.header.frame_id = root_frame;
+		stamped.header.stamp = ros::Time().now();
+		stamped.pose.position.x = jnt_fk_mat.at(i).p.x();
+		stamped.pose.position.y = jnt_fk_mat.at(i).p.y();
+		stamped.pose.position.z = jnt_fk_mat.at(i).p.z();
+		jnt_homo_mat.at(i).M.GetQuaternion(stamped.pose.orientation.x, stamped.pose.orientation.y, stamped.pose.orientation.z, stamped.pose.orientation.w);
+
+		//ROS_INFO_STREAM("compute_and_get_each_joint_pose: ... Joint pose relative to root frame \n" << stamped);
+
+		each_joint_stamped.push_back(stamped);
+	}*/
+
+	for ( auto it=jnt_fk_mat.begin(); it != jnt_fk_mat.end(); ++it )
+	{
+		geometry_msgs::PoseStamped stamped;
+		stamped.header.frame_id = root_frame;
+		stamped.header.stamp = ros::Time().now();
+		stamped.pose.position.x = it->p.x();
+		stamped.pose.position.y = it->p.y();
+		stamped.pose.position.z = it->p.z();
+		it->M.GetQuaternion(stamped.pose.orientation.x, stamped.pose.orientation.y, stamped.pose.orientation.z, stamped.pose.orientation.w);
+
+		//ROS_INFO_STREAM("compute_and_get_each_joint_pose: ... Joint pose relative to root frame \n" << stamped);
+
+		each_joint_stamped.push_back(stamped);
+	}
+}
 
 void Kinematic_calculations::get_joint_limits(const std::string& name_of_limit, std::vector<double>& limit_vec)
 {

@@ -70,7 +70,19 @@ bool Kinematic_calculations::initialize(const std::string rbt_description_param,
         ROS_ERROR("Failed to parse urdf file for JointLimits");
         return false;
     }
+/*
+    ROS_WARN_STREAM(model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.position.x<< "  " << model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.position.y <<
+    	    "  "<<model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.position.z);
 
+    ROS_WARN_STREAM(model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.rotation.w<< "  " << model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.rotation.x <<
+    	    "  "<<model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.rotation.y<<"  "<<model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.rotation.z);
+
+    //model.getJoint("arm_6_joint")->limits->
+
+    ROS_ERROR_STREAM(model.getLink("arm_6_link")->inertial->origin.position.x<< model.getLink("arm_6_link")->inertial->origin.position.y<< model.getLink("arm_6_link")->inertial->origin.position.z);
+    ROS_ERROR_STREAM(model.getLink("arm_6_link")->visual->origin.position.x<< model.getLink("arm_6_link")->visual->origin.position.y<< model.getLink("arm_6_link")->visual->origin.position.z);
+    ROS_ERROR_STREAM(model.getLink("arm_6_link")->collision->origin.position.x<< model.getLink("arm_6_link")->collision->origin.position.y<< model.getLink("arm_6_link")->collision->origin.position.z);
+*/
     // Set frame Name, joint names
     frame_names.clear();
     jnts_name.clear();
@@ -83,6 +95,7 @@ bool Kinematic_calculations::initialize(const std::string rbt_description_param,
     // Set joint axis, angle, Create transformation matrix
     for (uint16_t i = 0; i < segments; ++i)
     {
+
     	jnts.push_back( this->chain.getSegment(i).getJoint());
     	frames.push_back( this->chain.getSegment(i).getFrameToTip() );
 
@@ -108,6 +121,24 @@ bool Kinematic_calculations::initialize(const std::string rbt_description_param,
     	jnt_pos_max_limit.push_back(model.getJoint( jnts_name[i])->limits->upper );
     	jnt_vel_limit.push_back(model.getJoint ( jnts_name[i])->limits->velocity );
     }
+
+    // Get link length
+    link_length.clear();
+    for (int i = 0u; i < segments ; ++i)
+    {
+    	geometry_msgs::Vector3 length_vec;
+
+    	//ROS_WARN_STREAM(jnt_homo_mat.at(i+1).p.x() << "  "<< jnt_homo_mat.at(i+1).p.y()<< "  "<< jnt_homo_mat.at(i+1).p.z());
+    	ROS_DEBUG_STREAM(jnt_homo_mat.at(i).p.x() << "  "<< jnt_homo_mat.at(i).p.y()<< "  "<< jnt_homo_mat.at(i).p.z());
+
+    	//todo: check better way to length should not be negative, ceil, floor should be use
+    	length_vec.x = std::abs(jnt_homo_mat.at(i).p.x());
+    	length_vec.y = std::abs(jnt_homo_mat.at(i).p.y());
+    	length_vec.z = std::abs(jnt_homo_mat.at(i).p.z());
+
+    	ROS_DEBUG_STREAM(jnts_name.at(i).c_str() << " length: " << length_vec);
+    	link_length.push_back(length_vec);
+     }
 
     return true;
 }
@@ -659,7 +690,7 @@ void Kinematic_calculations::compute_gripper_pose_and_jacobian(const std::vector
 	jacobian_mat = JacobianMatrix;
 }
 
-void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<double>& jnt_position, std::vector<geometry_msgs::PoseStamped>& each_joint_stamped)
+void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<double>& jnt_position, std::vector<geometry_msgs::PoseStamped>& each_joint_stamped, std::vector<geometry_msgs::Vector3>& link_length)
 {
 	KDL::JntArray kdl_jnt_angles = KDL::JntArray(jnt_position.size());
 
@@ -690,6 +721,8 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 		each_joint_stamped.push_back(stamped);
 	}*/
 
+	each_joint_stamped.clear();
+
 	for ( auto it=jnt_fk_mat.begin(); it != jnt_fk_mat.end(); ++it )
 	{
 		geometry_msgs::PoseStamped stamped;
@@ -704,6 +737,9 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 
 		each_joint_stamped.push_back(stamped);
 	}
+
+	link_length.clear();
+	link_length = this->link_length;
 }
 
 void Kinematic_calculations::get_joint_limits(const std::string& name_of_limit, std::vector<double>& limit_vec)

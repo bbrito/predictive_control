@@ -58,6 +58,7 @@ class Kinematic_calculations
 		std::vector<double> jnt_vel_limit;
 		std::vector<std::string> frame_names;
 		std::vector<std::string> jnts_name;
+		std::vector<geometry_msgs::Vector3> link_length;
 
 		std::vector<KDL::Frame> jnt_fk_mat;	//ff_mat
 		std::vector<KDL::Frame> transformation_matrix;
@@ -93,7 +94,7 @@ class Kinematic_calculations
 		Kinematic_calculations();
 		~Kinematic_calculations();
 
-		bool initialize(const std::string rbt_description_param = "/robot_description", const std::string& base_link_param="arm_base_link", const std::string& tip_link_param="arm_7_link", const std::string& root_frame_param="arm_base_link");
+		bool initialize(const std::string rbt_description_param = "/robot_description", const std::string& base_link_param="arm_base_link", const std::string& tip_link_param="arm_7_link", const std::string& root_frame_param="world");
 
 		// Calculate inverse of jacobian by using singular value decomposition (SVD), direct method
 		void calculate_inverse_jacobian_bySVD( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv );
@@ -139,7 +140,7 @@ class Kinematic_calculations
 		/**
 		 * @brief using forward kinematic compute joint poseStamped relatice to root frame
 		 */
-		void compute_and_get_each_joint_pose(const std::vector<double>& jnt_position, std::vector<geometry_msgs::PoseStamped>& each_joint_stamped);
+		void compute_and_get_each_joint_pose(const std::vector<double>& jnt_position, std::vector<geometry_msgs::PoseStamped>& each_joint_stamped, std::vector<geometry_msgs::Vector3>& link_length);
 
 		// Debug function for kinematic calculation class
 		void print_data_memebers(void);

@@ -791,12 +791,12 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 			frame.p.y(it_previous->p.y());
 			frame.p.z(it_previous->p.z()*0.5);
 
-			Eigen::Vector4d vec(it->p.x(), it->p.y(), it->p.z()*0.5, 1.0), new_vec;
+			new_point_frame = *it_previous * frame;
 
-			new_vec = fk_mat * vec.data();
-
-			point_stamped.pose.position.x = new_vec(0);				point_stamped.pose.position.y = new_vec(1);
-			point_stamped.pose.position.z = new_vec(2);
+			point_stamped.pose.position.x = new_point_frame.p.x();
+			point_stamped.pose.position.y = new_point_frame.p.y();
+			point_stamped.pose.position.z = new_point_frame.p.z();
+			new_point_frame.M.GetQuaternion(point_stamped.pose.orientation.x,point_stamped.pose.orientation.y,point_stamped.pose.orientation.z,point_stamped.pose.orientation.w );
 
 			i = i+1;
 			self_collsion_matrix[ key+std::toString(i) ] = point_stamped;

@@ -199,11 +199,15 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	std::vector<geometry_msgs::Vector3> link_length;
 	kinematic_solver_->compute_and_get_each_joint_pose(current_position_vec_copy, tranformation_matrix_stamped, link_length);
 
-	std::cout<<"\033[20;1m" << "############"<< "links " << tranformation_matrix_stamped.size() << "###########" << "\033[0m\n" << std::endl;
-	for (int i=0u; i < tranformation_matrix_stamped.size(); ++i)
+	std::map<std::string, geometry_msgs::PoseStamped> self_collsion_matrix;
+	kinematic_solver_->compute_and_get_each_joint_pose(current_position_vec_copy, self_collsion_matrix);
+
+	std::cout<<"\033[20;1m" << "############"<< "links " << self_collsion_matrix.size() << "###########" << "\033[0m\n" << std::endl;
+	for (int i=0u; i < self_collsion_matrix.size(); ++i)
 	{
-		link_length.at(i).z = 0.15;
-		pd_frame_tracker_->create_collision_ball(tranformation_matrix_stamped.at(i), link_length.at(i).z, i);
+		double length = 0.15;
+		std::string key = "point_" + std::toString(i);
+		pd_frame_tracker_->create_collision_ball(self_collsion_matrix[key], length, i);
 
 			/*
 			if (link_length.at(i).z >= 0.20)

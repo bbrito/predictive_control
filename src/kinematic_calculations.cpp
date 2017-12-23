@@ -762,8 +762,8 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 	// compute forward kinematics for joint transformation matrix relative to root frame
 	forward_kinematics(kdl_jnt_angles);
 	std::string key = "point_";
-	int i=0u;
-	for ( auto it=jnt_fk_mat.begin(), it1 = jnt_homo_mat.begin(); it != jnt_fk_mat.end() & it1 != jnt_homo_mat.end() ; ++it, ++it1, ++i)
+	int i=0u, j=0u;
+	for ( auto it=jnt_fk_mat.begin(), it1 = jnt_homo_mat.begin(); it != jnt_fk_mat.end() & it1 != jnt_homo_mat.end() ; ++it, ++it1, ++i, ++j)
 	{
 		geometry_msgs::PoseStamped stamped;
 		stamped.header.frame_id = root_frame;
@@ -777,31 +777,37 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 
 		if (it1->p.z() > 0.14)
 		{
+			ROS_ERROR_STREAM((it)->p.x() << "  "<< (it)->p.y()<< "  "<< (it)->p.z());
+
+			ROS_WARN("Create new point for self collision avoidance");
+			geometry_msgs::PoseStamped new_point_stamped;
+			new_point_stamped.header.frame_id = root_frame;
+			new_point_stamped.header.stamp = ros::Time().now();
+			new_point_stamped.pose.position.x = (it)->p.x()*0.5 + (it-1)->p.x();
+			new_point_stamped.pose.position.y = (it)->p.y()*0.5 + (it-1)->p.y();
+			new_point_stamped.pose.position.z = (it)->p.z()*0.5 + (it-1)->p.z();
+			(it-1)->M.GetQuaternion(new_point_stamped.pose.orientation.x, new_point_stamped.pose.orientation.y, new_point_stamped.pose.orientation.z, new_point_stamped.pose.orientation.w);
+			i = i+1;
+			self_collsion_matrix[ key+std::toString(i) ] = new_point_stamped;
+			create_static_frame(new_point_stamped, key+std::toString(i));
+		}
+
+		/*
+		if (it1->p.z() > 0.14)
+		{
+
 			ROS_WARN("Create new point for self collision avoidance");
 			geometry_msgs::PoseStamped point_stamped = stamped;
-			auto it_previous = it - 1;
-			/*
-			point_stamped.pose.position.x = it_previous->p.x() + (it1->p.x() * 0.5) ;
-			point_stamped.pose.position.y = it_previous->p.y() + (it1->p.y() * 0.5);
-			point_stamped.pose.position.z = it_previous->p.z() + (it1->p.z() * 0.5);*/
 
-			KDL::Frame frame, new_point_frame;
-			frame.M.Identity();
-			frame.p.x(it_previous->p.x());
-			frame.p.y(it_previous->p.y());
-			frame.p.z(it_previous->p.z()*0.5);
-
-			new_point_frame = *it_previous * frame;
-
-			point_stamped.pose.position.x = new_point_frame.p.x();
-			point_stamped.pose.position.y = new_point_frame.p.y();
-			point_stamped.pose.position.z = new_point_frame.p.z();
-			new_point_frame.M.GetQuaternion(point_stamped.pose.orientation.x,point_stamped.pose.orientation.y,point_stamped.pose.orientation.z,point_stamped.pose.orientation.w );
-
+			point_stamped.pose.position.x = (it-1)->p.x() + it1->p.x() * 0.5;
+			point_stamped.pose.position.y = (it-1)->p.y() + it1->p.y() * 0.5;
+			point_stamped.pose.position.z = (it-1)->p.z() + it1->p.z() * 0.5;
+			(it-1)->M.GetQuaternion(point_stamped.pose.orientation.x,point_stamped.pose.orientation.y,point_stamped.pose.orientation.z,point_stamped.pose.orientation.w );
+			ROS_ERROR_STREAM(point_stamped);
 			i = i+1;
 			self_collsion_matrix[ key+std::toString(i) ] = point_stamped;
 			create_static_frame(point_stamped, key+std::toString(i));
-		}
+		}*/
 		//ROS_INFO_STREAM("compute_and_get_each_joint_pose: ... Joint pose relative to root frame \n" << stamped);
 	}
 }

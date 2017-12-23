@@ -3,7 +3,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/SVD>
-
+#include <geometry_msgs/TransformStamped.h>
 
 Kinematic_calculations::Kinematic_calculations()
 {
@@ -70,13 +70,20 @@ bool Kinematic_calculations::initialize(const std::string rbt_description_param,
         ROS_ERROR("Failed to parse urdf file for JointLimits");
         return false;
     }
-/*
+/* homogenous transformation matrix
     ROS_WARN_STREAM(model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.position.x<< "  " << model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.position.y <<
     	    "  "<<model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.position.z);
 
     ROS_WARN_STREAM(model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.rotation.w<< "  " << model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.rotation.x <<
     	    "  "<<model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.rotation.y<<"  "<<model.getJoint("arm_6_joint")->parent_to_joint_origin_transform.rotation.z);
 
+    ROS_WARN_STREAM(model.getJoint("arm_3_joint")->parent_to_joint_origin_transform.position.x<< "  " << model.getJoint("arm_3_joint")->parent_to_joint_origin_transform.position.y <<
+    	    "  "<<model.getJoint("arm_3_joint")->parent_to_joint_origin_transform.position.z);
+
+    ROS_WARN_STREAM(model.getJoint("arm_3_joint")->parent_to_joint_origin_transform.rotation.w<< "  " << model.getJoint("arm_3_joint")->parent_to_joint_origin_transform.rotation.x <<
+    	    "  "<<model.getJoint("arm_3_joint")->parent_to_joint_origin_transform.rotation.y<<"  "<<model.getJoint("arm_3_joint")->parent_to_joint_origin_transform.rotation.z);
+*/
+    /*
     //model.getJoint("arm_6_joint")->limits->
 
     ROS_ERROR_STREAM(model.getLink("arm_6_link")->inertial->origin.position.x<< model.getLink("arm_6_link")->inertial->origin.position.y<< model.getLink("arm_6_link")->inertial->origin.position.z);
@@ -740,6 +747,80 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 
 	link_length.clear();
 	link_length = this->link_length;
+}
+
+void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<double>& jnt_position, std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix)
+{
+	KDL::JntArray kdl_jnt_angles = KDL::JntArray(jnt_position.size());
+
+	// convert std vector to kdl vector
+	for (int i=0u; i < jnt_position.size(); ++i)
+	{
+		kdl_jnt_angles(i) = jnt_position.at(i);
+	}
+
+	// compute forward kinematics for joint transformation matrix relative to root frame
+	forward_kinematics(kdl_jnt_angles);
+	std::string key = "point_";
+	int i=0u;
+	for ( auto it=jnt_fk_mat.begin(), it1 = jnt_homo_mat.begin(); it != jnt_fk_mat.end() & it1 != jnt_homo_mat.end() ; ++it, ++it1, ++i)
+	{
+		geometry_msgs::PoseStamped stamped;
+		stamped.header.frame_id = root_frame;
+		stamped.header.stamp = ros::Time().now();
+		stamped.pose.position.x = it->p.x();
+		stamped.pose.position.y = it->p.y();
+		stamped.pose.position.z = it->p.z();
+		it->M.GetQuaternion(stamped.pose.orientation.x, stamped.pose.orientation.y, stamped.pose.orientation.z, stamped.pose.orientation.w);
+
+		self_collsion_matrix[ key+std::toString(i) ] = stamped;
+
+		if (it1->p.z() > 0.14)
+		{
+			ROS_WARN("Create new point for self collision avoidance");
+			geometry_msgs::PoseStamped point_stamped = stamped;
+			auto it_previous = it - 1;
+			/*
+			point_stamped.pose.position.x = it_previous->p.x() + (it1->p.x() * 0.5) ;
+			point_stamped.pose.position.y = it_previous->p.y() + (it1->p.y() * 0.5);
+			point_stamped.pose.position.z = it_previous->p.z() + (it1->p.z() * 0.5);*/
+
+			KDL::Frame frame, new_point_frame;
+			frame.M.Identity();
+			frame.p.x(it_previous->p.x());
+			frame.p.y(it_previous->p.y());
+			frame.p.z(it_previous->p.z()*0.5);
+
+			Eigen::Vector4d vec(it->p.x(), it->p.y(), it->p.z()*0.5, 1.0), new_vec;
+
+			new_vec = fk_mat * vec.data();
+
+			point_stamped.pose.position.x = new_vec(0);				point_stamped.pose.position.y = new_vec(1);
+			point_stamped.pose.position.z = new_vec(2);
+
+			i = i+1;
+			self_collsion_matrix[ key+std::toString(i) ] = point_stamped;
+			create_static_frame(point_stamped, key+std::toString(i));
+		}
+		//ROS_INFO_STREAM("compute_and_get_each_joint_pose: ... Joint pose relative to root frame \n" << stamped);
+	}
+}
+
+bool Kinematic_calculations::create_static_frame(const geometry_msgs::PoseStamped& stamped, const std::string& frame_name)
+{
+	geometry_msgs::TransformStamped static_transformStamped;
+	static_transformStamped.header.stamp = stamped.header.stamp;
+	static_transformStamped.header.frame_id = stamped.header.frame_id;
+	static_transformStamped.child_frame_id = frame_name;
+
+	static_transformStamped.transform.translation.x = stamped.pose.position.x;
+	static_transformStamped.transform.translation.y = stamped.pose.position.y;
+	static_transformStamped.transform.translation.z = stamped.pose.position.z;
+	static_transformStamped.transform.rotation = stamped.pose.orientation;
+
+	static_broadcaster.sendTransform(static_transformStamped);
+	ros::spinOnce();
+	return true;
 }
 
 void Kinematic_calculations::get_joint_limits(const std::string& name_of_limit, std::vector<double>& limit_vec)

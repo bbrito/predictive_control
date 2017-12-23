@@ -7,7 +7,7 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf2_kdl/tf2_kdl.h>
-
+#include <tf2_ros/static_transform_broadcaster.h>
 // eigen includes
 #include <Eigen/Core>
 #include <Eigen/LU>				//inverse of matrix
@@ -64,6 +64,10 @@ class Kinematic_calculations
 		std::vector<KDL::Frame> transformation_matrix;
 		KDL::Frame fk_mat;
 		Eigen::Matrix<double, 6, 7> JacobianMatrix;	//Jacobian Matrix	todo: change 7 with dof
+
+		std::map<std::string, geometry_msgs::PoseStamped> self_collsion_matrix;
+		tf2_ros::StaticTransformBroadcaster static_broadcaster;
+
 
 	    boost::shared_ptr<KDL::ChainFkSolverVel_recursive> jntToCartSolver_vel_;
 	    boost::shared_ptr<KDL::ChainJntToJacSolver> jntToJacSolver_;
@@ -141,6 +145,10 @@ class Kinematic_calculations
 		 * @brief using forward kinematic compute joint poseStamped relatice to root frame
 		 */
 		void compute_and_get_each_joint_pose(const std::vector<double>& jnt_position, std::vector<geometry_msgs::PoseStamped>& each_joint_stamped, std::vector<geometry_msgs::Vector3>& link_length);
+
+		void compute_and_get_each_joint_pose(const std::vector<double>& jnt_position, std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix);
+
+		bool create_static_frame(const geometry_msgs::PoseStamped& stamped, const std::string& frame_name);
 
 		// Debug function for kinematic calculation class
 		void print_data_memebers(void);

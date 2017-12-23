@@ -807,7 +807,7 @@ bool Kinematic_calculations::create_static_frame(const geometry_msgs::PoseStampe
 	static_transformStamped.transform.translation.z = stamped.pose.position.z;
 	static_transformStamped.transform.rotation = stamped.pose.orientation;
 
-	ROS_WARN("Created new point 'Static Frame' with %s parent frame id and %s child frame id", stamped.header.frame_id.c_str(), frame_name.c_str());
+	ROS_INFO("Created new point 'Static Frame' with '%s' parent frame id and '%s' child frame id", stamped.header.frame_id.c_str(), frame_name.c_str());
 
 	static_broadcaster.sendTransform(static_transformStamped);
 	ros::spinOnce();

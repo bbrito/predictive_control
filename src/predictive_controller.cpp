@@ -200,27 +200,25 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	kinematic_solver_->compute_and_get_each_joint_pose(current_position_vec_copy, tranformation_matrix_stamped, link_length);
 
 	std::cout<<"\033[20;1m" << "############"<< "links " << tranformation_matrix_stamped.size() << "###########" << "\033[0m\n" << std::endl;
-	for (int i=0u; i < tranformation_matrix_stamped.size()-1; ++i)
+	for (int i=0u; i < tranformation_matrix_stamped.size(); ++i)
 	{
-			//double link_length = 0.12;
-			ROS_INFO_STREAM("Joint_"<<i+1);
-			ROS_WARN_STREAM(tranformation_matrix_stamped.at(i));
+		link_length.at(i).z = 0.15;
+		pd_frame_tracker_->create_collision_ball(tranformation_matrix_stamped.at(i), link_length.at(i).z, i);
 
-			//pd_frame_tracker_->create_collision_ball(tranformation_matrix_stamped.at(i), link_length.at(i).z, i);
-
-
-			double offset = link_length.at(i).z;//(tranformation_matrix_stamped.at(i+1).pose.position.z - tranformation_matrix_stamped.at(i).pose.position.z);
-			if (offset > 0.10)
+			/*
+			if (link_length.at(i).z >= 0.20)
 			{
-				offset = offset / 2.0;
+				ROS_INFO_STREAM(tranformation_matrix_stamped.at(i));
 
-				//tranformation_matrix_stamped[i].pose.position.z += offset;		// move frame to center of link
-				pd_frame_tracker_->create_collision_ball(tranformation_matrix_stamped.at(i), offset, i);
-				/*
-				tranformation_matrix_stamped[i].pose.position.z += offset;		// move frame to center of link
-				tranformation_matrix_stamped[i].pose.position.z *= -1;
-				pd_frame_tracker_->create_collision_ball(tranformation_matrix_stamped.at(i), offset, (i+1)*i);*/
+				tranformation_matrix_stamped[i].pose.position.z -= (link_length.at(i).z * 0.5);
+				link_length.at(i).z *= 0.5;
+				ROS_WARN_STREAM(tranformation_matrix_stamped.at(i));
 			}
+			else
+			{
+				link_length.at(i).z = 0.12;
+			}
+			pd_frame_tracker_->create_collision_ball(tranformation_matrix_stamped.at(i), link_length.at(i).z, i);*/
 	}
 
 	marker_pub.publish(pd_frame_tracker_->get_collision_ball_marker());

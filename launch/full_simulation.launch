@@ -8,6 +8,7 @@
     <arg name="robot" default="lwa4p_extended"/>
     <arg name="robot_env" default="empty"/>
     <arg name="enable_gazebo_gui" default="false"/>
+    <arg name="joint_state_gui" default="true"/>
     <arg name="component_name" value="arm"/>
     <arg name="ipa_sim" default="true"/>
     <arg name="paused" default="false"/>
@@ -45,7 +46,8 @@
 
     <!-- robot state publisher -->
     <include file="$(find cob_bringup)/tools/robot_state_publisher.launch">
-    <arg name="robot" value="$(arg robot)"/>
+    	<arg name="robot" value="$(arg robot)"/>
+    	<!--arg name="joint_state_gui" value="$(arg joint_state_gui)"/-->
     </include>
 
     <include unless="$(arg sim)" file="$(find cob_bringup)/drivers/canopen_402.launch">

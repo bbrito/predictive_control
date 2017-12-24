@@ -626,15 +626,15 @@ void pd_frame_tracker::compute_euclidean_distance(const geometry_msgs::Point& po
 // get 2d distance between two points
 double pd_frame_tracker::get_2d_distance(const geometry_msgs::Pose& point_a, const geometry_msgs::Pose& point_b)
 {
-	ROS_WARN_STREAM("point_a:" << point_a.position);
-	ROS_INFO_STREAM("point_b:" << point_b.position);
+	ROS_DEBUG_STREAM("point_a:" << point_a.position);
+	ROS_DEBUG_STREAM("point_b:" << point_b.position);
 
 	double distance = ( sqrt( 	(point_a.position.x - point_b.position.x) * (point_a.position.x - point_b.position.x) +
 				    		(point_a.position.y - point_b.position.y) * (point_a.position.y - point_b.position.y) +
 				    		(point_a.position.z - point_b.position.z) * (point_a.position.z - point_b.position.z)
 					));
 
-	ROS_WARN_STREAM("get_2d_distance: ...  "<< distance);
+	ROS_DEBUG_STREAM("get_2d_distance: ...  "<< distance);
 	return distance;
 }
 
@@ -774,8 +774,10 @@ void pd_frame_tracker::generate_self_collision_distance_matrix(const std::map<st
 		}
 	}
 
+	//todo: if it will more time for computation than collision distance matrix must be symmetric so compute only upper triangle matrix.
+
 	std::cout << "*******************************" << std::endl;
-	std::cout << collision_distance_matrix << std::endl;
+	std::cout << " collision distance matrix \n "<<collision_distance_matrix << std::endl;
 	std::cout << "*******************************" << std::endl;
 
 }

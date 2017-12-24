@@ -227,7 +227,7 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 
 	marker_pub.publish(pd_frame_tracker_->get_collision_ball_marker());
 
-	/*
+
 	// target poseStamped
 	pd_frame_tracker_->get_transform("/arm_base_link", new_config.target_frame, target_gripper_pose);
 
@@ -254,7 +254,7 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	{
 		joint_velocity_pub.publish(joint_velocity_data);
 	}
-	*/
+
 }
 
 void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec)

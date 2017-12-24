@@ -770,15 +770,6 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 		if ( ( it1->p.z() > 0.02) )	// randomly choose
 		//if ( (it1->p.z() != (it-1)->p.z()) )
 		{
-			geometry_msgs::PoseStamped stamped;
-			stamped.header.frame_id = root_frame;
-			stamped.header.stamp = ros::Time().now();
-			stamped.pose.position.x = it->p.x();
-			stamped.pose.position.y = it->p.y();
-			stamped.pose.position.z = it->p.z();
-			it->M.GetQuaternion(stamped.pose.orientation.x, stamped.pose.orientation.y, stamped.pose.orientation.z, stamped.pose.orientation.w);
-
-			self_collsion_matrix[ key+std::toString(point_number) ] = stamped;
 
 			// distance between two frame is larger than radius of ball, create ball between two points
 			// todo: change 0.14 to read parameter from yaml
@@ -794,11 +785,21 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 				new_point_stamped.pose.position.y = (it-1)->p.y() + ( (it->p.y() - (it-1)->p.y())*0.5 );
 				new_point_stamped.pose.position.z = (it-1)->p.z() + ( (it->p.z() - (it-1)->p.z())*0.5 );
 				(it-1)->M.GetQuaternion(new_point_stamped.pose.orientation.x, new_point_stamped.pose.orientation.y, new_point_stamped.pose.orientation.z, new_point_stamped.pose.orientation.w);
-				point_number = point_number+1;
+				//point_number = point_number+1;
 				self_collsion_matrix[ key+std::toString(point_number) ] = new_point_stamped;
 				create_static_frame(new_point_stamped, key+std::toString(point_number));
+				point_number = point_number+1;
 			}
 
+			geometry_msgs::PoseStamped stamped;
+			stamped.header.frame_id = root_frame;
+			stamped.header.stamp = ros::Time().now();
+			stamped.pose.position.x = it->p.x();
+			stamped.pose.position.y = it->p.y();
+			stamped.pose.position.z = it->p.z();
+			it->M.GetQuaternion(stamped.pose.orientation.x, stamped.pose.orientation.y, stamped.pose.orientation.z, stamped.pose.orientation.w);
+
+			self_collsion_matrix[ key+std::toString(point_number) ] = stamped;
 			++point_number;
 		}
 	}

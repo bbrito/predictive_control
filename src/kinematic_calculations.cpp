@@ -781,6 +781,7 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 			self_collsion_matrix[ key+std::toString(point_number) ] = stamped;
 
 			// distance between two frame is larger than radius of ball, create ball between two points
+			// todo: change 0.14 to read parameter from yaml
 			if (it1->p.z() > 0.14)
 			{
 				ROS_DEBUG_STREAM((it)->p.x() << "  "<< (it)->p.y()<< "  "<< (it)->p.z());

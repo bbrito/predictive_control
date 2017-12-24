@@ -178,7 +178,7 @@ void predictive_control_node::main_predictive_control()
 			joint_velocity_data.data[i] = current_velocity.at(i);
 		}
 
-	    timer_ = nh.createTimer(ros::Duration(1/1), &predictive_control_node::run_node, this);
+	    timer_ = nh.createTimer(ros::Duration(1/new_config.update_rate), &predictive_control_node::run_node, this);
 	    timer_.start();
 
 	    ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());

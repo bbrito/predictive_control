@@ -484,6 +484,8 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 	c_init(0) = updated_vel.data[0];	c_init(1) = updated_vel.data[1];	c_init(2) = updated_vel.data[2];
 	c_init(3) = updated_vel.data[3];	c_init(4) = updated_vel.data[4];	c_init(5) = updated_vel.data[5];	c_init(6) = updated_vel.data[6];
 
+	// self collision distance
+
 
 	OCP ocp_problem(0.0, 1.0, 4);
 	ocp_problem.minimizeMayerTerm( 10.0*( ( (x(0)-target_gripper_pose.pose.position.x)  * (x(0)-target_gripper_pose.pose.position.x) ) +
@@ -526,6 +528,17 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 	updated_vel.data[6] = u(6);
 }
 
+void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat,
+									const geometry_msgs::PoseStamped& current_gripper_pose,
+									const geometry_msgs::PoseStamped& target_gripper_pose,
+									const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix,
+									std_msgs::Float64MultiArray& updated_vel
+									)
+{
+
+
+
+}
 
 void pd_frame_tracker::convert_quaternion_to_rpy(const geometry_msgs::Quaternion& quat, geometry_msgs::Vector3& rpy)
 {
@@ -608,6 +621,18 @@ void pd_frame_tracker::compute_rotation_distance(const geometry_msgs::Quaternion
 void pd_frame_tracker::compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist)
 {
 	cart_dist = sqrt( point.x * point.x + point.y * point.y + point.z * point.z);
+}
+
+// get 2d distance between two points
+double pd_frame_tracker::get_2d_distance(const geometry_msgs::Pose& point_a, const geometry_msgs::Pose& point_b)
+{
+	double distance = ( sqrt( 	(point_a.position.x - point_b.position.x) * (point_a.position.x - point_b.position.x) +
+				    		(point_a.position.y - point_b.position.y) * (point_a.position.y - point_b.position.y) +
+				    		(point_a.position.z - point_b.position.z) * (point_a.position.z - point_b.position.z)
+					));
+
+	ROS_WARN_STREAM("get_2d_distance: ...  "<< distance);
+	return distance;
 }
 
 void pd_frame_tracker::quaternion_product(const geometry_msgs::Quaternion& quat_1, const geometry_msgs::Quaternion& quat_2, geometry_msgs::Quaternion& quat_resultant)
@@ -706,3 +731,30 @@ visualization_msgs::MarkerArray pd_frame_tracker::get_collision_ball_marker()
 {
 	return this->collision_ball_marker_array;
 }
+
+double pd_frame_tracker::compute_self_collision_distance(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix)
+{
+	double distance;
+
+	// iterate to each points
+	for (auto it = self_collsion_matrix.begin(); it != self_collsion_matrix.end(); ++it)
+	{
+		distance = 0.0;
+		ROS_INFO_STREAM(it->first.c_str() << " \n"<< it->second.pose.position);
+
+		// skip the point which already computed and point self
+		int count = 0u;
+		std::cout<<"\033[20;1m" << "############"<< "self_collsion_matrix size " << self_collsion_matrix.size() << "###########" << "\033[0m\n" << std::endl;
+		for (auto it1 = it; it1 != self_collsion_matrix.end() && count < self_collsion_matrix.size();count++)
+		{
+			it1++;
+			std::cout<<"\033[36;1m" << "***********************"<< "count: " << count << "\033[0m\n" << std::endl;
+			distance += this->get_2d_distance(it->second.pose, (it1)->second.pose);
+			ROS_WARN_STREAM( it1->first.c_str() << " \n"<< it1->second.pose.position << " \n \t --------------- distance: -------- " << distance);
+		}
+		ROS_ERROR("Hello");
+	}
+
+	return distance;
+}
+

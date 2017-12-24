@@ -153,7 +153,25 @@ class pd_frame_tracker
 		void optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat, const geometry_msgs::PoseStamped& current_gripper_pose,
 									const geometry_msgs::PoseStamped& target_gripper_pose, std_msgs::Float64MultiArray& updated_vel);
 
+		/**
+		 * @brief solve optimal control problem in the terms of model predictive control(MPC) using ACADO Toolkit
+		 * @param Jacobian_Mat Jacobian matrix with d(6*7) where rows are linear and angular velocity, columns are same as dof
+		 * @param current_gripper_pose Current position and rotation in the form of Euler angle(rpy) used to initialize differential states
+		 * @param current_gripper_quternion Current quaternion of gripper used to minimize quaternion error
+		 * @param self_collsion_matrix Collision matrix to avoid collide with it body
+		 * @return updated_vel Initialize control states and filled with control joint velocity, want to publish it
+		 **/
+		void optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat,
+									const geometry_msgs::PoseStamped& current_gripper_pose,
+									const geometry_msgs::PoseStamped& target_gripper_pose,
+									const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix,
+									std_msgs::Float64MultiArray& updated_vel
+									);
+
+
 		void compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist);
+
+		double get_2d_distance(const geometry_msgs::Pose& point_a, const geometry_msgs::Pose& point_b);
 
 		void compute_rotation_distance(const geometry_msgs::Quaternion& quat, double& rot_distance);
 
@@ -170,6 +188,8 @@ class pd_frame_tracker
 		void get_collision_ball_marker(visualization_msgs::MarkerArray& collision_ball_marker_array);
 
 		visualization_msgs::MarkerArray get_collision_ball_marker();
+
+		double compute_self_collision_distance(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix);
 };
 
 

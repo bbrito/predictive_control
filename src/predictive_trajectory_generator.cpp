@@ -626,6 +626,9 @@ void pd_frame_tracker::compute_euclidean_distance(const geometry_msgs::Point& po
 // get 2d distance between two points
 double pd_frame_tracker::get_2d_distance(const geometry_msgs::Pose& point_a, const geometry_msgs::Pose& point_b)
 {
+	ROS_WARN_STREAM("point_a:" << point_a.position);
+	ROS_INFO_STREAM("point_b:" << point_b.position);
+
 	double distance = ( sqrt( 	(point_a.position.x - point_b.position.x) * (point_a.position.x - point_b.position.x) +
 				    		(point_a.position.y - point_b.position.y) * (point_a.position.y - point_b.position.y) +
 				    		(point_a.position.z - point_b.position.z) * (point_a.position.z - point_b.position.z)
@@ -732,29 +735,47 @@ visualization_msgs::MarkerArray pd_frame_tracker::get_collision_ball_marker()
 	return this->collision_ball_marker_array;
 }
 
-double pd_frame_tracker::compute_self_collision_distance(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix)
+std::vector<double> pd_frame_tracker::compute_self_collision_distance(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix)
 {
-	double distance;
+	std::vector<double> distance;
 
 	// iterate to each points
 	for (auto it = self_collsion_matrix.begin(); it != self_collsion_matrix.end(); ++it)
 	{
-		distance = 0.0;
+		double distance_variable = 0.0;
 		ROS_INFO_STREAM(it->first.c_str() << " \n"<< it->second.pose.position);
 
 		// skip the point which already computed and point self
-		int count = 0u;
-		std::cout<<"\033[20;1m" << "############"<< "self_collsion_matrix size " << self_collsion_matrix.size() << "###########" << "\033[0m\n" << std::endl;
-		for (auto it1 = it; it1 != self_collsion_matrix.end() && count < self_collsion_matrix.size();count++)
+		for (auto it1 = it; it1 != self_collsion_matrix.end();)
 		{
 			it1++;
-			std::cout<<"\033[36;1m" << "***********************"<< "count: " << count << "\033[0m\n" << std::endl;
-			distance += this->get_2d_distance(it->second.pose, (it1)->second.pose);
-			ROS_WARN_STREAM( it1->first.c_str() << " \n"<< it1->second.pose.position << " \n \t --------------- distance: -------- " << distance);
+			distance_variable += this->get_2d_distance(it->second.pose, (it1)->second.pose);
+			ROS_WARN_STREAM( "-------- distance ------" << distance_variable);
+			//ROS_WARN_STREAM( it1->first.c_str() << " \n"<< it1->second.pose.position << " \n \t --------------- distance: -------- " << distance);
 		}
-		ROS_ERROR("Hello");
+
+		distance.push_back(distance_variable);
 	}
 
 	return distance;
 }
 
+void pd_frame_tracker::generate_self_collision_distance_matrix(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix)
+{
+	collision_distance_matrix.resize(self_collsion_matrix.size(), self_collsion_matrix.size());
+
+	int i = 0u;
+	for (auto it_outer = self_collsion_matrix.begin(); it_outer != self_collsion_matrix.end(); ++it_outer, ++i )
+	{
+		int j = 0u;
+		for (auto it_inner = self_collsion_matrix.begin(); it_inner != self_collsion_matrix.end(); ++it_inner, ++j)
+		{
+			collision_distance_matrix(i,j) = std::abs( this->get_2d_distance(it_outer->second.pose, it_inner->second.pose) );
+		}
+	}
+
+	std::cout << "*******************************" << std::endl;
+	std::cout << collision_distance_matrix << std::endl;
+	std::cout << "*******************************" << std::endl;
+
+}

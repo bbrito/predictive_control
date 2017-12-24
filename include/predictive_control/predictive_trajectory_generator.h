@@ -121,6 +121,8 @@ class pd_frame_tracker
 
 
 	    visualization_msgs::MarkerArray collision_ball_marker_array;
+	    Eigen::MatrixXd collision_distance_matrix;
+
 
 	    //double cart_distance;
 	    //double rot_distance;
@@ -189,7 +191,9 @@ class pd_frame_tracker
 
 		visualization_msgs::MarkerArray get_collision_ball_marker();
 
-		double compute_self_collision_distance(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix);
+		std::vector<double> compute_self_collision_distance(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix);
+
+		void generate_self_collision_distance_matrix(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix);
 };
 
 

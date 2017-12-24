@@ -766,8 +766,9 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 	for ( auto it=jnt_fk_mat.begin(), it1 = jnt_homo_mat.begin(); it != jnt_fk_mat.end() & it1 != jnt_homo_mat.end() ; ++it, ++it1)
 	{
 
-		// two point distance is less than some value than assume that both point are same origin, skip to add in self collision matrix
+		// two point distance is same than assume that both point are same origin, skip to add in self collision matrix
 		if ( ( it1->p.z() > 0.02) )	// randomly choose
+		//if ( (it1->p.z() != (it-1)->p.z()) )
 		{
 			geometry_msgs::PoseStamped stamped;
 			stamped.header.frame_id = root_frame;

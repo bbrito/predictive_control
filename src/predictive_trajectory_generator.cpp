@@ -5,6 +5,7 @@
 #include <iomanip>	//print false or true
 #include <math.h>
 
+
 predictive_config::predictive_config()
 {
 	nh =  ros::this_node::getName() ;
@@ -767,9 +768,11 @@ void pd_frame_tracker::generate_self_collision_distance_matrix(const std::map<st
 	int i = 0u;
 	for (auto it_outer = self_collsion_matrix.begin(); it_outer != self_collsion_matrix.end(); ++it_outer, ++i )
 	{
+		ROS_DEBUG_STREAM(it_outer->first.c_str());
 		int j = 0u;
 		for (auto it_inner = self_collsion_matrix.begin(); it_inner != self_collsion_matrix.end(); ++it_inner, ++j)
 		{
+			ROS_DEBUG_STREAM(it_inner->first.c_str());
 			collision_distance_matrix(i,j) = std::abs( this->get_2d_distance(it_outer->second.pose, it_inner->second.pose) );
 		}
 	}

@@ -2,7 +2,7 @@
 //This file containts read parameter from server, callback, call class objects, control all class, objects of all class
 
 #include <predictive_control/predictive_controller.h>
-
+#include <boost/thread/thread.hpp>
 
 predictive_control_node::predictive_control_node()
 {
@@ -178,7 +178,7 @@ void predictive_control_node::main_predictive_control()
 			joint_velocity_data.data[i] = current_velocity.at(i);
 		}
 
-	    timer_ = nh.createTimer(ros::Duration(1/new_config.update_rate), &predictive_control_node::run_node, this);
+	    timer_ = nh.createTimer(ros::Duration(1/1), &predictive_control_node::run_node, this);
 	    timer_.start();
 
 	    ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());
@@ -227,7 +227,19 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 
 	marker_pub.publish(pd_frame_tracker_->get_collision_ball_marker());
 
+	//std::vector<double> dist = pd_frame_tracker_->compute_self_collision_distance(self_collsion_matrix);
 
+	//boost::thread mux_thread{pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix)};
+	pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix);
+	//mux_thread.join();
+
+	/*
+	for (auto const& it: dist)
+	{
+		std::cout<<"\033[36;1m" << "***********************"<< "self collision distance: " << it << "\033[0m\n" << std::endl;
+	}*/
+
+/*
 	// target poseStamped
 	pd_frame_tracker_->get_transform("/arm_base_link", new_config.target_frame, target_gripper_pose);
 
@@ -254,7 +266,7 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	{
 		joint_velocity_pub.publish(joint_velocity_data);
 	}
-
+*/
 }
 
 void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec)

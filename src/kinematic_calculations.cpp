@@ -762,34 +762,42 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 	// compute forward kinematics for joint transformation matrix relative to root frame
 	forward_kinematics(kdl_jnt_angles);
 	std::string key = "point_";
-	int i=0u;
-	for ( auto it=jnt_fk_mat.begin(), it1 = jnt_homo_mat.begin(); it != jnt_fk_mat.end() & it1 != jnt_homo_mat.end() ; ++it, ++it1, ++i)
+	int point_number=0u;
+	for ( auto it=jnt_fk_mat.begin(), it1 = jnt_homo_mat.begin(); it != jnt_fk_mat.end() & it1 != jnt_homo_mat.end() ; ++it, ++it1)
 	{
-		geometry_msgs::PoseStamped stamped;
-		stamped.header.frame_id = root_frame;
-		stamped.header.stamp = ros::Time().now();
-		stamped.pose.position.x = it->p.x();
-		stamped.pose.position.y = it->p.y();
-		stamped.pose.position.z = it->p.z();
-		it->M.GetQuaternion(stamped.pose.orientation.x, stamped.pose.orientation.y, stamped.pose.orientation.z, stamped.pose.orientation.w);
 
-		self_collsion_matrix[ key+std::toString(i) ] = stamped;
-
-		if (it1->p.z() > 0.14)
+		// two point distance is less than some value than assume that both point are same origin, skip to add in self collision matrix
+		if ( ( it1->p.z() > 0.02) )	// randomly choose
 		{
-			ROS_DEBUG_STREAM((it)->p.x() << "  "<< (it)->p.y()<< "  "<< (it)->p.z());
+			geometry_msgs::PoseStamped stamped;
+			stamped.header.frame_id = root_frame;
+			stamped.header.stamp = ros::Time().now();
+			stamped.pose.position.x = it->p.x();
+			stamped.pose.position.y = it->p.y();
+			stamped.pose.position.z = it->p.z();
+			it->M.GetQuaternion(stamped.pose.orientation.x, stamped.pose.orientation.y, stamped.pose.orientation.z, stamped.pose.orientation.w);
 
-			ROS_DEBUG("Create new point for self collision avoidance");
-			geometry_msgs::PoseStamped new_point_stamped;
-			new_point_stamped.header.frame_id = root_frame;
-			new_point_stamped.header.stamp = ros::Time().now();
-			new_point_stamped.pose.position.x = (it-1)->p.x() + ( (it->p.x() - (it-1)->p.x())*0.5 );
-			new_point_stamped.pose.position.y = (it-1)->p.y() + ( (it->p.y() - (it-1)->p.y())*0.5 );
-			new_point_stamped.pose.position.z = (it-1)->p.z() + ( (it->p.z() - (it-1)->p.z())*0.5 );
-			(it-1)->M.GetQuaternion(new_point_stamped.pose.orientation.x, new_point_stamped.pose.orientation.y, new_point_stamped.pose.orientation.z, new_point_stamped.pose.orientation.w);
-			i = i+1;
-			self_collsion_matrix[ key+std::toString(i) ] = new_point_stamped;
-			create_static_frame(new_point_stamped, key+std::toString(i));
+			self_collsion_matrix[ key+std::toString(point_number) ] = stamped;
+
+			// distance between two frame is larger than radius of ball, create ball between two points
+			if (it1->p.z() > 0.14)
+			{
+				ROS_DEBUG_STREAM((it)->p.x() << "  "<< (it)->p.y()<< "  "<< (it)->p.z());
+
+				ROS_DEBUG("Create new point for self collision avoidance");
+				geometry_msgs::PoseStamped new_point_stamped;
+				new_point_stamped.header.frame_id = root_frame;
+				new_point_stamped.header.stamp = ros::Time().now();
+				new_point_stamped.pose.position.x = (it-1)->p.x() + ( (it->p.x() - (it-1)->p.x())*0.5 );
+				new_point_stamped.pose.position.y = (it-1)->p.y() + ( (it->p.y() - (it-1)->p.y())*0.5 );
+				new_point_stamped.pose.position.z = (it-1)->p.z() + ( (it->p.z() - (it-1)->p.z())*0.5 );
+				(it-1)->M.GetQuaternion(new_point_stamped.pose.orientation.x, new_point_stamped.pose.orientation.y, new_point_stamped.pose.orientation.z, new_point_stamped.pose.orientation.w);
+				point_number = point_number+1;
+				self_collsion_matrix[ key+std::toString(point_number) ] = new_point_stamped;
+				create_static_frame(new_point_stamped, key+std::toString(point_number));
+			}
+
+			++point_number;
 		}
 	}
 }

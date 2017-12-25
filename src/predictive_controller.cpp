@@ -203,41 +203,19 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	kinematic_solver_->compute_and_get_each_joint_pose(current_position_vec_copy, self_collsion_matrix);
 
 	std::cout<<"\033[20;1m" << "############"<< "links " << self_collsion_matrix.size() << "###########" << "\033[0m\n" << std::endl;
-	for (int i=0u; i < self_collsion_matrix.size(); ++i)
+
+
+	int id=0u;
+	for (auto it = self_collsion_matrix.begin(); it != self_collsion_matrix.end(); ++it, ++id)
 	{
-		double length = 0.15;
-		std::string key = "point_" + std::toString(i);
-		pd_frame_tracker_->create_collision_ball(self_collsion_matrix[key], length, i);
-
-			/*
-			if (link_length.at(i).z >= 0.20)
-			{
-				ROS_INFO_STREAM(tranformation_matrix_stamped.at(i));
-
-				tranformation_matrix_stamped[i].pose.position.z -= (link_length.at(i).z * 0.5);
-				link_length.at(i).z *= 0.5;
-				ROS_WARN_STREAM(tranformation_matrix_stamped.at(i));
-			}
-			else
-			{
-				link_length.at(i).z = 0.12;
-			}
-			pd_frame_tracker_->create_collision_ball(tranformation_matrix_stamped.at(i), link_length.at(i).z, i);*/
+		pd_frame_tracker_->create_collision_ball(it->second, 0.15, id);
 	}
 
 	marker_pub.publish(pd_frame_tracker_->get_collision_ball_marker());
 
-	//std::vector<double> dist = pd_frame_tracker_->compute_self_collision_distance(self_collsion_matrix);
-
 	//boost::thread mux_thread{pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix)};
-	pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix);
+	pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix, collision_distance_matrix);
 	//mux_thread.join();
-
-	/*
-	for (auto const& it: dist)
-	{
-		std::cout<<"\033[36;1m" << "***********************"<< "self collision distance: " << it << "\033[0m\n" << std::endl;
-	}*/
 
 /*
 	// target poseStamped

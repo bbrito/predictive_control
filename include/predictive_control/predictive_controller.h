@@ -74,6 +74,9 @@ private:
 	geometry_msgs::PoseStamped target_gripper_pose;
 	Eigen::MatrixXd Jacobian_Mat;
 
+	// self collision avoidance
+	Eigen::MatrixXd collision_distance_matrix;
+
 	// kinematic calculation
 	boost::shared_ptr<Kinematic_calculations> kinematic_solver_;
 

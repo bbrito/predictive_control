@@ -740,6 +740,7 @@ std::vector<double> pd_frame_tracker::compute_self_collision_distance(const std:
 {
 	std::vector<double> distance;
 
+	/*
 	// iterate to each points
 	for (auto it = self_collsion_matrix.begin(); it != self_collsion_matrix.end(); ++it)
 	{
@@ -757,9 +758,58 @@ std::vector<double> pd_frame_tracker::compute_self_collision_distance(const std:
 
 		distance.push_back(distance_variable);
 	}
+	*/
+
+	for (auto it_outer = self_collsion_matrix.begin(); it_outer != self_collsion_matrix.end(); ++it_outer)
+	{
+		ROS_DEBUG_STREAM(it_outer->first.c_str());
+		double distance_variable = 0.0;
+		for (auto it_inner = self_collsion_matrix.begin(); it_inner != self_collsion_matrix.end(); ++it_inner)
+		{
+			ROS_DEBUG_STREAM(it_inner->first.c_str());
+			distance_variable +=  std::abs( this->get_2d_distance(it_outer->second.pose, it_inner->second.pose));
+		}
+
+		distance.push_back(distance_variable);
+	}
 
 	return distance;
 }
+
+std::vector<double> pd_frame_tracker::compute_self_collision_distance(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix,
+													const double& min_distance,
+													const double& const_division_factor)
+{
+	std::vector<double> distance;
+
+	for (auto it_outer = self_collsion_matrix.begin(); it_outer != self_collsion_matrix.end(); ++it_outer)
+	{
+		ROS_DEBUG_STREAM(it_outer->first.c_str());
+		double distance_variable = 0.0;
+		for (auto it_inner = self_collsion_matrix.begin(); it_inner != self_collsion_matrix.end(); ++it_inner)
+		{
+			ROS_DEBUG_STREAM(it_inner->first.c_str());
+
+			if (it_outer->first.find(it_inner->first) == std::string::npos)	// both string are not equal than execute if loop
+			{
+				ROS_INFO(" '%s'  <---> '%s'", it_outer->first.c_str(),it_inner->first.c_str());
+				distance_variable += exp( (min_distance - std::abs( this->get_2d_distance(it_outer->second.pose, it_inner->second.pose))) / const_division_factor);
+				ROS_WARN_STREAM("Exponential term: "<<exp( (min_distance - std::abs( this->get_2d_distance(it_outer->second.pose, it_inner->second.pose))) / const_division_factor));
+			}
+		}
+		ROS_ERROR_STREAM("Distance from : "<< it_outer->first << "  " << distance_variable);
+		distance.push_back(distance_variable);
+	}
+
+	for (auto const& it:distance)
+	{
+		std::cout<<"\033[95m" << "-----"<< it << "-----" << "\033[0m\n" << std::endl;
+	}
+
+	return distance;
+
+}
+
 
 void pd_frame_tracker::generate_self_collision_distance_matrix(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix, Eigen::MatrixXd& collision_distance_matrix)
 {

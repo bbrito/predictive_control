@@ -666,15 +666,15 @@ void pd_frame_tracker::hard_code_optimal_control_solver()
 	f << dot(x) == v;
 
 	// todo: how it solve
-	OCP ocp_problem(0.0, 1.0, 2);	// objective function want to minimize
-	ocp_problem.minimizeMayerTerm( ((x - 0.05) * (x - 0.05)) + (collsion_avoidance.transpose() * collsion_avoidance) );
+	OCP ocp_problem(0.0, 1.0, 1);	// objective function want to minimize
+	ocp_problem.minimizeMayerTerm( ((x - 0.05) * (x - 0.05)) + (collsion_avoidance.transpose() * collsion_avoidance) ); //
 	ocp_problem.subjectTo(f);
 
 	OptimizationAlgorithm alg(ocp_problem);
 
 	DVector c_init(1), s_init(1), p_init(1);
 	c_init.setAll(0.0);
-	s_init.setAll(0.0);
+	s_init.setAll(0.05);
 	p_init.setAll(1.0);
 
 	ROS_WARN("Hello");

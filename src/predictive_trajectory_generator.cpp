@@ -761,7 +761,7 @@ std::vector<double> pd_frame_tracker::compute_self_collision_distance(const std:
 	return distance;
 }
 
-void pd_frame_tracker::generate_self_collision_distance_matrix(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix)
+void pd_frame_tracker::generate_self_collision_distance_matrix(const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix, Eigen::MatrixXd& collision_distance_matrix)
 {
 	collision_distance_matrix.resize(self_collsion_matrix.size(), self_collsion_matrix.size());
 

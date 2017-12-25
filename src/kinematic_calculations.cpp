@@ -767,7 +767,7 @@ void Kinematic_calculations::compute_and_get_each_joint_pose(const std::vector<d
 	{
 
 		// two point distance is same than assume that both point are same origin, skip to add in self collision matrix
-		if ( ( it1->p.z() > 0.02) )	// randomly choose
+		if ( ( it1->p.z() > 0.10) )	// randomly choose , 0.02
 		//if ( (it1->p.z() != (it-1)->p.z()) )
 		{
 

@@ -123,6 +123,7 @@ class pd_frame_tracker
 	    visualization_msgs::MarkerArray collision_ball_marker_array;
 	    //Eigen::MatrixXd collision_distance_matrix;
 
+	    double self_collision_distance;
 
 	    //double cart_distance;
 	    //double rot_distance;
@@ -166,7 +167,7 @@ class pd_frame_tracker
 		void optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat,
 									const geometry_msgs::PoseStamped& current_gripper_pose,
 									const geometry_msgs::PoseStamped& target_gripper_pose,
-									const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix,
+									const std::vector<double>& collision_distance_vector,
 									std_msgs::Float64MultiArray& updated_vel
 									);
 

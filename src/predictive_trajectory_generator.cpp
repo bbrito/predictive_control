@@ -532,12 +532,117 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Mat,
 									const geometry_msgs::PoseStamped& current_gripper_pose,
 									const geometry_msgs::PoseStamped& target_gripper_pose,
-									const std::map<std::string, geometry_msgs::PoseStamped>& self_collsion_matrix,
+									const std::vector<double>& collision_distance_vector,
 									std_msgs::Float64MultiArray& updated_vel
 									)
 {
+	ROS_INFO("----------------------------------------");
+	ROS_WARN("pd_frame_tracker::optimal_control_solver");
+	ROS_INFO("----------------------------------------");
+
+	tf::Quaternion q(target_gripper_pose.pose.orientation.x, target_gripper_pose.pose.orientation.y, target_gripper_pose.pose.orientation.z, target_gripper_pose.pose.orientation.w);
+	tf::Matrix3x3 quat_error(q);
+	double r,p,y;
+	quat_error.getRPY(r,p,y);
+	std::cout<<"\033[36;1m" << "***********************"<< "r: " << r<< " p: " << p << " y: " << y << "***********************"<< "\033[0m\n" << std::endl;
 
 
+	DMatrix Jac_Mat = Jacobian_Mat;
+
+    const unsigned int m = 6;
+    const unsigned int n = 7;
+
+    DifferentialState x("",m,1);            // position of end effector
+    Control v("",n,1);                      // velocity of joints
+    Parameter collision_avoidace("",1,1);
+
+    x.clearStaticCounters();
+    v.clearStaticCounters();
+    collision_avoidace.clearStaticCounters();
+
+    DifferentialEquation f;             // Define differential equation
+    f << dot(x) == Jac_Mat * v;
+
+	ROS_WARN_STREAM("Gripper_pose: "<< current_gripper_pose);
+
+	DVector c_init(7), s_init(6);
+	c_init.setAll(0.00);
+	s_init.setAll(0.00);
+
+	geometry_msgs::Vector3 rpy_vec3;
+	this->convert_quaternion_to_rpy(current_gripper_pose.pose.orientation, rpy_vec3);
+
+	s_init(0) = current_gripper_pose.pose.position.x;		s_init(1) = current_gripper_pose.pose.position.y;		s_init(2) = current_gripper_pose.pose.position.z;
+
+	if (isnan(rpy_vec3.x) || isnan(r) || isnan(rpy_vec3.y) || isnan(p) || isnan(rpy_vec3.z) || isnan(y))
+	{
+		ROS_ERROR("Hello nan");
+		s_init(3) = 0.000;		s_init(4) = 0.0000;		s_init(5) = 0.0000;
+		r = 0.0; p=0.0; y=0.0;
+	}
+	else
+	{
+		s_init(3) = rpy_vec3.x;		s_init(4) = rpy_vec3.y;		s_init(5) = rpy_vec3.z;
+	}
+	c_init(0) = updated_vel.data[0];	c_init(1) = updated_vel.data[1];	c_init(2) = updated_vel.data[2];
+	c_init(3) = updated_vel.data[3];	c_init(4) = updated_vel.data[4];	c_init(5) = updated_vel.data[5];	c_init(6) = updated_vel.data[6];
+
+	// self collision distance
+	Expression self_collsion_exp(self_collision_distance);
+	VariablesGrid ca(1,1);
+	ca(0,0) = this->self_collision_distance;
+	DVector self_collsion_dvec(collision_distance_vector.size());
+	self_collsion_dvec.setAll(0.0);
+	double zero = 0.0;
+	self_collsion_dvec(0) = this->self_collision_distance;
+
+	OCP ocp_problem(0.0, 1.0, 4);
+
+	ocp_problem.minimizeMayerTerm( 10.0*( ( (x(0)-target_gripper_pose.pose.position.x)  * (x(0)-target_gripper_pose.pose.position.x) ) +
+  	   	   	   	   	  	  	  	  	  	  ( (x(1)-target_gripper_pose.pose.position.y)  * (x(1)-target_gripper_pose.pose.position.y) ) +
+  	   	   	   	   	  	  	  	  	  	  ( (x(2)-target_gripper_pose.pose.position.z)  * (x(2)-target_gripper_pose.pose.position.z) )) +
+								  ( 1.0 * ( ((x(3)- r) * (x(3)- r)) + ((x(4)- p) * (x(4)- p)) + ((x(5)- y) * (x(5)- y))) ) +
+								  (1.0 * (v.transpose()*v)) );
+
+    ocp_problem.subjectTo(f);
+    ocp_problem.subjectTo(-0.50 <= v <= 0.50);
+    //ocp_problem.subjectTo(AT_END, x == 0.0);
+    ocp_problem.subjectTo(AT_END , v == 0.0);
+
+    ConstraintComponent c;
+    c.setLB(self_collision_distance);
+
+    ocp_problem.subjectTo(0.30 <= c <= 100);
+
+    RealTimeAlgorithm alg(ocp_problem, 0.025);
+
+	alg.initializeControls(c_init);
+	alg.initializeDifferentialStates(s_init);
+	alg.initializeParameters(self_collsion_dvec);
+	//alg.initializeParameters(ca);
+
+	alg.set(MAX_NUM_ITERATIONS, 10);
+    alg.set(LEVENBERG_MARQUARDT, 1e-5);
+    alg.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
+    alg.set( DISCRETIZATION_TYPE, COLLOCATION);
+    alg.set(KKT_TOLERANCE, 1.000000E-06);
+
+    Controller controller(alg);
+    controller.init(0.0, s_init);
+    controller.step(0.0, s_init);
+
+    DVector u;
+    controller.getU(u);
+    u.print();
+
+	updated_vel.data.resize(7,0.0);
+	updated_vel.data[0] = u(0);
+	updated_vel.data[1] = u(1);
+	updated_vel.data[2] = u(2);
+	updated_vel.data[3] = u(3);
+	updated_vel.data[4] = u(4);
+	updated_vel.data[5] = u(5);
+	updated_vel.data[6] = u(6);
 
 }
 
@@ -801,13 +906,14 @@ std::vector<double> pd_frame_tracker::compute_self_collision_distance(const std:
 		distance.push_back(distance_variable);
 	}
 
+	this->self_collision_distance = 0.0;
 	for (auto const& it:distance)
 	{
-		std::cout<<"\033[95m" << "-----"<< it << "-----" << "\033[0m\n" << std::endl;
+		self_collision_distance += it;
+		std::cout<<"\033[95m" << "---"<< it << " :  " << self_collision_distance << " --- \n";
 	}
-
+	std::cout << "\033[0m\n" << std::endl;
 	return distance;
-
 }
 
 

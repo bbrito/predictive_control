@@ -178,7 +178,7 @@ void predictive_control_node::main_predictive_control()
 			joint_velocity_data.data[i] = current_velocity.at(i);
 		}
 
-	    timer_ = nh.createTimer(ros::Duration(1/1), &predictive_control_node::run_node, this);
+	    timer_ = nh.createTimer(ros::Duration(1/new_config.update_rate), &predictive_control_node::run_node, this);
 	    timer_.start();
 
 	    ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());
@@ -214,16 +214,17 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	marker_pub.publish(pd_frame_tracker_->get_collision_ball_marker());
 
 	//boost::thread mux_thread{pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix)};
-	pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix, collision_distance_matrix);
+	//pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix, collision_distance_matrix);
 	//mux_thread.join();
 
-/*
+	collision_distance_vector = pd_frame_tracker_->compute_self_collision_distance(self_collsion_matrix, 0.20, 0.01);
+
 	// target poseStamped
 	pd_frame_tracker_->get_transform("/arm_base_link", new_config.target_frame, target_gripper_pose);
 
 	// optimal problem solver
 	//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
-	pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose, joint_velocity_data);
+	pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose,collision_distance_vector, joint_velocity_data);
 
 	// error poseStamped, computation of euclidean distance error
 	geometry_msgs::PoseStamped tip_Target_Frame_error_stamped;
@@ -236,6 +237,7 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 							<< "***********************"<< "rotation distance: " << rotation_dist << "***********************" << std::endl
 			<< "\033[0m\n" << std::endl;
 
+
 	if (cartesian_dist < 0.05 && rotation_dist < 0.05)
 	{
 			publish_zero_jointVelocity();
@@ -244,7 +246,7 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	{
 		joint_velocity_pub.publish(joint_velocity_data);
 	}
-*/
+
 }
 
 void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec)

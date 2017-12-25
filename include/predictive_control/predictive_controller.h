@@ -75,7 +75,8 @@ private:
 	Eigen::MatrixXd Jacobian_Mat;
 
 	// self collision avoidance
-	Eigen::MatrixXd collision_distance_matrix;
+	//Eigen::MatrixXd collision_distance_matrix;
+	std::vector<double> collision_distance_vector;
 
 	// kinematic calculation
 	boost::shared_ptr<Kinematic_calculations> kinematic_solver_;

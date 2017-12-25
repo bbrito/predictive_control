@@ -588,38 +588,44 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 	c_init(3) = updated_vel.data[3];	c_init(4) = updated_vel.data[4];	c_init(5) = updated_vel.data[5];	c_init(6) = updated_vel.data[6];
 
 	// self collision distance
-	Expression self_collsion_exp(self_collision_distance);
-	VariablesGrid ca(1,1);
-	ca(0,0) = this->self_collision_distance;
+	ROS_ERROR_STREAM(collision_distance_vector.size());
+	VariablesGrid grid(collision_distance_vector.size(), collision_distance_vector.size());
+
+
 	DVector self_collsion_dvec(collision_distance_vector.size());
 	self_collsion_dvec.setAll(0.0);
-	double zero = 0.0;
-	self_collsion_dvec(0) = this->self_collision_distance;
+	for (int i=0u; i < collision_distance_vector.size(); ++i)
+	{
+		self_collsion_dvec(i) = collision_distance_vector.at(i);
+		grid(i,i) = collision_distance_vector.at(i);
+		ROS_ERROR_STREAM("value: "<< i << " : " << collision_distance_vector.at(i));
+	}
+
+	Expression exp;
 
 	OCP ocp_problem(0.0, 1.0, 4);
 
+	/*
 	ocp_problem.minimizeMayerTerm( 10.0*( ( (x(0)-target_gripper_pose.pose.position.x)  * (x(0)-target_gripper_pose.pose.position.x) ) +
   	   	   	   	   	  	  	  	  	  	  ( (x(1)-target_gripper_pose.pose.position.y)  * (x(1)-target_gripper_pose.pose.position.y) ) +
   	   	   	   	   	  	  	  	  	  	  ( (x(2)-target_gripper_pose.pose.position.z)  * (x(2)-target_gripper_pose.pose.position.z) )) +
 								  ( 1.0 * ( ((x(3)- r) * (x(3)- r)) + ((x(4)- p) * (x(4)- p)) + ((x(5)- y) * (x(5)- y))) ) +
 								  (1.0 * (v.transpose()*v)) );
+	*/
+
+	ocp_problem.minimizeMayerTerm( 10.0 * (collision_avoidace.transpose() * collision_avoidace) );
 
     ocp_problem.subjectTo(f);
     ocp_problem.subjectTo(-0.50 <= v <= 0.50);
     //ocp_problem.subjectTo(AT_END, x == 0.0);
     ocp_problem.subjectTo(AT_END , v == 0.0);
 
-    ConstraintComponent c;
-    c.setLB(self_collision_distance);
-
-    ocp_problem.subjectTo(0.30 <= c <= 100);
-
     RealTimeAlgorithm alg(ocp_problem, 0.025);
 
 	alg.initializeControls(c_init);
 	alg.initializeDifferentialStates(s_init);
-	alg.initializeParameters(self_collsion_dvec);
-	//alg.initializeParameters(ca);
+	//alg.initializeParameters(self_collsion_dvec);
+	alg.initializeParameters(grid);
 
 	alg.set(MAX_NUM_ITERATIONS, 10);
     alg.set(LEVENBERG_MARQUARDT, 1e-5);
@@ -645,6 +651,69 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 	updated_vel.data[6] = u(6);
 
 }
+
+void pd_frame_tracker::hard_code_optimal_control_solver()
+{
+	ROS_INFO("---------------------------");
+	ROS_WARN("hard_code_optimal_control_solver");
+	ROS_INFO("---------------------------");
+
+	DifferentialState x; // position
+	Parameter collsion_avoidance;
+	Control v;	// velocity
+
+	DifferentialEquation f;	// dynamic model
+	f << dot(x) == v;
+
+	// todo: how it solve
+	OCP ocp_problem(0.0, 1.0, 2);	// objective function want to minimize
+	ocp_problem.minimizeMayerTerm( ((x - 0.05) * (x - 0.05)) + (collsion_avoidance.transpose() * collsion_avoidance) );
+	ocp_problem.subjectTo(f);
+
+	OptimizationAlgorithm alg(ocp_problem);
+
+	DVector c_init(1), s_init(1), p_init(1);
+	c_init.setAll(0.0);
+	s_init.setAll(0.0);
+	p_init.setAll(1.0);
+
+	ROS_WARN("Hello");
+
+	ROS_WARN("Hello");
+	alg.initializeControls(c_init);
+	alg.initializeDifferentialStates(s_init);
+	alg.initializeParameters(p_init);
+	ROS_WARN("Hello");
+    // set solver option
+    //alg.set(INTEGRATOR_TYPE, INT_RK78);
+	alg.set(INTEGRATOR_TOLERANCE, 1.000000E-08);
+	//alg.set(DISCRETIZATION_TYPE, SINGLE_SHOOTING);
+	//alg.set(KKT_TOLERANCE, 1.000000E-6);
+	alg.set(MAX_NUM_ITERATIONS, 10);
+	//alg.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
+	//alg.set( HESSIAN_PROJECTION_FACTOR, 2.0 );
+	alg.set(LEVENBERG_MARQUARDT, 1e-5);
+	//alg.set(GAUSS_NEWTON, 1e-5);
+
+	ROS_WARN("Hello");
+
+	//alg.solve();
+	alg.solve();
+
+	ROS_WARN("Hello");
+
+	VariablesGrid c_output;
+	alg.getControls(c_output);
+	c_output.print();
+
+	ROS_WARN("***************** Last control vector: ****************** ");
+	DVector u = c_output.getLastVector();
+	u.print();
+	ROS_ERROR_STREAM("Size of control vector: "<< c_output.getLastVector().getDim());
+
+}
+
+
 
 void pd_frame_tracker::convert_quaternion_to_rpy(const geometry_msgs::Quaternion& quat, geometry_msgs::Vector3& rpy)
 {

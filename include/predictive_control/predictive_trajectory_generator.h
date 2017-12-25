@@ -171,6 +171,16 @@ class pd_frame_tracker
 									std_msgs::Float64MultiArray& updated_vel
 									);
 
+		/**
+		 * @brief solve optimal control problem in the terms of model predictive control(MPC) using ACADO Toolkit
+		 * @param Jacobian_Mat Jacobian matrix with d(6*7) where rows are linear and angular velocity, columns are same as dof
+		 * @param current_gripper_pose Current position and rotation in the form of Euler angle(rpy) used to initialize differential states
+		 * @param current_gripper_quternion Current quaternion of gripper used to minimize quaternion error
+		 * @param self_collsion_matrix Collision matrix to avoid collide with it body
+		 * @return updated_vel Initialize control states and filled with control joint velocity, want to publish it
+		 **/
+		void hard_code_optimal_control_solver();
+
 
 		void compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist);
 

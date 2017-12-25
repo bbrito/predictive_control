@@ -98,7 +98,7 @@ class Kinematic_calculations
 		Kinematic_calculations();
 		~Kinematic_calculations();
 
-		bool initialize(const std::string rbt_description_param = "/robot_description", const std::string& base_link_param="arm_base_link", const std::string& tip_link_param="arm_7_link", const std::string& root_frame_param="world");
+		bool initialize(const std::string rbt_description_param = "/robot_description", const std::string& base_link_param="arm_base_link", const std::string& tip_link_param="arm_7_link", const std::string& root_frame_param="arm_base_link");
 
 		// Calculate inverse of jacobian by using singular value decomposition (SVD), direct method
 		void calculate_inverse_jacobian_bySVD( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv );

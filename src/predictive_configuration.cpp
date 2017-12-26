@@ -86,6 +86,52 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     }
   }
 
+  // read and set joint velocity constrints
+  if (!nh_config.getParam ("constraints/velocity_constraints/min", joints_vel_min_limit_) )
+  {
+    ROS_WARN(" Parameter '/constraints/velocity_constraints/min' not set on %s node" , ros::this_node::getName().c_str());
+    joints_vel_min_limit_.resize(degree_of_freedom_, -1.0);
+
+    for (int i = 0u; i < joints_name_.size() && joints_vel_min_limit_.size(); ++i)
+    {
+      ROS_INFO("%s defualt min limit value %f", joints_name_.at(i).c_str(), joints_vel_min_limit_.at(i));
+    }
+  }
+
+  if (!nh_config.getParam ("constraints/velocity_constraints/max", joints_vel_max_limit_) )
+  {
+    ROS_WARN(" Parameter '/constraints/velocity_constraints/max' not set on %s node " ,  ros::this_node::getName().c_str());
+    joints_vel_max_limit_.resize(degree_of_freedom_, 1.0);
+
+    for (int i = 0u; i < joints_name_.size() && joints_vel_max_limit_.size(); ++i)
+    {
+      ROS_INFO("%s defualt min limit value %f", joints_name_.at(i).c_str(), joints_vel_max_limit_.at(i));
+    }
+  }
+
+  // read and set joint effort/acceleration constrints
+  if (!nh_config.getParam ("constraints/effort_constraints/min", joints_effort_min_limit_) )
+  {
+    ROS_WARN(" Parameter '/constraints/effort_constraints/min' not set on %s node" , ros::this_node::getName().c_str());
+    joints_effort_min_limit_.resize(degree_of_freedom_, -0.0);
+
+    for (int i = 0u; i < joints_name_.size() && joints_effort_min_limit_.size(); ++i)
+    {
+      ROS_INFO("%s defualt min limit value %f", joints_name_.at(i).c_str(), joints_effort_min_limit_.at(i));
+    }
+  }
+
+  if (!nh_config.getParam ("constraints/effort_constraints/max", joints_effort_max_limit_) )
+  {
+    ROS_WARN(" Parameter '/constraints/effort_constraints/max' not set on %s node " ,  ros::this_node::getName().c_str());
+    joints_effort_max_limit_.resize(degree_of_freedom_, 1.0);
+
+    for (int i = 0u; i < joints_name_.size() && joints_effort_max_limit_.size(); ++i)
+    {
+      ROS_INFO("%s defualt min limit value %f", joints_name_.at(i).c_str(), joints_effort_max_limit_.at(i));
+    }
+  }
+
   // check requested parameter availble on parameter server if not than set default value
   nh.param("/clock_frequency", clock_frequency_, double(50.0)); // 50 hz
   nh.param("/activate_output", activate_output_, bool(false));  // debug
@@ -118,6 +164,10 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
   joints_name_ = new_config.joints_name_;
   joints_min_limit_ = new_config.joints_min_limit_;
   joints_max_limit_ = new_config.joints_max_limit_;
+  joints_vel_min_limit_ = new_config.joints_vel_min_limit_;
+  joints_vel_max_limit_ = new_config.joints_vel_max_limit_;
+  joints_effort_min_limit_ = new_config.joints_effort_min_limit_;
+  joints_effort_max_limit_ = new_config.joints_effort_max_limit_;
 
   clock_frequency_ = new_config.clock_frequency_;
   ball_radius_ = new_config.ball_radius_;
@@ -169,6 +219,42 @@ void predictive_configuration::print_configuration_parameter()
   }
   );
   std::cout<<"]"<<std::endl;
+
+  // print joint vel min limit
+  std::cout << "Joint vel min limit: [";
+  for_each(joints_vel_min_limit_.begin(), joints_vel_min_limit_.end(), [](double& val)
+  {
+    std::cout << val << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
+
+  // print joint vel max limit
+  std::cout << "Joint vel max limit: [";
+  for_each(joints_vel_max_limit_.begin(), joints_vel_max_limit_.end(), [](double& val)
+  {
+    std::cout << val << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
+
+  // print joint effort min limit
+  std::cout << "Joint effort min limit: [";
+  for_each(joints_effort_min_limit_.begin(), joints_effort_min_limit_.end(), [](double& val)
+  {
+    std::cout << val << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
+
+  // print joint effort max limit
+  std::cout << "Joint effort max limit: [";
+  for_each(joints_effort_max_limit_.begin(), joints_effort_max_limit_.end(), [](double& val)
+  {
+    std::cout << val << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
 }
 
 // clear allocated data from vector
@@ -177,4 +263,8 @@ void predictive_configuration::free_allocated_memory()
   joints_name_.clear();
   joints_min_limit_.clear();
   joints_max_limit_.clear();
+  joints_vel_min_limit_.clear();
+  joints_vel_max_limit_.clear();
+  joints_effort_min_limit_.clear();
+  joints_effort_max_limit_.clear();
 }

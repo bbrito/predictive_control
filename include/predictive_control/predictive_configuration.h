@@ -71,6 +71,10 @@ public:
   std::vector<std::string> joints_name_;
   std::vector<double> joints_min_limit_;
   std::vector<double> joints_max_limit_;
+  std::vector<double> joints_vel_min_limit_;
+  std::vector<double> joints_vel_max_limit_;
+  std::vector<double> joints_effort_min_limit_;
+  std::vector<double> joints_effort_max_limit_;
 
   // predictive control
   double clock_frequency_;  //hz clock Frequency

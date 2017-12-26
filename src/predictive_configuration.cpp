@@ -8,7 +8,7 @@ predictive_configuration::predictive_configuration()
 
 predictive_configuration::~predictive_configuration()
 {
-  ;
+  free_allocated_memory();
 }
 
 // read predicitve configuration paramter from paramter server
@@ -78,6 +78,7 @@ bool predictive_configuration::initialize(const std::string& node_handle_name)
 
   // check requested parameter availble on parameter server if not than set default value
   nh.param("/clock_frequency", clock_frequency_, double(50.0)); // 50 hz
+  nh_config.param("/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
   nh.param("/active_output", active_output_, bool(false));  // debug
 
   degree_of_freedom_ = joints_name_.size();
@@ -91,4 +92,13 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
 {
 
   return true;
+}
+
+
+// clear allocated data from vector
+void predictive_configuration::free_allocated_memory()
+{
+  joints_name_.clear();
+  joints_min_limit_.clear();
+  joints_max_limit_.clear();
 }

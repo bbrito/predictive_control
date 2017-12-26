@@ -39,13 +39,17 @@ catkin_package(
   CATKIN_DEPENDS cob_control_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs
   DEPENDS Boost CERES ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_PACKAGES}
-  LIBRARIES  kinematic_calculations predictive_trajectory_generator predictive_controller 
+  LIBRARIES  predictive_configuration kinematic_calculations predictive_trajectory_generator predictive_controller 
 )
 
 ### BUILD ###
 include_directories(include ${catkin_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${orocos_kdl_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS} ${ACADO_INCLUDE_PACKAGES})
 
 FIND_LIBRARY(libacado libacado_toolkit_s.so ${ACADO_DIR}/build/lib)
+
+add_library(predictive_configuration src/predictive_configuration.cpp)
+add_dependencies(predictive_configuration ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(predictive_configuration ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES} ${libacado})
 
 add_library(kinematic_calculations src/kinematic_calculations.cpp)
 add_dependencies(kinematic_calculations ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -77,7 +81,7 @@ add_dependencies(predictive_controller_test ${${PROJECT_NAME}_EXPORTED_TARGETS} 
 target_link_libraries(predictive_controller_test predictive_controller ${catkin_LIBRARIES} )
 
 ### INSTALL ###
-install(TARGETS kinematic_calculations predictive_trajectory_generator predictive_controller
+install(TARGETS predictive_configuration kinematic_calculations predictive_trajectory_generator predictive_controller
  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

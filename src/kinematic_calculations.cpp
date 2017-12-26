@@ -72,25 +72,26 @@ void Kinematic_calculations::initializeDataMember(const KDL::Chain &chain)
   for (int i = 0u; i < segments_; ++i)
   {
     // convert kdl frame to eigen matrix, give tranformation matrix between two concecutive frame
-    transformKDLTOEigen(chain.getSegment(i).getFrameToTip(), Transformation_Matrix_[i]);
+    transformKDLToEigen(chain.getSegment(i).getFrameToTip(), Transformation_Matrix_[i]);
     //std::cout << Transformation_Matrix_[i] << std::endl;
   }
 }
 
 void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
 {
+  // todo: create function for enforce velocity and effort.
   predictive_configuration pd_config;
-  for (const auto& it: predictive_configuration::joints_name_)
+  for (int i=0u; i < predictive_configuration::degree_of_freedom_; ++i)
   {
-    model.getJoint(it).get()->limits->lower;
-    model.getJoint(it).get()->limits->upper;
-    model.getJoint(it).get()->limits->velocity;
-    model.getJoint(it).get()->limits->effort;
+    pd_config.joints_min_limit_[i] = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->lower;
+    pd_config.joints_max_limit_[i] = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->upper;
+    model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->velocity;
+    model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->effort;
   }
 }
 
 //convert KDL to Eigen matrix
-void Kinematic_calculations::transformKDLTOEigen(const KDL::Frame &frame, Eigen::MatrixXd &matrix)
+void Kinematic_calculations::transformKDLToEigen(const KDL::Frame &frame, Eigen::MatrixXd &matrix)
 {
   // translation
   for (unsigned int i = 0; i < 3; ++i)

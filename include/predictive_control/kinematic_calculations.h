@@ -115,7 +115,9 @@ private:
     }
   }*/
 
-  void transformKDLTOEigen(const KDL::Frame& frame, Eigen::MatrixXd& matrix);
+  void transformKDLToEigen(const KDL::Frame& frame, Eigen::MatrixXd& matrix);
+
+  void transformEigenToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame);
 
   void clear_data_member();
 

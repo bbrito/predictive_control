@@ -24,4 +24,10 @@ predictive_config:
          joint_constraints:
                min: [-3.14, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14]
                max: [3.14, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
+         velocity_constraints:
+               min: [-2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0]
+               max: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+         effort_constraints:
+               min: [-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0]
+               max: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
          #orientation_constraints:

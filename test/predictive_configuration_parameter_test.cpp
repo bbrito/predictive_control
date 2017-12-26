@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 			// Read and update data member of predicitve_config class.
 			predictive_configuration config;
 
-			if ( config.initialize("/predictive_config") )
+			if ( config.initialize( ros::this_node::getNamespace() + "/predictive_config") )
 			{
 				ROS_INFO("********* Now print all data members ********** ");
 				config.activate_output_ = true;

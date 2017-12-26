@@ -57,7 +57,8 @@ bool Kinematic_calculations::initialize(const std::string rbt_description)
   this->initializeDataMember(chain);
   this->initializeLimitParameter(model);
 
-
+  ROS_WARN("KINEMATIC CALCULATION INTIALIZED!!");
+  return true;
 }
 
 // initialize data using chain
@@ -65,22 +66,20 @@ void Kinematic_calculations::initializeDataMember(const KDL::Chain &chain)
 {
   segments_ = chain.getNrOfSegments();
 
-  Transformation_Matrix_.resize(segments_);
+  Transformation_Matrix_.resize(segments_, Eigen::Matrix4d::Identity()); //matrix = Eigen::Matrix4d::Identity();
   FK_Homogenous_Matrix_.resize(segments_);
 
   for (int i = 0u; i < segments_; ++i)
   {
     // convert kdl frame to eigen matrix
-    //tf::transformKDLToEigen(chain.getSegment(i).getFrameToTip(), Transformation_Matrix_[i]);
+    transformKDLTOEigen(chain.getSegment(i).getFrameToTip(), Transformation_Matrix_[i]);
     ROS_INFO("Transformation Matrix of %s: ", predictive_configuration::joints_name_.at(i).c_str());
-    //std::cout << Transformation_Matrix_.at(i).rotation() << std::endl;
+    std::cout << Transformation_Matrix_[i] << std::endl;
   }
 }
 
 void Kinematic_calculations::transformKDLTOEigen(const KDL::Frame &frame, Eigen::MatrixXd &matrix)
 {
-  matrix = Eigen::Matrix4d::Identity();
-
   // translation
   for (unsigned int i = 0; i < 3; ++i)
   {

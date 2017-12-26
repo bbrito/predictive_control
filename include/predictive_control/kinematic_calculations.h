@@ -70,7 +70,7 @@ public:
   /** public data members */
   // transformation matrix between two concecutive frame
   //std::vector<Eigen::MatrixXd> Transformation_Matrix_;
-  std::vector<Eigen::Affine3d> Transformation_Matrix_;
+  std::vector<Eigen::MatrixXd> Transformation_Matrix_;
 
   // Forward kinematic matrix from root link till current link
   std::vector<Eigen::MatrixXd> FK_Homogenous_Matrix_;
@@ -97,6 +97,23 @@ private:
    * @param model urdf model of robot desciption
    */
   void initializeLimitParameter(const urdf::Model& model);
+
+  /*
+  template<typedef T>
+  void transformKDLTOEigen(const KDL::Frame& frame, T& matrix)
+  {
+    // translation
+    for (unsigned int i = 0; i < 3; ++i)
+    {
+      matrix(i, 3) = frame.p[i];
+    }
+
+    // rotation matrix
+    for (unsigned int i = 0; i < 9; ++i)
+    {
+      matrix(i/3, i%3) = frame.M.data[i];
+    }
+  }*/
 
   void transformKDLTOEigen(const KDL::Frame& frame, Eigen::MatrixXd& matrix);
 

@@ -11,16 +11,22 @@ int main(int argc, char **argv)
 		ros::init(argc, argv, ros::this_node::getName());
 		ros::NodeHandle node_handler;
 
+
 		if (node_handler.hasParam("/robot_description"))
 		{
+
 			// Read and update data member of predicitve_config class.
 			predictive_configuration config;
-			if ( config.initialize("predictive_config") )
-			{
-				ROS_WARN(" -------- CONFIGURATION SUCCESSED!!! ------------- ");
 
-				config.active_output_ = true;
+			if ( config.initialize("/predictive_config") )
+			{
+				ROS_INFO("********* Now print all data members ********** ");
+				config.activate_output_ = true;
 				config.updateConfiguration(config);
+			}
+			else
+			{
+				ROS_WARN(" -------- CONFIGURATION FAILED!!! ------------- ");
 			}
 
 		}

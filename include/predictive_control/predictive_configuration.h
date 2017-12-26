@@ -42,7 +42,7 @@ public:
    * @param node_handle_name: node handler initialize from name, as parameter set inside that name
    * @return true all parameter initialize successfully else false
    */
-  bool initialize(const std::string& node_handle_name);
+  bool initialize();  //const std::string& node_handle_name
 
   /**
    * @brief updateConfiguration: update configuration parameter with new parameter

@@ -12,9 +12,9 @@ predictive_configuration::~predictive_configuration()
 }
 
 // read predicitve configuration paramter from paramter server
-bool predictive_configuration::initialize(const std::string& node_handle_name)
+bool predictive_configuration::initialize() //const std::string& node_handle_name
 {
-  ros::NodeHandle nh_config(node_handle_name);
+  ros::NodeHandle nh_config("predictive_config");
   ros::NodeHandle nh;
 
   // read paramter from parameter server if not set than terminate code, as this parameter is essential parameter

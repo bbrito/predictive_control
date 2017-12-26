@@ -77,6 +77,10 @@ target_link_libraries(predictive_configuration_test predictive_configuration ${c
 #add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} )
 
+add_executable(kinematic_calculations_test test/new_kinematic_calculation_test.cpp)
+add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} )
+
 #add_executable(predictive_config_test test/predictive_config_test.cpp)
 #add_dependencies(predictive_config_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #target_link_libraries(predictive_config_test predictive_trajectory_generator ${catkin_LIBRARIES} )

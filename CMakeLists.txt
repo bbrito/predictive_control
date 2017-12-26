@@ -68,6 +68,10 @@ add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${c
 target_link_libraries(predictive_control_node predictive_controller ${catkin_LIBRARIES})
 
 ### Test Case ####
+add_executable(predictive_configuration_test test/predictive_configuration_parameter_test.cpp)
+add_dependencies(predictive_configuration_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(predictive_configuration_test predictive_configuration ${catkin_LIBRARIES} )
+
 add_executable(kinematic_calculations_test test/kinematic_calculations_test.cpp)
 add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} )

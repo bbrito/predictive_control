@@ -77,6 +77,7 @@ void Kinematic_calculations::initializeDataMember(const KDL::Chain &chain)
   }
 }
 
+// initialize limiter parameter
 void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
 {
   // todo: create function for enforce velocity and effort.

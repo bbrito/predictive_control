@@ -115,10 +115,23 @@ private:
     }
   }*/
 
+  /**
+   * @brief transformKDLToEigen: transform KDL Frame to Eigen Matrix
+   * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
+   * @param matrix transformation matrix
+   */
   void transformKDLToEigen(const KDL::Frame& frame, Eigen::MatrixXd& matrix);
 
+  /**
+   * @brief transformEigenToKDL: transform Eigen Matrix to KDL Frame
+   * @param matrix transformation matrix
+   * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
+   */
   void transformEigenToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame);
 
+  /**
+   * @brief clear_data_member: clear vectors means free allocated memory
+   */
   void clear_data_member();
 
 };

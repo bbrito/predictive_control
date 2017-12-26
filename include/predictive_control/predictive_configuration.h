@@ -9,7 +9,9 @@
 #include<iostream>
 #include<string>
 #include<vector>
-
+#include <algorithm>
+#include <iomanip>	//print false or true
+#include <math.h>
 
 class predictive_configuration
 {
@@ -71,6 +73,21 @@ public:
 
   // predictive control
   double clock_frequency_;  //hz clock Frequency
+
+  // self collision distance
+  double ball_radius_;
+
+private:
+
+  /**
+   * @brief free_allocated_memory: remove all allocated data just for memory management
+   */
+  void free_allocated_memory();
+
+  /**
+   * @brief print_configuration_parameter: debug purpose print set data member of this class
+   */
+  void print_configuration_parameter();
 
 };
 

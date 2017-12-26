@@ -84,16 +84,83 @@ bool predictive_configuration::initialize(const std::string& node_handle_name)
   degree_of_freedom_ = joints_name_.size();
   initialize_success_ = true;
 
+  if (active_output_)
+  {
+    print_configuration_parameter();
+  }
+
   ROS_WARN(" PREDICTIVE PARAMETER INITIALIZED!!");
   return true;
 }
 
+// update configuration parameter
 bool predictive_configuration::updateConfiguration(const predictive_configuration &new_config)
 {
+  active_output_ = new_config.active_output_;
+  initialize_success_ = new_config.initialize_success_;
 
-  return true;
+  degree_of_freedom_ = new_config.degree_of_freedom_;
+  chain_base_link_ = new_config.chain_base_link_;
+  chain_tip_link_ = new_config.chain_tip_link_;
+  chain_root_link_ = new_config.chain_root_link_;
+  target_frame_ = new_config.target_frame_;
+  tracking_frame_ = new_config.tracking_frame_;
+
+  joints_name_ = new_config.joints_name_;
+  joints_min_limit_ = new_config.joints_min_limit_;
+  joints_max_limit_ = new_config.joints_max_limit_;
+
+  clock_frequency_ = new_config.clock_frequency_;
+  ball_radius_ = new_config.ball_radius_;
+
+  if (active_output_)
+  {
+    print_configuration_parameter();
+  }
+
+  return initialize_success_;
 }
 
+// print all data member of this class
+void predictive_configuration::print_configuration_parameter()
+{
+  ROS_INFO_STREAM("Initialize_success: " << std::boolalpha << initialize_success_);
+  ROS_INFO_STREAM("Degree_of_freedom: " << degree_of_freedom_);
+  ROS_INFO_STREAM("Chain_base_link: " << chain_base_link_);
+  ROS_INFO_STREAM("Chain_tip_link: " << chain_tip_link_);
+  ROS_INFO_STREAM("Chain_root_link: " << chain_root_link_);
+  ROS_INFO_STREAM("Target_frame: " << target_frame_);
+  ROS_INFO_STREAM("Tracking_frame: " << tracking_frame_);
+  ROS_INFO_STREAM("Clock_frequency: " << clock_frequency_);
+  ROS_INFO_STREAM("Ball_radius: " << ball_radius_);
+
+  // print joints name
+  std::cout << "Joint names: [";
+  for_each(joints_name_.begin(), joints_name_.end(), [](std::string& str)
+  {
+    std::cout << str << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
+
+  // print joint min limits
+  std::cout << "Joint min limit: [";
+  for_each(joints_min_limit_.begin(), joints_min_limit_.end(), [](double& val)
+  {
+    std::cout << val << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
+
+  // print joint max limit
+  std::cout << "Joint max limit: [";
+  for_each(joints_max_limit_.begin(), joints_max_limit_.end(), [](double& val)
+  {
+    std::cout << val << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
+}
 
 // clear allocated data from vector
 void predictive_configuration::free_allocated_memory()

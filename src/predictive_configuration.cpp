@@ -48,13 +48,15 @@ bool predictive_configuration::initialize(const std::string& node_handle_name)
     return false;
   }
 
-  if (!nh.getParam ("/joints_name:", joints_name_) )
+  if (!nh.getParam ("/joints_name", joints_name_) )
   {
     ROS_WARN(" Parameter 'joints_name' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
-  if (!nh_config.getParam ("/constraints/joint_constraints/min:", joints_min_limit_) )
+  degree_of_freedom_ = joints_name_.size();
+
+  if (!nh_config.getParam ("/constraints/joint_constraints/min", joints_min_limit_) )
   {
     ROS_WARN(" Parameter 'joints_min_limit' not set on %s node" , ros::this_node::getName().c_str());
     joints_min_limit_.resize(degree_of_freedom_, -3.14);
@@ -65,7 +67,7 @@ bool predictive_configuration::initialize(const std::string& node_handle_name)
     }
   }
 
-  if (!nh_config.getParam ("/constraints/joint_constraints/max:", joints_max_limit_) )
+  if (!nh_config.getParam ("/constraints/joint_constraints/max", joints_max_limit_) )
   {
     ROS_WARN(" Parameter 'joints_max_limit' not set on %s node " , ros::this_node::getName().c_str());
     joints_max_limit_.resize(degree_of_freedom_, 3.14);
@@ -81,7 +83,6 @@ bool predictive_configuration::initialize(const std::string& node_handle_name)
   nh_config.param("/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
   nh.param("/active_output", active_output_, bool(false));  // debug
 
-  degree_of_freedom_ = joints_name_.size();
   initialize_success_ = true;
 
   if (active_output_)

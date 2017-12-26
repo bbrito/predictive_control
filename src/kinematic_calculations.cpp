@@ -71,13 +71,25 @@ void Kinematic_calculations::initializeDataMember(const KDL::Chain &chain)
 
   for (int i = 0u; i < segments_; ++i)
   {
-    // convert kdl frame to eigen matrix
+    // convert kdl frame to eigen matrix, give tranformation matrix between two concecutive frame
     transformKDLTOEigen(chain.getSegment(i).getFrameToTip(), Transformation_Matrix_[i]);
-    ROS_INFO("Transformation Matrix of %s: ", predictive_configuration::joints_name_.at(i).c_str());
-    std::cout << Transformation_Matrix_[i] << std::endl;
+    //std::cout << Transformation_Matrix_[i] << std::endl;
   }
 }
 
+void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
+{
+  predictive_configuration pd_config;
+  for (const auto& it: predictive_configuration::joints_name_)
+  {
+    model.getJoint(it).get()->limits->lower;
+    model.getJoint(it).get()->limits->upper;
+    model.getJoint(it).get()->limits->velocity;
+    model.getJoint(it).get()->limits->effort;
+  }
+}
+
+//convert KDL to Eigen matrix
 void Kinematic_calculations::transformKDLTOEigen(const KDL::Frame &frame, Eigen::MatrixXd &matrix)
 {
   // translation
@@ -91,5 +103,4 @@ void Kinematic_calculations::transformKDLTOEigen(const KDL::Frame &frame, Eigen:
   {
     matrix(i/3, i%3) = frame.M.data[i];
   }
-
 }

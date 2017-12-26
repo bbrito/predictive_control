@@ -2,10 +2,10 @@
 ### Kinematic configuration parameter
 
 # Debug mode
-activate_output: false
+activate_output: true
 
 # Clock frequency
-update_rate: 50
+clock_frequency: 150
 
 # Joint_names
 joints_name: [arm_1_joint, arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint]

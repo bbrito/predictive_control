@@ -3,8 +3,9 @@
 
     <!-- Debug Info -->
     <arg name="debug" default="false" />
-    <arg unless="$(arg debug)" name="launch_prefix" value="" />
-    <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+    <arg name="pd_debug" default="true" />
+    <arg unless="$(arg pd_debug)" name="launch_prefix" value="" />
+    <arg     if="$(arg pd_debug)" name="launch_prefix" value="gdb --ex run --args" />
     <arg name="robot" default="lwa4p_extended"/>
     <arg name="robot_env" default="empty"/>
     <arg name="enable_gazebo_gui" default="false"/>
@@ -20,8 +21,7 @@
     <arg name="pkg_hardware_config" default="$(find cob_hardware_config)"/>
 
     <!-- This configuration file will use for predictive control -->
-    <!--rosparam command="load" file="$(find frame_tracker)/config/frame_tracker.yaml" /-->
-	<rosparam command="load" file="$(find predictive_control)/config/predicitve_config.yaml"/>
+	<rosparam command="load" file="$(find predictive_control)/config/predictive_config_parameter.yaml"/>
 	
     <!-- start gazebo with empty world -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -88,7 +88,7 @@
 		<node pkg="cob_frame_tracker" type="interactive_frame_target_node" name="interactive_target" cwd="node" respawn="false" output="screen"/>
         
         <node pkg="cob_obstacle_distance" type="cob_obstacle_distance" name="obstacle_distance" cwd="node" respawn="false" output="screen"/>
-        <node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/>
+        <!--node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/-->
         
 <!--
         <node pkg="cob_cartesian_controller" type="cartesian_controller_node" name="cartesian_controller"  cwd="node" respawn="false" output="screen">
@@ -100,6 +100,10 @@
                 <node pkg="cob_twist_controller" type="debug_trajectory_marker_node" name="debug_trajectory_marker_node" cwd="node" respawn="false" output="screen"/>
                 <node pkg="cob_obstacle_distance" type="debug_obstacle_distance_node" name="debug_obstacle_distance_node" cwd="node" respawn="false" output="screen"/>
                 <node pkg="cob_obstacle_distance" type="test_interactive_obstacle_node.py" name="test_interactive_obstacle_node" cwd="node" respawn="false" output="screen"/>
+        </group>
+
+		<group if="$(arg pd_debug)">
+                <node pkg="predictive_control" type="predictive_configuration_test" name="predictive_configuration_test" cwd="node" respawn="false" output="screen"/>
         </group>
 
     </group>

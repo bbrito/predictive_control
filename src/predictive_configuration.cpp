@@ -64,9 +64,9 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   degree_of_freedom_ = joints_name_.size();
 
   // read and set joint constrints
-  if (!nh_config.getParam ("constraints/joint_constraints/min", joints_min_limit_) )
+  if (!nh_config.getParam ("constraints/position_constraints/min", joints_min_limit_) )
   {
-    ROS_WARN(" Parameter '/constraints/joint_constraints/min' not set on %s node" , ros::this_node::getName().c_str());
+    ROS_WARN(" Parameter '/constraints/position_constraints/min' not set on %s node" , ros::this_node::getName().c_str());
     joints_min_limit_.resize(degree_of_freedom_, -3.14);
 
     for (int i = 0u; i < joints_name_.size() && joints_min_limit_.size(); ++i)
@@ -75,9 +75,9 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     }
   }
 
-  if (!nh_config.getParam ("constraints/joint_constraints/max", joints_max_limit_) )
+  if (!nh_config.getParam ("constraints/position_constraints/max", joints_max_limit_) )
   {
-    ROS_WARN(" Parameter '/constraints/joint_constraints/max' not set on %s node " ,  ros::this_node::getName().c_str());
+    ROS_WARN(" Parameter '/constraints/position_constraints/max' not set on %s node " ,  ros::this_node::getName().c_str());
     joints_max_limit_.resize(degree_of_freedom_, 3.14);
 
     for (int i = 0u; i < joints_name_.size() && joints_max_limit_.size(); ++i)

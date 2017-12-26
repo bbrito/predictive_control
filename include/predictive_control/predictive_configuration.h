@@ -60,6 +60,7 @@ public:
   unsigned int degree_of_freedom_;
 
   // use for finding kinematic chain and urdf model
+  std::string robot_description_;
   std::string chain_base_link_;
   std::string chain_tip_link_;
   std::string chain_root_link_;

@@ -178,11 +178,15 @@ void predictive_control_node::main_predictive_control()
 			joint_velocity_data.data[i] = current_velocity.at(i);
 		}
 
+		//ros::Duration(5.0).sleep();
+		//pd_frame_tracker_->hard_code_optimal_control_solver(joint_velocity_data);
+
 	    timer_ = nh.createTimer(ros::Duration(1/new_config.update_rate), &predictive_control_node::run_node, this);
 	    timer_.start();
 
 	    ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());
 
+		//joint_velocity_pub.publish(joint_velocity_data);
 		//spin_node();
 	}
 }
@@ -224,7 +228,7 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 
 	// optimal problem solver
 	//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
-	pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose,collision_distance_vector, joint_velocity_data);
+	pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose, joint_velocity_data); //, collision_distance_vector
 
 	// error poseStamped, computation of euclidean distance error
 	geometry_msgs::PoseStamped tip_Target_Frame_error_stamped;
@@ -238,7 +242,7 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 			<< "\033[0m\n" << std::endl;
 
 
-	if (cartesian_dist < 0.05 && rotation_dist < 0.05)
+	if (cartesian_dist < 0.03 && rotation_dist < 0.05)
 	{
 			publish_zero_jointVelocity();
 	}

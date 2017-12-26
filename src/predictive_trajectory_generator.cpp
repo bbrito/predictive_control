@@ -591,7 +591,7 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 	ROS_ERROR_STREAM(collision_distance_vector.size());
 	VariablesGrid grid(collision_distance_vector.size(), collision_distance_vector.size());
 
-
+/*
 	DVector self_collsion_dvec(collision_distance_vector.size());
 	self_collsion_dvec.setAll(0.0);
 	for (int i=0u; i < collision_distance_vector.size(); ++i)
@@ -599,9 +599,11 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 		self_collsion_dvec(i) = collision_distance_vector.at(i);
 		grid(i,i) = collision_distance_vector.at(i);
 		ROS_ERROR_STREAM("value: "<< i << " : " << collision_distance_vector.at(i));
-	}
+	}*/
 
-	Expression exp;
+	DVector self_collsion_dvec(1);
+	self_collsion_dvec.setAll(0.0);
+	self_collsion_dvec(0) = 1000000.0;
 
 	OCP ocp_problem(0.0, 1.0, 4);
 
@@ -613,19 +615,21 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 								  (1.0 * (v.transpose()*v)) );
 	*/
 
-	ocp_problem.minimizeMayerTerm( 10.0 * (collision_avoidace.transpose() * collision_avoidace) );
+	ocp_problem.minimizeMayerTerm( ( ( collision_avoidace.transpose()-1.0) * (collision_avoidace-1.0) ) );
 
     ocp_problem.subjectTo(f);
     ocp_problem.subjectTo(-0.50 <= v <= 0.50);
     //ocp_problem.subjectTo(AT_END, x == 0.0);
-    ocp_problem.subjectTo(AT_END , v == 0.0);
+    //ocp_problem.subjectTo(AT_START , collision_avoidace  == 1.0);
+    ocp_problem.subjectTo(AT_END , v  == 0.0);
+    //ocp_problem.subjectTo(AT_END , collision_avoidace  == 0.0);
 
     RealTimeAlgorithm alg(ocp_problem, 0.025);
 
 	alg.initializeControls(c_init);
 	alg.initializeDifferentialStates(s_init);
-	//alg.initializeParameters(self_collsion_dvec);
-	alg.initializeParameters(grid);
+	alg.initializeParameters(self_collsion_dvec);
+	//alg.initializeParameters(grid);
 
 	alg.set(MAX_NUM_ITERATIONS, 10);
     alg.set(LEVENBERG_MARQUARDT, 1e-5);
@@ -652,7 +656,7 @@ void pd_frame_tracker::optimal_control_solver(const Eigen::MatrixXd& Jacobian_Ma
 
 }
 
-void pd_frame_tracker::hard_code_optimal_control_solver()
+void pd_frame_tracker::hard_code_optimal_control_solver(std_msgs::Float64MultiArray& updated_vel)
 {
 	ROS_INFO("---------------------------");
 	ROS_WARN("hard_code_optimal_control_solver");
@@ -667,14 +671,15 @@ void pd_frame_tracker::hard_code_optimal_control_solver()
 
 	// todo: how it solve
 	OCP ocp_problem(0.0, 1.0, 1);	// objective function want to minimize
-	ocp_problem.minimizeMayerTerm( ((x - 0.05) * (x - 0.05)) + (collsion_avoidance.transpose() * collsion_avoidance) ); //
+	ocp_problem.minimizeMayerTerm( ((x - 5) * (x - 5)) ); //
 	ocp_problem.subjectTo(f);
 
 	OptimizationAlgorithm alg(ocp_problem);
+	//RealTimeAlgorithm alg(ocp_problem, 1.0);
 
 	DVector c_init(1), s_init(1), p_init(1);
 	c_init.setAll(0.0);
-	s_init.setAll(0.05);
+	s_init.setAll(1.00);
 	p_init.setAll(1.0);
 
 	ROS_WARN("Hello");
@@ -685,32 +690,53 @@ void pd_frame_tracker::hard_code_optimal_control_solver()
 	alg.initializeParameters(p_init);
 	ROS_WARN("Hello");
     // set solver option
-    //alg.set(INTEGRATOR_TYPE, INT_RK78);
+    //alg.set(INTEGRATOR_TYPE, INT_RK45);
 	alg.set(INTEGRATOR_TOLERANCE, 1.000000E-08);
 	//alg.set(DISCRETIZATION_TYPE, SINGLE_SHOOTING);
 	//alg.set(KKT_TOLERANCE, 1.000000E-6);
 	alg.set(MAX_NUM_ITERATIONS, 10);
 	//alg.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
-	//alg.set( HESSIAN_PROJECTION_FACTOR, 2.0 );
+	alg.set( HESSIAN_PROJECTION_FACTOR, 2.0 );
 	alg.set(LEVENBERG_MARQUARDT, 1e-5);
 	//alg.set(GAUSS_NEWTON, 1e-5);
+    alg.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
 
 	ROS_WARN("Hello");
 
-	//alg.solve();
+	//alg.solve(0.0, s_init, c_init);
 	alg.solve();
+	//alg.solve();
+/*
+    Controller controller(alg);
+    controller.init(0.0, s_init);
+    controller.step(0.0, s_init);
 
+    DVector u;
+    controller.getU(u);
+    u.print();
+	*/
 	ROS_WARN("Hello");
 
 	VariablesGrid c_output;
 	alg.getControls(c_output);
-	c_output.print();
+	//c_output.print();
 
 	ROS_WARN("***************** Last control vector: ****************** ");
 	DVector u = c_output.getLastVector();
 	u.print();
 	ROS_ERROR_STREAM("Size of control vector: "<< c_output.getLastVector().getDim());
 
+	updated_vel.data.resize(7,0.0);
+	updated_vel.data[0] = u(0);
+	updated_vel.data[1] = u(0);
+
+	ROS_INFO_STREAM(updated_vel.data[0]);
+	ROS_INFO_STREAM(updated_vel.data[0]);
+	ROS_INFO_STREAM(updated_vel.data[2]);
+	ROS_INFO_STREAM(updated_vel.data[3]);
+	ROS_INFO_STREAM(updated_vel.data[4]);
+	ROS_INFO_STREAM(updated_vel.data[5]);
+	ROS_INFO_STREAM(updated_vel.data[6]);
 }
 
 

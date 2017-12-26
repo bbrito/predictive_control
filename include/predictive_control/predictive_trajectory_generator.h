@@ -179,7 +179,7 @@ class pd_frame_tracker
 		 * @param self_collsion_matrix Collision matrix to avoid collide with it body
 		 * @return updated_vel Initialize control states and filled with control joint velocity, want to publish it
 		 **/
-		void hard_code_optimal_control_solver();
+		void hard_code_optimal_control_solver(std_msgs::Float64MultiArray& updated_vel);
 
 
 		void compute_euclidean_distance(const geometry_msgs::Point& point, double& cart_dist);

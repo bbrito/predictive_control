@@ -53,7 +53,7 @@ public:
 
   /** data member of class **/
   // DEBUG
-  bool active_output_;
+  bool activate_output_;
   bool initialize_success_;
 
   // kinematic of robotics manipulator

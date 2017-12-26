@@ -18,74 +18,76 @@ bool predictive_configuration::initialize(const std::string& node_handle_name)
   ros::NodeHandle nh;
 
   // read paramter from parameter server if not set than terminate code, as this parameter is essential parameter
-  if (!nh.getParam ("/chain_base_link", chain_base_link_) )
+  if (!nh.getParam ("chain_base_link", chain_base_link_) )
   {
     ROS_WARN(" Parameter 'chain_base_link' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
-  if (!nh.getParam ("/chain_tip_link", chain_tip_link_) )
+  if (!nh.getParam ("chain_tip_link", chain_tip_link_) )
   {
     ROS_WARN(" Parameter 'chain_tip_link' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
-  if (!nh.getParam ("/chain_root_link", chain_root_link_) )
+  if (!nh.getParam ("chain_root_link", chain_root_link_) )
   {
     ROS_WARN(" Parameter 'chain_root_link' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
-  if (!nh.getParam ("/target_frame", target_frame_) )
+  if (!nh.getParam ("target_frame", target_frame_) )
   {
     ROS_WARN(" Parameter 'target_frame' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
-  if (!nh.getParam ("/tracking_frame", tracking_frame_) )
+  if (!nh.getParam ("tracking_frame", tracking_frame_) )
   {
     ROS_WARN(" Parameter 'tracking_frame' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
-  if (!nh.getParam ("/joints_name", joints_name_) )
+  if (!nh.getParam ("joints_name", joints_name_) )
   {
     ROS_WARN(" Parameter 'joints_name' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
+  // initialize degree of freedom, assume that number of joint equal to degree of freedom
   degree_of_freedom_ = joints_name_.size();
 
-  if (!nh_config.getParam ("/constraints/joint_constraints/min", joints_min_limit_) )
+  // read and set joint constrints
+  if (!nh_config.getParam ("constraints/joint_constraints/min", joints_min_limit_) )
   {
-    ROS_WARN(" Parameter 'joints_min_limit' not set on %s node" , ros::this_node::getName().c_str());
+    ROS_WARN(" Parameter '/constraints/joint_constraints/min' not set on %s node" , ros::this_node::getName().c_str());
     joints_min_limit_.resize(degree_of_freedom_, -3.14);
 
     for (int i = 0u; i < joints_name_.size() && joints_min_limit_.size(); ++i)
     {
-      ROS_INFO("%s defualt min limit %f", joints_name_.at(i).c_str(), joints_min_limit_.at(i));
+      ROS_INFO("%s defualt min limit value %f", joints_name_.at(i).c_str(), joints_min_limit_.at(i));
     }
   }
 
-  if (!nh_config.getParam ("/constraints/joint_constraints/max", joints_max_limit_) )
+  if (!nh_config.getParam ("constraints/joint_constraints/max", joints_max_limit_) )
   {
-    ROS_WARN(" Parameter 'joints_max_limit' not set on %s node " , ros::this_node::getName().c_str());
+    ROS_WARN(" Parameter '/constraints/joint_constraints/max' not set on %s node " ,  ros::this_node::getName().c_str());
     joints_max_limit_.resize(degree_of_freedom_, 3.14);
 
     for (int i = 0u; i < joints_name_.size() && joints_max_limit_.size(); ++i)
     {
-      ROS_INFO("%s defualt min limit %f", joints_name_.at(i).c_str(), joints_max_limit_.at(i));
+      ROS_INFO("%s defualt min limit value %f", joints_name_.at(i).c_str(), joints_max_limit_.at(i));
     }
   }
 
   // check requested parameter availble on parameter server if not than set default value
   nh.param("/clock_frequency", clock_frequency_, double(50.0)); // 50 hz
-  nh_config.param("/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
-  nh.param("/active_output", active_output_, bool(false));  // debug
+  nh.param("/activate_output", activate_output_, bool(false));  // debug
+  nh_config.param("self_collision/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
 
   initialize_success_ = true;
 
-  if (active_output_)
+  if (activate_output_)
   {
     print_configuration_parameter();
   }
@@ -97,7 +99,7 @@ bool predictive_configuration::initialize(const std::string& node_handle_name)
 // update configuration parameter
 bool predictive_configuration::updateConfiguration(const predictive_configuration &new_config)
 {
-  active_output_ = new_config.active_output_;
+  activate_output_ = new_config.activate_output_;
   initialize_success_ = new_config.initialize_success_;
 
   degree_of_freedom_ = new_config.degree_of_freedom_;
@@ -114,7 +116,7 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
   clock_frequency_ = new_config.clock_frequency_;
   ball_radius_ = new_config.ball_radius_;
 
-  if (active_output_)
+  if (activate_output_)
   {
     print_configuration_parameter();
   }

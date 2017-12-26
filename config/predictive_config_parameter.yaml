@@ -1,0 +1,25 @@
+
+### Kinematic configuration parameter
+
+# Debug mode
+activate_output: false
+
+# Clock frequency
+update_rate: 50
+
+# Joint_names
+joints_name: [arm_1_joint, arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint]
+
+# Kinematic chain parameter
+chain_base_link: arm_base_link
+chain_tip_link: arm_7_link
+chain_root_link: world
+target_frame: arm_7_target
+tracking_frame: arm_7_link
+
+predictive_config:
+    constraints:
+         joint_constraints:
+               min: [-3.14, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14]
+               max: [3.14, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]		       
+  

@@ -3,9 +3,8 @@
 
     <!-- Debug Info -->
     <arg name="debug" default="false" />
-    <arg name="pd_debug" default="true" />
-    <arg unless="$(arg pd_debug)" name="launch_prefix" value="" />
-    <arg     if="$(arg pd_debug)" name="launch_prefix" value="gdb --ex run --args" />
+    <arg unless="$(arg debug)" name="launch_prefix" value="" />
+    <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
     <arg name="robot" default="lwa4p_extended"/>
     <arg name="robot_env" default="empty"/>
     <arg name="enable_gazebo_gui" default="false"/>
@@ -101,11 +100,7 @@
                 <node pkg="cob_obstacle_distance" type="debug_obstacle_distance_node" name="debug_obstacle_distance_node" cwd="node" respawn="false" output="screen"/>
                 <node pkg="cob_obstacle_distance" type="test_interactive_obstacle_node.py" name="test_interactive_obstacle_node" cwd="node" respawn="false" output="screen"/>
         </group>
-
-		<group if="$(arg pd_debug)">
-                <node pkg="predictive_control" type="predictive_configuration_test" name="predictive_configuration_test" cwd="node" respawn="false" output="screen"/>
-        </group>
-
+		
     </group>
 
     <!-- configured rviz -->

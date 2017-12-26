@@ -105,3 +105,19 @@ void Kinematic_calculations::transformKDLToEigen(const KDL::Frame &frame, Eigen:
     matrix(i/3, i%3) = frame.M.data[i];
   }
 }
+
+//convert Eigen matrix to KDL::Frame
+void Kinematic_calculations::transformEigenToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame)
+{
+  // translation
+  for (unsigned int i = 0; i < 3; ++i)
+  {
+    frame.p[i] = matrix(i, 3);
+  }
+
+  // rotation matrix
+  for (unsigned int i = 0; i < 9; ++i)
+  {
+    frame.M.data[i] = matrix(i/3, i%3);
+  }
+}

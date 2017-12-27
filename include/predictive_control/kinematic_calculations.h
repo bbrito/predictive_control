@@ -84,13 +84,15 @@ public:
   // Forward kinematic matrix represent end effector position relative to root_link
   Eigen::MatrixXd FK_Matrix_;
 
-
 private:
 
   unsigned int segments_;
 
   KDL::Chain chain;
   urdf::Model model;
+
+  // Axis of Joints
+  std::vector<Eigen::Vector3d> axis;
 
   /**
    * @brief initializeDataMember: initialize data member from kinematic chain
@@ -122,18 +124,39 @@ private:
   }*/
 
   /**
-   * @brief transformKDLToEigen: transform KDL Frame to Eigen Matrix
+   * @brief transformKDLToEigenMatrix: transform KDL Frame to Eigen Matrix
    * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
    * @param matrix transformation matrix
    */
   void transformKDLToEigenMatrix(const KDL::Frame& frame, Eigen::MatrixXd& matrix);
 
   /**
-   * @brief transformEigenToKDL: transform Eigen Matrix to KDL Frame
+   * @brief transformEigenMatrixToKDL: transform Eigen Matrix to KDL Frame
    * @param matrix transformation matrix
    * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
    */
   void transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame);
+
+  /**
+   * @brief transformKDLToEigen: transform KDL Frame to Eigen Vector
+   * @param frame KDL::JntArray containts joint values in KDL form
+   * @param vector joint values in Eigen vectors
+   */
+//  void transformKDLToEigen(const KDL::JntArray& joints_value, Eigen::VectorXd& vector);
+
+  /**
+   * @brief transformEigenToKDL: transform Eigen Vector to KDL Frame
+   * @param vector joint values in Eigen vectors
+   * @param frame KDL::JntArray containts joint values in KDL form
+   */
+//  void transformEigenToKDL(const Eigen::VectorXd& vector, KDL::JntArray& joints_value);
+
+  /**
+   * @brief generateTransformationMatrixFromJointValues: Generate transformation matrix used for computing forward kinematics
+   * @param joint_value: Joint angle
+   * @param trans_matrix: Resultant transformation matrix
+   */
+  void generateTransformationMatrixFromJointValues(const double& joint_value, Eigen::MatrixXd& trans_matrix);
 
   /**
    * @brief clear_data_member: clear vectors means free allocated memory

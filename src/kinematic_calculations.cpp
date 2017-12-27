@@ -67,7 +67,7 @@ void Kinematic_calculations::initializeDataMember(const KDL::Chain &chain)
   segments_ = chain.getNrOfSegments();
 
   Transformation_Matrix_.resize(segments_, Eigen::Matrix4d::Identity()); //matrix = Eigen::Matrix4d::Identity();
-  FK_Homogenous_Matrix_.resize(segments_);
+  FK_Homogenous_Matrix_.resize(segments_, Eigen::Matrix4d::Identity());
 
   for (int i = 0u; i < segments_; ++i)
   {
@@ -75,11 +75,21 @@ void Kinematic_calculations::initializeDataMember(const KDL::Chain &chain)
     transformKDLToEigenMatrix(chain.getSegment(i).getFrameToTip(), Transformation_Matrix_[i]);
     //std::cout << Transformation_Matrix_[i] << std::endl;
   }
+
 }
 
 // initialize limiter parameter
 void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
 {
+  // set axis of joint rotation
+  axis.resize(predictive_configuration::degree_of_freedom_);
+  for (int i = 0u; i < predictive_configuration::degree_of_freedom_; ++i)
+  {
+    axis[i](0) = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->axis.x;
+    axis[i](1) = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->axis.y;
+    axis[i](2) = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->axis.z;
+  }
+
   // todo: create function for enforce velocity and effort.
   // update position constrints if not set
   if (!predictive_configuration::set_position_constrints_)
@@ -171,6 +181,38 @@ void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
 
 }
 
+void Kinematic_calculations::generateTransformationMatrixFromJointValues(const double &joint_value, Eigen::MatrixXd &trans_matrix)
+{
+;
+}
+
+// calculate end effector pose using joint angles
+void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& joints_angle, Eigen::MatrixXd& FK_Matrix)
+{
+  FK_Matrix = Eigen::Matrix4d::Identity();
+
+  if (predictive_configuration::chain_root_link_ == predictive_configuration::chain_base_link_)
+  {
+    ROS_WARN("%s and %s are not same root", chain_root_link_.c_str(), chain_base_link_.c_str());
+  }
+
+  // segments - degree_of_freedom_ gives information about fixed frame
+  for (int i = (segments_- degree_of_freedom_); i < segments_; ++i)
+  {
+    if (chain.getSegment(i).getJoint().getType() == 0)  // 0 means revolute joint
+    {
+      model.getJoint("a").get()->axis.x;
+    }
+
+    if (chain.getSegment(i).getJoint().getType() == 8)  // 0 means presmatic joint
+    {
+
+    }
+
+  }
+
+}
+
 //convert KDL to Eigen matrix
 void Kinematic_calculations::transformKDLToEigenMatrix(const KDL::Frame &frame, Eigen::MatrixXd &matrix)
 {
@@ -202,3 +244,26 @@ void Kinematic_calculations::transformEigenMatrixToKDL(const Eigen::MatrixXd& ma
     frame.M.data[i] = matrix(i/3, i%3);
   }
 }
+
+/*
+//convert KDL vectors to Eigen vector
+void Kinematic_calculations::transformKDLToEigen(const KDL::JntArray& joints_value, Eigen::VectorXd& vector)
+{
+  ROS_INFO("transformKDLToEigen: Number of Joint Values: %f", vector.size());
+  joints_value.resize(vector.size());
+  for (unsigned int i = 0; i < vector.size(); ++i)
+  {
+    joints_value(i) = vector(i);
+  }
+}
+
+//convert Eigen vector to KDL vectors
+void Kinematic_calculations::transformEigenToKDL(const Eigen::VectorXd& vector, KDL::JntArray& joints_value)
+{
+  ROS_INFO("transformKDLToEigen: Number of Joint Values: %f", vector.size());
+  vector.resize(joints_value.data.size());
+  for (unsigned int i = 0; i < vector.size(); ++i)
+  {
+    vector(i) = joints_value.data[i];
+  }
+}*/

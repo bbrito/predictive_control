@@ -14,6 +14,7 @@ int main(int argc, char **argv)
 		{
 			Kinematic_calculations kin_solver;
 			kin_solver.initialize();
+			kin_solver.printDataMembers();
 
 			ROS_INFO("Done");
 		}

@@ -663,30 +663,37 @@ void pd_frame_tracker::hard_code_optimal_control_solver(std_msgs::Float64MultiAr
 	ROS_INFO("---------------------------");
 
 	DifferentialState x; // position
+	AlgebraicState c;
 	Parameter collsion_avoidance;
 	Control v;	// velocity
 
 	DifferentialEquation f;	// dynamic model
 	f << dot(x) == v;
+	f << 0 == c;
+
+	DVector temp(1);
+	temp.setAll(5.0);
 
 	// todo: how it solve
 	OCP ocp_problem(0.0, 1.0, 1);	// objective function want to minimize
-	ocp_problem.minimizeMayerTerm( ((x - 5) * (x - 5)) ); //
+	ocp_problem.minimizeMayerTerm(  ((x - 0.05) * (x - 0.05))    ); //+
 	ocp_problem.subjectTo(f);
+	ocp_problem.subjectTo(collsion_avoidance <= 100.0);
 
 	OptimizationAlgorithm alg(ocp_problem);
 	//RealTimeAlgorithm alg(ocp_problem, 1.0);
 
 	DVector c_init(1), s_init(1), p_init(1);
 	c_init.setAll(0.0);
-	s_init.setAll(1.00);
-	p_init.setAll(1.0);
+	s_init.setAll(0.00);
+	p_init.setAll(10.0);
 
 	ROS_WARN("Hello");
 
 	ROS_WARN("Hello");
 	alg.initializeControls(c_init);
 	alg.initializeDifferentialStates(s_init);
+	alg.initializeAlgebraicStates(p_init);
 	alg.initializeParameters(p_init);
 	ROS_WARN("Hello");
     // set solver option
@@ -699,7 +706,7 @@ void pd_frame_tracker::hard_code_optimal_control_solver(std_msgs::Float64MultiAr
 	alg.set( HESSIAN_PROJECTION_FACTOR, 2.0 );
 	alg.set(LEVENBERG_MARQUARDT, 1e-5);
 	//alg.set(GAUSS_NEWTON, 1e-5);
-    alg.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
+    //alg.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
 
 	ROS_WARN("Hello");
 

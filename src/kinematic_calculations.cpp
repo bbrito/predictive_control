@@ -220,31 +220,48 @@ void Kinematic_calculations::generateTransformationMatrixFromJointValues(const u
 void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& joints_angle, Eigen::MatrixXd& FK_Matrix)
 {
   FK_Matrix = Eigen::Matrix4d::Identity();
+  Eigen::MatrixXd till_joint_FK_Matrix = Eigen::Matrix4d::Identity();
   Eigen::MatrixXd dummy_RotTrans_Matrix = Eigen::Matrix4d::Identity();
+
+  ROS_INFO_STREAM("Forward Kinematics with joint values: ");
+  ROS_INFO_STREAM(joints_angle.transpose());
 
   if (predictive_configuration::chain_root_link_ != predictive_configuration::chain_base_link_)
   {
-    ROS_WARN("%s and %s are not same from root", chain_root_link_.c_str(), chain_base_link_.c_str());
+    ROS_WARN("'%s' and '%s' are not same from it's root", chain_root_link_.c_str(), chain_base_link_.c_str());
   }
 
   // segments - degree_of_freedom_ gives information about fixed frame
-  for (int i = (segments_- degree_of_freedom_), angle_id = 0u; i < segments_; ++i, ++angle_id) //
+  for (int i = 0u, angle_id = 0u; i < segments_; ++i) //(segments_- degree_of_freedom_)
   {
-    if (chain.getSegment(i).getJoint().getType() == 0)  // 0 means revolute joint
+    // revolute joints update
+    if (chain.getSegment(i).getJoint().getType() == 0)
     {
-      ROS_INFO("joint values: %f", joints_angle(angle_id));
       generateTransformationMatrixFromJointValues(angle_id, joints_angle(angle_id), dummy_RotTrans_Matrix);
-      std::cout<<"\033[36;1m" << chain.getSegment(i).getName() <<"\033[36;0m"<<std::endl;
-      std::cout << dummy_RotTrans_Matrix << std::endl;
+      till_joint_FK_Matrix = till_joint_FK_Matrix * ( Transformation_Matrix_[i] * dummy_RotTrans_Matrix);
+      FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
+      ++angle_id;
     }
 
-    if (chain.getSegment(i).getJoint().getType() == 8)  // 0 means presmatic joint
+    // fixed joints update
+    if (chain.getSegment(i).getJoint().getType() == 8)
     {
-
+      ROS_INFO("calculateForwardKinematics: Fixed Joint");
+      till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[i];
+      FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
     }
 
+    /*
+    else  // presmatic joint
+    {
+      std::cout<<"\033[36;1m" << chain.getSegment(i).getName() <<"\033[36;0m"<<std::endl;
+      till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[i];
+      FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
+    }*/
   }
 
+  // take last segment value that is FK Matrix
+  FK_Matrix = FK_Homogenous_Matrix_[segments_-1];
 }
 
 //convert KDL to Eigen matrix
@@ -322,6 +339,20 @@ void Kinematic_calculations::printDataMembers()
     std::cout<<"\033[36;1m" << predictive_configuration::joints_name_.at(i)<< ": " << "\033[36;0m" <<
                axis.at(i).transpose() <<std::endl;
   }
+  ROS_WARN("===================");
+
+  // till joint forward kinematic matrix relative to root link
+  ROS_INFO(" Joint Forward Kinematic matrix:");
+  for (int i=0u; i < segments_; ++i)
+  {
+    std::cout<<"\033[36;1m" << chain.getSegment(i).getName()<< ": \n" << "\033[36;0m" <<
+               FK_Homogenous_Matrix_[i] <<std::endl;
+  }
+  ROS_WARN("===================");
+
+  // Forward kinematic matrix relative to root link
+  ROS_INFO(" Forward Kinematic matrix:");
+  std::cout<<"\033[36;1m" << FK_Homogenous_Matrix_[segments_-1] <<  "\033[36;0m" << std::endl;
   ROS_WARN("===================");
 
   ROS_INFO("------------------------- \n");

@@ -71,7 +71,7 @@ void Kinematic_calculations::initializeDataMember(const KDL::Chain &chain)
 
   for (int i = 0u; i < segments_; ++i)
   {
-    // convert kdl frame to eigen matrix, give tranformation matrix between two concecutive frame
+    /// convert kdl frame to eigen matrix, give tranformation matrix between two concecutive frame
     transformKDLToEigen(chain.getSegment(i).getFrameToTip(), Transformation_Matrix_[i]);
     //std::cout << Transformation_Matrix_[i] << std::endl;
   }
@@ -81,14 +81,81 @@ void Kinematic_calculations::initializeDataMember(const KDL::Chain &chain)
 void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
 {
   // todo: create function for enforce velocity and effort.
-  predictive_configuration pd_config;
-  for (int i=0u; i < predictive_configuration::degree_of_freedom_; ++i)
+  // update position constrints if not set
+  if (!predictive_configuration::set_position_constrints_)
   {
-    pd_config.joints_min_limit_[i] = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->lower;
-    pd_config.joints_max_limit_[i] = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->upper;
-    model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->velocity;
-    model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->effort;
+    for (int i=0u; i < predictive_configuration::degree_of_freedom_; ++i)
+    {
+      predictive_configuration::joints_min_limit_[i] = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->lower;
+      predictive_configuration::joints_max_limit_[i] = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->upper;
+    }
+    predictive_configuration::set_position_constrints_ = true;
+
+    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_min_limit_.size(); ++i)
+    {
+      ROS_INFO("%s min velocity limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
+               predictive_configuration::joints_effort_min_limit_.at(i));
+    }
+
+    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_max_limit_.size(); ++i)
+    {
+      ROS_INFO("%s max velocity limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
+               predictive_configuration::joints_max_limit_.at(i));
+    }
   }
+
+  // update velocity constrints if not set
+  if (!predictive_configuration::set_velocity_constrints_)
+  {
+    for (int i=0u; i < predictive_configuration::degree_of_freedom_; ++i)
+    {
+      predictive_configuration::joints_vel_min_limit_[i] = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->velocity - 0.50;
+      predictive_configuration::joints_vel_max_limit_[i] = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->velocity + 0.50;
+    }
+    predictive_configuration::set_velocity_constrints_ = true;
+
+    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_vel_min_limit_.size(); ++i)
+    {
+      ROS_INFO("%s min velocity limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
+               predictive_configuration::joints_effort_min_limit_.at(i));
+    }
+
+    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_effort_max_limit_.size(); ++i)
+    {
+      ROS_INFO("%s max velocity limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
+               predictive_configuration::joints_effort_max_limit_.at(i));
+    }
+
+  }
+
+  // update effort constrints if not set
+  if (!predictive_configuration::set_effort_constraints_)
+  {
+    for (int i=0u; i < predictive_configuration::degree_of_freedom_; ++i)
+    {
+      predictive_configuration::joints_effort_min_limit_[i] = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->effort - 0.1;
+      predictive_configuration::joints_effort_max_limit_[i] = model.getJoint(predictive_configuration::joints_name_.at(i)).get()->limits->effort + 0.1;
+    }
+    predictive_configuration::set_effort_constraints_ = true;
+
+    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_effort_min_limit_.size(); ++i)
+    {
+      ROS_INFO("%s min effort limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
+               predictive_configuration::joints_effort_min_limit_.at(i));
+    }
+
+    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_effort_max_limit_.size(); ++i)
+    {
+      ROS_INFO("%s max effort limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
+               predictive_configuration::joints_effort_max_limit_.at(i));
+    }
+  }
+
+  else
+  {
+    ROS_INFO("initializeLimitParameter: All constraints already sat");
+  }
+
 }
 
 //convert KDL to Eigen matrix

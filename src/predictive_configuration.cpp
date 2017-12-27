@@ -3,9 +3,9 @@
 
 predictive_configuration::predictive_configuration()
 {
-  set_position_constrints_ = false;
-  set_velocity_constrints_ = false;
-  set_effort_constraints_ = false;
+  set_position_constrints_ = true;
+  set_velocity_constrints_ = true;
+  set_effort_constraints_ = true;
   initialize_success_ = false;
 }
 
@@ -71,6 +71,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   {
     ROS_WARN(" Parameter '/constraints/position_constraints/min' not set on %s node" , ros::this_node::getName().c_str());
     joints_min_limit_.resize(degree_of_freedom_, -3.14);
+    set_position_constrints_ = false;
 
     for (int i = 0u; i < joints_name_.size() && joints_min_limit_.size(); ++i)
     {
@@ -82,6 +83,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   {
     ROS_WARN(" Parameter '/constraints/position_constraints/max' not set on %s node " ,  ros::this_node::getName().c_str());
     joints_max_limit_.resize(degree_of_freedom_, 3.14);
+    set_position_constrints_ = false;
 
     for (int i = 0u; i < joints_name_.size() && joints_max_limit_.size(); ++i)
     {
@@ -94,6 +96,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   {
     ROS_WARN(" Parameter '/constraints/velocity_constraints/min' not set on %s node" , ros::this_node::getName().c_str());
     joints_vel_min_limit_.resize(degree_of_freedom_, -1.0);
+    set_velocity_constrints_ = false;
 
     for (int i = 0u; i < joints_name_.size() && joints_vel_min_limit_.size(); ++i)
     {
@@ -105,6 +108,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   {
     ROS_WARN(" Parameter '/constraints/velocity_constraints/max' not set on %s node " ,  ros::this_node::getName().c_str());
     joints_vel_max_limit_.resize(degree_of_freedom_, 1.0);
+    set_velocity_constrints_ = false;
 
     for (int i = 0u; i < joints_name_.size() && joints_vel_max_limit_.size(); ++i)
     {
@@ -117,6 +121,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   {
     ROS_WARN(" Parameter '/constraints/effort_constraints/min' not set on %s node" , ros::this_node::getName().c_str());
     joints_effort_min_limit_.resize(degree_of_freedom_, -0.0);
+    set_effort_constraints_ = false;
 
     for (int i = 0u; i < joints_name_.size() && joints_effort_min_limit_.size(); ++i)
     {
@@ -128,6 +133,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   {
     ROS_WARN(" Parameter '/constraints/effort_constraints/max' not set on %s node " ,  ros::this_node::getName().c_str());
     joints_effort_max_limit_.resize(degree_of_freedom_, 1.0);
+    set_effort_constraints_ = false;
 
     for (int i = 0u; i < joints_name_.size() && joints_effort_max_limit_.size(); ++i)
     {
@@ -140,9 +146,6 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   nh.param("/activate_output", activate_output_, bool(false));  // debug
   nh_config.param("self_collision/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
 
-  set_position_constrints_ = true;
-  set_velocity_constrints_ = true;
-  set_effort_constraints_ = true;
   initialize_success_ = true;
 
   if (activate_output_)

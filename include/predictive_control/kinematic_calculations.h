@@ -73,9 +73,10 @@ public:
    */
   void calculate_inverse_jacobian_byDirect( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv );
 
+  void printDataMembers(void);
+
   /** public data members */
   // transformation matrix between two concecutive frame
-  //std::vector<Eigen::MatrixXd> Transformation_Matrix_;
   std::vector<Eigen::MatrixXd> Transformation_Matrix_;
 
   // Forward kinematic matrix from root link till current link

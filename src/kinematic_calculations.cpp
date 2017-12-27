@@ -267,3 +267,28 @@ void Kinematic_calculations::transformEigenToKDL(const Eigen::VectorXd& vector, 
     vector(i) = joints_value.data[i];
   }
 }*/
+
+void Kinematic_calculations::printDataMembers()
+{
+  ROS_INFO("\n ------------------------- ");
+
+  // print transformation matrix of each joint
+  ROS_INFO("Transformation Matrix: ");
+  for (int i=0u; i < segments_; ++i)
+  {
+    std::cout<<"\033[36;1m" << chain.getSegment(i).getName() <<"\033[36;0m"<<std::endl;
+    std::cout << Transformation_Matrix_.at(i) << std::endl;
+  }
+  ROS_WARN("===================");
+
+  // print joint rotation axis
+  ROS_INFO("Joint rotation axis");
+  for (int i=0u; i < degree_of_freedom_; ++i)
+  {
+    std::cout<<"\033[36;1m" << predictive_configuration::joints_name_.at(i)<< ": " <<
+               axis.at(i).transpose() <<"\033[36;0m"<<std::endl;
+  }
+  ROS_WARN("===================");
+
+  ROS_INFO("------------------------- \n");
+}

@@ -1,6 +1,7 @@
 
 #include <ros/ros.h>
-
+#include <Eigen/Core>
+#include <Eigen/LU>	//inverse of matrix
 #include <predictive_control/kinematic_calculations.h>
 
 int main(int argc, char **argv)
@@ -14,7 +15,17 @@ int main(int argc, char **argv)
 		{
 			Kinematic_calculations kin_solver;
 			kin_solver.initialize();
-			kin_solver.printDataMembers();
+			//kin_solver.printDataMembers();
+
+			Eigen::VectorXd joint_angles(7);
+			joint_angles(0) = 1.57079632679;	joint_angles(1) = 0.0;	joint_angles(2) = 0.0;
+			joint_angles(3) = 0.0;	joint_angles(4) = 0.0;	joint_angles(5) = -1.57079632679;
+			joint_angles(6) = 0.0;
+			//joint_angles.resize(7,0.0);
+			//joint_angles.Constant(0.0);
+
+			Eigen::MatrixXd FK_Matrix;
+			kin_solver.calculateForwardKinematics(joint_angles, FK_Matrix);
 
 			ROS_INFO("Done");
 		}

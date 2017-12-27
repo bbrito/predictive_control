@@ -183,6 +183,7 @@ void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
 }
 
 // generate rotation matrix using joint angle and axis of rotation
+/// Note: if angle value has less floating point accuracy than gives wrong answers like wrong 1.57, correct 1.57079632679.
 void Kinematic_calculations::generateTransformationMatrixFromJointValues(const unsigned int& current_segment_id, const double &joint_value, Eigen::MatrixXd &trans_matrix)
 {
   trans_matrix = Eigen::Matrix4d::Identity();
@@ -221,17 +222,18 @@ void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& j
   FK_Matrix = Eigen::Matrix4d::Identity();
   Eigen::MatrixXd dummy_RotTrans_Matrix = Eigen::Matrix4d::Identity();
 
-  if (predictive_configuration::chain_root_link_ == predictive_configuration::chain_base_link_)
+  if (predictive_configuration::chain_root_link_ != predictive_configuration::chain_base_link_)
   {
-    ROS_WARN("%s and %s are not same root", chain_root_link_.c_str(), chain_base_link_.c_str());
+    ROS_WARN("%s and %s are not same from root", chain_root_link_.c_str(), chain_base_link_.c_str());
   }
 
   // segments - degree_of_freedom_ gives information about fixed frame
-  for (int i = (segments_- degree_of_freedom_), angle_id = 0u; i < segments_; ++i, ++angle_id)
+  for (int i = (segments_- degree_of_freedom_), angle_id = 0u; i < segments_; ++i, ++angle_id) //
   {
     if (chain.getSegment(i).getJoint().getType() == 0)  // 0 means revolute joint
     {
-      generateTransformationMatrixFromJointValues(i, angle_id, dummy_RotTrans_Matrix);
+      ROS_INFO("joint values: %f", joints_angle(angle_id));
+      generateTransformationMatrixFromJointValues(angle_id, joints_angle(angle_id), dummy_RotTrans_Matrix);
       std::cout<<"\033[36;1m" << chain.getSegment(i).getName() <<"\033[36;0m"<<std::endl;
       std::cout << dummy_RotTrans_Matrix << std::endl;
     }

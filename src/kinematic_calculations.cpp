@@ -16,11 +16,12 @@ Kinematic_calculations::~Kinematic_calculations()
   clear_data_member();
 }
 
-
+// diallocated memory
 void Kinematic_calculations::clear_data_member()
 {
   Transformation_Matrix_.clear();
   FK_Homogenous_Matrix_.clear();
+  axis.clear();
 }
 
 // initialize chain and urdf model using robot description
@@ -181,15 +182,44 @@ void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
 
 }
 
-void Kinematic_calculations::generateTransformationMatrixFromJointValues(const double &joint_value, Eigen::MatrixXd &trans_matrix)
+// generate rotation matrix using joint angle and axis of rotation
+void Kinematic_calculations::generateTransformationMatrixFromJointValues(const unsigned int& current_segment_id, const double &joint_value, Eigen::MatrixXd &trans_matrix)
 {
-;
+  trans_matrix = Eigen::Matrix4d::Identity();
+
+  // check axis of ration about x-axis
+  if (axis.at(current_segment_id) == Eigen::Vector3i(1, 0, 0))
+  {
+    trans_matrix(1,1) = cos(joint_value);	trans_matrix(1,2) = -1*sin(joint_value);
+    trans_matrix(2,1) = sin(joint_value);	trans_matrix(2,2) = cos(joint_value);
+  }
+
+  // check axis of ration about y-axis
+  if (axis.at(current_segment_id) == Eigen::Vector3i(0, 1, 0))
+  {
+    trans_matrix(0,0) = cos(joint_value);    trans_matrix(0,2) = sin(joint_value);
+    trans_matrix(2,0) = -1*sin(joint_value); trans_matrix(2,2) = cos(joint_value);
+  }
+
+  // check axis of ration about z-axis
+  if (axis.at(current_segment_id) == Eigen::Vector3i(0, 0, 1))
+  {
+    trans_matrix(0,0) = cos(joint_value);	trans_matrix(0,1) = -1*sin(joint_value);
+    trans_matrix(1,0) = sin(joint_value);	trans_matrix(1,1) = cos(joint_value);
+  }
+
+  else
+  {
+    ROS_ERROR("generateTransformationMatrixFromJointValues: Given rotation axis is wrong, check urdf files specifically %s ",
+              chain.getSegment(current_segment_id).getName().c_str());
+  }
 }
 
 // calculate end effector pose using joint angles
 void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& joints_angle, Eigen::MatrixXd& FK_Matrix)
 {
   FK_Matrix = Eigen::Matrix4d::Identity();
+  Eigen::MatrixXd dummy_RotTrans_Matrix = Eigen::Matrix4d::Identity();
 
   if (predictive_configuration::chain_root_link_ == predictive_configuration::chain_base_link_)
   {
@@ -197,11 +227,13 @@ void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& j
   }
 
   // segments - degree_of_freedom_ gives information about fixed frame
-  for (int i = (segments_- degree_of_freedom_); i < segments_; ++i)
+  for (int i = (segments_- degree_of_freedom_), angle_id = 0u; i < segments_; ++i, ++angle_id)
   {
     if (chain.getSegment(i).getJoint().getType() == 0)  // 0 means revolute joint
     {
-      model.getJoint("a").get()->axis.x;
+      generateTransformationMatrixFromJointValues(i, angle_id, dummy_RotTrans_Matrix);
+      std::cout<<"\033[36;1m" << chain.getSegment(i).getName() <<"\033[36;0m"<<std::endl;
+      std::cout << dummy_RotTrans_Matrix << std::endl;
     }
 
     if (chain.getSegment(i).getJoint().getType() == 8)  // 0 means presmatic joint
@@ -285,8 +317,8 @@ void Kinematic_calculations::printDataMembers()
   ROS_INFO("Joint rotation axis");
   for (int i=0u; i < degree_of_freedom_; ++i)
   {
-    std::cout<<"\033[36;1m" << predictive_configuration::joints_name_.at(i)<< ": " <<
-               axis.at(i).transpose() <<"\033[36;0m"<<std::endl;
+    std::cout<<"\033[36;1m" << predictive_configuration::joints_name_.at(i)<< ": " << "\033[36;0m" <<
+               axis.at(i).transpose() <<std::endl;
   }
   ROS_WARN("===================");
 

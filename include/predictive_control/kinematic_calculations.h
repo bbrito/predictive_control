@@ -93,7 +93,7 @@ private:
   urdf::Model model;
 
   // Axis of Joints
-  std::vector<Eigen::Vector3d> axis;
+  std::vector<Eigen::Vector3i> axis;
 
   /**
    * @brief initializeDataMember: initialize data member from kinematic chain
@@ -153,11 +153,12 @@ private:
 //  void transformEigenToKDL(const Eigen::VectorXd& vector, KDL::JntArray& joints_value);
 
   /**
-   * @brief generateTransformationMatrixFromJointValues: Generate transformation matrix used for computing forward kinematics
+   * @brief generateTransformationMatrixFromJointValues: Generate transformation matrix used for computing forward kinematics,
+   *                                                     make it easy for multiplication create transformation matrix
    * @param joint_value: Joint angle
    * @param trans_matrix: Resultant transformation matrix
    */
-  void generateTransformationMatrixFromJointValues(const double& joint_value, Eigen::MatrixXd& trans_matrix);
+  void generateTransformationMatrixFromJointValues(const unsigned int& current_segment_id, const double& joint_value, Eigen::MatrixXd& trans_matrix);
 
   /**
    * @brief clear_data_member: clear vectors means free allocated memory

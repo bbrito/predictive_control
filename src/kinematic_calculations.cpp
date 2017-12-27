@@ -72,7 +72,7 @@ void Kinematic_calculations::initializeDataMember(const KDL::Chain &chain)
   for (int i = 0u; i < segments_; ++i)
   {
     /// convert kdl frame to eigen matrix, give tranformation matrix between two concecutive frame
-    transformKDLToEigen(chain.getSegment(i).getFrameToTip(), Transformation_Matrix_[i]);
+    transformKDLToEigenMatrix(chain.getSegment(i).getFrameToTip(), Transformation_Matrix_[i]);
     //std::cout << Transformation_Matrix_[i] << std::endl;
   }
 }
@@ -172,7 +172,7 @@ void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
 }
 
 //convert KDL to Eigen matrix
-void Kinematic_calculations::transformKDLToEigen(const KDL::Frame &frame, Eigen::MatrixXd &matrix)
+void Kinematic_calculations::transformKDLToEigenMatrix(const KDL::Frame &frame, Eigen::MatrixXd &matrix)
 {
   // translation
   for (unsigned int i = 0; i < 3; ++i)
@@ -188,7 +188,7 @@ void Kinematic_calculations::transformKDLToEigen(const KDL::Frame &frame, Eigen:
 }
 
 //convert Eigen matrix to KDL::Frame
-void Kinematic_calculations::transformEigenToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame)
+void Kinematic_calculations::transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame)
 {
   // translation
   for (unsigned int i = 0; i < 3; ++i)

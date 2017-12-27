@@ -53,6 +53,13 @@ public:
   bool initialize(const std::string rbt_description = "/robot_description");
 
   /**
+   * @brief calculateForwardKinematics: Calculate forward kinematics start from root frame to tip link of manipulator
+   * @param joints_angle: Current joint angle
+   * @param FK_Matrix: Resultant Forward Kinematic Matrix
+   */
+  void calculateForwardKinematics(const Eigen::VectorXd& joints_angle, Eigen::MatrixXd& FK_Matrix);
+
+  /**
    * @brief calculate_inverse_jacobian_bySVD: calculate inverse of Jacobian Matrix using Singular Value Decomposition
    * @param jacobian: Jacobian Matrix
    * @param jacobianInv: Inverse of Jacobian Matrix
@@ -65,7 +72,6 @@ public:
    * @param jacobianInv: Inverse of Jacobian Matrix
    */
   void calculate_inverse_jacobian_byDirect( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv );
-
 
   /** public data members */
   // transformation matrix between two concecutive frame
@@ -120,14 +126,14 @@ private:
    * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
    * @param matrix transformation matrix
    */
-  void transformKDLToEigen(const KDL::Frame& frame, Eigen::MatrixXd& matrix);
+  void transformKDLToEigenMatrix(const KDL::Frame& frame, Eigen::MatrixXd& matrix);
 
   /**
    * @brief transformEigenToKDL: transform Eigen Matrix to KDL Frame
    * @param matrix transformation matrix
    * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
    */
-  void transformEigenToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame);
+  void transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame);
 
   /**
    * @brief clear_data_member: clear vectors means free allocated memory

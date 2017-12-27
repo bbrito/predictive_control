@@ -3,7 +3,10 @@
 
 predictive_configuration::predictive_configuration()
 {
-  ;
+  set_position_constrints_ = false;
+  set_velocity_constrints_ = false;
+  set_effort_constraints_ = false;
+  initialize_success_ = false;
 }
 
 predictive_configuration::~predictive_configuration()
@@ -137,6 +140,9 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   nh.param("/activate_output", activate_output_, bool(false));  // debug
   nh_config.param("self_collision/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
 
+  set_position_constrints_ = true;
+  set_velocity_constrints_ = true;
+  set_effort_constraints_ = true;
   initialize_success_ = true;
 
   if (activate_output_)
@@ -153,6 +159,9 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
 {
   activate_output_ = new_config.activate_output_;
   initialize_success_ = new_config.initialize_success_;
+  set_position_constrints_ = new_config.set_position_constrints_;
+  set_velocity_constrints_ = new_config.set_velocity_constrints_;
+  set_effort_constraints_ = new_config.set_effort_constraints_;
 
   degree_of_freedom_ = new_config.degree_of_freedom_;
   chain_base_link_ = new_config.chain_base_link_;
@@ -184,6 +193,9 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
 void predictive_configuration::print_configuration_parameter()
 {
   ROS_INFO_STREAM("Initialize_success: " << std::boolalpha << initialize_success_);
+  ROS_INFO_STREAM("Set position constrints: " << std::boolalpha << set_position_constrints_);
+  ROS_INFO_STREAM("Set velocity constrints: " << std::boolalpha << set_velocity_constrints_);
+  ROS_INFO_STREAM("Set effort constraints: " << std::boolalpha << set_effort_constraints_);
   ROS_INFO_STREAM("Degree_of_freedom: " << degree_of_freedom_);
   ROS_INFO_STREAM("Chain_base_link: " << chain_base_link_);
   ROS_INFO_STREAM("Chain_tip_link: " << chain_tip_link_);

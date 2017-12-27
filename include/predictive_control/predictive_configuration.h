@@ -55,6 +55,9 @@ public:
   // DEBUG
   bool activate_output_;
   bool initialize_success_;
+  bool set_position_constrints_;
+  bool set_velocity_constrints_;
+  bool set_effort_constraints_;
 
   // kinematic of robotics manipulator
   unsigned int degree_of_freedom_;

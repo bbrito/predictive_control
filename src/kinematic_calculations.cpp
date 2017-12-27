@@ -91,17 +91,22 @@ void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
     }
     predictive_configuration::set_position_constrints_ = true;
 
-    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_min_limit_.size(); ++i)
+    for (int i = 0u; i < predictive_configuration::joints_name_.size()
+         && predictive_configuration::joints_min_limit_.size() && predictive_configuration::joints_max_limit_.size();
+         ++i)
     {
       ROS_INFO("%s min velocity limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
                predictive_configuration::joints_effort_min_limit_.at(i));
-    }
-
-    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_max_limit_.size(); ++i)
-    {
       ROS_INFO("%s max velocity limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
                predictive_configuration::joints_max_limit_.at(i));
     }
+
+    /*for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_max_limit_.size(); ++i)
+    {
+      ROS_INFO("%s max velocity limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
+               predictive_configuration::joints_max_limit_.at(i));
+    }*/
+
   }
 
   // update velocity constrints if not set
@@ -114,17 +119,21 @@ void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
     }
     predictive_configuration::set_velocity_constrints_ = true;
 
-    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_vel_min_limit_.size(); ++i)
+    for (int i = 0u; i < predictive_configuration::joints_name_.size()
+         && predictive_configuration::joints_vel_min_limit_.size() && predictive_configuration::joints_vel_max_limit_.size();
+         ++i)
     {
       ROS_INFO("%s min velocity limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
-               predictive_configuration::joints_effort_min_limit_.at(i));
+               predictive_configuration::joints_vel_min_limit_.at(i));
+      ROS_INFO("%s max velocity limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
+               predictive_configuration::joints_vel_max_limit_.at(i));
     }
 
-    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_effort_max_limit_.size(); ++i)
+    /*for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_effort_max_limit_.size(); ++i)
     {
       ROS_INFO("%s max velocity limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
                predictive_configuration::joints_effort_max_limit_.at(i));
-    }
+    }*/
 
   }
 
@@ -138,17 +147,21 @@ void Kinematic_calculations::initializeLimitParameter(const urdf::Model &model)
     }
     predictive_configuration::set_effort_constraints_ = true;
 
-    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_effort_min_limit_.size(); ++i)
+    for (int i = 0u; i < predictive_configuration::joints_name_.size()
+         && predictive_configuration::joints_effort_min_limit_.size() && predictive_configuration::joints_effort_max_limit_.size();
+         ++i)
     {
       ROS_INFO("%s min effort limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
                predictive_configuration::joints_effort_min_limit_.at(i));
-    }
-
-    for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_effort_max_limit_.size(); ++i)
-    {
       ROS_INFO("%s max effort limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
                predictive_configuration::joints_effort_max_limit_.at(i));
     }
+
+    /*for (int i = 0u; i < predictive_configuration::joints_name_.size() && predictive_configuration::joints_effort_max_limit_.size(); ++i)
+    {
+      ROS_INFO("%s max effort limit value %f", predictive_configuration::joints_name_.at(i).c_str(),
+               predictive_configuration::joints_effort_max_limit_.at(i));
+    }*/
   }
 
   else

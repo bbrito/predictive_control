@@ -77,6 +77,15 @@ void Kinematic_calculations::initializeDataMember(const KDL::Chain &chain)
     //std::cout << Transformation_Matrix_[i] << std::endl;
   }
 
+  if (predictive_configuration::activate_output_)
+  {
+    ROS_WARN("===== TRANSFORMATION MATRIX =====");
+    for (int i=0u; i < segments_; ++i)
+    {
+      std::cout<<"\033[36;1m" << chain.getSegment(i).getName() <<"\033[36;0m"<<std::endl;
+      std::cout << Transformation_Matrix_.at(i) << std::endl;
+    }
+  }
 }
 
 // initialize limiter parameter
@@ -373,8 +382,7 @@ void Kinematic_calculations::calculateJacobianMatrix(const Eigen::VectorXd &join
       Jacobian_Matrix(5,point) = Jo(2);
     }
   }
-  ROS_WARN("===== JACOBIAN_MATRIX: ======");
-  std::cout << Jacobian_Matrix << std::endl;
+
   if (predictive_configuration::activate_output_)
   {
     ROS_WARN("===== JACOBIAN_MATRIX: ======");

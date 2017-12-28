@@ -52,7 +52,7 @@ void CollisionRobot::initializeDataMember(const std::vector<Eigen::MatrixXd> &FK
 
     // fill up pose stamped
     stamped.header.frame_id = predictive_configuration::chain_root_link_;
-    stamped.header.stamp = ros::Time.now();
+    stamped.header.stamp = ros::Time().now();
     stamped.pose.position.x = frame.p.x();
     stamped.pose.position.y = frame.p.y();
     stamped.pose.position.z = frame.p.z();

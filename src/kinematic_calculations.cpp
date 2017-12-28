@@ -228,7 +228,7 @@ void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& j
 
   if (predictive_configuration::chain_root_link_ != predictive_configuration::chain_base_link_)
   {
-    ROS_WARN("'%s' and '%s' are not same from it's root", chain_root_link_.c_str(), chain_base_link_.c_str());
+    ROS_WARN("'%s' and '%s' are not same frame", chain_root_link_.c_str(), chain_base_link_.c_str());
   }
 
   // segments - degree_of_freedom_ gives information about fixed frame

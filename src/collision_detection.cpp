@@ -25,7 +25,7 @@ void CollisionRobot::clear_data_member()
 }
 
 // update collision detection, specifically center position of collision matrix
-bool CollisionRobot::updateCollisionMatrix(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix, const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
+void CollisionRobot::createCollisionMatrix(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix, const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
 {
   int point = 0u, counter = 0u;
   std::string key = "point_";
@@ -128,6 +128,29 @@ void CollisionRobot::generateCollisionVolume(const geometry_msgs::PoseStamped &c
   marker_array_.markers.push_back(marker);
 }
 
+// create static frame, just for visualization purpose
+void CollisionRobot::createStaticFrame(const geometry_msgs::PoseStamped &stamped, const std::string &frame_name)
+{
+  geometry_msgs::TransformStamped static_transformStamped;
+
+  // frame information
+  static_transformStamped.header.stamp = stamped.header.stamp;
+  static_transformStamped.header.frame_id = stamped.header.frame_id;
+  static_transformStamped.child_frame_id = frame_name;
+
+  // pose of frame relative to header frame_id
+  static_transformStamped.transform.translation.x = stamped.pose.position.x;
+  static_transformStamped.transform.translation.y = stamped.pose.position.y;
+  static_transformStamped.transform.translation.z = stamped.pose.position.z;
+  static_transformStamped.transform.rotation = stamped.pose.orientation;
+
+  ROS_INFO("Created intermediate 'Static Frame' with '%s' parent frame id and '%s' child frame id",
+           stamped.header.frame_id.c_str(), frame_name.c_str()
+           );
+
+  static_broadcaster_.sendTransform(static_transformStamped);
+  ros::spinOnce();
+}
 
 //convert KDL to Eigen matrix
 void CollisionRobot::transformKDLToEigenMatrix(const KDL::Frame &frame, Eigen::MatrixXd &matrix)

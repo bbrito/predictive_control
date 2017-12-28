@@ -52,8 +52,14 @@ public:
     */
   ~CollisionRobot();
 
-  //bool initialize(const std::vector<Eigen::MatrixXd>& FK_Homogenous_Matrix);
-  bool updateCollisionMatrix(const std::vector<Eigen::MatrixXd>& FK_Homogenous_Matrix, const std::vector<Eigen::MatrixXd>& Transformation_Matrix);
+  /**
+   * @brief createCollisionMatrix: Create collsion matrix using forward kinematic relative to root link
+   * @param FK_Homogenous_Matrix: Forward kinematic replative to root link
+   * @param Transformation_Matrix: Transformation matrix between two concecutive frame
+   */
+  void createCollisionMatrix(const std::vector<Eigen::MatrixXd>& FK_Homogenous_Matrix,
+                             const std::vector<Eigen::MatrixXd>& Transformation_Matrix
+                             );
 
   /**
    * @brief generateCollisionVoulme: generate collision ball on given position
@@ -61,7 +67,10 @@ public:
    * @param radius: Ball radius
    * @param ball_id: Ball id should be unique for each ball
    */
-  void generateCollisionVolume(const geometry_msgs::PoseStamped& center, const double& radius, const uint32_t& ball_id);
+  void generateCollisionVolume(const geometry_msgs::PoseStamped& center,
+                               const double& radius, const uint32_t& ball_id
+                               );
+
 
   /** public data member*/
   // visulaize all volumes
@@ -72,6 +81,16 @@ public:
 
 private:
 
+  tf2_ros::StaticTransformBroadcaster static_broadcaster_;
+
+  /**
+   * @brief createStaticFrame: visulize intermidiate added frame, relative to root frame
+   * @param stamped: Center position of ball
+   * @param frame_name: Child frame name
+   */
+  void createStaticFrame(const geometry_msgs::PoseStamped& stamped,
+                         const std::string& frame_name
+                         );
 
   /**
    * @brief transformKDLToEigenMatrix: transform KDL Frame to Eigen Matrix

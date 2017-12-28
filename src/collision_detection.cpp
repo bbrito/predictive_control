@@ -26,14 +26,29 @@ bool CollisionRobot::initialize(const std::vector<Eigen::MatrixXd> &FK_Homogenou
     predictive_configuration::initialize();
   }
 
+  KDL::Tree tree;
+  if (!kdl_parser::treeFromParam("/robot_description", tree))
+  {
+      ROS_ERROR("CollisionRobot: Failed to construct kdl tree");
+      return false;
+  }
+
+  // construct chain using tree inforamtion. Note: make sure chain root link or chain base link
+  tree.getChain( predictive_configuration::chain_root_link_, predictive_configuration::chain_tip_link_, chain_);
+  if (chain.getNrOfJoints() == 0 || chain.getNrOfSegments() == 0)
+  {
+    ROS_ERROR("CollisionRobot: Failed to initialize kinematic chain");
+    return false;
+  }
+
+  segments_ = FK_Homogenous_Matrix.size(); //chain_.getNrOfSegments();
+
   // construct/initialize urdf model using robot description
   if (!model.initParam("/robot_description"))
   {
     ROS_ERROR("CollisionRobot: Failed to parse urdf file for JointLimits");
     return false;
   }
-
-
 
 }
 
@@ -42,6 +57,49 @@ void CollisionRobot::initializeDataMember(const std::vector<Eigen::MatrixXd> &FK
 {
   int point = 0u;
   std::string key = "point_";
+
+  for (uint32_t i = (segments_ - degree_of_freedom_), joint_it=0; i < segments_; ++i, ++joint_it)
+  {
+    /*// if distance between two frame is less than ball radius than skip to add in collision matrix
+    if (model.getJoint(predictive_configuration::joints_name_.at(i)).get()->parent_to_joint_origin_transform.position.z
+        < 0.10)
+    {
+      continue;
+    }*/
+
+    // if distance between two frame is more than ball radius than add intermidiate ball
+    if (model.getJoint(predictive_configuration::joints_name_.at(i)).get()->parent_to_joint_origin_transform.position.z
+        > predictive_configuration::ball_radius_)
+    {
+      ROS_INFO("CollisionRobot: Add intermidiate volume with point: %s", (key+std::to_string(point)).c_str());
+      // if condition is not satisfied, than only execute below code
+      geometry_msgs::PoseStamped stamped;
+      KDL::Frame frame;
+
+      // transform Eigen Matrix to Kdl Frame
+      transformEigenMatrixToKDL(FK_Homogenous_Matrix[i], frame);
+
+      // fill up pose stamped
+      createIntermidiateBallStamped(frame, stamped);
+      collision_matrix_[key + std::to_string(point)] = stamped;
+      point = point + 1;
+    }
+
+    // if condition is not satisfied, than only execute below code
+    geometry_msgs::PoseStamped stamped;
+    KDL::Frame frame;
+
+    // transform Eigen Matrix to Kdl Frame
+    transformEigenMatrixToKDL(FK_Homogenous_Matrix[i], frame);
+
+    // fill up pose stamped
+    createIntermidiateBallStamped(frame, stamped);
+
+    collision_matrix_[key + std::to_string(point)] = stamped;
+    point = point + 1;
+  }
+
+/*
   for (const auto& it: FK_Homogenous_Matrix)
   {
     geometry_msgs::PoseStamped stamped;
@@ -64,7 +122,7 @@ void CollisionRobot::initializeDataMember(const std::vector<Eigen::MatrixXd> &FK
 
     collision_matrix_[key + std::to_string(point)] = stamped;
     point = point + 1;
-  }
+  }*/
 
 }
 
@@ -100,6 +158,21 @@ void CollisionRobot::generateCollisionVolume(const geometry_msgs::PoseStamped &c
 
   // store created marker
   marker_array_.markers.push_back(marker);
+}
+
+// create intermidiate ball stamped from kdl frame
+void CollisionRobot::createIntermidiateBallStamped(const KDL::Frame &frame, geometry_msgs::PoseStamped &stamped)
+{
+  stamped.header.frame_id = predictive_configuration::chain_root_link_;
+  stamped.header.stamp = ros::Time().now();
+  stamped.pose.position.x = frame.p.x();
+  stamped.pose.position.y = frame.p.y();
+  stamped.pose.position.z = frame.p.z();
+  frame.M.GetQuaternion(stamped.pose.orientation.x,
+                        stamped.pose.orientation.y,
+                        stamped.pose.orientation.z,
+                        stamped.pose.orientation.w
+                        );
 }
 
 //convert KDL to Eigen matrix

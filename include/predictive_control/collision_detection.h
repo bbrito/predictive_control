@@ -24,8 +24,9 @@
 #include <map>
 #include <string>
 
-// urdf includes
+// kdl,urdf includes
 #include <urdf/model.h>
+#include <kdl_parser/kdl_parser.hpp>
 
 // predictive includes
 #include <predictive_control/predictive_configuration.h>
@@ -70,6 +71,9 @@ public:
 
 private:
 
+  uint32_t segments_;
+
+  KDL::Chain chain_;
   urdf::Model model;
 
   void initializeDataMember(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix);
@@ -91,6 +95,8 @@ private:
   void transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix,
                                  KDL::Frame& frame
                                  );
+
+  void createIntermidiateBallStamped(const KDL::Frame& frame, geometry_msgs::PoseStamped& stamped);
 
   /**
    * @brief clear_data_member: clear vectors means free allocated memory

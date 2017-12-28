@@ -52,7 +52,8 @@ public:
     */
   ~CollisionRobot();
 
-  bool initialize(const std::vector<Eigen::MatrixXd>& FK_Homogenous_Matrix);
+  //bool initialize(const std::vector<Eigen::MatrixXd>& FK_Homogenous_Matrix);
+  bool updateCollisionMatrix(const std::vector<Eigen::MatrixXd>& FK_Homogenous_Matrix, const std::vector<Eigen::MatrixXd>& Transformation_Matrix);
 
   /**
    * @brief generateCollisionVoulme: generate collision ball on given position
@@ -71,12 +72,6 @@ public:
 
 private:
 
-  uint32_t segments_;
-
-  KDL::Chain chain_;
-  urdf::Model model;
-
-  void initializeDataMember(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix);
 
   /**
    * @brief transformKDLToEigenMatrix: transform KDL Frame to Eigen Matrix
@@ -95,8 +90,6 @@ private:
   void transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix,
                                  KDL::Frame& frame
                                  );
-
-  void createIntermidiateBallStamped(const KDL::Frame& frame, geometry_msgs::PoseStamped& stamped);
 
   /**
    * @brief clear_data_member: clear vectors means free allocated memory

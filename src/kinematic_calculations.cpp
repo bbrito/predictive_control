@@ -219,6 +219,7 @@ void Kinematic_calculations::generateTransformationMatrixFromJointValues(const u
 // calculate end effector pose using joint angles
 void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& joints_angle, Eigen::MatrixXd& FK_Matrix)
 {
+  // initialize local member and parameters
   FK_Matrix = Eigen::Matrix4d::Identity();
   Eigen::MatrixXd till_joint_FK_Matrix = Eigen::Matrix4d::Identity();
   Eigen::MatrixXd dummy_RotTrans_Matrix = Eigen::Matrix4d::Identity();
@@ -226,6 +227,7 @@ void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& j
   ROS_INFO_STREAM("Forward Kinematics with joint values: ");
   ROS_INFO_STREAM(joints_angle.transpose());
 
+  // compute tf transformation between root frame and base link of manipulator
   if (predictive_configuration::chain_root_link_ != predictive_configuration::chain_base_link_)
   {
     ROS_WARN("'%s' and '%s' are not same frame", chain_root_link_.c_str(), chain_base_link_.c_str());

@@ -42,7 +42,15 @@
 class Kinematic_calculations: public predictive_configuration
 {
 public:
+
+  /**
+   * @brief Kinematic_calculations: Default constructor, allocate memory
+   */
   Kinematic_calculations();
+
+  /**
+    *@brief ~Kinematic_calculations: Default distructor, free memory
+    */
   ~Kinematic_calculations();
 
   /**
@@ -57,21 +65,38 @@ public:
    * @param joints_angle: Current joint angle
    * @param FK_Matrix: Resultant Forward Kinematic Matrix
    */
-  void calculateForwardKinematics(const Eigen::VectorXd& joints_angle, Eigen::MatrixXd& FK_Matrix);
+  void calculateForwardKinematics(const Eigen::VectorXd& joints_angle,
+                                  Eigen::MatrixXd& FK_Matrix
+                                  );
+
+  /**
+   * @brief calculateJacobianMatrix: calculate Jacobian Matrix and Forward Kinematics (end effector pose)
+   * @param joints_angle
+   * @param FK_Matrix
+   * @param Jacobian_Matrix
+   */
+  void calculateJacobianMatrix(const Eigen::VectorXd& joints_angle,
+                               Eigen::MatrixXd& FK_Matrix,
+                               Eigen::MatrixXd& Jacobian_Matrix
+                               );
 
   /**
    * @brief calculate_inverse_jacobian_bySVD: calculate inverse of Jacobian Matrix using Singular Value Decomposition
    * @param jacobian: Jacobian Matrix
    * @param jacobianInv: Inverse of Jacobian Matrix
    */
-  void calculate_inverse_jacobian_bySVD( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv );
+  void calculate_inverse_jacobian_bySVD( const Eigen::MatrixXd& jacobian,
+                                         Eigen::MatrixXd& jacobianInv
+                                         );
 
   /**
    * @brief calculate_inverse_jacobian_bySVD: calculate inverse of Jacobian Matrix using 'Direct Method'
    * @param jacobian: Jacobian Matrix
    * @param jacobianInv: Inverse of Jacobian Matrix
    */
-  void calculate_inverse_jacobian_byDirect( const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv );
+  void calculate_inverse_jacobian_byDirect( const Eigen::MatrixXd& jacobian,
+                                            Eigen::MatrixXd& jacobianInv
+                                            );
 
   void printDataMembers(void);
 
@@ -129,14 +154,18 @@ private:
    * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
    * @param matrix transformation matrix
    */
-  void transformKDLToEigenMatrix(const KDL::Frame& frame, Eigen::MatrixXd& matrix);
+  void transformKDLToEigenMatrix(const KDL::Frame& frame,
+                                 Eigen::MatrixXd& matrix
+                                 );
 
   /**
    * @brief transformEigenMatrixToKDL: transform Eigen Matrix to KDL Frame
    * @param matrix transformation matrix
    * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
    */
-  void transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame);
+  void transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix,
+                                 KDL::Frame& frame
+                                 );
 
   /**
    * @brief transformKDLToEigen: transform KDL Frame to Eigen Vector
@@ -158,7 +187,10 @@ private:
    * @param joint_value: Joint angle
    * @param trans_matrix: Resultant transformation matrix
    */
-  void generateTransformationMatrixFromJointValues(const unsigned int& current_segment_id, const double& joint_value, Eigen::MatrixXd& trans_matrix);
+  void generateTransformationMatrixFromJointValues(const unsigned int& current_segment_id,
+                                                   const double& joint_value,
+                                                   Eigen::MatrixXd& trans_matrix
+                                                   );
 
   /**
    * @brief clear_data_member: clear vectors means free allocated memory

@@ -390,6 +390,46 @@ void Kinematic_calculations::calculateJacobianMatrix(const Eigen::VectorXd &join
   }
 }
 
+// calculate inverse of Jacobian matrix using Singular value decomposition
+void Kinematic_calculations::calculateInverseJacobianbySVD(const Eigen::MatrixXd &jacobian, Eigen::MatrixXd &jacobianInv)
+{
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+  //singular values lie on diagonal of matrix, easily invert
+  Eigen::VectorXd singularValues = svd.singularValues();
+  Eigen::VectorXd singularValuesInv = Eigen::VectorXd::Zero(singularValues.rows());
+
+  for (uint32_t i = 0; i < singularValues.rows(); ++i)
+  {
+    double denominator = singularValues(i) * singularValues(i);
+    //singularValuesInv(i) = 1.0 / singularValues(i);
+    singularValuesInv(i) = (singularValues(i) < 1e-6) ? 0.0 : singularValues(i) / denominator;
+  }
+
+  Eigen::MatrixXd result  = svd.matrixV() * singularValuesInv.asDiagonal() * svd.matrixU().transpose();
+  jacobianInv = result;
+}
+
+// calculate inverse of Jacobian matrix using direct multilication method
+void Kinematic_calculations::calculateInverseJacobianbyDirect(const Eigen::MatrixXd& jacobian, Eigen::MatrixXd& jacobianInv)
+{
+  Eigen::MatrixXd result;
+  Eigen::MatrixXd jac_t = jacobian.transpose();
+  uint32_t rows = jacobian.rows();
+  uint32_t cols = jacobian.cols();
+
+  if (cols >= rows)
+  {
+    result = jac_t * (jacobian * jac_t).inverse();
+  }
+  else
+  {
+    result = (jac_t * jacobian).inverse() * jac_t;
+  }
+
+  jacobianInv = result;
+}
+
 //convert KDL to Eigen matrix
 void Kinematic_calculations::transformKDLToEigenMatrix(const KDL::Frame &frame, Eigen::MatrixXd &matrix)
 {
@@ -481,7 +521,7 @@ void Kinematic_calculations::printDataMembers()
 
   // Forward kinematic matrix relative to root link
   ROS_INFO(" Forward Kinematic matrix:");
-  std::cout<<"\033[36;1m" << FK_Homogenous_Matrix_[segments_-1] <<  "\033[36;0m" << std::endl;
+  std::cout<<"\033[0;32m" << FK_Homogenous_Matrix_[segments_-1] <<  "\033[36;0m" << std::endl;
   ROS_WARN("===================");
 
   ROS_INFO("------------------------- \n");

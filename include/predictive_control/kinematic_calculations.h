@@ -10,6 +10,7 @@
 #include <tf2_ros/static_transform_broadcaster.h>
 
 // eigen includes
+#include <Eigen/Eigen>
 #include <Eigen/Core>
 #include <Eigen/LU>	//inverse of matrix
 
@@ -20,6 +21,7 @@
 #include <urdf/model.h>
 #include <kdl_parser/kdl_parser.hpp>
 #include <kdl/frames.hpp>
+#include <kdl/jntarray.hpp>
 #include <kdl/chainfksolver.hpp>
 #include <kdl/chainiksolvervel_pinv.hpp>
 #include <kdl/chainfksolvervel_recursive.hpp>
@@ -31,9 +33,6 @@
 #include <map>
 #include <string>
 //#include <iomanip> std::setprecision(5)
-
-// acado includes
-#include <acado_optimal_control.hpp>
 
 #include<predictive_control/predictive_configuration.h>
 
@@ -85,7 +84,7 @@ public:
    * @param jacobian: Jacobian Matrix
    * @param jacobianInv: Inverse of Jacobian Matrix
    */
-  void calculate_inverse_jacobian_bySVD( const Eigen::MatrixXd& jacobian,
+  void calculateInverseJacobianbySVD( const Eigen::MatrixXd& jacobian,
                                          Eigen::MatrixXd& jacobianInv
                                          );
 
@@ -94,10 +93,13 @@ public:
    * @param jacobian: Jacobian Matrix
    * @param jacobianInv: Inverse of Jacobian Matrix
    */
-  void calculate_inverse_jacobian_byDirect( const Eigen::MatrixXd& jacobian,
+  void calculateInverseJacobianbyDirect( const Eigen::MatrixXd& jacobian,
                                             Eigen::MatrixXd& jacobianInv
                                             );
 
+  /**
+   * @brief printDataMembers: Print important data memeber of this class, Just for Debug purpose
+   */
   void printDataMembers(void);
 
   /** public data members */

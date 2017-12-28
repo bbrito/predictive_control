@@ -40,7 +40,8 @@ bool CollisionRobot::initializeCollisionRobot()
 }
 
 // update collsion ball position, publish new position of collision ball
-void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix, const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
+void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix,
+                                           const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
 {
   // make sure collsion matrix and marker array should be empty
   clear_data_member();
@@ -81,7 +82,8 @@ void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &F
 }
 
 // create collision detection, specifically center position of collision matrix
-void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix, const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
+void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix,
+                                             const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
 {
   int point = 0u, counter = 0u;
   std::string key = "point_";
@@ -152,7 +154,8 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
 }
 
 // generate collision around robot body
-void CollisionRobot::visualizeCollisionVolume(const geometry_msgs::PoseStamped &center, const double &radius, const uint32_t &ball_id)
+void CollisionRobot::visualizeCollisionVolume(const geometry_msgs::PoseStamped &center,
+                                              const double &radius, const uint32_t &ball_id)
 {
   visualization_msgs::Marker marker;
   marker.type = visualization_msgs::Marker::SPHERE;
@@ -205,9 +208,10 @@ void CollisionRobot::computeCollisionCost(const std::map<std::string, geometry_m
         // logistic cost function
         // Nonlinear Model Predictive Control for Multi-Micro Aerial Vehicle Robust Collision Avoidance
         // https://arxiv.org/pdf/1703.01164.pdf ... equation(10)
-        ROS_INFO(" '%s'  <---> '%s'", it_out->first.c_str(),it_in->first.c_str());
+        ROS_DEBUG(" '%s'  <---> '%s'", it_out->first.c_str(),it_in->first.c_str());
         dist += exp((collision_min_distance - std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose))) / weight_factor);
-        //ROS_WARN_STREAM("Exponential term: "<<exp(collision_min_distance - std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose)) / weight_factor));
+        ROS_DEBUG_STREAM("Exponential term: "<<
+                         exp(collision_min_distance - std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose)) / weight_factor));
       }
     }
     //store cost of each point into vector
@@ -216,7 +220,8 @@ void CollisionRobot::computeCollisionCost(const std::map<std::string, geometry_m
 }
 
 // create static frame, just for visualization purpose
-void CollisionRobot::createStaticFrame(const geometry_msgs::PoseStamped &stamped, const std::string &frame_name)
+void CollisionRobot::createStaticFrame(const geometry_msgs::PoseStamped &stamped,
+                                       const std::string &frame_name)
 {
   geometry_msgs::TransformStamped static_transformStamped;
 
@@ -240,7 +245,8 @@ void CollisionRobot::createStaticFrame(const geometry_msgs::PoseStamped &stamped
 }
 
 //convert KDL to Eigen matrix
-void CollisionRobot::transformKDLToEigenMatrix(const KDL::Frame &frame, Eigen::MatrixXd &matrix)
+void CollisionRobot::transformKDLToEigenMatrix(const KDL::Frame &frame,
+                                               Eigen::MatrixXd &matrix)
 {
   // translation
   for (unsigned int i = 0; i < 3; ++i)
@@ -256,7 +262,8 @@ void CollisionRobot::transformKDLToEigenMatrix(const KDL::Frame &frame, Eigen::M
 }
 
 //convert Eigen matrix to KDL::Frame
-void CollisionRobot::transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame)
+void CollisionRobot::transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix,
+                                               KDL::Frame& frame)
 {
   // translation
   for (unsigned int i = 0; i < 3; ++i)

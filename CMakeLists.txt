@@ -40,7 +40,7 @@ catkin_package(
   DEPENDS Boost CERES ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_PACKAGES}
   #LIBRARIES  predictive_configuration kinematic_calculations predictive_trajectory_generator predictive_controller
-  LIBRARIES  predictive_configuration kinematic_calculations  
+  LIBRARIES  predictive_configuration kinematic_calculations self_collision_detection 
 )
 
 ### BUILD ###
@@ -81,9 +81,9 @@ add_executable(kinematic_calculations_test test/kinematic_calculations_test.cpp)
 add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} )
 
-#add_executable(kinematic_calculations_test test/new_kinematic_calculation_test.cpp)
-#add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} )
+add_executable(collision_detection_test test/collision_detection_test.cpp)
+add_dependencies(collision_detection_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(collision_detection_test kinematic_calculations self_collision_detection ${catkin_LIBRARIES} )
 
 #add_executable(predictive_config_test test/predictive_config_test.cpp)
 #add_dependencies(predictive_config_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -94,7 +94,7 @@ target_link_libraries(kinematic_calculations_test kinematic_calculations ${catki
 #target_link_libraries(predictive_controller_test predictive_controller ${catkin_LIBRARIES} )
 
 ### INSTALL ###
-#install(TARGETS predictive_configuration kinematic_calculations predictive_trajectory_generator predictive_controller
+#install(TARGETS predictive_configuration kinematic_calculations self_collision_detection predictive_trajectory_generator predictive_controller
 # ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 # LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 # RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 
 #include <predictive_control/kinematic_calculations.h>
+#include <predictive_control/collision_detection.h>
 
 int main(int argc, char **argv)
 {
@@ -64,6 +65,7 @@ int main(int argc, char **argv)
 
 			std::cout<<"KDL Jacobian Matrix: \n"
 					<<"\033[0;33m"<< Jacobian_Matrix <<"\033[36;0m" <<std::endl;
+
 
 		}
 

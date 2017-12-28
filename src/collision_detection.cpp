@@ -48,9 +48,10 @@ void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &F
   // generate/update collision matrix
   generateCollisionVolume(FK_Homogenous_Matrix, Transformation_Matrix);
 
-  // debug
+  // DEBUG
   if (predictive_configuration::activate_output_)
   {
+    ROS_WARN("===== COLLISION MATRIX =====");
     for (auto const& it: collision_matrix_)
     {
       ROS_INFO_STREAM("CollisionRobot: "<<it.first << " -> stamped: \n" << it.second);
@@ -68,7 +69,15 @@ void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &F
   marker_pub_.publish(marker_array_);
 
   // compute collision cost vectors
-  computeCollisionCost(collision_matrix_, predictive_configuration::ball_radius_, 0.01);
+  computeCollisionCost(collision_matrix_, predictive_configuration::minimum_collision_distance_,
+                       predictive_configuration::collision_weight_factor_);
+
+  // DEBUG
+  if (true) //predictive_configuration::activate_output_
+  {
+    ROS_WARN("===== COLLISION COST VECTOR =====");
+    std::cout << collision_cost_vector_.transpose() << std::endl;
+  }
 }
 
 // create collision detection, specifically center position of collision matrix
@@ -196,7 +205,9 @@ void CollisionRobot::computeCollisionCost(const std::map<std::string, geometry_m
         // logistic cost function
         // Nonlinear Model Predictive Control for Multi-Micro Aerial Vehicle Robust Collision Avoidance
         // https://arxiv.org/pdf/1703.01164.pdf ... equation(10)
-        dist += exp(collision_min_distance - std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose))) / weight_factor;
+        ROS_INFO(" '%s'  <---> '%s'", it_out->first.c_str(),it_in->first.c_str());
+        dist += exp((collision_min_distance - std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose))) / weight_factor);
+        //ROS_WARN_STREAM("Exponential term: "<<exp(collision_min_distance - std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose)) / weight_factor));
       }
     }
     //store cost of each point into vector

@@ -24,6 +24,9 @@
 #include <map>
 #include <string>
 
+// urdf includes
+#include <urdf/model.h>
+
 // predictive includes
 #include <predictive_control/predictive_configuration.h>
 
@@ -59,9 +62,35 @@ public:
   void generateCollisionVolume(const geometry_msgs::PoseStamped& center, const double& radius, const uint32_t& ball_id);
 
   /** public data member*/
+  // visulaize all volumes
   visualization_msgs::MarkerArray marker_array_;
 
+  // collision matrix
+  std::map<std::string, geometry_msgs::PoseStamped> collision_matrix_;
+
 private:
+
+  urdf::Model model;
+
+  void initializeDataMember(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix);
+
+  /**
+   * @brief transformKDLToEigenMatrix: transform KDL Frame to Eigen Matrix
+   * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
+   * @param matrix transformation matrix
+   */
+  void transformKDLToEigenMatrix(const KDL::Frame& frame,
+                                 Eigen::MatrixXd& matrix
+                                 );
+
+  /**
+   * @brief transformEigenMatrixToKDL: transform Eigen Matrix to KDL Frame
+   * @param matrix transformation matrix
+   * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
+   */
+  void transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix,
+                                 KDL::Frame& frame
+                                 );
 
   /**
    * @brief clear_data_member: clear vectors means free allocated memory

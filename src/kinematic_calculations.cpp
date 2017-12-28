@@ -234,15 +234,15 @@ void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& j
   }
 
   // segments - degree_of_freedom_ gives information about fixed frame
-  for (int i = 0u, angle_id = 0u; i < segments_; ++i) //(segments_- degree_of_freedom_)
+  for (int i = 0u, revolute_joint_number = 0u; i < segments_; ++i) //(segments_- degree_of_freedom_)
   {
     // revolute joints update
     if (chain.getSegment(i).getJoint().getType() == 0)
     {
-      generateTransformationMatrixFromJointValues(angle_id, joints_angle(angle_id), dummy_RotTrans_Matrix);
+      generateTransformationMatrixFromJointValues(revolute_joint_number, joints_angle(revolute_joint_number), dummy_RotTrans_Matrix);
       till_joint_FK_Matrix = till_joint_FK_Matrix * ( Transformation_Matrix_[i] * dummy_RotTrans_Matrix);
       FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
-      ++angle_id;
+      ++revolute_joint_number;
     }
 
     // fixed joints update
@@ -264,6 +264,122 @@ void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& j
 
   // take last segment value that is FK Matrix
   FK_Matrix = FK_Homogenous_Matrix_[segments_-1];
+
+  if (predictive_configuration::activate_output_)
+  {
+    ROS_WARN("===== FORWARD KINEMATICS MATRIX =======");
+    std::cout << FK_Matrix << std::endl;
+  }
+}
+
+// calculate diffrential velocity (linear and angular) called Jacobian Matrix
+void Kinematic_calculations::calculateJacobianMatrix(const Eigen::VectorXd &joints_angle, Eigen::MatrixXd &FK_Matrix, Eigen::MatrixXd &Jacobian_Matrix)
+{
+  // initialize paramters and local variables
+  const int jacobian_matrix_rows = 6, jacobian_matrix_columns = predictive_configuration::degree_of_freedom_;
+  //FK_Matrix = Eigen::Matrix4d::Identity();
+  Jacobian_Matrix.resize(jacobian_matrix_rows, jacobian_matrix_columns);
+  Eigen::Vector3d p( 0.0, 0.0, 0.0);
+  Eigen::Vector3d z0( 0.0, 0.0, 1.0);
+  Eigen::Vector3d p0( 0.0, 0.0, 0.0);
+
+  // first calculate forward kinematic matrix
+  calculateForwardKinematics(joints_angle, FK_Matrix);
+
+  // use information about translation of end effector relative to root link
+  p(0) = FK_Matrix(0,3);
+  p(1) = FK_Matrix(1,3);
+  p(2) = FK_Matrix(2,3);
+
+  //compute differential velocity
+  // Modelling and Control of Robot Manipulators by L. Sciavicco and B. Siciliano
+  for (int i = 0u; i < segments_; ++i)
+  {
+    Eigen::Vector3d Jv( 0.0, 0.0, 0.0);
+    Eigen::Vector3d Jo( 0.0, 0.0, 0.0);
+
+    // for first joint
+    if ( i == 0)
+    {
+      // revolute joints update
+      if (chain.getSegment(i).getJoint().getType() == 0)
+      {
+        Jv = z0.cross(p);
+        Jo = z0;
+      }
+
+      // fixed joints update
+      if (chain.getSegment(i).getJoint().getType() == 8)
+      {
+        Jv = z0;
+        Jo = p0;
+      }
+    }
+
+    // for rest of joint execept first joint
+    else
+    {
+      Eigen::Vector3d zi( 0.0, 0.0, 0.0);
+      Eigen::Vector3d pi( 0.0, 0.0, 0.0);
+
+      // third column of rotation matrix
+      zi(0) = FK_Homogenous_Matrix_[i](0,2);
+      zi(1) = FK_Homogenous_Matrix_[i](1,2);
+      zi(2) = FK_Homogenous_Matrix_[i](2,2);
+
+      // translation vector each joint relative to root link
+      pi(0) = FK_Homogenous_Matrix_[i](0,3);
+      pi(1) = FK_Homogenous_Matrix_[i](1,3);
+      pi(2) = FK_Homogenous_Matrix_[i](2,3);
+
+      // revolute joints update
+      if (chain.getSegment(i).getJoint().getType() == 0)
+      {
+        Jv = zi.cross(p-pi);
+        Jo = zi;
+      }
+
+      // fixed joints update
+      if (chain.getSegment(i).getJoint().getType() == 8)
+      {
+        Jv = zi;
+        Jo = p0;
+      }
+    }
+
+    // root frame are not same as base frame, segments are more than degree of freedom
+    // shift jacobian matrix update value from actual joint values
+    if ( i >= (segments_ - degree_of_freedom_))
+    {
+      int point = i - (segments_ - degree_of_freedom_);
+      /*// update Jacobian Matrix using computed differential velocity
+      // linear velocity
+      Jacobian_Matrix(0,i) = Jv(0);
+      Jacobian_Matrix(1,i) = Jv(1);
+      Jacobian_Matrix(2,i) = Jv(2);
+      // angular velocity
+      Jacobian_Matrix(3,i) = Jo(0);
+      Jacobian_Matrix(4,i) = Jo(1);
+      Jacobian_Matrix(5,i) = Jo(2);*/
+
+      // update Jacobian Matrix using computed differential velocity
+      // linear velocity
+      Jacobian_Matrix(0,point) = Jv(0);
+      Jacobian_Matrix(1,point) = Jv(1);
+      Jacobian_Matrix(2,point) = Jv(2);
+      // angular velocity
+      Jacobian_Matrix(3,point) = Jo(0);
+      Jacobian_Matrix(4,point) = Jo(1);
+      Jacobian_Matrix(5,point) = Jo(2);
+    }
+  }
+  ROS_WARN("===== JACOBIAN_MATRIX: ======");
+  std::cout << Jacobian_Matrix << std::endl;
+  if (predictive_configuration::activate_output_)
+  {
+    ROS_WARN("===== JACOBIAN_MATRIX: ======");
+    std::cout << Jacobian_Matrix << std::endl;
+  }
 }
 
 //convert KDL to Eigen matrix

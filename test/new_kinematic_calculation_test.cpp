@@ -17,16 +17,18 @@ int main(int argc, char **argv)
 			kin_solver.initialize();
 
 			Eigen::VectorXd joint_angles(7);
-			joint_angles(0) = 1.57;	joint_angles(1) = 0.70;	joint_angles(2) = 1.57;
+			joint_angles(0) = 1.57;	joint_angles(1) = 1.57;	joint_angles(2) = 1.57;
 			joint_angles(3) = 1.57;	joint_angles(4) = 0.0;	joint_angles(5) = 0.0;
 			joint_angles(6) = 0.0; //1.57079632679
 			//joint_angles.resize(7,0.0);
 			//joint_angles.Constant(0.0);
 
 			Eigen::MatrixXd FK_Matrix;
-			kin_solver.calculateForwardKinematics(joint_angles, FK_Matrix);
+			Eigen::MatrixXd Jacobian_Matrix;
+			//kin_solver.calculateForwardKinematics(joint_angles, FK_Matrix);
+			kin_solver.calculateJacobianMatrix(joint_angles, FK_Matrix, Jacobian_Matrix);
 
-			kin_solver.printDataMembers();
+			//kin_solver.printDataMembers();
 
 			ROS_INFO("Done");
 		}

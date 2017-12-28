@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 			//kin_solver.calculateForwardKinematics(joint_angles, FK_Matrix);
 			kin_solver.calculateJacobianMatrix(joint_angles, FK_Matrix, Jacobian_Matrix);
 
-			//kin_solver.printDataMembers();
+			kin_solver.printDataMembers();
 
 			ROS_INFO("Done");
 		}

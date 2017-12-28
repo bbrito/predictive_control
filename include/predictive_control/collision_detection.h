@@ -86,6 +86,39 @@ public:
                                const double& radius, const uint32_t& ball_id
                                );
 
+  /**
+   * @brief computeCollisionCost: Computation collision distance cost,
+   *                              Store Distance vectors represent distance from center of frame to other frame
+   * @param collision_matrix: Collision matrix has information about distance between frames relative to root frame
+   * @param collision_min_distance: Minimum collision distance, below that should not go
+   * @param weight_factor: convergence rate
+   */
+  void computeCollisionCost(const std::map<std::string, geometry_msgs::PoseStamped> collision_matrix,
+                                       const double& collision_min_distance,
+                                       const double& weight_factor
+                                       );
+
+  /**
+   * @brief getEuclideanDistance: compute 2D distance called EuclideanDistance
+   * @param pose_a: Pose of one point
+   * @param pose_b: Pose of second point
+   * @return distance between pose_a and pose_b
+   */
+  static inline double getEuclideanDistance(const geometry_msgs::Pose& pose_a,
+                                     const geometry_msgs::Pose& pose_b
+                                     )
+  {
+    ROS_DEBUG_STREAM("point_a:" << pose_a.position);
+    ROS_DEBUG_STREAM("point_b:" << pose_b.position);
+
+    double distance = ( sqrt( (pose_a.position.x - pose_b.position.x) * (pose_a.position.x - pose_b.position.x) +
+                  (pose_a.position.y - pose_b.position.y) * (pose_a.position.y - pose_b.position.y) +
+                  (pose_a.position.z - pose_b.position.z) * (pose_a.position.z - pose_b.position.z)
+            ));
+
+    ROS_DEBUG_STREAM("getEuclideanDistance: ...  "<< distance);
+    return distance;
+  }
 
   /** public data member*/
   // visulaize all volumes
@@ -93,6 +126,9 @@ public:
 
   // collision matrix
   std::map<std::string, geometry_msgs::PoseStamped> collision_matrix_;
+
+  // collision cost vector
+  Eigen::VectorXd collision_cost_vector_;
 
 private:
   // marker publisher

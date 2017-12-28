@@ -66,6 +66,9 @@ void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &F
 
   // publish
   marker_pub_.publish(marker_array_);
+
+  // compute collision cost vectors
+  computeCollisionCost(collision_matrix_, predictive_configuration::ball_radius_, 0.01);
 }
 
 // create collision detection, specifically center position of collision matrix
@@ -171,6 +174,34 @@ void CollisionRobot::visualizeCollisionVolume(const geometry_msgs::PoseStamped &
 
   // store created marker
   marker_array_.markers.push_back(marker);
+}
+
+// compute collsion cost such way that below minimum distance cost goes to infinite, and far distance costs goes to zero
+void CollisionRobot::computeCollisionCost(const std::map<std::string, geometry_msgs::PoseStamped> collision_matrix,
+                                                     const double &collision_min_distance,
+                                                     const double &weight_factor)
+{
+  collision_cost_vector_ = Eigen::VectorXd(collision_matrix.size());
+
+  // iterate to one by one point in collision matrix
+  int loop_counter = 0u;
+  for (auto it_out = collision_matrix.begin(); it_out != collision_matrix.end(); ++it_out, ++loop_counter)
+  {
+    double dist = 0.0;
+    for (auto it_in = collision_matrix.begin(); it_in != collision_matrix.end(); ++it_in)
+    {
+      // both string are not equal than execute if loop
+      if (it_out->first.find(it_in->first) == std::string::npos)
+      {
+        // logistic cost function
+        // Nonlinear Model Predictive Control for Multi-Micro Aerial Vehicle Robust Collision Avoidance
+        // https://arxiv.org/pdf/1703.01164.pdf ... equation(10)
+        dist += exp(collision_min_distance - std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose))) / weight_factor;
+      }
+    }
+    //store cost of each point into vector
+    collision_cost_vector_(loop_counter) = dist;
+  }
 }
 
 // create static frame, just for visualization purpose

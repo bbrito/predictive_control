@@ -460,6 +460,9 @@ void Kinematic_calculations::printDataMembers()
 
   // print joint rotation axis
   ROS_INFO("Joint rotation axis");
+  ROS_WARN("arm_podest_joint: %f, %f, %f",model.getJoint("arm_podest_joint").get()->axis.x,
+           model.getJoint("arm_podest_joint").get()->axis.y,
+           model.getJoint("arm_podest_joint").get()->axis.z);
   for (int i=0u; i < degree_of_freedom_; ++i)
   {
     std::cout<<"\033[36;1m" << predictive_configuration::joints_name_.at(i)<< ": " << "\033[36;0m" <<

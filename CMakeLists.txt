@@ -54,7 +54,7 @@ target_link_libraries(predictive_configuration ${catkin_LIBRARIES} ${orocos_kdl_
 
 add_library(kinematic_calculations src/kinematic_calculations.cpp)
 add_dependencies(kinematic_calculations ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(kinematic_calculations predictive_configuration ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES} ${libacado}) 
+target_link_libraries(kinematic_calculations predictive_configuration ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES}) 
 
 #add_library(predictive_trajectory_generator src/predictive_trajectory_generator.cpp)
 #add_dependencies(predictive_trajectory_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -73,13 +73,13 @@ add_executable(predictive_configuration_test test/predictive_configuration_param
 add_dependencies(predictive_configuration_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(predictive_configuration_test predictive_configuration ${catkin_LIBRARIES} )
 
-#add_executable(kinematic_calculations_test test/kinematic_calculations_test.cpp)
-#add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} )
-
-add_executable(kinematic_calculations_test test/new_kinematic_calculation_test.cpp)
+add_executable(kinematic_calculations_test test/kinematic_calculations_test.cpp)
 add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} )
+
+#add_executable(kinematic_calculations_test test/new_kinematic_calculation_test.cpp)
+#add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} )
 
 #add_executable(predictive_config_test test/predictive_config_test.cpp)
 #add_dependencies(predictive_config_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

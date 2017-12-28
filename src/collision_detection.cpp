@@ -29,10 +29,11 @@ bool CollisionRobot::initializeCollisionRobot()
 
   clear_data_member();
 
-  ros::NodeHandle nh_collisionRobot("CollisionRobot");
+  ros::NodeHandle nh_collisionRobot("predictive_control/collisionRobot");
   marker_pub_ = nh_collisionRobot.advertise<visualization_msgs::MarkerArray>("collision_ball", 1);
 
-  ROS_INFO("===== Collision Ball marker published with topic: ~/CollisionRobot/collision_ball =====");
+
+  ROS_INFO("===== Collision Ball marker published with topic: ~/predictive_control/collisionRobot/collision_ball =====");
   ROS_WARN("COLLISIONROBOT INITIALIZED!!");
 
   return true;
@@ -46,6 +47,15 @@ void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &F
 
   // generate/update collision matrix
   generateCollisionVolume(FK_Homogenous_Matrix, Transformation_Matrix);
+
+  // debug
+  if (predictive_configuration::activate_output_)
+  {
+    for (auto const& it: collision_matrix_)
+    {
+      ROS_INFO_STREAM("CollisionRobot: "<<it.first << " -> stamped: \n" << it.second);
+    }
+  }
 
   // visualize marker array
   int id = 0u;
@@ -84,9 +94,9 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
         // fill up pose stamped
         stamped.header.frame_id = predictive_configuration::chain_root_link_;
         stamped.header.stamp = ros::Time().now();
-        stamped.pose.position.x = previous_frame.p.x() + (frame.p.x() - previous_frame.p.x()*0.5);
-        stamped.pose.position.y = previous_frame.p.y() + (frame.p.y() - previous_frame.p.y()*0.5);
-        stamped.pose.position.z = previous_frame.p.z() + (frame.p.z() - previous_frame.p.z()*0.5);
+        stamped.pose.position.x = previous_frame.p.x() + ((frame.p.x() - previous_frame.p.x())*0.5);
+        stamped.pose.position.y = previous_frame.p.y() + ((frame.p.y() - previous_frame.p.y())*0.5);
+        stamped.pose.position.z = previous_frame.p.z() + ((frame.p.z() - previous_frame.p.z())*0.5);
         previous_frame.M.GetQuaternion(stamped.pose.orientation.x,
                               stamped.pose.orientation.y,
                               stamped.pose.orientation.z,
@@ -218,3 +228,4 @@ void CollisionRobot::transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix, KD
     frame.M.data[i] = matrix(i/3, i%3);
   }
 }
+

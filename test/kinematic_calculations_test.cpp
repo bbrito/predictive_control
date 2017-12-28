@@ -27,8 +27,14 @@ int main(int argc, char **argv)
 			//kin_solver.calculateForwardKinematics(joint_angles, FK_Matrix);
 			kin_solver.calculateJacobianMatrix(joint_angles, FK_Matrix, Jacobian_Matrix);
 
-			std::cout<<"\033[95m"<<"Compute and get Jacobian Matrix: \n"	<<"\033[36;0m" << Jacobian_Matrix <<std::endl;
+			std::cout<<"FK_Matrix: \n"
+					<<"\033[0;32m" << FK_Matrix	<<"\033[36;0m"<<std::endl;
 
+			std::cout<<"Jacobian Matrix: \n"
+					<<"\033[0;33m"<< Jacobian_Matrix <<"\033[36;0m" <<std::endl;
+
+
+			/*
 			// Check Inverse jacobian calculation using 2*2 Jacobian matrix
 			Eigen::MatrixXd J_Inv_Mat_bySVD, J_Test(2,2);
 			J_Test(0,0) = 1;
@@ -44,6 +50,20 @@ int main(int argc, char **argv)
 			std::cout<<"\033[95m"<<"Inverse Jacobian Matrix by using Direct: \n"	<<"\033[36;0m" << J_Inv_Mat_byDirect <<std::endl;
 
 			kin_solver.printDataMembers();
+			*/
+
+			kin_solver.calculateForwardKinematicsUsingKDLSolver(joint_angles, FK_Matrix);
+
+			std::cout<<"KDL FK_Matrix: \n"
+					<<"\033[0;32m" << FK_Matrix	<<"\033[36;0m"<<std::endl;
+
+			kin_solver.calculateJacobianMatrixUsingKDLSolver(joint_angles, FK_Matrix, Jacobian_Matrix);
+
+			std::cout<<"KDL FK_Matrix: \n"
+					<<"\033[0;32m" << FK_Matrix	<<"\033[36;0m"<<std::endl;
+
+			std::cout<<"KDL Jacobian Matrix: \n"
+					<<"\033[0;33m"<< Jacobian_Matrix <<"\033[36;0m" <<std::endl;
 
 		}
 

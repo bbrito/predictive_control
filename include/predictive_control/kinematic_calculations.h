@@ -129,6 +129,13 @@ public:
    */
   void printDataMembers(void);
 
+  /**
+   * @brief getTranMatrixFromRootLink: Get transformation matrix relative to root link
+   * @param segment_id: From segment id to root link find transformation matrix
+   * @param trans_matrix_from_root_link: Resultant transformation matrix
+   */
+  //void getTranMatrixFromRootLink(const unsigned int& segment_id, Eigen::MatrixXd& trans_matrix_from_root_link);
+
   /** public data members */
   // transformation matrix between two concecutive frame
   std::vector<Eigen::MatrixXd> Transformation_Matrix_;

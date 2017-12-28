@@ -15,25 +15,19 @@ int main(int argc, char **argv)
 			Kinematic_calculations kin_solver;
 			kin_solver.initialize();
 
-			// Print data member of kinematic solver class
-			kin_solver.print_data_memebers();
-			std::cout<<std::endl;
+			Eigen::VectorXd joint_angles(7);
+			joint_angles(0) = 1.57;	joint_angles(1) = 1.57;	joint_angles(2) = 1.57;
+			joint_angles(3) = 1.57;	joint_angles(4) = 0.0;	joint_angles(5) = 0.0;
+			joint_angles(6) = 0.0; //1.57079632679
+			//joint_angles.resize(7,0.0);
+			//joint_angles.Constant(0.0);
 
-			KDL::JntArray jnt_angles = KDL::JntArray(7);
-			jnt_angles(0) = 1.57;	jnt_angles(1) = 1.57;	jnt_angles(2) = 1.57;	jnt_angles(3) = 1.57;
+			Eigen::MatrixXd FK_Matrix;
+			Eigen::MatrixXd Jacobian_Matrix;
+			//kin_solver.calculateForwardKinematics(joint_angles, FK_Matrix);
+			kin_solver.calculateJacobianMatrix(joint_angles, FK_Matrix, Jacobian_Matrix);
 
-			// Print fk and Jacobian matrix
-			kin_solver.print_fk_and_jacobian_matrix(jnt_angles);
-			std::cout<<std::endl;
-
-			// Print fk and Jacobian matrix with KDL solver
-			kin_solver.print_kdl_fk_and_jacobian_matrix(jnt_angles);
-			std::cout<<std::endl;
-
-			//Cross check get function values
-			Eigen::MatrixXd J_Mat;
-			kin_solver.compute_and_get_jacobian(jnt_angles, J_Mat);
-			std::cout<<"\033[95m"<<"Compute and get Jacobian Matrix: \n"	<<"\033[36;0m" << J_Mat <<std::endl;
+			std::cout<<"\033[95m"<<"Compute and get Jacobian Matrix: \n"	<<"\033[36;0m" << Jacobian_Matrix <<std::endl;
 
 			// Check Inverse jacobian calculation using 2*2 Jacobian matrix
 			Eigen::MatrixXd J_Inv_Mat_bySVD, J_Test(2,2);
@@ -41,13 +35,15 @@ int main(int argc, char **argv)
 			J_Test(0,1) = 0;
 			J_Test(1,0) = 2;
 			J_Test(1,1) = 2;
-			kin_solver.calculate_inverse_jacobian_bySVD(J_Test, J_Inv_Mat_bySVD);
+			kin_solver.calculateInverseJacobianbySVD(J_Test, J_Inv_Mat_bySVD);
 			std::cout<<"\033[95m"<<"Inverse Jacobian Matrix by using SVD: \n"	<<"\033[36;0m" << J_Inv_Mat_bySVD <<std::endl;
 
 			// Check Inverse jacobian calculation using 2*2 Jacobian matrix
 			Eigen::MatrixXd J_Inv_Mat_byDirect;
-			kin_solver.calculate_inverse_jacobian_bySVD(J_Test, J_Inv_Mat_byDirect);
+			kin_solver.calculateInverseJacobianbyDirect(J_Test, J_Inv_Mat_byDirect);
 			std::cout<<"\033[95m"<<"Inverse Jacobian Matrix by using Direct: \n"	<<"\033[36;0m" << J_Inv_Mat_byDirect <<std::endl;
+
+			kin_solver.printDataMembers();
 
 		}
 

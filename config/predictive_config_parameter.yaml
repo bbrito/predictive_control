@@ -20,6 +20,8 @@ tracking_frame: arm_7_link
 predictive_config:
     self_collision:
          ball_radius: 0.15
+         minimum_collision_distance: 0.15
+         collision_weight_factor: 0.01
     constraints:
          position_constraints:
                min: [-3.14, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14]

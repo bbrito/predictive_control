@@ -145,6 +145,8 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   nh.param("/clock_frequency", clock_frequency_, double(50.0)); // 50 hz
   nh.param("/activate_output", activate_output_, bool(false));  // debug
   nh_config.param("self_collision/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
+  nh_config.param("self_collision/minimum_collision_distance", minimum_collision_distance_, double(0.12));  // self collision avoidance minimum distance
+  nh_config.param("self_collision/collision_weight_factor", collision_weight_factor_, double(0.01));  // self collision avoidance weight factor
 
   initialize_success_ = true;
 
@@ -183,6 +185,8 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
 
   clock_frequency_ = new_config.clock_frequency_;
   ball_radius_ = new_config.ball_radius_;
+  minimum_collision_distance_ = new_config.minimum_collision_distance_;
+  collision_weight_factor_ = new_config.collision_weight_factor_;
 
   if (activate_output_)
   {
@@ -207,6 +211,8 @@ void predictive_configuration::print_configuration_parameter()
   ROS_INFO_STREAM("Tracking_frame: " << tracking_frame_);
   ROS_INFO_STREAM("Clock_frequency: " << clock_frequency_);
   ROS_INFO_STREAM("Ball_radius: " << ball_radius_);
+  ROS_INFO_STREAM("Minimum collision distance: " << minimum_collision_distance_);
+  ROS_INFO_STREAM("Collision weight factor: " << collision_weight_factor_);
 
   // print joints name
   std::cout << "Joint names: [";

@@ -84,6 +84,8 @@ public:
 
   // self collision distance
   double ball_radius_;
+  double minimum_collision_distance_;
+  double collision_weight_factor_;
 
 private:
 

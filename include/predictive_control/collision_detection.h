@@ -53,21 +53,36 @@ public:
   ~CollisionRobot();
 
   /**
-   * @brief createCollisionMatrix: Create collsion matrix using forward kinematic relative to root link
+   * @brief initializeCollisionRobot: Initialize Collision Robot class
+   * @return true with success, else false
+   */
+  bool initializeCollisionRobot();
+
+  /**
+   * @brief updateCollisionVolume: Update collsion matrix using forward kinematic relative to root link
    * @param FK_Homogenous_Matrix: Forward kinematic replative to root link
    * @param Transformation_Matrix: Transformation matrix between two concecutive frame
    */
-  void createCollisionMatrix(const std::vector<Eigen::MatrixXd>& FK_Homogenous_Matrix,
+  void updateCollisionVolume(const std::vector<Eigen::MatrixXd>& FK_Homogenous_Matrix,
                              const std::vector<Eigen::MatrixXd>& Transformation_Matrix
                              );
 
   /**
-   * @brief generateCollisionVoulme: generate collision ball on given position
+   * @brief generateCollisionVolume: Create collsion matrix using forward kinematic relative to root link
+   * @param FK_Homogenous_Matrix: Forward kinematic replative to root link
+   * @param Transformation_Matrix: Transformation matrix between two concecutive frame
+   */
+  void generateCollisionVolume(const std::vector<Eigen::MatrixXd>& FK_Homogenous_Matrix,
+                             const std::vector<Eigen::MatrixXd>& Transformation_Matrix
+                             );
+
+  /**
+   * @brief visualizeCollisionVolume: visulize collision ball on given position
    * @param center: Pose of center of volume
    * @param radius: Ball radius
    * @param ball_id: Ball id should be unique for each ball
    */
-  void generateCollisionVolume(const geometry_msgs::PoseStamped& center,
+  void visualizeCollisionVolume(const geometry_msgs::PoseStamped& center,
                                const double& radius, const uint32_t& ball_id
                                );
 
@@ -80,7 +95,10 @@ public:
   std::map<std::string, geometry_msgs::PoseStamped> collision_matrix_;
 
 private:
+  // marker publisher
+  ros::Publisher marker_pub_;
 
+  // static frame broadcaster
   tf2_ros::StaticTransformBroadcaster static_broadcaster_;
 
   /**

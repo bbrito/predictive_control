@@ -3,13 +3,7 @@
 
 CollisionRobot::CollisionRobot()
 {
-  // make sure predictice_configuration class initialized
-  if (!predictive_configuration::initialize_success_)
-  {
-    predictive_configuration::initialize();
-  }
-
-  clear_data_member();
+;
 }
 
 CollisionRobot::~CollisionRobot()
@@ -24,8 +18,48 @@ void CollisionRobot::clear_data_member()
   collision_matrix_.clear();
 }
 
-// update collision detection, specifically center position of collision matrix
-void CollisionRobot::createCollisionMatrix(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix, const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
+// initialize and create publisher for publishing collsion ball marker
+bool CollisionRobot::initializeCollisionRobot()
+{
+  // make sure predictice_configuration class initialized
+  if (!predictive_configuration::initialize_success_)
+  {
+    predictive_configuration::initialize();
+  }
+
+  clear_data_member();
+
+  ros::NodeHandle nh_collisionRobot("CollisionRobot");
+  marker_pub_ = nh_collisionRobot.advertise<visualization_msgs::MarkerArray>("collision_ball", 1);
+
+  ROS_INFO("===== Collision Ball marker published with topic: ~/CollisionRobot/collision_ball =====");
+  ROS_WARN("COLLISIONROBOT INITIALIZED!!");
+
+  return true;
+}
+
+// update collsion ball position, publish new position of collision ball
+void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix, const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
+{
+  // make sure collsion matrix and marker array should be empty
+  clear_data_member();
+
+  // generate/update collision matrix
+  generateCollisionVolume(FK_Homogenous_Matrix, Transformation_Matrix);
+
+  // visualize marker array
+  int id = 0u;
+  for (auto it = collision_matrix_.begin(); it != collision_matrix_.end(); ++it, ++id)
+  {
+    visualizeCollisionVolume(it->second, predictive_configuration::ball_radius_, id);
+  }
+
+  // publish
+  marker_pub_.publish(marker_array_);
+}
+
+// create collision detection, specifically center position of collision matrix
+void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix, const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
 {
   int point = 0u, counter = 0u;
   std::string key = "point_";
@@ -58,7 +92,8 @@ void CollisionRobot::createCollisionMatrix(const std::vector<Eigen::MatrixXd> &F
                               stamped.pose.orientation.z,
                               stamped.pose.orientation.w
                               );
-
+        // broadcast static frame
+        createStaticFrame(stamped, key + std::to_string(point));
         collision_matrix_[key + std::to_string(point)] = stamped;
         point = point + 1;
       }
@@ -95,7 +130,7 @@ void CollisionRobot::createCollisionMatrix(const std::vector<Eigen::MatrixXd> &F
 }
 
 // generate collision around robot body
-void CollisionRobot::generateCollisionVolume(const geometry_msgs::PoseStamped &center, const double &radius, const uint32_t &ball_id)
+void CollisionRobot::visualizeCollisionVolume(const geometry_msgs::PoseStamped &center, const double &radius, const uint32_t &ball_id)
 {
   visualization_msgs::Marker marker;
   marker.type = visualization_msgs::Marker::SPHERE;

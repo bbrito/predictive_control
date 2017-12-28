@@ -36,10 +36,15 @@
 
 #include<predictive_control/predictive_configuration.h>
 
-#define _DEBUG_  false
-
 class Kinematic_calculations: public predictive_configuration
 {
+  /**
+    * Class to determine kinematics of robotics manipulator with following functionality
+    * - Computation of forward kinematics gives information about end effector pose in cartesian space
+    * - Computation of Jacobian matrix gives information about differential velocity namely linear and angular velocity
+    * - Computation of inverse of Jacobian matrix gives information about inverse of differential velocity
+    */
+
 public:
 
   /**
@@ -70,11 +75,33 @@ public:
 
   /**
    * @brief calculateJacobianMatrix: calculate Jacobian Matrix and Forward Kinematics (end effector pose)
-   * @param joints_angle
-   * @param FK_Matrix
-   * @param Jacobian_Matrix
+   * @param joints_angle: Current joint angle
+   * @param FK_Matrix: Resultant formward kinematic matrix
+   * @param Jacobian_Matrix: Resultant Jacobian Matrix
    */
   void calculateJacobianMatrix(const Eigen::VectorXd& joints_angle,
+                               Eigen::MatrixXd& FK_Matrix,
+                               Eigen::MatrixXd& Jacobian_Matrix
+                               );
+
+  /**
+   * @brief calculateForwardKinematicsUsingKDLSolver: Calculate forward kinematics start from root frame to tip link of manipulator
+   *                                                  by using kdl recursive solver
+   * @param joints_angle: Current joint angle
+   * @param FK_Matrix: Resultant Forward Kinematic Matrix
+   */
+  void calculateForwardKinematicsUsingKDLSolver(const Eigen::VectorXd& joints_angle,
+                                  Eigen::MatrixXd& FK_Matrix
+                                  );
+
+  /**
+   * @brief calculateJacobianMatrixUsingKDLSolver: calculate Jacobian Matrix and Forward Kinematics (end effector pose)
+   *                                               by using kdl recursive solver
+   * @param joints_angle: Current joint angle
+   * @param FK_Matrix: Resultant formward kinematic matrix
+   * @param Jacobian_Matrix: Resultant Jacobian Matrix
+   */
+  void calculateJacobianMatrixUsingKDLSolver(const Eigen::VectorXd& joints_angle,
                                Eigen::MatrixXd& FK_Matrix,
                                Eigen::MatrixXd& Jacobian_Matrix
                                );

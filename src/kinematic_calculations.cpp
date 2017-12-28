@@ -286,7 +286,7 @@ void Kinematic_calculations::calculateJacobianMatrix(const Eigen::VectorXd &join
 {
   // initialize paramters and local variables
   const int jacobian_matrix_rows = 6, jacobian_matrix_columns = predictive_configuration::degree_of_freedom_;
-  //FK_Matrix = Eigen::Matrix4d::Identity();
+  FK_Matrix = Eigen::Matrix4d::Identity();
   Jacobian_Matrix.resize(jacobian_matrix_rows, jacobian_matrix_columns);
   Eigen::Vector3d p( 0.0, 0.0, 0.0);
   Eigen::Vector3d z0( 0.0, 0.0, 1.0);
@@ -390,6 +390,81 @@ void Kinematic_calculations::calculateJacobianMatrix(const Eigen::VectorXd &join
   }
 }
 
+// calculate end effector pose using joint angles by using standard kdl pose recursive solver
+void Kinematic_calculations::calculateForwardKinematicsUsingKDLSolver(const Eigen::VectorXd &joints_angle, Eigen::MatrixXd &FK_Matrix)
+{
+  FK_Matrix = Eigen::Matrix4d::Identity();
+  KDL::Frame frame = KDL::Frame::Identity();
+  KDL::JntArray joints_value; //= KDL::JntArray::resize(joints_angle.size())
+  joints_value.data = joints_angle;
+
+  ROS_INFO_STREAM("Forward Kinematics using KDL recursive solver with joint values: ");
+  ROS_INFO_STREAM(joints_angle.transpose());
+
+  // compute tf transformation between root frame and base link of manipulator
+  if (predictive_configuration::chain_root_link_ != predictive_configuration::chain_base_link_)
+  {
+    ROS_WARN("'%s' and '%s' are not same frame", chain_root_link_.c_str(), chain_base_link_.c_str());
+  }
+
+  // kdl recursive solver to determine end effoctor position by given joint angle
+  KDL::ChainFkSolverPos_recursive pose_recursive_solver(chain);
+  int success_state = pose_recursive_solver.JntToCart( joints_value, frame);
+
+  //success_state < 0 something went wrong
+  if (success_state < 0)
+  {
+    ROS_ERROR("calculateForwardKinematicsUsingKDLSolver: Failed to compute forward kinematic using recursive solver");
+  }
+  else
+  {
+    ROS_INFO("calculateForwardKinematicsUsingKDLSolver: Successed to compute forward kinematic using recursive solver");
+    transformKDLToEigenMatrix(frame, FK_Matrix);
+  }
+}
+
+// calculate diffrential velocity (linear and angular) called Jacobian Matrix by using standard kdl pose recursive solver
+void Kinematic_calculations::calculateJacobianMatrixUsingKDLSolver(const Eigen::VectorXd &joints_angle, Eigen::MatrixXd &FK_Matrix, Eigen::MatrixXd &Jacobian_Matrix)
+{
+  // initialize paramters and local variables
+  const int jacobian_matrix_rows = 6, jacobian_matrix_columns = predictive_configuration::degree_of_freedom_;
+  FK_Matrix = Eigen::Matrix4d::Identity();
+  Jacobian_Matrix.resize(jacobian_matrix_rows, jacobian_matrix_columns);
+  KDL::Frame frame = KDL::Frame::Identity();
+  KDL::Jacobian KDL_Jacobian = KDL::Jacobian(predictive_configuration::degree_of_freedom_);
+  KDL::JntArray joints_value;
+  joints_value.data = joints_angle;
+
+  ROS_INFO_STREAM("Forward Kinematics using KDL recursive solver with joint values: ");
+  ROS_INFO_STREAM(joints_angle.transpose());
+
+  // compute tf transformation between root frame and base link of manipulator
+  if (predictive_configuration::chain_root_link_ != predictive_configuration::chain_base_link_)
+  {
+    ROS_WARN("'%s' and '%s' are not same frame", chain_root_link_.c_str(), chain_base_link_.c_str());
+  }
+
+  // kdl recursive solver to determine end effoctor position by given joint angle
+  KDL::ChainFkSolverPos_recursive pose_recursive_solver(chain);
+  int fk_success_state = pose_recursive_solver.JntToCart( joints_value, frame);
+
+  // kdl recursive solver to determine jacobian matrix by given joint angle
+  KDL::ChainJntToJacSolver jacobian_solver(chain);
+  int success_state = jacobian_solver.JntToJac(joints_value, KDL_Jacobian);
+
+  //success_state < 0 something went wrong
+  if (success_state < 0 || fk_success_state < 0)
+  {
+    ROS_ERROR("calculateJacobianMatrixUsingKDLSolver: Failed to compute forward kinematic or Jacobian matrix using recursive solver");
+  }
+  else
+  {
+    ROS_INFO("calculateJacobianMatrixUsingKDLSolver: Successed to compute forward kinematic and Jacobian matrix using recursive solver");
+    transformKDLToEigenMatrix(frame, FK_Matrix);
+    Jacobian_Matrix = KDL_Jacobian.data;
+  }
+}
+
 // calculate inverse of Jacobian matrix using Singular value decomposition
 void Kinematic_calculations::calculateInverseJacobianbySVD(const Eigen::MatrixXd &jacobian, Eigen::MatrixXd &jacobianInv)
 {
@@ -473,18 +548,22 @@ void Kinematic_calculations::transformKDLToEigen(const KDL::JntArray& joints_val
     joints_value(i) = vector(i);
   }
 }
-
+*/
+/*
 //convert Eigen vector to KDL vectors
 void Kinematic_calculations::transformEigenToKDL(const Eigen::VectorXd& vector, KDL::JntArray& joints_value)
 {
-  ROS_INFO("transformKDLToEigen: Number of Joint Values: %f", vector.size());
-  vector.resize(joints_value.data.size());
-  for (unsigned int i = 0; i < vector.size(); ++i)
+  uint32_t size = vector.rows()*vector.cols();
+  ROS_INFO("transformEigenToKDL: Number of Joint Values: %f", size);
+  joints_value.resize(size);
+  for (unsigned int i = 0; i < size; ++i)
   {
-    vector(i) = joints_value.data[i];
+    joints_value.data[i] = vector(i);
   }
-}*/
 
+  joints_value.data = vector;
+}
+*/
 void Kinematic_calculations::printDataMembers()
 {
   ROS_INFO("\n ------------------------- ");

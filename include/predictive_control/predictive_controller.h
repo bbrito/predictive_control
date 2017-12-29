@@ -37,7 +37,7 @@
 
 class predictive_control
 {
-  /** Managing of all classes execution of predictive control
+  /** Managing execution of all classes of predictive control
    * - Handle self collsion avoidance
    * - Extract current position and velocity of manipulator joints
    * - Publish controlled joint velocity

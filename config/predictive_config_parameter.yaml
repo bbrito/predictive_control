@@ -37,3 +37,12 @@ predictive_config:
          goal_tolerance:
                # 3 position and 3 orientation tolerance
                [0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+    acado_config:
+         max_num_iteration: 10
+         kkt_tolerance: 1e-6
+         integrator_tolerance: 1e-8
+         use_lagrange_term: false
+         use_LSQ_term: false
+         start_time_horizon: 0.0
+         end_time_horizon: 1.0
+         discretization_intervals: 4

@@ -141,6 +141,19 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     }
   }
 
+  // read and set goal tolerance/threshold
+  if (!nh_config.getParam ("tolerance/goal_tolerance", goal_pose_tolerance_) )
+  {
+    ROS_WARN(" Parameter 'tolerance/goal_tolerance' not set on %s node " ,  ros::this_node::getName().c_str());
+    // 3 position and 3 orientation(rpy) tolerance
+    goal_pose_tolerance_.resize(6, 0.05);
+
+    for (int i = 0u; i < goal_pose_tolerance_.size(); ++i)
+    {
+      ROS_INFO("Defualt goal tolerance value %f", goal_pose_tolerance_.at(i));
+    }
+  }
+
   // check requested parameter availble on parameter server if not than set default value
   nh.param("/clock_frequency", clock_frequency_, double(50.0)); // 50 hz
   nh.param("/activate_output", activate_output_, bool(false));  // debug
@@ -182,6 +195,7 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
   joints_vel_max_limit_ = new_config.joints_vel_max_limit_;
   joints_effort_min_limit_ = new_config.joints_effort_min_limit_;
   joints_effort_max_limit_ = new_config.joints_effort_max_limit_;
+  goal_pose_tolerance_ = new_config.goal_pose_tolerance_;
 
   clock_frequency_ = new_config.clock_frequency_;
   ball_radius_ = new_config.ball_radius_;
@@ -276,6 +290,15 @@ void predictive_configuration::print_configuration_parameter()
   }
   );
   std::cout<<"]"<<std::endl;
+
+  // print goal pose tolerance/threshold
+  std::cout << "Goal pose tolerance: [";
+  for_each(goal_pose_tolerance_.begin(), goal_pose_tolerance_.end(), [](double& val)
+  {
+    std::cout << val << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
 }
 
 // clear allocated data from vector
@@ -288,4 +311,5 @@ void predictive_configuration::free_allocated_memory()
   joints_vel_max_limit_.clear();
   joints_effort_min_limit_.clear();
   joints_effort_max_limit_.clear();
+  goal_pose_tolerance_.clear();
 }

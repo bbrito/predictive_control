@@ -78,6 +78,7 @@ public:
   std::vector<double> joints_vel_max_limit_;
   std::vector<double> joints_effort_min_limit_;
   std::vector<double> joints_effort_max_limit_;
+  std::vector<double> goal_pose_tolerance_;
 
   // predictive control
   double clock_frequency_;  //hz clock Frequency

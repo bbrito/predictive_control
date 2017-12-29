@@ -73,12 +73,10 @@ public:
   // joint state subsciber to get current joint value
   ros::Subscriber joint_state_sub_;
 
-  // joint velocity, should be control velocity of controller
-  ros::Publisher joint_velocity_pub_;
+  // controlled joint velocity, should be control velocity of controller
+  ros::Publisher controlled_velocity_pub_;
 
 private:
-
-  ros::NodeHandle nh;
 
    tf::TransformListener tf_listener_;
 
@@ -86,7 +84,7 @@ private:
    uint32_t degree_of_freedom_;
 
   // Clock frequency
-  double update_rate_;
+  double clock_frequency_;
 
   // Cartesian distance/error
   double cartesian_dist_;

@@ -12,9 +12,9 @@ predictive_control::predictive_control()
 predictive_control::~predictive_control()
 {
   clearDataMember();
-  delete pd_config_;
-  delete kinematic_solver_;
-  delete collision_detect_;
+  //delete pd_config_;
+  //delete kinematic_solver_;
+  //delete collision_detect_;
 }
 
 void predictive_control::spinNode()
@@ -26,16 +26,17 @@ void predictive_control::spinNode()
 // diallocated memory
 void predictive_control::clearDataMember()
 {
-  current_position_ = Eigen::VectorXd::resize(0, 0.0);
-  last_position_ = Eigen::VectorXd::resize(0, 0.0);
-  current_velocity_ = Eigen::VectorXd::resize(0, 0.0);
-  last_velocity_ = Eigen::VectorXd::resize(0, 0.0);
+  current_position_ = Eigen::VectorXd(1.0);
+  last_position_ = Eigen::VectorXd(1.0);
+  current_velocity_ = Eigen::VectorXd(1.0);
+  last_velocity_ = Eigen::VectorXd(1.0);
 }
 
 
 bool predictive_control::initialize()
 {
   ros::NodeHandle nh_tracker("pd_control");
+  ros::NodeHandle nh;
 
   // make sure node is still running
   if (ros::ok())
@@ -64,48 +65,72 @@ bool predictive_control::initialize()
       return false;
     }
 
+    // initialize data member of class
+    degree_of_freedom_ = pd_config_->degree_of_freedom_;
+    clock_frequency_ = pd_config_->clock_frequency_;
+    cartesian_dist_ = double(0.0);
+    rotation_dist_ = double(0.0);
 
+    // resize position and velocity velocity vectors
+    current_position_ = Eigen::VectorXd(degree_of_freedom_);
+    last_position_ = Eigen::VectorXd(degree_of_freedom_);
+    current_velocity_ = Eigen::VectorXd(degree_of_freedom_);
+    last_velocity_ = Eigen::VectorXd(degree_of_freedom_);
+
+    // resize controlled velocity variable, that publishing
+    controlled_velocity.data.resize(degree_of_freedom_, 0.0);
+
+    // ros interfaces
+    joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control::jointStateCallBack, this);
+    controlled_velocity_pub_ = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
+
+    timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &predictive_control::runNode, this);
+    timer_.start();
+
+    //ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());
+    ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
+    return true;
   }
-
+  else
+  {
+    ROS_ERROR("predictive_control: Failed to initialize as ROS Node is shoutdown");
+    return false;
+  }
 }
 
 
-void predictive_control::joint_state_callBack(const sensor_msgs::JointState::ConstPtr& msg)
+void predictive_control::jointStateCallBack(const sensor_msgs::JointState::ConstPtr& msg)
 {
-	// Make sure both members are empty before use as used push_back command
-	current_position.clear();	current_velocity.clear();
-	int count = 0;
-	//assert( current_position.size() != current_velocity.size() );
-	//ROS_ERROR("Position and velocity size is not same ... joint_state_callBack");
 
-	ROS_DEBUG("Call joint_state_callBack function ... ");
+  int count = 0;
+  ROS_DEBUG("Call joint_state_callBack function ... ");
 
-	for (unsigned int i = 0; i < dof; ++i)
-	{
-		for (unsigned int j = 0; j < msg->name.size(); ++j)
-		{
-			if ( std::strcmp( msg->name[j].c_str(), new_config.jnts_name[i].c_str()) == 0 )
-			{
-				//current_position[i] = msg->position[j];
-				current_position.push_back( msg->position[j] );
-				current_velocity.push_back( msg->velocity[j] );
-				count++;
-				break;
-			}
-		}
-	}
+  for (unsigned int i = 0; i < degree_of_freedom_; ++i)
+  {
+    for (unsigned int j = 0; j < msg->name.size(); ++j)
+    {
+      if ( std::strcmp( msg->name[j].c_str(), pd_config_->joints_name_[i].c_str()) == 0 )
+      {
+        //current_position[i] = msg->position[j];
+        current_position_(i) =  msg->position[j] ;
+        current_velocity_(i) =  msg->velocity[j] ;
+        count++;
+        break;
+      }
+    }
+  }
 
-	ros::Duration(0.1).sleep();
+  ros::Duration(0.1).sleep();
 
-	if (count != new_config.jnts_name.size())
-	{
-		ROS_WARN(" Joint names are mismatched, need to check yaml file or code ... joint_state_callBack ");
-	}
+  if (count != degree_of_freedom_)
+  {
+    ROS_WARN(" Joint names are mismatched, need to check yaml file or code ... joint_state_callBack ");
+  }
 
 	else
 	{
 		// Output is active, than only print joint state values
-		if (new_config.activate_output)
+    /*if (new_config.activate_output)
 		{
 			std::cout<< "\n --------------------------------------------- \n";
 			std::cout << "Current joint position: [";
@@ -120,64 +145,11 @@ void predictive_control::joint_state_callBack(const sensor_msgs::JointState::Con
 			);
 			std::cout<<"]"<<std::endl;
 			std::cout<< "\n --------------------------------------------- \n";
-		}
+    }*/
 	}
 }
 
-void predictive_control_node::main_predictive_control()
-{
-	ros::NodeHandle nh_tracker(ros::this_node::getName().c_str());
-	// Check ROS node start correctly.
-	if (ros::ok())
-	{
-		// read data from parameter server
-		read_predictive_parameters(new_config);
-		if (new_config.activate_output) new_config.print_data_member();
-
-		// update configuration parameter
-		new_config.update_config_parameters(new_config);
-
-		dof = new_config.dof;
-		current_position.resize(dof,0.0);
-		current_velocity.resize(dof,0.0);
-		current_gripper_pose = geometry_msgs::PoseStamped();
-		target_gripper_pose = geometry_msgs::PoseStamped();
-		const int m = 6, n = dof;
-		Jacobian_Mat.resize(m,n);
-		Jacobian_Mat.setIdentity();
-
-		// initialize helper classes
-		kinematic_solver_.reset(new Kinematic_calculations());
-		kinematic_solver_->initialize();
-		pd_frame_tracker_.reset(new pd_frame_tracker());
-		pd_frame_tracker_->initialization(new_config);
-
-		// Initialize ROS interfaces
-		joint_state_sub = nh.subscribe("joint_states", 1, &predictive_control_node::joint_state_callBack, this);
-		joint_velocity_pub = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
-
-		marker_pub = nh_tracker.advertise<visualization_msgs::MarkerArray>("self_collision_ball", 1);
-
-		// initialize publishing data members
-		joint_velocity_data.data.resize(dof, 0.0);
-		for (int i = 0u; i < dof && !current_velocity.empty(); ++i)
-		{
-			joint_velocity_data.data[i] = current_velocity.at(i);
-		}
-
-		//ros::Duration(5.0).sleep();
-		//pd_frame_tracker_->hard_code_optimal_control_solver(joint_velocity_data);
-
-	    timer_ = nh.createTimer(ros::Duration(1/new_config.update_rate), &predictive_control_node::run_node, this);
-	    timer_.start();
-
-	    ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());
-
-		//joint_velocity_pub.publish(joint_velocity_data);
-		//spin_node();
-	}
-}
-
+/*
 void predictive_control_node::run_node(const ros::TimerEvent& event)
 {
 	ros::Duration period = event.current_real - event.last_real;
@@ -239,27 +211,18 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 	}
 
 }
+*/
 
-void predictive_control_node::convert_std_To_Eigen_vector(const std::vector<double>& std_vec, Eigen::VectorXd& eigen_vec)
+void predictive_control::publishZeroJointVelocity()
 {
-	//std::assert(("convert_std_To_Eigen_vector ... Should not be empty vector",std_vec.empty()));
-	eigen_vec.setZero(std_vec.size());
-	for (int i = 0u; i < std_vec.size(); ++i)
-	{
-		eigen_vec(i) = std_vec.at(i);
-	}
-}
-
-void predictive_control_node::publish_zero_jointVelocity()
-{
-	joint_velocity_data.data.resize(dof, 0.0);
-	joint_velocity_data.data[0] = 0.0;
-	joint_velocity_data.data[1] = 0.0;
-	joint_velocity_data.data[2] = 0.0;
-	joint_velocity_data.data[3] = 0.0;
-	joint_velocity_data.data[4] = 0.0;
-	joint_velocity_data.data[5] = 0.0;
-	joint_velocity_data.data[6] = 0.0;
-	joint_velocity_pub.publish(joint_velocity_data);
+  controlled_velocity.data.resize(degree_of_freedom_, 0.0);
+  controlled_velocity.data[0] = 0.0;
+  controlled_velocity.data[1] = 0.0;
+  controlled_velocity.data[2] = 0.0;
+  controlled_velocity.data[3] = 0.0;
+  controlled_velocity.data[4] = 0.0;
+  controlled_velocity.data[5] = 0.0;
+  controlled_velocity.data[6] = 0.0;
+  controlled_velocity_pub_.publish(controlled_velocity);
 }
 

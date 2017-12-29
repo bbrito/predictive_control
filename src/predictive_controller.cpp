@@ -31,7 +31,7 @@ void predictive_control::clearDataMember()
   //current_velocity_ = Eigen::VectorXd(1.0);
   last_velocity_ = Eigen::VectorXd(degree_of_freedom_);
 
-  // initialize FK_Matrix and Jacobian Matrix
+  // reset FK_Matrix and Jacobian Matrix
   const int jacobian_matrix_rows = 6, jacobian_matrix_columns = degree_of_freedom_;
   FK_Matrix_ = Eigen::Matrix4d::Identity();
   Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);

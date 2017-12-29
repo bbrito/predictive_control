@@ -9,6 +9,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, ros::this_node::getName());
     predictive_control pd_control_;
 
+    // initialize predictive control node
     if (!pd_control_.initialize())
     {
       ROS_ERROR_STREAM_NAMED("FILED TO INITIALIZE %s", ros::this_node::getName().c_str());

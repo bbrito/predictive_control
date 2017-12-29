@@ -234,7 +234,8 @@ void Kinematic_calculations::calculateForwardKinematics(const Eigen::VectorXd& j
   Eigen::MatrixXd dummy_RotTrans_Matrix = Eigen::Matrix4d::Identity();
 
   ROS_INFO_STREAM("Forward Kinematics with joint values: ");
-  ROS_INFO_STREAM(joints_angle.transpose());
+  std::cout << "[ " << joints_angle.transpose() << " ]" << std::endl;
+  //ROS_INFO_STREAM(joints_angle.transpose());
 
   // compute tf transformation between root frame and base link of manipulator
   if (predictive_configuration::chain_root_link_ != predictive_configuration::chain_base_link_)

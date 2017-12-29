@@ -75,6 +75,7 @@ bool predictive_control::initialize()
     // initialize data member of class
     degree_of_freedom_ = pd_config_->degree_of_freedom_;
     clock_frequency_ = pd_config_->clock_frequency_;
+    // INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
     goal_tolerance_ = transformStdVectorToEigenVector<double>(pd_config_->goal_pose_tolerance_);
     cartesian_dist_ = double(0.0);
     rotation_dist_ = double(0.0);

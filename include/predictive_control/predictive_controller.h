@@ -55,6 +55,10 @@ public:
    */
   ~predictive_control();
 
+  /**
+   * @brief initialize: Initialize all helper class of predictive control and subscibe joint state and publish controlled joint velocity
+   * @return: True with successuflly initialize all classes else false
+   */
   bool initialize();
 
   /**
@@ -95,10 +99,14 @@ private:
   // Timmer
   ros::Timer timer_;
 
+  // Kinematic variables, FK_Matrix, Jacobian_Matrix
+  Eigen::MatrixXd FK_Matrix_;
+  Eigen::MatrixXd Jacobian_Matrix_;
+
   // Current and last position and velocity from joint state callback
-  Eigen::VectorXd current_position_;
+  //Eigen::VectorXd current_position_;
   Eigen::VectorXd last_position_;
-  Eigen::VectorXd current_velocity_;
+  //Eigen::VectorXd current_velocity_;
   Eigen::VectorXd last_velocity_;
 
   // Type of variable used to publish joint velocity
@@ -113,6 +121,9 @@ private:
   // self collision detector/avoidance
   boost::shared_ptr<CollisionRobot> collision_detect_;
 
+  /**
+   * @brief spinNode: spin node means ROS is still running
+   */
   void spinNode();
 
   /**

@@ -26,16 +26,20 @@ void predictive_control::spinNode()
 // diallocated memory
 void predictive_control::clearDataMember()
 {
-  current_position_ = Eigen::VectorXd(1.0);
-  last_position_ = Eigen::VectorXd(1.0);
-  current_velocity_ = Eigen::VectorXd(1.0);
-  last_velocity_ = Eigen::VectorXd(1.0);
+  //current_position_ = Eigen::VectorXd(1.0);
+  last_position_ = Eigen::VectorXd(degree_of_freedom_);
+  //current_velocity_ = Eigen::VectorXd(1.0);
+  last_velocity_ = Eigen::VectorXd(degree_of_freedom_);
+
+  // initialize FK_Matrix and Jacobian Matrix
+  const int jacobian_matrix_rows = 6, jacobian_matrix_columns = degree_of_freedom_;
+  FK_Matrix_ = Eigen::Matrix4d::Identity();
+  Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
 }
 
-
+// initialize all helper class of predictive control and subscibe joint state and publish controlled joint velocity
 bool predictive_control::initialize()
 {
-  ros::NodeHandle nh_tracker("pd_control");
   ros::NodeHandle nh;
 
   // make sure node is still running
@@ -72,10 +76,15 @@ bool predictive_control::initialize()
     rotation_dist_ = double(0.0);
 
     // resize position and velocity velocity vectors
-    current_position_ = Eigen::VectorXd(degree_of_freedom_);
+    //current_position_ = Eigen::VectorXd(degree_of_freedom_);
     last_position_ = Eigen::VectorXd(degree_of_freedom_);
-    current_velocity_ = Eigen::VectorXd(degree_of_freedom_);
+    //current_velocity_ = Eigen::VectorXd(degree_of_freedom_);
     last_velocity_ = Eigen::VectorXd(degree_of_freedom_);
+
+    // initialize FK_Matrix and Jacobian Matrix
+    const int jacobian_matrix_rows = 6, jacobian_matrix_columns = degree_of_freedom_;
+    FK_Matrix_ = Eigen::Matrix4d::Identity();
+    Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
 
     // resize controlled velocity variable, that publishing
     controlled_velocity.data.resize(degree_of_freedom_, 0.0);
@@ -87,7 +96,6 @@ bool predictive_control::initialize()
     timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &predictive_control::runNode, this);
     timer_.start();
 
-    //ROS_WARN("%s INTIALIZED!!", ros::this_node::getName().c_str());
     ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
     return true;
   }
@@ -98,56 +106,74 @@ bool predictive_control::initialize()
   }
 }
 
+// update this function 1/colck_frequency
+void predictive_control::runNode(const ros::TimerEvent &event)
+{
+  // update collision ball according to joint angles
+  collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
 
+  // publish zero controlled velocity
+  publishZeroJointVelocity();
+}
+
+// read current position and velocity of robot joints
 void predictive_control::jointStateCallBack(const sensor_msgs::JointState::ConstPtr& msg)
 {
-
+  Eigen::VectorXd current_position = Eigen::VectorXd(degree_of_freedom_);
+  Eigen::VectorXd current_velocity = Eigen::VectorXd(degree_of_freedom_);
   int count = 0;
-  ROS_DEBUG("Call joint_state_callBack function ... ");
 
   for (unsigned int i = 0; i < degree_of_freedom_; ++i)
   {
     for (unsigned int j = 0; j < msg->name.size(); ++j)
     {
+      // 0 means the contents of both strings are equal
       if ( std::strcmp( msg->name[j].c_str(), pd_config_->joints_name_[i].c_str()) == 0 )
       {
-        //current_position[i] = msg->position[j];
-        current_position_(i) =  msg->position[j] ;
-        current_velocity_(i) =  msg->velocity[j] ;
+        current_position(i) =  msg->position[j] ;
+        current_velocity(i) =  msg->velocity[j] ;
         count++;
         break;
       }
     }
   }
 
-  ros::Duration(0.1).sleep();
-
   if (count != degree_of_freedom_)
   {
     ROS_WARN(" Joint names are mismatched, need to check yaml file or code ... joint_state_callBack ");
   }
 
-	else
-	{
-		// Output is active, than only print joint state values
-    /*if (new_config.activate_output)
-		{
-			std::cout<< "\n --------------------------------------------- \n";
-			std::cout << "Current joint position: [";
-			for_each(current_position.begin(), current_position.end(), [](double& p)
-														{ std::cout<< std::setprecision(5) << p << ", " ; }
-			);
-			std::cout<<"]"<<std::endl;
+  else
+  {
+    last_position_ = current_position;
+    last_velocity_ = current_velocity;
 
-			std::cout << "Current joint velocity: [";
-			for_each(current_velocity.begin(), current_velocity.end(), [](double& v)
-														{ std::cout<< std::setprecision(5) << v << ", " ; }
-			);
-			std::cout<<"]"<<std::endl;
-			std::cout<< "\n --------------------------------------------- \n";
-    }*/
-	}
+    // calculate forward kinematic and Jacobian matrix using current joint values
+    kinematic_solver_->calculateJacobianMatrix(last_position_, FK_Matrix_, Jacobian_Matrix_);
+
+    // Output is active, than only print joint state values
+    if (pd_config_->activate_output_)
+    {
+      std::cout<< "\n --------------------------------------------- \n";
+      std::cout << "Current joint position: [ " << current_position.transpose() << " ]" << std::endl;
+      std::cout << "Current joint velocity: [ " << current_velocity.transpose() << " ]" << std::endl;
+      /*std::cout << "Current joint position: [";
+      for_each(current_position.begin(), current_position.end(), [](double& p)
+                            { std::cout<< std::setprecision(5) << p << ", " ; }
+      );
+      std::cout<<"]"<<std::endl;
+
+      std::cout << "Current joint velocity: [";
+      for_each(current_velocity.begin(), current_velocity.end(), [](double& v)
+                            { std::cout<< std::setprecision(5) << v << ", " ; }
+      );
+      std::cout<<"]"<<std::endl;*/
+      std::cout<< "\n --------------------------------------------- \n";
+    }
+  }
 }
+
+
 
 /*
 void predictive_control_node::run_node(const ros::TimerEvent& event)

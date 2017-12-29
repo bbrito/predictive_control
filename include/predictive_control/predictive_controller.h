@@ -41,6 +41,7 @@ class predictive_control
    * - Handle self collsion avoidance
    * - Extract current position and velocity of manipulator joints
    * - Publish controlled joint velocity
+   * Info: static member for transform std::vector to Eigen::vector
    */
 
 public:

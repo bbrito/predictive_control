@@ -38,6 +38,7 @@ class CollisionRobot: public predictive_configuration
     * - Development of distance cost function (logistic function) use to keep distance from robot body
     * - Visualize collision bounding ball aroung robot body
     * - Creat static frame for visulize center of intermidiate ball
+    * Info: static member for computation of getEuclideanDistance
     */
 
 public:

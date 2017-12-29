@@ -286,7 +286,7 @@ bool predictive_control::getTransform(const std::string& from, const std::string
       stamped_pose.pose.position.y = stamped_tf.getOrigin().y();
       stamped_pose.pose.position.z = stamped_tf.getOrigin().z();
 
-      // header
+      // header frame_id should be parent frame
       stamped_pose.header.frame_id = stamped_tf.frame_id_;  //from or to
       stamped_pose.header.stamp = ros::Time(0);
 

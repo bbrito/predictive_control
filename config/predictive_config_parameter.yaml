@@ -2,7 +2,7 @@
 ### Kinematic configuration parameter
 
 # Debug mode
-activate_output: true
+activate_output: false
 
 # Clock frequency
 clock_frequency: 50 //hz

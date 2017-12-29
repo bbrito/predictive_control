@@ -77,6 +77,8 @@ bool predictive_control::initialize()
     clock_frequency_ = pd_config_->clock_frequency_;
     // INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
     goal_tolerance_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->goal_pose_tolerance_);
+    // 3 position and 3 orientation(rpy)
+    goal_pose_.resize(6);
     cartesian_dist_ = double(0.0);
     rotation_dist_ = double(0.0);
 
@@ -264,7 +266,53 @@ void predictive_control::publishZeroJointVelocity()
   controlled_velocity_pub_.publish(controlled_velocity);
 }
 
+bool pd_frame_tracker::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
+{
+  bool transform = false;
+  stamped_pose = Eigen::VectorXd(6);
+  tf::StampedTransform stamped_tf;
 
+  // make sure source and target frame exist
+  if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
+  {
+    try
+    {
+      // find transforamtion between souce and target frame
+      tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
+      tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
+
+      // translation
+      stamped_pose(0) = stamped_tf.getOrigin().x();
+      stamped_pose(1) = stamped_tf.getOrigin().y();
+      stamped_pose(2) = stamped_tf.getOrigin().z();
+
+      // convert quternion to rpy
+      tf::Quaternion quat(stamped_tf.getRotation().getX(),
+                          stamped_tf.getRotation().getY(),
+                          stamped_tf.getRotation().getZ(),
+                          stamped_tf.getRotation().getW()
+                          );
+      tf::Matrix3x3 quat_matrix(quat);
+      quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
+
+      transform = true;
+    }
+    catch (tf::TransformException& ex)
+    {
+      ROS_ERROR("pd_frame_tracker::getTransform: %s", ex.what());
+    }
+  }
+
+  else
+  {
+    ROS_WARN("pd_frame_tracker::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
+             from.c_str(), to.c_str());
+  }
+
+  return transform;
+}
+
+/*
 bool predictive_control::getTransform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
 {
   bool transform = false;
@@ -309,3 +357,4 @@ bool predictive_control::getTransform(const std::string& from, const std::string
 
   return transform;
 }
+*/

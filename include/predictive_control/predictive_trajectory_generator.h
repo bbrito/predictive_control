@@ -132,10 +132,12 @@ private:
     * @param OCP_problem: Current optimal control problem
     * @param x: Differential state represent dynamic system of equations
     * @param v: Control state use to control manipulator, in our case joint velocity
+    * @param goal_pose: Target pose where want to move
     */
    void generateCostFunction(OCP& OCP_problem,
                              const DifferentialState& x,
-                             const Control& v
+                             const Control& v,
+                             const Eigen::VectorXd& goal_pose
                              );
 
    /**
@@ -143,7 +145,8 @@ private:
     * @param OCP_solver: optimal control solver used to solver system of equations
     */
    template<typename T>
-   void setAlgorithmOptions(boost::shared_ptr<T> OCP_solver);
+    void setAlgorithmOptions(T& OCP_solver);
+    //void setAlgorithmOptions(boost::shared_ptr<T> OCP_solver);
 
    /**
     * @brief setupLSQWeightsAndReferences: generate LSQ weight matrix and references

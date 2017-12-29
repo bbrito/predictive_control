@@ -131,9 +131,39 @@ bool pd_frame_tracker::getTransform(const std::string& from, const std::string& 
 }
 
 
-void pd_frame_tracker::generateCostFunction(OCP &OCP_problem, const DifferentialState &x, const Control &v)
+// Generate cost function of optimal control problem
+void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
+                                            const DifferentialState &x,
+                                            const Control &v,
+                                            const Eigen::VectorXd& goal_pose)
 {
-  //OCP_problem.minimizeMayerTerm( );
+  if (predictive_configuration::use_mayer_term_)
+  {
+    //ROS_ERROR_STREAM("generateCostFunction: dimension of state: "<< x.dim);
+    //ROS_ERROR_STREAM("generateCostFunction: dimension of control: "<< v.dim);
+    OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
+                                           +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
+                                           +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2))
+                                           +(x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
+                                           +(x(4) - goal_pose(4)) * (x(4) - goal_pose(4))
+                                           +(x(5) - goal_pose(5)) * (x(5) - goal_pose(5)) )
+                                   + 1.0 * (v.transpose() * v)
+                                );
+
+    //OCP_problem.minimizeMayerTerm( 10.0* ( (x-goal_pose) * (x-goal_pose) ) + 1.00* (v.transpose() * v) );
+
+  }
+
+  if (predictive_configuration::use_lagrange_term_)
+  {
+    ;
+  }
+
+  if (predictive_configuration::use_LSQ_term_)
+  {
+    ;
+  }
+
 }
 
 
@@ -164,21 +194,59 @@ std_msgs::Float64MultiArray pd_frame_tracker::solveOptimalControlProblem(const E
   f << dot(x) == Jacobian_Matrix_ * v;
 
   // Optimal control problem
-  OCP OCP_problem(0.0, 1.0, 4);
+  OCP OCP_problem( start_time_horizon_, end_time_horizon_, discretization_intervals_);
+  generateCostFunction(OCP_problem, x, v, goal_pose);
+
+  // set hard and soft constraints
+  OCP_problem.subjectTo(f);
+  OCP_problem.subjectTo(control_min_constraint_ <= v <= control_max_constraint_);
+  OCP_problem.subjectTo(AT_END, v == 0.0);
+
+  // Optimal Control Algorithm
+
+
 }
 
+// setup acado algorithm options, need to set solver when calling this function
+template<typename T>
+void pd_frame_tracker::setAlgorithmOptions(T& OCP_solver)
+{
+  // intergrator
+  OCP_solver.set(INTEGRATOR_TYPE, LEVENBERG_MARQUARDT);                                      // default INT_RK45: (INT_RK12, INT_RK23, INT_RK45, INT_RK78, INT_BDF)
+  OCP_solver.set(INTEGRATOR_TOLERANCE, predictive_configuration::integrator_tolerance_);     // default 1e-8
+
+  // SQP method
+  OCP_solver.set(HESSIAN_APPROXIMATION, EXACT_HESSIAN);                                      // default BLOCK_BFGS_UPDATE: (CONSTANT_HESSIAN, FULL_BFGS_UPDATE, BLOCK_BFGS_UPDATE, GAUSS_NEWTON, EXACT_HESSIAN)
+  OCP_solver.set(MAX_NUM_ITERATIONS, predictive_configuration::max_num_iteration_);          // default 1000
+  OCP_solver.set(KKT_TOLERANCE, predictive_configuration::kkt_tolerance_);                   // default 1e-6
+//  OCP_solver.set(HOTSTART_QP, true);                   // default true
+//  OCP_solver.set(SPARSE_QP_SOLUTION, CONDENSING);      // CONDENSING, FULL CONDENSING, SPARSE SOLVER
+
+  // Discretization Type
+  OCP_solver.set(DISCRETIZATION_TYPE, MULTIPLE_SHOOTING); // default MULTIPLE_SHOOTING: (SINGLE_SHOOTING, MULTIPLE_SHOOTING)
+  OCP_solver.set(TERMINATE_AT_CONVERGENCE, true);         // default true
+
+  // output
+  OCP_solver.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
+  OCP_solver.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
+  OCP_solver.set(PRINT_COPYRIGHT, false);                 // default true
+
+}
+
+
+/*
 // setup acado algorithm options, need to set solver when calling this function
 template<typename T>
 void pd_frame_tracker::setAlgorithmOptions(boost::shared_ptr<T> OCP_solver)
 {
   // intergrator
-  OCP_solver->set(INTEGRATOR_TYPE, LEVENBERG_MARQUARDT);  // default INT_RK45: (INT_RK12, INT_RK23, INT_RK45, INT_RK78, INT_BDF)
-  OCP_solver->set(INTEGRATOR_TOLERANCE, 1e-8);            // default 1e-8
+  OCP_solver->set(INTEGRATOR_TYPE, LEVENBERG_MARQUARDT);                                      // default INT_RK45: (INT_RK12, INT_RK23, INT_RK45, INT_RK78, INT_BDF)
+  OCP_solver->set(INTEGRATOR_TOLERANCE, predictive_configuration::integrator_tolerance_);     // default 1e-8
 
   // SQP method
-  OCP_solver->set(HESSIAN_APPROXIMATION, EXACT_HESSIAN);  // default BLOCK_BFGS_UPDATE: (CONSTANT_HESSIAN, FULL_BFGS_UPDATE, BLOCK_BFGS_UPDATE, GAUSS_NEWTON, EXACT_HESSIAN)
-  OCP_solver->set(MAX_NUM_ITERATIONS, 10);                // default 1000
-  OCP_solver->set(KKT_TOLERANCE, 1e-6);                   // default 1e-6
+  OCP_solver->set(HESSIAN_APPROXIMATION, EXACT_HESSIAN);                                      // default BLOCK_BFGS_UPDATE: (CONSTANT_HESSIAN, FULL_BFGS_UPDATE, BLOCK_BFGS_UPDATE, GAUSS_NEWTON, EXACT_HESSIAN)
+  OCP_solver->set(MAX_NUM_ITERATIONS, predictive_configuration::max_num_iteration_);          // default 1000
+  OCP_solver->set(KKT_TOLERANCE, predictive_configuration::kkt_tolerance_);                   // default 1e-6
 //  OCP_solver->set(HOTSTART_QP, true);                   // default true
 //  OCP_solver->set(SPARSE_QP_SOLUTION, CONDENSING);      // CONDENSING, FULL CONDENSING, SPARSE SOLVER
 
@@ -192,7 +260,7 @@ void pd_frame_tracker::setAlgorithmOptions(boost::shared_ptr<T> OCP_solver)
   OCP_solver->set(PRINT_COPYRIGHT, false);                 // default true
 
 }
-
+*/
 
 /*
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

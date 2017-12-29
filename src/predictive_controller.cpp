@@ -19,8 +19,8 @@ predictive_control::~predictive_control()
 
 void predictive_control::spinNode()
 {
-	ROS_INFO(" Predictive control node is running, now it's 'Spinning Node'");
-	ros::spin();
+  ROS_INFO(" Predictive control node is running, now it's 'Spinning Node'");
+  ros::spin();
 }
 
 // diallocated memory

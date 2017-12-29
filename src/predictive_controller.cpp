@@ -76,6 +76,7 @@ bool predictive_control::initialize()
     cartesian_dist_ = double(0.0);
     rotation_dist_ = double(0.0);
 
+    // DEBUG
     if (pd_config_->activate_output_)
     {
       ROS_WARN("===== GOAL TOLERANCE =====");

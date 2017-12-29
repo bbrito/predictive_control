@@ -100,7 +100,6 @@ private:
   ros::Timer timer_;
 
   // goal tolerance
-  //std::vector<double> goal_tolerance_;
   Eigen::VectorXd goal_tolerance_;
 
   // Kinematic variables, FK_Matrix, Jacobian_Matrix
@@ -180,7 +179,7 @@ private:
                               );
 
   /**
-   * @brief checkInfinitesimalPose: check goal tolereance statisfied
+   * @brief checkInfinitesimalPose: check goal tolereance statisfied, check tolerance with goal_tolerance_ data member
    * @param pose: end effoctor pose
    * @return true statisfied else false
    */

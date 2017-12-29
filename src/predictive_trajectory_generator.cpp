@@ -167,9 +167,10 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 }
 
 
-std_msgs::Float64MultiArray pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobian_Matrix,
-                                                                         const Eigen::VectorXd &last_position,
-                                                                         const Eigen::VectorXd &goal_pose)
+void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobian_Matrix,
+                                                  const Eigen::VectorXd &last_position,
+                                                  const Eigen::VectorXd &goal_pose,
+                                                  std_msgs::Float64MultiArray& controlled_velocity)
 {
 
   const unsigned int jacobian_matrix_rows = Jacobian_Matrix.rows();
@@ -178,6 +179,7 @@ std_msgs::Float64MultiArray pd_frame_tracker::solveOptimalControlProblem(const E
   // initialize variables
   Jacobian_Matrix_ = Jacobian_Matrix;
   state_initialize_ = last_position;
+  //control_initialize_ = controlled_velocity.data;
 
   // OCP variables
   DifferentialState x("state", jacobian_matrix_rows, 1);       // position
@@ -203,7 +205,24 @@ std_msgs::Float64MultiArray pd_frame_tracker::solveOptimalControlProblem(const E
   OCP_problem.subjectTo(AT_END, v == 0.0);
 
   // Optimal Control Algorithm
+  RealTimeAlgorithm OCP_solver(OCP_problem, 0.025); // 0.025 sampling time
+  OCP_solver.initializeDifferentialStates(state_initialize_);
+  OCP_solver.initializeControls(control_initialize_);
+  setAlgorithmOptions<RealTimeAlgorithm>(OCP_solver);
 
+  // setup controller
+  Controller controller(OCP_solver);
+  controller.init(start_time_horizon_, state_initialize_);
+  controller.step(start_time_horizon_, state_initialize_);
+
+  // get control at first step and update controlled velocity vector
+  controller.getU(control_initialize_);
+  controlled_velocity.data.resize(jacobian_matrix_columns, 0.0);
+
+  for (int i=0u; i < jacobian_matrix_columns; ++i)
+  {
+    controlled_velocity.data[i] = control_initialize_(i);
+  }
 
 }
 

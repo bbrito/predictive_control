@@ -101,8 +101,8 @@ bool predictive_control::initialize()
     joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control::jointStateCallBack, this);
     controlled_velocity_pub_ = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
 
-    //timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &predictive_control::runNode, this);
-    //timer_.start();
+    timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &predictive_control::runNode, this);
+    timer_.start();
 
     ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
     return true;

@@ -124,8 +124,11 @@ private:
   // Timmer
   ros::Timer timer_;
 
+  // current end effector and goal frame pose relative to root link
+  Eigen::VectorXd current_gripper_pose_;
+  Eigen::VectorXd goal_gripper_pose_;
+
   // goal position, goal tolerance
-  Eigen::VectorXd goal_pose_;
   Eigen::VectorXd goal_tolerance_;
 
   // Kinematic variables, FK_Matrix, Jacobian_Matrix
@@ -139,7 +142,7 @@ private:
   Eigen::VectorXd last_velocity_;
 
   // Type of variable used to publish joint velocity
-  std_msgs::Float64MultiArray controlled_velocity;
+  std_msgs::Float64MultiArray controlled_velocity_;
 
   // predictive configuration
   boost::shared_ptr<predictive_configuration> pd_config_;

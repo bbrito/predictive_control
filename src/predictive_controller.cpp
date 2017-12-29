@@ -75,10 +75,17 @@ bool predictive_control::initialize()
     // initialize data member of class
     degree_of_freedom_ = pd_config_->degree_of_freedom_;
     clock_frequency_ = pd_config_->clock_frequency_;
-    // INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
+
+    /// INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
     goal_tolerance_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->goal_pose_tolerance_);
-    // 3 position and 3 orientation(rpy)
-    goal_pose_.resize(6);
+
+    /// 3 position and 3 orientation(rpy)
+    goal_gripper_pose_.resize(6);
+    getTransform(pd_config_->chain_root_link_, pd_config_->target_frame_, goal_gripper_pose_);
+
+    current_gripper_pose_.resize(6);
+    getTransform(pd_config_->chain_root_link_, pd_config_->tracking_frame_, current_gripper_pose_);
+
     cartesian_dist_ = double(0.0);
     rotation_dist_ = double(0.0);
 
@@ -101,11 +108,13 @@ bool predictive_control::initialize()
     Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
 
     // resize controlled velocity variable, that publishing
-    controlled_velocity.data.resize(degree_of_freedom_, 0.0);
+    controlled_velocity_.data.resize(degree_of_freedom_, 0.0);
 
     // ros interfaces
     joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control::jointStateCallBack, this);
     controlled_velocity_pub_ = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
+
+    ros::Duration(1).sleep();
 
     timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &predictive_control::runNode, this);
     timer_.start();
@@ -123,11 +132,24 @@ bool predictive_control::initialize()
 // update this function 1/colck_frequency
 void predictive_control::runNode(const ros::TimerEvent &event)
 {
+  // get current pose of end effector and goal pose w.r.t root link
+  getTransform(pd_config_->chain_root_link_, pd_config_->target_frame_, goal_gripper_pose_);
+  getTransform(pd_config_->chain_root_link_, pd_config_->tracking_frame_, current_gripper_pose_);
+
   // update collision ball according to joint angles
   collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
 
-  // publish zero controlled velocity
-  publishZeroJointVelocity();
+  // solver optimal control problem, track frame
+  std::cout << "current gripper pose: \n "<< current_gripper_pose_.transpose() << std::endl;
+  std::cout << "goal gripper pose: \n "<< goal_gripper_pose_.transpose() << std::endl;
+
+  pd_trajectory_generator_->solveOptimalControlProblem(Jacobian_Matrix_,
+                                                       current_gripper_pose_,
+                                                       goal_gripper_pose_,
+                                                       controlled_velocity_);
+
+    // publish zero controlled velocity
+    //publishZeroJointVelocity();
 }
 
 // read current position and velocity of robot joints
@@ -255,30 +277,30 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 
 void predictive_control::publishZeroJointVelocity()
 {
-  controlled_velocity.data.resize(degree_of_freedom_, 0.0);
-  controlled_velocity.data[0] = 0.0;
-  controlled_velocity.data[1] = 0.0;
-  controlled_velocity.data[2] = 0.0;
-  controlled_velocity.data[3] = 0.0;
-  controlled_velocity.data[4] = 0.0;
-  controlled_velocity.data[5] = 0.0;
-  controlled_velocity.data[6] = 0.0;
-  controlled_velocity_pub_.publish(controlled_velocity);
+  controlled_velocity_.data.resize(degree_of_freedom_, 0.0);
+  controlled_velocity_.data[0] = 0.0;
+  controlled_velocity_.data[1] = 0.0;
+  controlled_velocity_.data[2] = 0.0;
+  controlled_velocity_.data[3] = 0.0;
+  controlled_velocity_.data[4] = 0.0;
+  controlled_velocity_.data[5] = 0.0;
+  controlled_velocity_.data[6] = 0.0;
+  controlled_velocity_pub_.publish(controlled_velocity_);
 }
 
-bool pd_frame_tracker::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
+bool predictive_control::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
 {
   bool transform = false;
   stamped_pose = Eigen::VectorXd(6);
   tf::StampedTransform stamped_tf;
 
   // make sure source and target frame exist
-  if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
+  if (tf_listener_.frameExists(to) && tf_listener_.frameExists(from))
   {
     try
     {
       // find transforamtion between souce and target frame
-      tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
+      tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.02));
       tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
 
       // translation
@@ -299,13 +321,13 @@ bool pd_frame_tracker::getTransform(const std::string& from, const std::string& 
     }
     catch (tf::TransformException& ex)
     {
-      ROS_ERROR("pd_frame_tracker::getTransform: %s", ex.what());
+      ROS_ERROR("predictive_control::getTransform: %s", ex.what());
     }
   }
 
   else
   {
-    ROS_WARN("pd_frame_tracker::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
+    ROS_WARN("predictive_control::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
              from.c_str(), to.c_str());
   }
 

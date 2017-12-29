@@ -103,7 +103,6 @@ public:
      // convert std to eigen vector
      for (uint32_t i = 0; i < vector.size(); ++i)
      {
-       std::cout << vector.at(i) << std::endl;
        eigen_vector(i) = vector.at(i);
     }
 

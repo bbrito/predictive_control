@@ -40,7 +40,7 @@ catkin_package(
   DEPENDS Boost CERES ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_PACKAGES}
   #LIBRARIES  predictive_configuration kinematic_calculations predictive_trajectory_generator predictive_controller
-  LIBRARIES  predictive_configuration kinematic_calculations self_collision_detection 
+  LIBRARIES  predictive_configuration kinematic_calculations self_collision_detection predictive_controller
 )
 
 ### BUILD ###
@@ -68,9 +68,13 @@ target_link_libraries(self_collision_detection predictive_configuration ${catkin
 #add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #target_link_libraries(predictive_controller kinematic_calculations  predictive_trajectory_generator ${catkin_LIBRARIES})
 
+add_library(predictive_controller src/predictive_controller.cpp)
+add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(predictive_controller predictive_configuration kinematic_calculations self_collision_detection ${catkin_LIBRARIES})
+
 add_executable(predictive_control_node src/predictive_control_node.cpp)
 add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_control_node  ${catkin_LIBRARIES}) #predictive_controller
+target_link_libraries(predictive_control_node predictive_controller ${catkin_LIBRARIES}) 
 
 ### Test Case ####
 add_executable(predictive_configuration_test test/predictive_configuration_parameter_test.cpp)

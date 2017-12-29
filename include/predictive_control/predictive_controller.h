@@ -73,6 +73,17 @@ public:
    */
   void controlSquence(void);
 
+  /**
+   * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
+   * @param from: source frame from find transformation
+   * @param to: target frame till find transformation
+   * @param stamped_pose: Resultant poseStamed between source and target frame
+   * @return: true if transform else false
+   */
+  bool getTransform(const std::string& from,
+                    const std::string& to,
+                    geometry_msgs::PoseStamped& stamped_pose
+                    );
 
   /** public data member */
   // joint state subsciber to get current joint value
@@ -148,8 +159,8 @@ private:
    * @return true with position limit violation else false
    */
   bool checkPositionLimitViolation(const Eigen::VectorXd& joint_position,
-                              const double& position_tolerance
-                              );
+                                   const double& position_tolerance
+                                  );
 
   /**
    * @brief checkPositionLimitViolation: check velocity limit violate, limit containts lower and upper limit
@@ -158,8 +169,8 @@ private:
    * @return true with velocity limit violation else false
    */
   bool checkVelocityLimitViolation(const Eigen::VectorXd& joint_velocity,
-                              const double& velocity_tolerance
-                              );
+                                   const double& velocity_tolerance
+                                  );
 
   /**
    * @brief enforcePositionInLimits: enforced position to be in limit, limit containts lower and upper limit
@@ -167,7 +178,7 @@ private:
    * @param enforced_joint_position: enforced joint position when it reach to minimum or maximum values
    */
   void enforcePositionInLimits(const Eigen::VectorXd& joint_position,
-                              const Eigen::VectorXd& enforced_joint_position
+                               const Eigen::VectorXd& enforced_joint_position
                               );
 
   /**
@@ -176,7 +187,7 @@ private:
    * @param enforced_joint_velocity: enforced joint velocity when it reach to minimum or maximum values
    */
   void enforceVelocityInLimits(const Eigen::VectorXd& joint_velocity,
-                              const Eigen::VectorXd& enforced_joint_velocity
+                               const Eigen::VectorXd& enforced_joint_velocity
                               );
 
   /**

@@ -260,3 +260,48 @@ void predictive_control::publishZeroJointVelocity()
   controlled_velocity_pub_.publish(controlled_velocity);
 }
 
+
+bool predictive_control::getTransform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
+{
+  bool transform = false;
+  tf::StampedTransform stamped_tf;
+
+  // make sure source and target frame exist
+  if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
+  {
+    try
+    {
+      // find transforamtion between souce and target frame
+      tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
+      tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
+
+      // rotation
+      stamped_pose.pose.orientation.w =  stamped_tf.getRotation().getW();
+      stamped_pose.pose.orientation.x =  stamped_tf.getRotation().getX();
+      stamped_pose.pose.orientation.y =  stamped_tf.getRotation().getY();
+      stamped_pose.pose.orientation.z =  stamped_tf.getRotation().getZ();
+
+      // translation
+      stamped_pose.pose.position.x = stamped_tf.getOrigin().x();
+      stamped_pose.pose.position.y = stamped_tf.getOrigin().y();
+      stamped_pose.pose.position.z = stamped_tf.getOrigin().z();
+
+      // header
+      stamped_pose.header.frame_id = stamped_tf.frame_id_;  //from or to
+      stamped_pose.header.stamp = ros::Time(0);
+
+      transform = true;
+    }
+    catch (tf::TransformException& ex)
+    {
+      ROS_ERROR("predictive_control_node::getTransform: \n%s", ex.what());
+    }
+  }
+
+  else
+  {
+    ROS_WARN("%s or %s frame doesn't exist, pass existing frame", from.c_str(), to.c_str());
+  }
+
+  return transform;
+}

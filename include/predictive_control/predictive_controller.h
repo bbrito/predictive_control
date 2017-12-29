@@ -138,6 +138,52 @@ private:
   void publishZeroJointVelocity();
 
   /**
+   * @brief checkPositionLimitViolation: check position limit violate, limit containts lower and upper limit
+   * @param joint_position: current joint values
+   * @param position_tolerance: tolerance in joint values after reaching minimum and maximum values
+   * @return true with position limit violation else false
+   */
+  bool checkPositionLimitViolation(const Eigen::VectorXd& joint_position,
+                              const double& position_tolerance
+                              );
+
+  /**
+   * @brief checkPositionLimitViolation: check velocity limit violate, limit containts lower and upper limit
+   * @param joint_velocity: current velocity joint values
+   * @param velocity_tolerance: tolerance in joint values after reaching minimum and maximum values
+   * @return true with velocity limit violation else false
+   */
+  bool checkVelocityLimitViolation(const Eigen::VectorXd& joint_velocity,
+                              const double& velocity_tolerance
+                              );
+
+  /**
+   * @brief enforcePositionInLimits: enforced position to be in limit, limit containts lower and upper limit
+   * @param joint_position: current joint values
+   * @param enforced_joint_position: enforced joint position when it reach to minimum or maximum values
+   */
+  void enforcePositionInLimits(const Eigen::VectorXd& joint_position,
+                              const Eigen::VectorXd& enforced_joint_position
+                              );
+
+  /**
+   * @brief enforceVelocityInLimits: enforced velocity to be in limit, limit containts lower and upper limit
+   * @param joint_velocity: current joint values
+   * @param enforced_joint_velocity: enforced joint velocity when it reach to minimum or maximum values
+   */
+  void enforceVelocityInLimits(const Eigen::VectorXd& joint_velocity,
+                              const Eigen::VectorXd& enforced_joint_velocity
+                              );
+
+  /**
+   * @brief checkInfinitesimalPose: check goal tolereance statisfied
+   * @param pose: end effoctor pose
+   * @return true statisfied else false
+   */
+  bool checkInfinitesimalPose(const geometry_msgs::Pose& pose);
+
+
+  /**
    * @brief clearDataMember: clear vectors means free allocated memory
    */
   void clearDataMember();

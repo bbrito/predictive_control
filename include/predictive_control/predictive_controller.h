@@ -99,6 +99,10 @@ private:
   // Timmer
   ros::Timer timer_;
 
+  // goal tolerance
+  //std::vector<double> goal_tolerance_;
+  Eigen::VectorXd goal_tolerance_;
+
   // Kinematic variables, FK_Matrix, Jacobian_Matrix
   Eigen::MatrixXd FK_Matrix_;
   Eigen::MatrixXd Jacobian_Matrix_;
@@ -182,6 +186,26 @@ private:
    */
   bool checkInfinitesimalPose(const geometry_msgs::Pose& pose);
 
+  /**
+   * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
+   * @param vector: std vectors want to tranfrom
+   * @return Eigen vectors transform from std vectos
+   */
+  template<typename T>
+  static inline Eigen::VectorXd transformStdVectorToEigenVector(const std::vector<T>& vector)
+  {
+    // resize eigen vector
+    Eigen::VectorXd eigen_vector = Eigen::VectorXd(vector.size());
+
+    // convert std to eigen vector
+    for (uint32_t i = 0; i < vector.size(); ++i)
+    {
+      std::cout << vector.at(i) << std::endl;
+      eigen_vector(i) = vector.at(i);
+   }
+
+    return eigen_vector;
+  }
 
   /**
    * @brief clearDataMember: clear vectors means free allocated memory

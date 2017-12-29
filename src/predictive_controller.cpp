@@ -72,8 +72,15 @@ bool predictive_control::initialize()
     // initialize data member of class
     degree_of_freedom_ = pd_config_->degree_of_freedom_;
     clock_frequency_ = pd_config_->clock_frequency_;
+    goal_tolerance_ = transformStdVectorToEigenVector<double>(pd_config_->goal_pose_tolerance_);
     cartesian_dist_ = double(0.0);
     rotation_dist_ = double(0.0);
+
+    if (pd_config_->activate_output_)
+    {
+      ROS_WARN("===== GOAL TOLERANCE =====");
+      std::cout << goal_tolerance_.transpose() << std::endl;
+    }
 
     // resize position and velocity velocity vectors
     //current_position_ = Eigen::VectorXd(degree_of_freedom_);
@@ -93,8 +100,8 @@ bool predictive_control::initialize()
     joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control::jointStateCallBack, this);
     controlled_velocity_pub_ = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
 
-    timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &predictive_control::runNode, this);
-    timer_.start();
+    //timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &predictive_control::runNode, this);
+    //timer_.start();
 
     ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
     return true;

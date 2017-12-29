@@ -66,7 +66,15 @@ public:
     * @brief initialize: initialize frame tracker class and data members
     * @return true with successful initialize else false
     */
-   bool initialize();
+   bool initialize(); //virtual
+
+   void updateTrajectoryGenerator();
+
+   /**
+    * @brief hardCodedOptimalControlSolver: hard coded optimal conrol solver just for debug purpose
+    * @return controlled joint velocity
+    */
+   std_msgs::Float64MultiArray hardCodedOptimalControlSolver();
 
 private:
 
@@ -79,6 +87,38 @@ private:
    // constraints
    DVector control_min_constraint_;
    DVector control_max_constraint_;
+
+   /**
+    * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ, Langrange
+    * @param current_ocp: Current optimal control problem
+    * @param x: Differential state represent dynamic system of equations
+    * @param v: Control state use to control manipulator, in our case joint velocity
+    */
+   void generateCostFunction(OCP& current_ocp,
+                             const DifferentialState& x,
+                             const Control& v
+                             );
+
+   /**
+    * @brief setAlgorithmOptions: setup solver options, Optimal control solver or RealTimeSolver(MPC)
+    * @param OCP_solver: optimal control solver used to solver system of equations
+    */
+   template<typename T>
+   void setAlgorithmOptions(boost::shared_ptr<T> OCP_solver);
+
+   /**
+    * @brief setupLSQWeightsAndReferences: generate LSQ weight matrix and references
+    * @param Q LSQ weight matrix
+    * @param grid set state initialization as reference
+    */
+   void setupLSQWeightsAndReferences(DMatrix& Q,
+                                     VariablesGrid& grid
+                                     );
+
+   /**
+    * @brief solveOptimalControlProblem: solve optimal control problem using ACADO Toolkit
+    */
+   void solveOptimalControlProblem();
 
    /**
    * @brief calculateQuaternionProduct: calculate quternion product used for finding quternion error

@@ -15,6 +15,8 @@ pd_frame_tracker::~pd_frame_tracker()
 
 bool pd_frame_tracker::initialize()
 {
+
+  ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
 }
 

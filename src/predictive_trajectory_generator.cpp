@@ -15,9 +15,17 @@ pd_frame_tracker::~pd_frame_tracker()
 
 bool pd_frame_tracker::initialize()
 {
-  boost::shared_ptr<RealTimeAlgorithm> ocp;
+  /*boost::shared_ptr<RealTimeAlgorithm> ocp;
   ocp.reset(new RealTimeAlgorithm());
   setAlgorithmOptions<RealTimeAlgorithm>(ocp);
+*/
+  const int jacobian_matrix_rows = 6, jacobian_matrix_columns = predictive_configuration::degree_of_freedom_;
+  Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
+  state_initialize_.resize(jacobian_matrix_rows);
+  control_initialize_.resize(jacobian_matrix_columns);
+
+  // initialize hard constraints vector
+
 
   ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
@@ -50,6 +58,83 @@ void pd_frame_tracker::calculateQuaternionInverse(const geometry_msgs::Quaternio
   quat_inv.x = -quat.x;
   quat_inv.y = -quat.y;
   quat_inv.z = -quat.z;
+}
+
+// get transformation matrix between source and target frame
+bool pd_frame_tracker::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
+{
+  bool transform = false;
+  stamped_pose = Eigen::VectorXd(6);
+  tf::StampedTransform stamped_tf;
+
+  // make sure source and target frame exist
+  if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
+  {
+    try
+    {
+      // find transforamtion between souce and target frame
+      tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
+      tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
+
+      // translation
+      stamped_pose(0) = stamped_tf.getOrigin().x();
+      stamped_pose(1) = stamped_tf.getOrigin().y();
+      stamped_pose(2) = stamped_tf.getOrigin().z();
+
+      // convert quternion to rpy
+      tf::Quaternion quat(stamped_tf.getRotation().getX(),
+                          stamped_tf.getRotation().getY(),
+                          stamped_tf.getRotation().getZ(),
+                          stamped_tf.getRotation().getW()
+                          );
+      tf::Matrix3x3 quat_matrix(quat);
+      quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
+
+      transform = true;
+    }
+    catch (tf::TransformException& ex)
+    {
+      ROS_ERROR("pd_frame_tracker::getTransform: %s", ex.what());
+    }
+  }
+
+  else
+  {
+    ROS_WARN("pd_frame_tracker::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
+             from.c_str(), to.c_str());
+  }
+
+  return transform;
+}
+
+
+void pd_frame_tracker::generateCostFunction(OCP &OCP_problem, const DifferentialState &x, const Control &v)
+{
+  //OCP_problem.minimizeMayerTerm( );
+}
+
+
+std_msgs::Float64MultiArray pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobian_Matrix,
+                                                                         const Eigen::VectorXd &last_position,
+                                                                         const Eigen::VectorXd &goal_pose)
+{
+
+  const unsigned int m = Jacobian_Matrix.rows();
+  const unsigned int n = Jacobian_Matrix.cols();
+
+  // initialize variables
+  Jacobian_Matrix_ = Jacobian_Matrix;
+  state_initialize_ = last_position;
+
+  // OCP variables
+  DifferentialState x("state",m,1);    // position
+  Control v("control",n,1);            // velocity
+
+  // Differential Equation
+  DifferentialEquation f;
+
+  // Differential Kinematic
+  f << dot(x) == Jacobian_Matrix_ * v;
 }
 
 // setup acado algorithm options, need to set solver when calling this function

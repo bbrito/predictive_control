@@ -12,6 +12,7 @@
 #include <std_msgs/String.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <tf/tf.h>
+#include <tf/transform_listener.h>
 
 //Eigen includes
 #include <Eigen/Eigen>
@@ -68,7 +69,17 @@ public:
     */
    bool initialize(); //virtual
 
-   void updateTrajectoryGenerator();
+   /**
+    * @brief solveOptimalControlProblem: Handle execution of whole class, solve optimal control problem using ACADO Toolkit
+    * @param Jacobian_Matrix: Jacobian Matrix use to generate dynamic system of equation
+    * @param last_position: current/last joint values used to initialize states
+    * @param goal_pose: Goal pose where want to reach
+    * @return controlled_velocity: controlled velocity use to publish
+    */
+   std_msgs::Float64MultiArray solveOptimalControlProblem(const Eigen::MatrixXd& Jacobian_Matrix,
+                                  const Eigen::VectorXd& last_position,
+                                  const Eigen::VectorXd& goal_pose
+                                  );
 
    /**
     * @brief hardCodedOptimalControlSolver: hard coded optimal conrol solver just for debug purpose
@@ -76,7 +87,35 @@ public:
     */
    std_msgs::Float64MultiArray hardCodedOptimalControlSolver();
 
+   // STATIC FUNCTION, NO NEED OBJECT OF CLASS, DIRECT CALL WITHOUT OBJECT
+   /**
+    * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
+    * @param vector: std vectors want to tranfrom
+    * @return Eigen vectors transform from std vectos
+    */
+   template<typename T>
+   static inline Eigen::VectorXd transformStdVectorToEigenVector(const std::vector<T>& vector)
+   {
+     // resize eigen vector
+     Eigen::VectorXd eigen_vector = Eigen::VectorXd(vector.size());
+
+     // convert std to eigen vector
+     for (uint32_t i = 0; i < vector.size(); ++i)
+     {
+       std::cout << vector.at(i) << std::endl;
+       eigen_vector(i) = vector.at(i);
+    }
+
+     return eigen_vector;
+   }
+
 private:
+
+   // tf listerner
+   tf::TransformListener tf_listener_;
+
+   // Jacobian matrix
+   DMatrix Jacobian_Matrix_;
 
    // state initialization
    DVector state_initialize_;
@@ -90,11 +129,11 @@ private:
 
    /**
     * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ, Langrange
-    * @param current_ocp: Current optimal control problem
+    * @param OCP_problem: Current optimal control problem
     * @param x: Differential state represent dynamic system of equations
     * @param v: Control state use to control manipulator, in our case joint velocity
     */
-   void generateCostFunction(OCP& current_ocp,
+   void generateCostFunction(OCP& OCP_problem,
                              const DifferentialState& x,
                              const Control& v
                              );
@@ -115,10 +154,6 @@ private:
                                      VariablesGrid& grid
                                      );
 
-   /**
-    * @brief solveOptimalControlProblem: solve optimal control problem using ACADO Toolkit
-    */
-   void solveOptimalControlProblem();
 
    /**
    * @brief calculateQuaternionProduct: calculate quternion product used for finding quternion error
@@ -140,7 +175,18 @@ private:
                                   geometry_msgs::Quaternion& quat_inv
                                   );
 
-};
+  /**
+   * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
+   * @param from: source frame from find transformation
+   * @param to: target frame till find transformation
+   * @param stamped_pose: Resultant poseStamed between source and target frame
+   * @return: true if transform else false
+   */
+  bool getTransform(const std::string& from,
+                    const std::string& to,
+                    Eigen::VectorXd& stamped_pose
+                    );
 
+};
 
 #endif

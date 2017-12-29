@@ -52,7 +52,7 @@ void pd_frame_tracker::calculateQuaternionInverse(const geometry_msgs::Quaternio
   quat_inv.z = -quat.z;
 }
 
-// setup acado algorithm options
+// setup acado algorithm options, need to set solver when calling this function
 template<typename T>
 void pd_frame_tracker::setAlgorithmOptions(boost::shared_ptr<T> OCP_solver)
 {

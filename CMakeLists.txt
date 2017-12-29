@@ -60,17 +60,13 @@ add_library(self_collision_detection src/collision_detection.cpp)
 add_dependencies(self_collision_detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(self_collision_detection predictive_configuration ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES}) 
 
-#add_library(predictive_trajectory_generator src/predictive_trajectory_generator.cpp)
-#add_dependencies(predictive_trajectory_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(predictive_trajectory_generator ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES} ${libacado})
-
-#add_library(predictive_controller src/predictive_controller.cpp)
-#add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(predictive_controller kinematic_calculations  predictive_trajectory_generator ${catkin_LIBRARIES})
+add_library(predictive_trajectory_generator src/predictive_trajectory_generator.cpp)
+add_dependencies(predictive_trajectory_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(predictive_trajectory_generator ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES} ${libacado})
 
 add_library(predictive_controller src/predictive_controller.cpp)
 add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_controller predictive_configuration kinematic_calculations self_collision_detection ${catkin_LIBRARIES})
+target_link_libraries(predictive_controller predictive_configuration kinematic_calculations self_collision_detection predictive_trajectory_generator ${catkin_LIBRARIES})
 
 add_executable(predictive_control_node src/predictive_control_node.cpp)
 add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

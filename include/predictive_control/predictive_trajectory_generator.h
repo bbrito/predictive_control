@@ -187,6 +187,11 @@ private:
                     Eigen::VectorXd& stamped_pose
                     );
 
+  /**
+   * @brief clearDataMember: clear vectors means free allocated memory
+   */
+  void clearDataMember();
+
 };
 
 #endif

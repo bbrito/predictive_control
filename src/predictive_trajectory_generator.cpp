@@ -5,27 +5,50 @@
 
 pd_frame_tracker::pd_frame_tracker()
 {
-  ;
+  clearDataMember();
 }
 
 pd_frame_tracker::~pd_frame_tracker()
 {
-  ;
+  clearDataMember();
 }
 
+// diallocated memory
+void pd_frame_tracker::clearDataMember()
+{
+  // resize matrix and vectors
+  const int jacobian_matrix_rows = 6, jacobian_matrix_columns = predictive_configuration::degree_of_freedom_;
+  Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
+  state_initialize_.resize(jacobian_matrix_rows);
+  control_initialize_.resize(jacobian_matrix_columns);
+
+  control_min_constraint_.resize(jacobian_matrix_columns);
+  control_max_constraint_.resize(jacobian_matrix_columns);
+}
+
+// initialize data member of pd_frame_tracker class
 bool pd_frame_tracker::initialize()
 {
   /*boost::shared_ptr<RealTimeAlgorithm> ocp;
   ocp.reset(new RealTimeAlgorithm());
   setAlgorithmOptions<RealTimeAlgorithm>(ocp);
 */
+
+  // make sure predictice_configuration class initialized
+  if (!predictive_configuration::initialize_success_)
+  {
+    predictive_configuration::initialize();
+  }
+
+  // intialize data members
   const int jacobian_matrix_rows = 6, jacobian_matrix_columns = predictive_configuration::degree_of_freedom_;
   Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
   state_initialize_.resize(jacobian_matrix_rows);
   control_initialize_.resize(jacobian_matrix_columns);
 
   // initialize hard constraints vector
-
+  control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::joints_vel_min_limit_);
+  control_max_constraint_ = transformStdVectorToEigenVector(predictive_configuration::joints_vel_max_limit_);
 
   ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
@@ -119,22 +142,29 @@ std_msgs::Float64MultiArray pd_frame_tracker::solveOptimalControlProblem(const E
                                                                          const Eigen::VectorXd &goal_pose)
 {
 
-  const unsigned int m = Jacobian_Matrix.rows();
-  const unsigned int n = Jacobian_Matrix.cols();
+  const unsigned int jacobian_matrix_rows = Jacobian_Matrix.rows();
+  const unsigned int jacobian_matrix_columns = Jacobian_Matrix.cols();
 
   // initialize variables
   Jacobian_Matrix_ = Jacobian_Matrix;
   state_initialize_ = last_position;
 
   // OCP variables
-  DifferentialState x("state",m,1);    // position
-  Control v("control",n,1);            // velocity
+  DifferentialState x("state", jacobian_matrix_rows, 1);       // position
+  Control v("control", jacobian_matrix_columns, 1);            // velocity
+
+  // Clear state, control variable
+  x.clearStaticCounters();
+  v.clearStaticCounters();
 
   // Differential Equation
   DifferentialEquation f;
 
   // Differential Kinematic
   f << dot(x) == Jacobian_Matrix_ * v;
+
+  // Optimal control problem
+  OCP OCP_problem(0.0, 1.0, 4);
 }
 
 // setup acado algorithm options, need to set solver when calling this function

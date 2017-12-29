@@ -81,9 +81,21 @@ public:
    * @param stamped_pose: Resultant poseStamed between source and target frame
    * @return: true if transform else false
    */
-  bool getTransform(const std::string& from,
+  /*bool getTransform(const std::string& from,
                     const std::string& to,
                     geometry_msgs::PoseStamped& stamped_pose
+                    );*/
+
+  /**
+   * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
+   * @param from: source frame from find transformation
+   * @param to: target frame till find transformation
+   * @param stamped_pose: Resultant poseStamed between source and target frame
+   * @return: true if transform else false
+   */
+  bool getTransform(const std::string& from,
+                    const std::string& to,
+                    Eigen::VectorXd& stamped_pose
                     );
 
   /** public data member */
@@ -112,7 +124,8 @@ private:
   // Timmer
   ros::Timer timer_;
 
-  // goal tolerance
+  // goal position, goal tolerance
+  Eigen::VectorXd goal_pose_;
   Eigen::VectorXd goal_tolerance_;
 
   // Kinematic variables, FK_Matrix, Jacobian_Matrix

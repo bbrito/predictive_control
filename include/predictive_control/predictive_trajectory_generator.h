@@ -74,11 +74,12 @@ public:
     * @param Jacobian_Matrix: Jacobian Matrix use to generate dynamic system of equation
     * @param last_position: current/last joint values used to initialize states
     * @param goal_pose: Goal pose where want to reach
-    * @return controlled_velocity: controlled velocity use to publish
+    * @param controlled_velocity: controlled velocity use to publish
     */
-   std_msgs::Float64MultiArray solveOptimalControlProblem(const Eigen::MatrixXd& Jacobian_Matrix,
+   void solveOptimalControlProblem(const Eigen::MatrixXd& Jacobian_Matrix,
                                   const Eigen::VectorXd& last_position,
-                                  const Eigen::VectorXd& goal_pose
+                                  const Eigen::VectorXd& goal_pose,
+                                  std_msgs::Float64MultiArray& controlled_velocity
                                   );
 
    /**

@@ -17,7 +17,7 @@ predictive_configuration::~predictive_configuration()
 // read predicitve configuration paramter from paramter server
 bool predictive_configuration::initialize() //const std::string& node_handle_name
 {
-  ros::NodeHandle nh_config("predictive_config");
+  ros::NodeHandle nh_config;//("predictive_config");
   ros::NodeHandle nh;
 
   // read paramter from parameter server if not set than terminate code, as this parameter is essential parameter
@@ -157,9 +157,22 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   // check requested parameter availble on parameter server if not than set default value
   nh.param("/clock_frequency", clock_frequency_, double(50.0)); // 50 hz
   nh.param("/activate_output", activate_output_, bool(false));  // debug
+
+  // self collision avoidance parameter
   nh_config.param("self_collision/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
   nh_config.param("self_collision/minimum_collision_distance", minimum_collision_distance_, double(0.12));  // self collision avoidance minimum distance
   nh_config.param("self_collision/collision_weight_factor", collision_weight_factor_, double(0.01));  // self collision avoidance weight factor
+
+  // acado configuration parameter
+  nh_config.param("acado_config/max_num_iteration", max_num_iteration_, int(10));  // maximum number of iteration for slution of OCP
+  nh_config.param("acado_config/discretization_intervals", discretization_intervals_, int(4));  // discretization_intervals for slution of OCP
+  nh_config.param("acado_config/kkt_tolerance", kkt_tolerance_, double(1e-6));  // kkt condition for optimal solution
+  nh_config.param("acado_config/integrator_tolerance", integrator_tolerance_, double(1e-8));  // intergrator tolerance
+  nh_config.param("acado_config/start_time_horizon", start_time_horizon_, double(0.0));  // start time horizon for defining OCP problem
+  nh_config.param("acado_config/end_time_horizon", end_time_horizon_, double(1.0));  // end time horizon for defining OCP problem
+  nh_config.param("acado_config/use_LSQ_term", use_LSQ_term_, bool(false));  // use for minimize objective function
+  nh_config.param("acado_config/use_lagrange_term", use_lagrange_term_, bool(false));  // use for minimize objective function
+  nh_config.param("acado_config/use_mayer_term", use_mayer_term_, bool(true));  // use for minimize objective function
 
   initialize_success_ = true;
 
@@ -202,6 +215,16 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
   minimum_collision_distance_ = new_config.minimum_collision_distance_;
   collision_weight_factor_ = new_config.collision_weight_factor_;
 
+  use_lagrange_term_ = new_config.use_lagrange_term_;
+  use_LSQ_term_ = new_config.use_LSQ_term_;
+  use_mayer_term_ = new_config.use_mayer_term_;
+  max_num_iteration_ = new_config.max_num_iteration_;
+  discretization_intervals_ = new_config.discretization_intervals_;
+  kkt_tolerance_ = new_config.kkt_tolerance_;
+  integrator_tolerance_ = new_config.integrator_tolerance_;
+  start_time_horizon_ = new_config.start_time_horizon_;
+  end_time_horizon_ = new_config.end_time_horizon_;
+
   if (activate_output_)
   {
     print_configuration_parameter();
@@ -227,6 +250,16 @@ void predictive_configuration::print_configuration_parameter()
   ROS_INFO_STREAM("Ball_radius: " << ball_radius_);
   ROS_INFO_STREAM("Minimum collision distance: " << minimum_collision_distance_);
   ROS_INFO_STREAM("Collision weight factor: " << collision_weight_factor_);
+  ROS_INFO_STREAM("Use lagrange term: " << std::boolalpha << use_lagrange_term_);
+  ROS_INFO_STREAM("Use LSQ term: " << std::boolalpha << use_LSQ_term_);
+  ROS_INFO_STREAM("Use mayer term: " << std::boolalpha << use_mayer_term_);
+  ROS_INFO_STREAM("Max num iteration: " << max_num_iteration_);
+  ROS_INFO_STREAM("Discretization intervals: " << discretization_intervals_);
+  ROS_INFO_STREAM("KKT tolerance: " << kkt_tolerance_);
+  ROS_INFO_STREAM("Integrator tolerance: " << integrator_tolerance_);
+  ROS_INFO_STREAM("Start time horizon: " << start_time_horizon_);
+  ROS_INFO_STREAM("End time horizon: " << end_time_horizon_);
+
 
   // print joints name
   std::cout << "Joint names: [";

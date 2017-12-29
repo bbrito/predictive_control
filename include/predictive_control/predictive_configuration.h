@@ -88,6 +88,18 @@ public:
   double minimum_collision_distance_;
   double collision_weight_factor_;
 
+  // acado configuration
+  bool use_lagrange_term_;
+  bool use_LSQ_term_;
+  bool use_mayer_term_;
+  int max_num_iteration_;
+  int discretization_intervals_;
+  double kkt_tolerance_;
+  double integrator_tolerance_;
+  double start_time_horizon_;
+  double end_time_horizon_;
+
+
 private:
 
   /**

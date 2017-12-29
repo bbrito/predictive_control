@@ -42,8 +42,8 @@ class predictive_control
    * - Handle self collsion avoidance
    * - Extract current position and velocity of manipulator joints
    * - Publish controlled joint velocity
-   * Info: static member for transform std::vector to Eigen::vector
    */
+    //Info: static member for transform std::vector to Eigen::vector
 
 public:
 
@@ -206,7 +206,7 @@ private:
    * @param vector: std vectors want to tranfrom
    * @return Eigen vectors transform from std vectos
    */
-  template<typename T>
+  /*template<typename T>
   static inline Eigen::VectorXd transformStdVectorToEigenVector(const std::vector<T>& vector)
   {
     // resize eigen vector
@@ -220,7 +220,7 @@ private:
    }
 
     return eigen_vector;
-  }
+  }*/
 
   /**
    * @brief clearDataMember: clear vectors means free allocated memory

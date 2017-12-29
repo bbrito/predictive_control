@@ -34,6 +34,7 @@
 #include <predictive_control/predictive_configuration.h>
 #include <predictive_control/kinematic_calculations.h>
 #include <predictive_control/collision_detection.h>
+#include <predictive_control/predictive_trajectory_generator.h>
 
 class predictive_control
 {
@@ -135,6 +136,9 @@ private:
 
   // self collision detector/avoidance
   boost::shared_ptr<CollisionRobot> collision_detect_;
+
+  // predictive trajectory generator
+  boost::shared_ptr<pd_frame_tracker> pd_trajectory_generator_;
 
   /**
    * @brief spinNode: spin node means ROS is still running

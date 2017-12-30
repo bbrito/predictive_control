@@ -80,10 +80,12 @@ bool predictive_control::initialize()
     goal_tolerance_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->goal_pose_tolerance_);
 
     /// 3 position and 3 orientation(rpy)
-    goal_gripper_pose_.resize(6);
+    //goal_gripper_pose_.resize(6);
+    goal_gripper_pose_.setConstant(6, 1, 1e-6);
     getTransform(pd_config_->chain_root_link_, pd_config_->target_frame_, goal_gripper_pose_);
 
-    current_gripper_pose_.resize(6);
+    //current_gripper_pose_.resize(6);
+    current_gripper_pose_.setConstant(6, 1, 1e-6);
     getTransform(pd_config_->chain_root_link_, pd_config_->tracking_frame_, current_gripper_pose_);
 
     cartesian_dist_ = double(0.0);
@@ -144,34 +146,15 @@ bool predictive_control::initialize()
 // update this function 1/colck_frequency
 void predictive_control::runNode(const ros::TimerEvent &event)
 {
-  // get goal pose w.r.t root link
-  getTransform(pd_config_->chain_root_link_, pd_config_->target_frame_, goal_gripper_pose_);
 
-  // update collision ball according to joint angles
-  collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
+  std::cout.precision(20);
 
-  // solver optimal control problem, track frame
-  std::cout << "current gripper pose: \n "<< current_gripper_pose_.transpose() << std::endl;
-  std::cout << "goal gripper pose: \n "<< goal_gripper_pose_.transpose() << std::endl;
-
-  for (int i=0u ; i < current_gripper_pose_.rows()*current_gripper_pose_.cols(); ++i)
-  {
-    if ( current_gripper_pose_(i) == 0) current_gripper_pose_(i) = 1e-6;
-  }
-
-  for (int i=0u ; i < goal_gripper_pose_.rows()*goal_gripper_pose_.cols(); ++i)
-  {
-    if ( goal_gripper_pose_(i) == 0) goal_gripper_pose_(i) = 1e-6;
-  }
-
-  // solver optimal control problem, track frame
-  std::cout << "again current gripper pose: \n "<< current_gripper_pose_.transpose() << std::endl;
-  std::cout << "again goal gripper pose: \n "<< goal_gripper_pose_.transpose() << std::endl;
-
+  // solver optimal control problem
   pd_trajectory_generator_->solveOptimalControlProblem(Jacobian_Matrix_,
                                                        current_gripper_pose_,
                                                        goal_gripper_pose_,
                                                        controlled_velocity_);
+
 
   // pubish controll velocity
   controlled_velocity_pub_.publish(controlled_velocity_);
@@ -213,7 +196,13 @@ void predictive_control::jointStateCallBack(const sensor_msgs::JointState::Const
 
     // calculate forward kinematic and Jacobian matrix using current joint values, get current gripper pose using FK_Matrix
     kinematic_solver_->calculateJacobianMatrix(last_position_, FK_Matrix_, Jacobian_Matrix_);
+
+    // get current and goal pose of gripper, w.r.t root link
     kinematic_solver_->getGripperPoseVectorFromFK(FK_Matrix_, current_gripper_pose_);
+    getTransform(pd_config_->chain_root_link_, pd_config_->target_frame_, goal_gripper_pose_);
+
+    // update collision ball according to joint angles
+    collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
 
     // Output is active, than only print joint state values
     if (pd_config_->activate_output_)

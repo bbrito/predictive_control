@@ -145,8 +145,8 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
     //ROS_ERROR_STREAM("generateCostFunction: dimension of control: "<< v.dim);
     OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
                                            +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
-                                           +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2))
-                                           +(x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
+                                           +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
+                                   + 1.0 *( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
                                            +(x(4) - goal_pose(4)) * (x(4) - goal_pose(4))
                                            +(x(5) - goal_pose(5)) * (x(5) - goal_pose(5)) )
                                    + 1.0 * (v.transpose() * v)
@@ -175,24 +175,10 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
                                                   std_msgs::Float64MultiArray& controlled_velocity)
 {
 
+  DMatrix Jac_Mat = Jacobian_Matrix;
+
   const unsigned int jacobian_matrix_rows = 6;//Jacobian_Matrix.rows();
   const unsigned int jacobian_matrix_columns = 7;//Jacobian_Matrix.cols();
-
-  // initialize and reset variables
-  Jacobian_Matrix_ = Jacobian_Matrix;
-  DVector state_initialize_(jacobian_matrix_rows);
-  state_initialize_.setAll(0.0);
-  state_initialize_ = last_position;
-  DVector control_initialize_(jacobian_matrix_columns);
-  control_initialize_.setAll(0.0);
-  control_initialize_ = controlled_velocity.data;
-
-  /*
-  ROS_ERROR("----------------------");
-  std::cout << "Jacobian: \n"<< Jacobian_Matrix_ << std::endl;
-  ROS_WARN_STREAM("current gripper pose: \n" << last_position.transpose());
-  ROS_ERROR_STREAM("goal pose: \n"<< goal_pose.transpose());
-  ROS_WARN("-----------------------");*/
 
   // OCP variables
   DifferentialState x("", jacobian_matrix_rows, 1);       // position
@@ -206,31 +192,48 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   DifferentialEquation f;
 
   // Differential Kinematic
-  f << dot(x) == Jacobian_Matrix_ * v;
+  f << dot(x) == Jac_Mat * v;
+
+  DVector control_init(7), state_init(6);
+  control_init.setAll(0.0);
+  state_init.setAll(0.0);
+
+  control_init(0) = controlled_velocity.data[0];
+  control_init(1) = controlled_velocity.data[1];
+  control_init(2) = controlled_velocity.data[2];
+  control_init(3) = controlled_velocity.data[3];
+  control_init(4) = controlled_velocity.data[4];
+  control_init(5) = controlled_velocity.data[5];
+  control_init(6) = controlled_velocity.data[6];
+
+  state_init(0) = last_position(0);
+  state_init(1) = last_position(1);
+  state_init(2) = last_position(2);
+  state_init(3) = last_position(3);
+  state_init(4) = last_position(4);
+  state_init(5) = last_position(5);
 
   // Optimal control problem
   OCP OCP_problem( 0.0, 1.0, 4);
-  //generateCostFunction(OCP_problem, x, v, goal_pose);
-  /*OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
+
+  OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
                                          +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
                                          +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
-                                 + 1.0 * ( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
+                                 + 1.0 *( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
                                          +(x(4) - goal_pose(4)) * (x(4) - goal_pose(4))
                                          +(x(5) - goal_pose(5)) * (x(5) - goal_pose(5)) )
                                  + 1.0 * (v.transpose() * v)
-                              );*/
-  OCP_problem.minimizeMayerTerm((x(0)-0.05)*(x(0)-0.05));
-  // set hard and soft constraints
+                              );
+
   OCP_problem.subjectTo(f);
-  //OCP_problem.subjectTo(control_min_constraint_ <= v <= control_max_constraint_);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
   OCP_problem.subjectTo(AT_END, v == 0.0);
 
   // Optimal Control Algorithm
   RealTimeAlgorithm OCP_solver(OCP_problem, 0.025); // 0.025 sampling time
 
-  OCP_solver.initializeControls(control_initialize_);
-  OCP_solver.initializeDifferentialStates(state_initialize_);
+  OCP_solver.initializeControls(control_init);
+  OCP_solver.initializeDifferentialStates(state_init);
 
   OCP_solver.set(MAX_NUM_ITERATIONS, 10);
   OCP_solver.set(LEVENBERG_MARQUARDT, 1e-5);
@@ -241,15 +244,14 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   //setAlgorithmOptions<RealTimeAlgorithm>(OCP_solver);
   // setup controller
   Controller controller(OCP_solver);
-  controller.init(0.0, state_initialize_);
-  controller.step(0.0, state_initialize_);
-
+  controller.init(0.0, state_init);
+  controller.step(0.0, state_init);
 
   // get control at first step and update controlled velocity vector
-  DVector controlled_velocity_vector;
-  controller.getU(controlled_velocity_vector);
+  DVector u;
+  controller.getU(u);
   ROS_WARN("================");
-  controlled_velocity_vector.print();
+  u.print();
   ROS_WARN("================");
   controlled_velocity.data.resize(jacobian_matrix_columns, 0.0);
   /*for (int i=0u; i < jacobian_matrix_columns; ++i)
@@ -257,13 +259,13 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
     controlled_velocity.data[i] = controlled_velocity_vector(i);
   }*/
 
-  controlled_velocity.data[0] = controlled_velocity_vector(0);
-  controlled_velocity.data[1] = controlled_velocity_vector(1);
-  controlled_velocity.data[2] = controlled_velocity_vector(2);
-  controlled_velocity.data[3] = controlled_velocity_vector(3);
-  controlled_velocity.data[4] = controlled_velocity_vector(4);
-  controlled_velocity.data[5] = controlled_velocity_vector(5);
-  controlled_velocity.data[6] = controlled_velocity_vector(6);
+  controlled_velocity.data[0] = u(0);
+  controlled_velocity.data[1] = u(1);
+  controlled_velocity.data[2] = u(2);
+  controlled_velocity.data[3] = u(3);
+  controlled_velocity.data[4] = u(4);
+  controlled_velocity.data[5] = u(5);
+  controlled_velocity.data[6] = u(6);
 /*  // resize used data members
   Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
   state_initialize_.setAll(0.0);

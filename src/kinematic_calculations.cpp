@@ -506,6 +506,25 @@ void Kinematic_calculations::calculateInverseJacobianbyDirect(const Eigen::Matri
   jacobianInv = result;
 }
 
+// get gripper pose using given forward kinematic matrix, orientation is in the form of rpy
+void Kinematic_calculations::getGripperPoseVectorFromFK(const Eigen::MatrixXd &FK_Matrix, Eigen::VectorXd &vector)
+{
+  // make sure initialize and empty data
+  vector = Eigen::VectorXd(6);
+  KDL::Frame frame = KDL::Frame::Identity();
+
+  // transform matrix to kdl frame
+  transformEigenMatrixToKDL(FK_Matrix, frame);
+
+  // position
+  vector(0) = FK_Matrix(0,3);
+  vector(1) = FK_Matrix(1,3);
+  vector(2) = FK_Matrix(2,3);
+
+  // orientation, filled data in the form of rpy
+  frame.M.GetRPY(vector(3), vector(4), vector(5));
+}
+
 //convert KDL to Eigen matrix
 void Kinematic_calculations::transformKDLToEigenMatrix(const KDL::Frame &frame, Eigen::MatrixXd &matrix)
 {

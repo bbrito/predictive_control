@@ -112,8 +112,8 @@ public:
    * @param jacobianInv: Inverse of Jacobian Matrix
    */
   void calculateInverseJacobianbySVD( const Eigen::MatrixXd& jacobian,
-                                         Eigen::MatrixXd& jacobianInv
-                                         );
+                                      Eigen::MatrixXd& jacobianInv
+                                      );
 
   /**
    * @brief calculate_inverse_jacobian_bySVD: calculate inverse of Jacobian Matrix using 'Direct Method'
@@ -121,8 +121,18 @@ public:
    * @param jacobianInv: Inverse of Jacobian Matrix
    */
   void calculateInverseJacobianbyDirect( const Eigen::MatrixXd& jacobian,
-                                            Eigen::MatrixXd& jacobianInv
-                                            );
+                                         Eigen::MatrixXd& jacobianInv
+                                         );
+
+
+  /**
+   * @brief getGripperPoseVectorFromFK: get end effector position using forward kinematic matrix
+   * @param FK_Matrix: Given forward kinematic matrix
+   * @param vector: End effector pose vector, orientation in the form of rpy
+   */
+  void getGripperPoseVectorFromFK(const Eigen::MatrixXd& FK_Matrix,
+                            Eigen::VectorXd& vector
+                            );
 
   /**
    * @brief printDataMembers: Print important data memeber of this class, Just for Debug purpose

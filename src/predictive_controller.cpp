@@ -109,6 +109,8 @@ bool predictive_control::initialize()
 
     // resize controlled velocity variable, that publishing
     controlled_velocity_.data.resize(degree_of_freedom_, 0.0);
+    for (int i=0u; i < degree_of_freedom_; ++i)
+      controlled_velocity_.data[i] = last_velocity_(i);
 
     // ros interfaces
     joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control::jointStateCallBack, this);

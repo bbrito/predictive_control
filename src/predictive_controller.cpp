@@ -132,9 +132,8 @@ bool predictive_control::initialize()
 // update this function 1/colck_frequency
 void predictive_control::runNode(const ros::TimerEvent &event)
 {
-  // get current pose of end effector and goal pose w.r.t root link
+  // get goal pose w.r.t root link
   getTransform(pd_config_->chain_root_link_, pd_config_->target_frame_, goal_gripper_pose_);
-  getTransform(pd_config_->chain_root_link_, pd_config_->tracking_frame_, current_gripper_pose_);
 
   // update collision ball according to joint angles
   collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
@@ -148,6 +147,7 @@ void predictive_control::runNode(const ros::TimerEvent &event)
                                                        goal_gripper_pose_,
                                                        controlled_velocity_);
 
+  controlled_velocity_pub_.publish(controlled_velocity_);
     // publish zero controlled velocity
     //publishZeroJointVelocity();
 }
@@ -184,8 +184,9 @@ void predictive_control::jointStateCallBack(const sensor_msgs::JointState::Const
     last_position_ = current_position;
     last_velocity_ = current_velocity;
 
-    // calculate forward kinematic and Jacobian matrix using current joint values
+    // calculate forward kinematic and Jacobian matrix using current joint values, get current gripper pose using FK_Matrix
     kinematic_solver_->calculateJacobianMatrix(last_position_, FK_Matrix_, Jacobian_Matrix_);
+    kinematic_solver_->getGripperPoseVectorFromFK(FK_Matrix_, current_gripper_pose_);
 
     // Output is active, than only print joint state values
     if (pd_config_->activate_output_)

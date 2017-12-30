@@ -118,6 +118,16 @@ bool predictive_control::initialize()
 
     ros::Duration(1).sleep();
 
+    // TEMPORARY SOLUTION TO CHANGE JOINT VALUES
+    std::cout << "CONFIRM FOR START TIME EXECUTION: 'y' " << std::endl;
+    char ch;
+    std::cin >> ch;
+    while (ch != 'y')
+    {
+      std::cout << "CONFIRM AGAIN FOR TIME EXECUTION: 'y' " << std::endl;
+      std::cin >> ch;
+    }
+
     timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &predictive_control::runNode, this);
     timer_.start();
 
@@ -144,11 +154,26 @@ void predictive_control::runNode(const ros::TimerEvent &event)
   std::cout << "current gripper pose: \n "<< current_gripper_pose_.transpose() << std::endl;
   std::cout << "goal gripper pose: \n "<< goal_gripper_pose_.transpose() << std::endl;
 
+  for (int i=0u ; i < current_gripper_pose_.rows()*current_gripper_pose_.cols(); ++i)
+  {
+    if ( current_gripper_pose_(i) == 0) current_gripper_pose_(i) = 1e-6;
+  }
+
+  for (int i=0u ; i < goal_gripper_pose_.rows()*goal_gripper_pose_.cols(); ++i)
+  {
+    if ( goal_gripper_pose_(i) == 0) goal_gripper_pose_(i) = 1e-6;
+  }
+
+  // solver optimal control problem, track frame
+  std::cout << "again current gripper pose: \n "<< current_gripper_pose_.transpose() << std::endl;
+  std::cout << "again goal gripper pose: \n "<< goal_gripper_pose_.transpose() << std::endl;
+
   pd_trajectory_generator_->solveOptimalControlProblem(Jacobian_Matrix_,
                                                        current_gripper_pose_,
                                                        goal_gripper_pose_,
                                                        controlled_velocity_);
 
+  // pubish controll velocity
   controlled_velocity_pub_.publish(controlled_velocity_);
     // publish zero controlled velocity
     //publishZeroJointVelocity();

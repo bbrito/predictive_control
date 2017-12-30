@@ -22,6 +22,7 @@
 #include <vector>
 #include <math.h>
 #include <algorithm>
+#include <limits>
 
 // boost includes
 #include <boost/shared_ptr.hpp>

@@ -21,12 +21,6 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   ros::NodeHandle nh;
 
   // read paramter from parameter server if not set than terminate code, as this parameter is essential parameter
-  if (!nh.getParam ("robot_description", robot_description_) )
-  {
-    ROS_WARN(" Parameter 'robot_description' not set on %s node " , ros::this_node::getName().c_str());
-    return false;
-  }
-
   if (!nh.getParam ("chain_base_link", chain_base_link_) )
   {
     ROS_WARN(" Parameter 'chain_base_link' not set on %s node " , ros::this_node::getName().c_str());
@@ -155,6 +149,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   }
 
   // check requested parameter availble on parameter server if not than set default value
+  nh.param("/robot_description", robot_description_, std::string("robot_description")); // robot description
   nh.param("/clock_frequency", clock_frequency_, double(50.0)); // 50 hz
   nh.param("/activate_output", activate_output_, bool(false));  // debug
 

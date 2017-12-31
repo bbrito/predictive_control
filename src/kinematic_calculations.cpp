@@ -8,16 +8,16 @@
 Kinematic_calculations::Kinematic_calculations()
 {
   segments_ = 7;
-  clear_data_member();
+  clearDataMember();
 }
 
 Kinematic_calculations::~Kinematic_calculations()
 {
-  clear_data_member();
+  clearDataMember();
 }
 
 // diallocated memory
-void Kinematic_calculations::clear_data_member()
+void Kinematic_calculations::clearDataMember()
 {
   Transformation_Matrix_.clear();
   FK_Homogenous_Matrix_.clear();

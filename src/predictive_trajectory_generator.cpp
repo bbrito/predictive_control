@@ -141,8 +141,6 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 {
   if (predictive_configuration::use_mayer_term_)
   {
-    //ROS_ERROR_STREAM("generateCostFunction: dimension of state: "<< x.dim);
-    //ROS_ERROR_STREAM("generateCostFunction: dimension of control: "<< v.dim);
     OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
                                            +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
                                            +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
@@ -174,8 +172,23 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
                                                   const Eigen::VectorXd &goal_pose,
                                                   std_msgs::Float64MultiArray& controlled_velocity)
 {
+  Jacobian_Matrix_ = Jacobian_Matrix;
+  // control initialize
+  control_initialize_(0) = controlled_velocity.data[0];
+  control_initialize_(1) = controlled_velocity.data[1];
+  control_initialize_(2) = controlled_velocity.data[2];
+  control_initialize_(3) = controlled_velocity.data[3];
+  control_initialize_(4) = controlled_velocity.data[4];
+  control_initialize_(5) = controlled_velocity.data[5];
+  control_initialize_(6) = controlled_velocity.data[6];
 
-  DMatrix Jac_Mat = Jacobian_Matrix;
+  // state initialize
+  state_initialize_(0) = last_position(0);
+  state_initialize_(1) = last_position(1);
+  state_initialize_(2) = last_position(2);
+  state_initialize_(3) = last_position(3);
+  state_initialize_(4) = last_position(4);
+  state_initialize_(5) = last_position(5);
 
   const unsigned int jacobian_matrix_rows = 6;//Jacobian_Matrix.rows();
   const unsigned int jacobian_matrix_columns = 7;//Jacobian_Matrix.cols();
@@ -192,30 +205,11 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   DifferentialEquation f;
 
   // Differential Kinematic
-  f << dot(x) == Jac_Mat * v;
-
-  DVector control_init(7), state_init(6);
-  control_init.setAll(0.0);
-  state_init.setAll(0.0);
-
-  control_init(0) = controlled_velocity.data[0];
-  control_init(1) = controlled_velocity.data[1];
-  control_init(2) = controlled_velocity.data[2];
-  control_init(3) = controlled_velocity.data[3];
-  control_init(4) = controlled_velocity.data[4];
-  control_init(5) = controlled_velocity.data[5];
-  control_init(6) = controlled_velocity.data[6];
-
-  state_init(0) = last_position(0);
-  state_init(1) = last_position(1);
-  state_init(2) = last_position(2);
-  state_init(3) = last_position(3);
-  state_init(4) = last_position(4);
-  state_init(5) = last_position(5);
+  f << dot(x) == Jacobian_Matrix_ * v;
 
   // Optimal control problem
   OCP OCP_problem( 0.0, 1.0, 4);
-
+  //generateCostFunction(OCP_problem, x, v, goal_pose);
   OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
                                          +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
                                          +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
@@ -232,8 +226,8 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   // Optimal Control Algorithm
   RealTimeAlgorithm OCP_solver(OCP_problem, 0.025); // 0.025 sampling time
 
-  OCP_solver.initializeControls(control_init);
-  OCP_solver.initializeDifferentialStates(state_init);
+  OCP_solver.initializeControls(control_initialize_);
+  OCP_solver.initializeDifferentialStates(state_initialize_);
 
   OCP_solver.set(MAX_NUM_ITERATIONS, 10);
   OCP_solver.set(LEVENBERG_MARQUARDT, 1e-5);
@@ -244,8 +238,8 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   //setAlgorithmOptions<RealTimeAlgorithm>(OCP_solver);
   // setup controller
   Controller controller(OCP_solver);
-  controller.init(0.0, state_init);
-  controller.step(0.0, state_init);
+  controller.init(0.0, state_initialize_);
+  controller.step(0.0, state_initialize_);
 
   // get control at first step and update controlled velocity vector
   DVector u;

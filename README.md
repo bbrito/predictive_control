@@ -10,4 +10,7 @@
 
 # predicitve_config:
 - Change to read data from yaml to Dynamic config. ex twist_control
+
+# install LaTex
+sudo apt-get install texlive-full
   

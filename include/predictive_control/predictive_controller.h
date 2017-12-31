@@ -216,7 +216,7 @@ private:
    * @param pose: end effoctor pose
    * @return true statisfied else false
    */
-  bool checkInfinitesimalPose(const geometry_msgs::Pose& pose);
+  bool checkInfinitesimalPose(const Eigen::VectorXd& pose);
 
   /**
    * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access

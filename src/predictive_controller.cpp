@@ -146,7 +146,6 @@ bool predictive_control::initialize()
 // update this function 1/colck_frequency
 void predictive_control::runNode(const ros::TimerEvent &event)
 {
-
   std::cout.precision(20);
 
   // solver optimal control problem
@@ -156,10 +155,20 @@ void predictive_control::runNode(const ros::TimerEvent &event)
                                                        controlled_velocity_);
 
 
-  // pubish controll velocity
-  controlled_velocity_pub_.publish(controlled_velocity_);
+  // check infinitesimal distance
+  Eigen::VectorXd distance_vector;
+  getTransform(pd_config_->tracking_frame_, pd_config_->target_frame_, distance_vector);
+
+  if (checkInfinitesimalPose(distance_vector))
+  {
     // publish zero controlled velocity
-    //publishZeroJointVelocity();
+    publishZeroJointVelocity();
+  }
+  else
+  {
+    // pubish controll velocity
+    controlled_velocity_pub_.publish(controlled_velocity_);
+  }
 }
 
 // read current position and velocity of robot joints
@@ -225,8 +234,6 @@ void predictive_control::jointStateCallBack(const sensor_msgs::JointState::Const
     }
   }
 }
-
-
 
 /*
 void predictive_control_node::run_node(const ros::TimerEvent& event)
@@ -397,3 +404,41 @@ bool predictive_control::getTransform(const std::string& from, const std::string
   return transform;
 }
 */
+
+// check infitisimal distance creteria
+bool predictive_control::checkInfinitesimalPose(const Eigen::VectorXd &pose)
+{
+  // check infinitesimal distance in position
+  if (fabs(pose(0)) > pd_config_->goal_pose_tolerance_.at(0))
+  {
+    return false;
+  }
+
+  if (fabs(pose(1)) > pd_config_->goal_pose_tolerance_.at(1))
+  {
+    return false;
+  }
+
+  if (fabs(pose(2)) > pd_config_->goal_pose_tolerance_.at(2))
+  {
+    return false;
+  }
+
+  // check infinitesimal distance in orientation
+  if (fabs(pose(3)) > pd_config_->goal_pose_tolerance_.at(3))
+  {
+    return false;
+  }
+
+  if (fabs(pose(4)) > pd_config_->goal_pose_tolerance_.at(4))
+  {
+    return false;
+  }
+
+  if (fabs(pose(5)) > pd_config_->goal_pose_tolerance_.at(5))
+  {
+    return false;
+  }
+
+  return true;
+}

@@ -166,9 +166,9 @@ private:
                                  );
 
   /**
-   * @brief clear_data_member: clear vectors means free allocated memory
+   * @brief clearDataMember: clear vectors means free allocated memory
    */
-  void clear_data_member();
+  void clearDataMember();
 
 };
 

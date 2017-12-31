@@ -8,11 +8,11 @@ CollisionRobot::CollisionRobot()
 
 CollisionRobot::~CollisionRobot()
 {
-  clear_data_member();
+  clearDataMember();
 }
 
 // diallocated memory
-void CollisionRobot::clear_data_member()
+void CollisionRobot::clearDataMember()
 {
   marker_array_.markers.clear();
   collision_matrix_.clear();
@@ -27,7 +27,7 @@ bool CollisionRobot::initializeCollisionRobot()
     predictive_configuration::initialize();
   }
 
-  clear_data_member();
+  clearDataMember();
 
   ros::NodeHandle nh_collisionRobot("predictive_control/collisionRobot");
   marker_pub_ = nh_collisionRobot.advertise<visualization_msgs::MarkerArray>("collision_ball", 1);
@@ -44,7 +44,7 @@ void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &F
                                            const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
 {
   // make sure collsion matrix and marker array should be empty
-  clear_data_member();
+  clearDataMember();
 
   // generate/update collision matrix
   generateCollisionVolume(FK_Homogenous_Matrix, Transformation_Matrix);

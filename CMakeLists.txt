@@ -75,44 +75,89 @@ FIND_LIBRARY(libacado libacado_toolkit_s.so ${ACADO_DIR}/build/lib)
 
 add_library(predictive_configuration src/predictive_configuration.cpp)
 add_dependencies(predictive_configuration ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_configuration ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES} ${libacado})
+target_link_libraries(predictive_configuration
+    ${catkin_LIBRARIES}
+    ${orocos_kdl_LIBRARIES}
+    ${CERES_LIBRARIES}
+    ${libacado}
+    )
 
 add_library(kinematic_calculations src/kinematic_calculations.cpp)
 add_dependencies(kinematic_calculations ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(kinematic_calculations predictive_configuration ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES}) 
+target_link_libraries(kinematic_calculations
+    predictive_configuration
+    ${catkin_LIBRARIES}
+    ${orocos_kdl_LIBRARIES}
+    ${CERES_LIBRARIES}
+    )
 
 add_library(self_collision_detection src/collision_detection.cpp)
 add_dependencies(self_collision_detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(self_collision_detection predictive_configuration ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES}) 
+target_link_libraries(self_collision_detection
+    predictive_configuration
+    ${catkin_LIBRARIES}
+    ${orocos_kdl_LIBRARIES}
+    ${CERES_LIBRARIES}
+    )
 
 add_library(predictive_trajectory_generator src/predictive_trajectory_generator.cpp)
 add_dependencies(predictive_trajectory_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_trajectory_generator ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${CERES_LIBRARIES} ${libacado})
+target_link_libraries(predictive_trajectory_generator
+    ${catkin_LIBRARIES}
+    ${orocos_kdl_LIBRARIES}
+    ${CERES_LIBRARIES}
+    ${libacado}
+    )
 
 add_library(predictive_controller src/predictive_controller.cpp)
 add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_controller predictive_configuration kinematic_calculations self_collision_detection predictive_trajectory_generator ${catkin_LIBRARIES})
+target_link_libraries(predictive_controller
+    predictive_configuration
+    kinematic_calculations
+    self_collision_detection
+    predictive_trajectory_generator
+    ${catkin_LIBRARIES}
+    ${orocos_kdl_LIBRARIES}
+    ${CERES_LIBRARIES}
+    ${libacado}
+    )
 
 add_executable(predictive_control_node src/predictive_control_node.cpp)
 add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_control_node predictive_controller ${catkin_LIBRARIES}) 
+target_link_libraries(predictive_control_node
+    predictive_controller
+    ${catkin_LIBRARIES}
+    )
 
 ### Test Case ####
 add_executable(predictive_configuration_test test/predictive_configuration_parameter_test.cpp)
 add_dependencies(predictive_configuration_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_configuration_test predictive_configuration ${catkin_LIBRARIES} )
+target_link_libraries(predictive_configuration_test
+    predictive_configuration
+    ${catkin_LIBRARIES}
+    )
 
 add_executable(kinematic_calculations_test test/kinematic_calculations_test.cpp)
 add_dependencies(kinematic_calculations_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(kinematic_calculations_test kinematic_calculations ${catkin_LIBRARIES} )
+target_link_libraries(kinematic_calculations_test
+    kinematic_calculations
+    ${catkin_LIBRARIES}
+    )
 
 add_executable(collision_detection_test test/collision_detection_test.cpp)
 add_dependencies(collision_detection_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(collision_detection_test kinematic_calculations self_collision_detection ${catkin_LIBRARIES} )
+target_link_libraries(collision_detection_test
+    kinematic_calculations
+    self_collision_detection
+    ${catkin_LIBRARIES}
+    )
 
 add_executable(predictive_controller_test test/predictive_controller_test.cpp)
 add_dependencies(predictive_controller_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_controller_test predictive_controller ${catkin_LIBRARIES} )
+target_link_libraries(predictive_controller_test
+    predictive_controller
+    ${catkin_LIBRARIES}
+    )
 
 ### INSTALL ###
 #install(TARGETS predictive_configuration kinematic_calculations self_collision_detection predictive_trajectory_generator predictive_controller

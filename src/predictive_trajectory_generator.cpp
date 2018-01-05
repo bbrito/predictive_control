@@ -147,7 +147,7 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
                                    + 1.0 *( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
                                            +(x(4) - goal_pose(4)) * (x(4) - goal_pose(4))
                                            +(x(5) - goal_pose(5)) * (x(5) - goal_pose(5)) )
-                                   + 1.0 * (v.transpose() * v)
+                                   + 10.0 * (v.transpose() * v)
                                 );
 
     //OCP_problem.minimizeMayerTerm( 10.0* ( (x-goal_pose) * (x-goal_pose) ) + 1.00* (v.transpose() * v) );

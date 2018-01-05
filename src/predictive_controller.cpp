@@ -78,6 +78,10 @@ bool predictive_control::initialize()
 
     /// INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
     goal_tolerance_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->goal_pose_tolerance_);
+    min_position_limit_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->joints_min_limit_);
+    max_position_limit_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->joints_max_limit_);
+    min_velocity_limit_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->joints_vel_min_limit_);
+    max_velocity_limit_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->joints_vel_max_limit_);
 
     /// 3 position and 3 orientation(rpy)
     //goal_gripper_pose_.resize(6);
@@ -441,4 +445,64 @@ bool predictive_control::checkInfinitesimalPose(const Eigen::VectorXd &pose)
   }
 
   return true;
+}
+
+// check position lower and upper limit violation
+bool predictive_control::checkPositionLimitViolation(const Eigen::VectorXd &joint_position, const double &position_tolerance)
+{
+  int size = joint_position.cols() * joint_position.rows();
+  // confirm size using conditional operator
+  //size == 0? min_position_limit_.rows()* min_position_limit_.cols(): size;
+
+  for (int i = 0u; i < size; ++i )
+  {
+    // Current position is below than minimum position limit + tolerance, check lower limit violation
+    if ( (min_position_limit_(i) - position_tolerance) >= joint_position(i) )
+    {
+      ROS_WARN("%s lower position tolerance violate with current position %f required position %f",
+               pd_config_->joints_name_.at(i).c_str(),
+               joint_position(i), (min_position_limit_(i) - position_tolerance));
+      return true;
+    }
+
+    // Current position is above than maximum position limit + tolerance, check upper limit violation
+    else if ( (max_position_limit_(i) + position_tolerance) <= joint_position(i) )
+    {
+      ROS_WARN("%s upper position tolerance violate with current position %f required position %f",
+               pd_config_->joints_name_.at(i).c_str(),
+               joint_position(i), (max_position_limit_(i) + position_tolerance));
+      return true;
+    }
+  }
+  return false;
+}
+
+// check position lower and upper limit violation
+bool predictive_control::checkVelocityLimitViolation(const Eigen::VectorXd &joint_velocity, const double &velocity_tolerance)
+{
+  int size = joint_velocity.cols() * joint_velocity.rows();
+  // confirm size using conditional operator
+  //size == 0? min_position_limit_.rows()* min_position_limit_.cols(): size;
+
+  for (int i = 0u; i < size; ++i )
+  {
+    // Current position is below than minimum position limit + tolerance, check lower limit violation
+    if ( (min_velocity_limit_(i) - velocity_tolerance) >= joint_velocity(i) )
+    {
+      ROS_WARN("%s lower position tolerance violate with current position %f required position %f",
+               pd_config_->joints_name_.at(i).c_str(),
+               joint_velocity(i), (min_velocity_limit_(i) - velocity_tolerance));
+      return true;
+    }
+
+    // Current position is above than maximum position limit + tolerance, check upper limit violation
+    else if ( (max_velocity_limit_(i) + velocity_tolerance) <= joint_velocity(i) )
+    {
+      ROS_WARN("%s upper position tolerance violate with current position %f required position %f",
+               pd_config_->joints_name_.at(i).c_str(),
+               joint_velocity(i), (max_velocity_limit_(i) + velocity_tolerance));
+      return true;
+    }
+  }
+  return false;
 }

@@ -132,6 +132,10 @@ private:
 
   // goal position, goal tolerance
   Eigen::VectorXd goal_tolerance_;
+  Eigen::VectorXd min_position_limit_;
+  Eigen::VectorXd max_position_limit_;
+  Eigen::VectorXd min_velocity_limit_;
+  Eigen::VectorXd max_velocity_limit_;
 
   // Kinematic variables, FK_Matrix, Jacobian_Matrix
   Eigen::MatrixXd FK_Matrix_;
@@ -181,7 +185,7 @@ private:
    * @return true with position limit violation else false
    */
   bool checkPositionLimitViolation(const Eigen::VectorXd& joint_position,
-                                   const double& position_tolerance
+                                   const double& position_tolerance = 0.0
                                   );
 
   /**
@@ -191,7 +195,7 @@ private:
    * @return true with velocity limit violation else false
    */
   bool checkVelocityLimitViolation(const Eigen::VectorXd& joint_velocity,
-                                   const double& velocity_tolerance
+                                   const double& velocity_tolerance = 0.0
                                   );
 
   /**

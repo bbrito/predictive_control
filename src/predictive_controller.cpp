@@ -75,6 +75,7 @@ bool predictive_control::initialize()
     // initialize data member of class
     degree_of_freedom_ = pd_config_->degree_of_freedom_;
     clock_frequency_ = pd_config_->clock_frequency_;
+    pub_zero_velocity_once_counter_ = 0.0;
 
     /// INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
     goal_tolerance_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->goal_pose_tolerance_);
@@ -163,13 +164,33 @@ void predictive_control::runNode(const ros::TimerEvent &event)
 
   //controlled_velocity_ = enforced_velocity_vector;
 
-  // check position and velocity of each joint are within limit
-  /*if( checkPositionLimitViolation(last_position_) )//|| checkVelocityLimitViolation(controlled_velocity_) )
+  bool position_violation = checkPositionLimitViolation(last_position_),
+      velocity_violation = checkVelocityLimitViolation(controlled_velocity_);
+
+  // check position and velocity are violate than stop execution
+  if( (position_violation == true) && (velocity_violation == true) )
   {
-    Eigen::VectorXd enforce_position_vector;
-    enforcePositionInLimits(last_position_, enforce_position_vector);
     publishZeroJointVelocity();
-    last_position_ = enforce_position_vector;
+  }
+
+  // velocity violate but position still within range, enfoce joint velocity
+  if( (position_violation == false) && (velocity_violation == true) )
+  {
+    ROS_ERROR("Position is still in range, Volocity violate!!");
+    std_msgs::Float64MultiArray enforced_velocity_vector = controlled_velocity_;
+    enforceVelocityInLimits(enforced_velocity_vector, controlled_velocity_);
+  }
+/*
+  // position violate but velocity still within range
+  if( checkPositionLimitViolation(last_position_) && !checkVelocityLimitViolation(controlled_velocity_))
+  {
+    // stop once and than continue execution
+  }
+
+  // position and velocity are not violate, continue execution
+  if( !checkPositionLimitViolation(last_position_) && !checkVelocityLimitViolation(controlled_velocity_))
+  {
+    // continue execution
   }*/
 
   // check infinitesimal distance
@@ -180,6 +201,7 @@ void predictive_control::runNode(const ros::TimerEvent &event)
   {
     // publish zero controlled velocity
     publishZeroJointVelocity();
+    pub_zero_velocity_once_counter_ = 0.0;
   }
   else
   {
@@ -219,12 +241,6 @@ void predictive_control::jointStateCallBack(const sensor_msgs::JointState::Const
   {
      last_position_ = current_position;
      last_velocity_ = current_velocity;
-
-     if( checkPositionLimitViolation(current_position) )//|| checkVelocityLimitViolation(controlled_velocity_) )
-     {
-       publishZeroJointVelocity();
-       enforcePositionInLimits(current_position, last_position_);
-     }
 
     // check position violation criteria, enforcing to be in limit
     //enforcePositionInLimits(current_position, last_position_);
@@ -520,7 +536,7 @@ bool predictive_control::checkVelocityLimitViolation(const std_msgs::Float64Mult
     // Current position is below than minimum position limit + tolerance, check lower limit violation
     if ( (min_velocity_limit_(i) - velocity_tolerance) >= joint_velocity.data[i] )
     {
-      ROS_WARN("%s lower position tolerance violate with current position %f required position %f",
+      ROS_WARN("%s lower velocity tolerance violate with current velocity %f required velocity %f",
                pd_config_->joints_name_.at(i).c_str(),
                joint_velocity.data[i], (min_velocity_limit_(i) - velocity_tolerance));
       return true;
@@ -529,7 +545,7 @@ bool predictive_control::checkVelocityLimitViolation(const std_msgs::Float64Mult
     // Current position is above than maximum position limit + tolerance, check upper limit violation
     else if ( (max_velocity_limit_(i) + velocity_tolerance) <= joint_velocity.data[i] )
     {
-      ROS_WARN("%s upper position tolerance violate with current position %f required position %f",
+      ROS_WARN("%s upper velocity tolerance violate with current velocity %f required velocity %f",
                pd_config_->joints_name_.at(i).c_str(),
                joint_velocity.data[i], (max_velocity_limit_(i) + velocity_tolerance));
       return true;

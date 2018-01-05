@@ -4,8 +4,8 @@
 # Debug mode
 activate_output: false
 
-# Clock frequency
-clock_frequency: 50 //hz
+# Clock frequency //hz
+clock_frequency: 50
 
 # Joint_names
 joints_name: [arm_1_joint, arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint]

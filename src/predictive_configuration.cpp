@@ -149,9 +149,9 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   }
 
   // check requested parameter availble on parameter server if not than set default value
-  nh.param("/robot_description", robot_description_, std::string("robot_description")); // robot description
-  nh.param("/clock_frequency", clock_frequency_, double(50.0)); // 50 hz
-  nh.param("/activate_output", activate_output_, bool(false));  // debug
+  nh.param("robot_description", robot_description_, std::string("robot_description")); // robot description
+  nh.param("clock_frequency", clock_frequency_, double(50.0)); // 50 hz
+  nh.param("activate_output", activate_output_, bool(false));  // debug
 
   // self collision avoidance parameter
   nh_config.param("self_collision/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius

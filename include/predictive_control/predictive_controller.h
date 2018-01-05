@@ -194,7 +194,7 @@ private:
    * @param velocity_tolerance: tolerance in joint values after reaching minimum and maximum values
    * @return true with velocity limit violation else false
    */
-  bool checkVelocityLimitViolation(const Eigen::VectorXd& joint_velocity,
+  bool checkVelocityLimitViolation(const std_msgs::Float64MultiArray& joint_velocity,
                                    const double& velocity_tolerance = 0.0
                                   );
 

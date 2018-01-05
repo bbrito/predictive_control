@@ -126,8 +126,8 @@ private:
   // Timmer
   ros::Timer timer_;
 
-  // publish zero velocity once
-  uint32_t pub_zero_velocity_once_counter_;
+  // activate output of this node
+  bool activate_output_;
 
   // current end effector and goal frame pose relative to root link
   Eigen::VectorXd current_gripper_pose_;

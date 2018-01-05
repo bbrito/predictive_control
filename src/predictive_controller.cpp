@@ -75,7 +75,9 @@ bool predictive_control::initialize()
     // initialize data member of class
     degree_of_freedom_ = pd_config_->degree_of_freedom_;
     clock_frequency_ = pd_config_->clock_frequency_;
-    pub_zero_velocity_once_counter_ = 0.0;
+
+    //DEBUG
+    activate_output_ = pd_config_->activate_controller_node_output_;
 
     /// INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
     goal_tolerance_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->goal_pose_tolerance_);
@@ -97,7 +99,7 @@ bool predictive_control::initialize()
     rotation_dist_ = double(0.0);
 
     // DEBUG
-    if (pd_config_->activate_output_)
+    if (pd_config_->activate_controller_node_output_)
     {
       ROS_WARN("===== GOAL TOLERANCE =====");
       std::cout << goal_tolerance_.transpose() << std::endl;
@@ -201,7 +203,6 @@ void predictive_control::runNode(const ros::TimerEvent &event)
   {
     // publish zero controlled velocity
     publishZeroJointVelocity();
-    pub_zero_velocity_once_counter_ = 0.0;
   }
   else
   {
@@ -256,7 +257,7 @@ void predictive_control::jointStateCallBack(const sensor_msgs::JointState::Const
     collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
 
     // Output is active, than only print joint state values
-    if (pd_config_->activate_output_)
+    if (pd_config_->activate_controller_node_output_)
     {
       std::cout<< "\n --------------------------------------------- \n";
       std::cout << "Current joint position: [ " << current_position.transpose() << " ]" << std::endl;
@@ -343,6 +344,11 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 
 void predictive_control::publishZeroJointVelocity()
 {
+  if (activate_output_)
+  {
+    ROS_INFO("Publishing ZERO joint velocity!!");
+  }
+
   controlled_velocity_.data.resize(degree_of_freedom_, 0.0);
   controlled_velocity_.data[0] = 0.0;
   controlled_velocity_.data[1] = 0.0;
@@ -513,7 +519,8 @@ bool predictive_control::checkPositionLimitViolation(const Eigen::VectorXd &join
     }
 
     // Current position is within range of minimum and maximum position limit
-    else if ( (((min_position_limit_(i)+position_tolerance) - joint_position(i)) <= 0.0) &&
+    else if ( activate_output_ &&
+              (((min_position_limit_(i)+position_tolerance) - joint_position(i)) <= 0.0) &&
               ((joint_position(i) - (max_position_limit_(i) + position_tolerance) <= 0.0) )
             )
     {
@@ -549,6 +556,16 @@ bool predictive_control::checkVelocityLimitViolation(const std_msgs::Float64Mult
                pd_config_->joints_name_.at(i).c_str(),
                joint_velocity.data[i], (max_velocity_limit_(i) + velocity_tolerance));
       return true;
+    }
+
+    // Current velocity is within range of minimum and maximum velocity limit
+    else if ( activate_output_ &&
+              (((min_velocity_limit_(i)+ velocity_tolerance) - joint_velocity.data[i]) <= 0.0) &&
+              ((joint_velocity.data[i] - (max_velocity_limit_(i) + velocity_tolerance) <= 0.0) )
+            )
+    {
+      ROS_INFO("Current %s velocity is within range of minimum and maximum velocity limit",
+               pd_config_->joints_name_.at(i).c_str());
     }
   }
   return false;
@@ -596,7 +613,8 @@ void predictive_control::enforcePositionInLimits(const Eigen::VectorXd &joint_po
     }
 
     // Current position is within range of minimum and maximum position limit
-    else if ( (((min_position_limit_(i)+position_tolerance) - joint_position(i)) <= 0.0) &&
+    else if ( activate_output_ &&
+              (((min_position_limit_(i)+position_tolerance) - joint_position(i)) <= 0.0) &&
               ((joint_position(i) - (max_position_limit_(i) + position_tolerance) <= 0.0) )
             )
     {
@@ -646,6 +664,16 @@ void predictive_control::enforceVelocityInLimits(const std_msgs::Float64MultiArr
       // enforced lower joint limit
       enforced_joint_velocity.data[i] = max_velocity_limit_(i);
       ROS_INFO("%s new velocity %f", pd_config_->joints_name_.at(i).c_str(), max_velocity_limit_(i));
+    }
+
+    // Current position is within range of minimum and maximum position limit
+    else if ( activate_output_ &&
+              (((min_velocity_limit_(i)+velocity_tolerance) - joint_velocity.data[i]) <= 0.0) &&
+              ((joint_velocity.data[i] - (max_velocity_limit_(i) + velocity_tolerance) <= 0.0) )
+            )
+    {
+      ROS_INFO("Current %s velocity is within range of minimum and maximum velocity limit",
+               pd_config_->joints_name_.at(i).c_str());
     }
   }
 

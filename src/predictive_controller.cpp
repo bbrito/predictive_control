@@ -164,10 +164,13 @@ void predictive_control::runNode(const ros::TimerEvent &event)
   //controlled_velocity_ = enforced_velocity_vector;
 
   // check position and velocity of each joint are within limit
-  if( checkPositionLimitViolation(last_position_) || checkVelocityLimitViolation(controlled_velocity_) )
+  /*if( checkPositionLimitViolation(last_position_) )//|| checkVelocityLimitViolation(controlled_velocity_) )
   {
+    Eigen::VectorXd enforce_position_vector;
+    enforcePositionInLimits(last_position_, enforce_position_vector);
     publishZeroJointVelocity();
-  }
+    last_position_ = enforce_position_vector;
+  }*/
 
   // check infinitesimal distance
   Eigen::VectorXd distance_vector;
@@ -216,6 +219,12 @@ void predictive_control::jointStateCallBack(const sensor_msgs::JointState::Const
   {
      last_position_ = current_position;
      last_velocity_ = current_velocity;
+
+     if( checkPositionLimitViolation(current_position) )//|| checkVelocityLimitViolation(controlled_velocity_) )
+     {
+       publishZeroJointVelocity();
+       enforcePositionInLimits(current_position, last_position_);
+     }
 
     // check position violation criteria, enforcing to be in limit
     //enforcePositionInLimits(current_position, last_position_);
@@ -485,6 +494,15 @@ bool predictive_control::checkPositionLimitViolation(const Eigen::VectorXd &join
                pd_config_->joints_name_.at(i).c_str(),
                joint_position(i), (max_position_limit_(i) + position_tolerance));
       return true;
+    }
+
+    // Current position is within range of minimum and maximum position limit
+    else if ( (((min_position_limit_(i)+position_tolerance) - joint_position(i)) <= 0.0) &&
+              ((joint_position(i) - (max_position_limit_(i) + position_tolerance) <= 0.0) )
+            )
+    {
+      ROS_INFO("Current %s position is within range of minimum and maximum position limit",
+               pd_config_->joints_name_.at(i).c_str());
     }
   }
   return false;

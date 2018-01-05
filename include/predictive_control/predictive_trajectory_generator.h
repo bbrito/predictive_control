@@ -79,6 +79,7 @@ public:
    void solveOptimalControlProblem(const Eigen::MatrixXd& Jacobian_Matrix,
                                   const Eigen::VectorXd& last_position,
                                   const Eigen::VectorXd& goal_pose,
+                                  const Eigen::VectorXd& error_vector,
                                   std_msgs::Float64MultiArray& controlled_velocity
                                   );
 
@@ -177,6 +178,8 @@ private:
   void calculateQuaternionInverse(const geometry_msgs::Quaternion& quat,
                                   geometry_msgs::Quaternion& quat_inv
                                   );
+
+  void checkWeightOfObjectiveFunction(const Eigen::VectorXd& vector, double& weight_factor);
 
   /**
    * @brief getTransform: Find transformation stamed rotation is in the form of quaternion

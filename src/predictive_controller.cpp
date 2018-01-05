@@ -148,16 +148,19 @@ void predictive_control::runNode(const ros::TimerEvent &event)
 {
   std::cout.precision(20);
 
+  // check infinitesimal distance
+  Eigen::VectorXd distance_vector;
+  getTransform(pd_config_->tracking_frame_, pd_config_->target_frame_, distance_vector);
+
+
   // solver optimal control problem
   pd_trajectory_generator_->solveOptimalControlProblem(Jacobian_Matrix_,
                                                        current_gripper_pose_,
                                                        goal_gripper_pose_,
+                                                       distance_vector,
                                                        controlled_velocity_);
 
 
-  // check infinitesimal distance
-  Eigen::VectorXd distance_vector;
-  getTransform(pd_config_->tracking_frame_, pd_config_->target_frame_, distance_vector);
 
   if (checkInfinitesimalPose(distance_vector))
   {

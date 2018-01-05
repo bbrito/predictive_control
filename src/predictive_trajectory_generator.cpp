@@ -85,6 +85,22 @@ void pd_frame_tracker::calculateQuaternionInverse(const geometry_msgs::Quaternio
   quat_inv.z = -quat.z;
 }
 
+// check if current velocity is close to start or desired
+void pd_frame_tracker::checkWeightOfObjectiveFunction(const Eigen::VectorXd &vector, double &weight_factor)
+{
+  weight_factor = 1.0;
+
+ double distance = ( sqrt( (vector(0)) * (vector(0)) +
+                  (vector(1)) * (vector(1)) +
+                  (vector(3)) * (vector(3))
+            ));
+
+ // check distance close to desired
+ if (distance > 1.0)
+   weight_factor = 10.0;
+
+}
+
 // get transformation matrix between source and target frame
 bool pd_frame_tracker::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
 {
@@ -170,6 +186,7 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobian_Matrix,
                                                   const Eigen::VectorXd &last_position,
                                                   const Eigen::VectorXd &goal_pose,
+                                                  const Eigen::VectorXd& error_vector,
                                                   std_msgs::Float64MultiArray& controlled_velocity)
 {
   Jacobian_Matrix_ = Jacobian_Matrix;
@@ -208,9 +225,14 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   f << dot(x) == Jacobian_Matrix_ * v;
 
   // Optimal control problem
-  OCP OCP_problem( 0.0, 2.0, 4);
+  // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
+  OCP OCP_problem( 0.0, 3.0, 4);
   //generateCostFunction(OCP_problem, x, v, goal_pose);
-  OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
+
+  double weight_factor = 0.0;
+  checkWeightOfObjectiveFunction(error_vector, weight_factor);
+
+  OCP_problem.minimizeMayerTerm( weight_factor * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
                                          +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
                                          +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
                                  + 1.0 *( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))

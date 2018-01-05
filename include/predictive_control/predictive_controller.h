@@ -201,19 +201,23 @@ private:
   /**
    * @brief enforcePositionInLimits: enforced position to be in limit, limit containts lower and upper limit
    * @param joint_position: current joint values
+   * @param position_tolerance: tolerance in joint values after reaching minimum and maximum values
    * @param enforced_joint_position: enforced joint position when it reach to minimum or maximum values
    */
   void enforcePositionInLimits(const Eigen::VectorXd& joint_position,
-                               const Eigen::VectorXd& enforced_joint_position
+                               Eigen::VectorXd& enforced_joint_position,
+                               const double& position_tolerance = 0.0
                               );
 
   /**
    * @brief enforceVelocityInLimits: enforced velocity to be in limit, limit containts lower and upper limit
    * @param joint_velocity: current joint values
+   * @param velocity_tolerance: tolerance in joint values after reaching minimum and maximum values
    * @param enforced_joint_velocity: enforced joint velocity when it reach to minimum or maximum values
    */
   void enforceVelocityInLimits(const Eigen::VectorXd& joint_velocity,
-                               const Eigen::VectorXd& enforced_joint_velocity
+                               Eigen::VectorXd& enforced_joint_velocity,
+                               const double& velocity_tolerance = 0.0
                               );
 
   /**

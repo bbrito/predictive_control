@@ -152,11 +152,8 @@ void predictive_control::runNode(const ros::TimerEvent &event)
 {
   std::cout.precision(20);
 
-  // check position and volicty of each joint are within limit if violate that set minimum or maximum limit
-  Eigen::VectorXd enforced_position_vector;
-  std_msgs::Float64MultiArray enforced_velocity_vector;
-  enforcePositionInLimits(current_gripper_pose_, enforced_position_vector);
-  enforceVelocityInLimits(controlled_velocity_, enforced_velocity_vector);
+  //std_msgs::Float64MultiArray enforced_velocity_vector;
+  //enforceVelocityInLimits(controlled_velocity_, enforced_velocity_vector);
 
   // solver optimal control problem
   pd_trajectory_generator_->solveOptimalControlProblem(Jacobian_Matrix_,
@@ -164,6 +161,13 @@ void predictive_control::runNode(const ros::TimerEvent &event)
                                                        goal_gripper_pose_,
                                                        controlled_velocity_);
 
+  //controlled_velocity_ = enforced_velocity_vector;
+
+  // check position and velocity of each joint are within limit
+  if( checkPositionLimitViolation(last_position_) || checkVelocityLimitViolation(controlled_velocity_) )
+  {
+    publishZeroJointVelocity();
+  }
 
   // check infinitesimal distance
   Eigen::VectorXd distance_vector;
@@ -210,8 +214,11 @@ void predictive_control::jointStateCallBack(const sensor_msgs::JointState::Const
 
   else
   {
-    last_position_ = current_position;
-    last_velocity_ = current_velocity;
+     last_position_ = current_position;
+     last_velocity_ = current_velocity;
+
+    // check position violation criteria, enforcing to be in limit
+    //enforcePositionInLimits(current_position, last_position_);
 
     // calculate forward kinematic and Jacobian matrix using current joint values, get current gripper pose using FK_Matrix
     kinematic_solver_->calculateJacobianMatrix(last_position_, FK_Matrix_, Jacobian_Matrix_);
@@ -484,29 +491,29 @@ bool predictive_control::checkPositionLimitViolation(const Eigen::VectorXd &join
 }
 
 // check position lower and upper limit violation
-bool predictive_control::checkVelocityLimitViolation(const Eigen::VectorXd &joint_velocity, const double &velocity_tolerance)
+bool predictive_control::checkVelocityLimitViolation(const std_msgs::Float64MultiArray &joint_velocity, const double &velocity_tolerance)
 {
-  int size = joint_velocity.cols() * joint_velocity.rows();
+  int size = joint_velocity.data.size();
   // confirm size using conditional operator
   //size == 0? min_position_limit_.rows()* min_position_limit_.cols(): size;
 
   for (int i = 0u; i < size; ++i )
   {
     // Current position is below than minimum position limit + tolerance, check lower limit violation
-    if ( (min_velocity_limit_(i) - velocity_tolerance) >= joint_velocity(i) )
+    if ( (min_velocity_limit_(i) - velocity_tolerance) >= joint_velocity.data[i] )
     {
       ROS_WARN("%s lower position tolerance violate with current position %f required position %f",
                pd_config_->joints_name_.at(i).c_str(),
-               joint_velocity(i), (min_velocity_limit_(i) - velocity_tolerance));
+               joint_velocity.data[i], (min_velocity_limit_(i) - velocity_tolerance));
       return true;
     }
 
     // Current position is above than maximum position limit + tolerance, check upper limit violation
-    else if ( (max_velocity_limit_(i) + velocity_tolerance) <= joint_velocity(i) )
+    else if ( (max_velocity_limit_(i) + velocity_tolerance) <= joint_velocity.data[i] )
     {
       ROS_WARN("%s upper position tolerance violate with current position %f required position %f",
                pd_config_->joints_name_.at(i).c_str(),
-               joint_velocity(i), (max_velocity_limit_(i) + velocity_tolerance));
+               joint_velocity.data[i], (max_velocity_limit_(i) + velocity_tolerance));
       return true;
     }
   }
@@ -552,6 +559,15 @@ void predictive_control::enforcePositionInLimits(const Eigen::VectorXd &joint_po
       // enforced lower joint limit
       enforced_joint_position(i) = max_position_limit_(i);
       ROS_INFO("%s new position %f", pd_config_->joints_name_.at(i).c_str(), max_position_limit_(i));
+    }
+
+    // Current position is within range of minimum and maximum position limit
+    else if ( (((min_position_limit_(i)+position_tolerance) - joint_position(i)) <= 0.0) &&
+              ((joint_position(i) - (max_position_limit_(i) + position_tolerance) <= 0.0) )
+            )
+    {
+      ROS_INFO("Current %s position is within range of minimum and maximum position limit",
+               pd_config_->joints_name_.at(i).c_str());
     }
   }
 

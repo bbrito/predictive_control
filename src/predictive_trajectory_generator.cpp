@@ -208,7 +208,8 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   f << dot(x) == Jacobian_Matrix_ * v;
 
   // Optimal control problem
-  OCP OCP_problem( 0.0, 2.0, 4);
+  // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
+  OCP OCP_problem( 0.0, 3.0, 4);
   //generateCostFunction(OCP_problem, x, v, goal_pose);
   OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
                                          +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))

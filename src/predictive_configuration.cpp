@@ -152,6 +152,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   nh.param("robot_description", robot_description_, std::string("robot_description")); // robot description
   nh.param("clock_frequency", clock_frequency_, double(50.0)); // 50 hz
   nh.param("activate_output", activate_output_, bool(false));  // debug
+  nh.param("activate_controller_node_output", activate_controller_node_output_, bool(false));  // debug
 
   // self collision avoidance parameter
   nh_config.param("self_collision/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
@@ -184,6 +185,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
 bool predictive_configuration::updateConfiguration(const predictive_configuration &new_config)
 {
   activate_output_ = new_config.activate_output_;
+  activate_controller_node_output_ = new_config.activate_controller_node_output_;
   initialize_success_ = new_config.initialize_success_;
   set_position_constrints_ = new_config.set_position_constrints_;
   set_velocity_constrints_ = new_config.set_velocity_constrints_;
@@ -231,6 +233,7 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
 // print all data member of this class
 void predictive_configuration::print_configuration_parameter()
 {
+  ROS_INFO_STREAM("Activate_controller_node_output: " << std::boolalpha << activate_controller_node_output_);
   ROS_INFO_STREAM("Initialize_success: " << std::boolalpha << initialize_success_);
   ROS_INFO_STREAM("Set position constrints: " << std::boolalpha << set_position_constrints_);
   ROS_INFO_STREAM("Set velocity constrints: " << std::boolalpha << set_velocity_constrints_);

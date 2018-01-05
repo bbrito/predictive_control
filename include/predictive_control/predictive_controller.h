@@ -133,6 +133,9 @@ private:
   Eigen::VectorXd current_gripper_pose_;
   Eigen::VectorXd goal_gripper_pose_;
 
+  // Distance between traget frame and tracking frame relative to base link
+  Eigen::VectorXd tf_traget_from_tracking_vector_;
+
   // goal position, goal tolerance
   Eigen::VectorXd goal_tolerance_;
   Eigen::VectorXd min_position_limit_;

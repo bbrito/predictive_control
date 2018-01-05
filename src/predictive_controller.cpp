@@ -196,10 +196,10 @@ void predictive_control::runNode(const ros::TimerEvent &event)
   }*/
 
   // check infinitesimal distance
-  Eigen::VectorXd distance_vector;
-  getTransform(pd_config_->tracking_frame_, pd_config_->target_frame_, distance_vector);
+  //Eigen::VectorXd distance_vector;
+  getTransform(pd_config_->tracking_frame_, pd_config_->target_frame_, tf_traget_from_tracking_vector_);
 
-  if (checkInfinitesimalPose(distance_vector))
+  if (checkInfinitesimalPose(tf_traget_from_tracking_vector_))
   {
     // publish zero controlled velocity
     publishZeroJointVelocity();

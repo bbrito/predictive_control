@@ -558,43 +558,43 @@ void predictive_control::enforcePositionInLimits(const Eigen::VectorXd &joint_po
 }
 
 // enforcing joint locity to be in velocity limits
-void predictive_control::enforceVelocityInLimits(const Eigen::VectorXd &joint_velocity,
-                                                 Eigen::VectorXd &enforced_joint_velocity,
+void predictive_control::enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
+                                                 std_msgs::Float64MultiArray& enforced_joint_velocity,
                                                  const double &velocity_tolerance)
 {
   // initialze enforced joint position vector, if limit violate than update otherwise remain same as joint position
   enforced_joint_velocity = joint_velocity;
-  int size = joint_velocity.cols() * joint_velocity.rows();
+  int size = joint_velocity.data.size();
   // confirm size using conditional operator
   //size == 0? min_velocity_limit_.rows()* min_position_limit_.cols(): size;
 
   for (int i = 0u; i < size; ++i )
   {
     // Current position is below than minimum velocity limit + tolerance, check lower limit violation
-    if ( ( (min_velocity_limit_(i) - velocity_tolerance) >= joint_velocity(i) ) &&
-         ( std::abs(joint_velocity(i)-min_velocity_limit_(i)) < std::abs(max_velocity_limit_(i)-joint_velocity(i)) )
+    if ( ( (min_velocity_limit_(i) - velocity_tolerance) >= joint_velocity.data[i] ) &&
+         ( std::abs(joint_velocity.data[i]-min_velocity_limit_(i)) < std::abs(max_velocity_limit_(i)-joint_velocity.data[i]) )
        )
     {
       ROS_WARN("%s lower velocity tolerance violate with current position %f required position %f",
                pd_config_->joints_name_.at(i).c_str(),
-               joint_velocity(i), (min_velocity_limit_(i) - velocity_tolerance));
+               joint_velocity.data[i], (min_velocity_limit_(i) - velocity_tolerance));
 
       // enforced lower joint limit
-      enforced_joint_velocity(i) = min_velocity_limit_(i);
+      enforced_joint_velocity.data[i] = min_velocity_limit_(i);
       ROS_INFO("%s new velocity %f", pd_config_->joints_name_.at(i).c_str(), min_velocity_limit_(i));
     }
 
     // Current velocity is above than maximum position limit + tolerance, check upper limit violation
-    else if ( ( (max_velocity_limit_(i) + velocity_tolerance) <= joint_velocity(i) ) &&
-              ( std::abs(joint_velocity(i)-min_velocity_limit_(i)) > std::abs(max_velocity_limit_(i)-joint_velocity(i)) )
+    else if ( ( (max_velocity_limit_(i) + velocity_tolerance) <= joint_velocity.data[i] ) &&
+              ( std::abs(joint_velocity.data[i]-min_velocity_limit_(i)) > std::abs(max_velocity_limit_(i)-joint_velocity.data[i]) )
             )
     {
       ROS_WARN("%s upper velocity tolerance violate with current position %f required position %f",
                pd_config_->joints_name_.at(i).c_str(),
-               joint_velocity(i), (max_velocity_limit_(i) + velocity_tolerance));
+               joint_velocity.data[i], (max_velocity_limit_(i) + velocity_tolerance));
 
       // enforced lower joint limit
-      enforced_joint_velocity(i) = max_velocity_limit_(i);
+      enforced_joint_velocity.data[i] = max_velocity_limit_(i);
       ROS_INFO("%s new velocity %f", pd_config_->joints_name_.at(i).c_str(), max_velocity_limit_(i));
     }
   }

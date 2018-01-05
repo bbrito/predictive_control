@@ -215,8 +215,8 @@ private:
    * @param velocity_tolerance: tolerance in joint values after reaching minimum and maximum values
    * @param enforced_joint_velocity: enforced joint velocity when it reach to minimum or maximum values
    */
-  void enforceVelocityInLimits(const Eigen::VectorXd& joint_velocity,
-                               Eigen::VectorXd& enforced_joint_velocity,
+  void enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
+                               std_msgs::Float64MultiArray& enforced_joint_velocity,
                                const double& velocity_tolerance = 0.0
                               );
 

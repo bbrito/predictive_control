@@ -13,6 +13,7 @@
 
 // eigen includes
 #include <Eigen/Eigen>
+#include <Eigen/Dense>
 #include <Eigen/Core>
 #include <Eigen/LU>
 

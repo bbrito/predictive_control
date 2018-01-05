@@ -12,6 +12,7 @@
 // eigen includes
 #include <Eigen/Eigen>
 #include <Eigen/Core>
+#include <Eigen/Dense>
 #include <Eigen/LU>	//inverse of matrix
 
 // boost include

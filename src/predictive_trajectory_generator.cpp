@@ -220,14 +220,37 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
   OCP OCP_problem( 0.0, 3.0, 4);
   //generateCostFunction(OCP_problem, x, v, goal_pose);
-  OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
+  /*OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
                                          +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
                                          +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
                                  + 1.0 *( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
                                          +(x(4) - goal_pose(4)) * (x(4) - goal_pose(4))
                                          +(x(5) - goal_pose(5)) * (x(5) - goal_pose(5)) )
                                  + 10.0 * (v.transpose() * v) + 1.0 * (p.transpose() * p)
-                              );
+                              );*/
+
+  Function h;
+  h << (x(0) - goal_pose(0));
+  h << (x(1) - goal_pose(1));
+  h << (x(2) - goal_pose(2));
+  h << (x(3) - goal_pose(3));
+  h << (x(4) - goal_pose(4));
+  h << (x(5) - goal_pose(5));
+
+  h << v(0);  h << v(1);
+  h << v(2);  h << v(3);
+  h << v(4);  h << v(5);
+  h << v(6);
+
+  // h.getN()
+  DMatrix Q(13,13);
+  Q(0,0) = 10.0;  Q(1,1) = 10.0;  Q(2,2) = 10.0;  Q(3,3) = 10.0;  Q(4,4) = 10.0;  Q(5,5) = 10.0;
+  Q(6,6) = 1.0; Q(7,7) = 1.0; Q(8,8) = 1.0; Q(9,9) = 1.0; Q(10,10) = 1.0; Q(11,11) = 1.0; Q(12,12) = 1.0;
+
+  DVector r(13);
+  r.setAll(0.0);
+
+  OCP_problem.minimizeLSQ(Q, h, r);
 
   //OCP_problem.minimizeMayerTerm(0.01 * (p.transpose() * p) );
 

@@ -242,17 +242,12 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   h << v(4);  h << v(5);
   h << v(6);
 
-  std::cout<<"\033[32m"<<"________________________"<<h.getN()<<"___________________"<<"\033[32;0m"<<std::endl;
-  std::cout<<"\033[32m"<<"________________________"<<h.getDim()<<"___________________"<<"\033[32;0m"<<std::endl;
-  std::cout<<"\033[32m"<<"________________________"<<h.getNDX()<<"___________________"<<"\033[32;0m"<<std::endl;
-  std::cout<<"\033[32m"<<"________________________"<<h.getNT()<<"___________________"<<"\033[32;0m"<<std::endl;
-
   // h.getN()
-  DMatrix Q(13,13);
+  DMatrix Q(h.getDim(), h.getDim());
   Q(0,0) = 10.0;  Q(1,1) = 10.0;  Q(2,2) = 10.0;  Q(3,3) = 10.0;  Q(4,4) = 10.0;  Q(5,5) = 10.0;
   Q(6,6) = 1.0; Q(7,7) = 1.0; Q(8,8) = 1.0; Q(9,9) = 1.0; Q(10,10) = 1.0; Q(11,11) = 1.0; Q(12,12) = 1.0;
 
-  DVector r(13);
+  DVector r(h.getDim());
   r.setAll(0.0);
 
   // terminal constraints
@@ -262,6 +257,14 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   t << (x(3)*x(3));
   t << (x(4)*x(4));
   t << (x(5)*x(5));
+
+  t << (v(0)*v(0));
+  t << (v(1)*v(1));
+  t << (v(2)*v(2));
+  t << (v(3)*v(3));
+  t << (v(4)*v(4));
+  t << (v(5)*v(5));
+  t << (v(6)*v(6));
 
   // h.getN()
   DMatrix Q_t(6,6);
@@ -290,8 +293,9 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   r_v.setAll(0.0);
 
   OCP_problem.minimizeLSQ(Q, h, r);
-  OCP_problem.minimizeLSQEndTerm(Q_t, t, r_t);
-  OCP_problem.minimizeLSQEndTerm(Q_v, t_v, r_v);
+  OCP_problem.minimizeLSQEndTerm(Q, t, r);
+  //OCP_problem.minimizeLSQEndTerm(Q_t, t, r_t);
+  //OCP_problem.minimizeLSQEndTerm(Q_v, t_v, r_v);
 
   //OCP_problem.minimizeMayerTerm(0.01 * (p.transpose() * p) );
 

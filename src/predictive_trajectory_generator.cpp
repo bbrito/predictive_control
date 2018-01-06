@@ -293,7 +293,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   r_v.setAll(0.0);
 
   OCP_problem.minimizeLSQ(Q, h, r);
-  OCP_problem.minimizeLSQEndTerm(Q, t, r);
+  //OCP_problem.minimizeLSQEndTerm(Q, t, r);
   //OCP_problem.minimizeLSQEndTerm(Q_t, t, r_t);
   //OCP_problem.minimizeLSQEndTerm(Q_v, t_v, r_v);
 

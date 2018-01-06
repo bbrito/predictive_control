@@ -52,6 +52,13 @@ bool pd_frame_tracker::initialize()
   control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::joints_vel_min_limit_);
   control_max_constraint_ = transformStdVectorToEigenVector(predictive_configuration::joints_vel_max_limit_);
 
+  // initialize state and control weight factors
+  if (predictive_configuration::use_LSQ_term_)
+  {
+    lsq_state_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_state_weight_factors_);
+    lsq_control_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_control_weight_factors_);
+  }
+
   ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
 }
@@ -161,7 +168,86 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 
   if (predictive_configuration::use_LSQ_term_)
   {
-    ;
+   /*
+    // Solve Ax = b using LSQ method where A is weight matrix, x is function to be compute, b reference vector is zero
+
+    Function h, t;
+
+    // initialize function with states
+    uint32_t state_vector_size = x.getNumRows()*x.getNumCols();
+    uint32_t goal_vector_size = goal_pose.rows() * goal_pose.cols();
+    for (int i = 0u; i < (state_vector_size && goal_vector_size); ++i)
+    {
+      h << ( x(i) - goal_pose(i) );
+    }
+
+    // initialize function with controls
+    uint32_t control_vector_size = v.getNumRows()*v.getNumCols();
+    for (int i = 0u; i < state_vector_size; ++i)
+    {
+      h << v(i);
+    }
+
+    // weighting matrix
+    DMatrix Q(h.getDim(), h.getDim());
+    // weighting of state weight
+    uint32_t lsq_state_vector_size = lsq_state_weight_factors_.rows() * lsq_state_weight_factors_.cols();
+    for (int i = 0u; i < (state_vector_size && lsq_state_vector_size); ++i)
+    {
+      Q(i,i) = lsq_state_weight_factors_(i);
+    }
+
+    // weighting of control weight, should filled after state wieghting factor
+    uint32_t lsq_control_vector_size = lsq_control_weight_factors_.rows() * lsq_control_weight_factors_.cols();
+    for (int i = (state_vector_size); i < (state_vector_size && lsq_control_vector_size); ++i)
+    {
+      Q(i,i) = lsq_control_weight_factors_(i);
+    }
+
+    // reference vectors
+    DVector r(h.getDim());
+    r.setAll(0.0);
+
+    OCP_problem.minimizeLSQ(Q, h, r);*/
+    // Solve Ax = b using LSQ method where A is weight matrix, x is function to be compute, b reference vector is zero
+
+    Function h;
+
+    uint32_t state_vector_size = lsq_state_weight_factors_.rows()* lsq_state_weight_factors_.cols();
+    uint32_t control_vector_size = lsq_control_weight_factors_.rows()*lsq_control_weight_factors_.cols();
+
+    // initialize function with states
+    for (int i = 0u; i < (state_vector_size ); ++i) //&& goal_vector_size
+    {
+      h << ( x(i) - goal_pose(i) );
+    }
+
+    // initialize function with controls
+    for (int i = 0u; i < control_vector_size; ++i)
+    {
+      h << v(i);
+    }
+
+    // initialization of weighting matrix
+    DMatrix Q(h.getDim(), h.getDim());
+
+    // weighting of state weight
+    for (int i = 0u; i < (state_vector_size); ++i) //&& lsq_state_vector_size
+    {
+      Q(i,i) = lsq_state_weight_factors_(i);
+    }
+
+    // weighting of control weight, should filled after state wieghting factor
+    for (int i = 0u, j = (state_vector_size); i < (control_vector_size); ++i, ++j) // && lsq_control_vector_size
+    {
+      Q(j,j) = lsq_control_weight_factors_(i);
+    }
+
+    // reference vectors
+    DVector r(h.getDim());
+    r.setAll(0.0);
+
+    OCP_problem.minimizeLSQ(Q, h, r);
   }
 
 }
@@ -229,70 +315,9 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
                                  + 10.0 * (v.transpose() * v) + 1.0 * (p.transpose() * p)
                               );*/
 
-  Function h, t;
-  h << (x(0) - goal_pose(0));
-  h << (x(1) - goal_pose(1));
-  h << (x(2) - goal_pose(2));
-  h << (x(3) - goal_pose(3));
-  h << (x(4) - goal_pose(4));
-  h << (x(5) - goal_pose(5));
+  generateCostFunction(OCP_problem, x, v, goal_pose);
 
-  h << v(0);  h << v(1);
-  h << v(2);  h << v(3);
-  h << v(4);  h << v(5);
-  h << v(6);
-
-  // h.getN()
-  DMatrix Q(h.getDim(), h.getDim());
-  Q(0,0) = 3.0;  Q(1,1) = 3.0;  Q(2,2) = 5.0;  Q(3,3) = 10.0;  Q(4,4) = 10.0;  Q(5,5) = 10.0;
-  Q(6,6) = 1.0; Q(7,7) = 1.0; Q(8,8) = 1.0; Q(9,9) = 1.0; Q(10,10) = 1.0; Q(11,11) = 1.0; Q(12,12) = 1.0;
-
-  DVector r(h.getDim());
-  r.setAll(0.0);
-
-  // terminal constraints
-  t << (x(0)*x(0));
-  t << (x(1)*x(1));
-  t << (x(2)*x(2));
-  t << (x(3)*x(3));
-  t << (x(4)*x(4));
-  t << (x(5)*x(5));
-
-  t << (v(0)*v(0));
-  t << (v(1)*v(1));
-  t << (v(2)*v(2));
-  t << (v(3)*v(3));
-  t << (v(4)*v(4));
-  t << (v(5)*v(5));
-  t << (v(6)*v(6));
-
-  // h.getN()
-  DMatrix Q_t(6,6);
-  Q_t(0,0) = 10.0;  Q_t(1,1) = 10.0;  Q_t(2,2) = 10.0;  Q_t(3,3) = 10.0;  Q_t(4,4) = 10.0;  Q_t(5,5) = 10.0;
-  //Q(6,6) = 1.0; Q(7,7) = 1.0; Q(8,8) = 1.0; Q(9,9) = 1.0; Q(10,10) = 1.0; Q(11,11) = 1.0; Q(12,12) = 1.0;
-
-  DVector r_t(6);
-  r_t.setAll(0.0);
-
-  // terminal cost of velocity
-  Function t_v;
-  t_v << (v(0)*v(0));
-  t_v << (v(1)*v(1));
-  t_v << (v(2)*v(2));
-  t_v << (v(3)*v(3));
-  t_v << (v(4)*v(4));
-  t_v << (v(5)*v(5));
-  t_v << (v(6)*v(6));
-
-  // h.getN()
-  DMatrix Q_v(7,7);
-  Q_v(0,0) = 10.0;  Q_v(1,1) = 10.0;  Q_v(2,2) = 10.0;  Q_v(3,3) = 10.0;  Q_v(4,4) = 10.0;  Q_v(5,5) = 10.0; Q_v(6,6) = 10.0;
-  //Q(6,6) = 1.0; Q(7,7) = 1.0; Q(8,8) = 1.0; Q(9,9) = 1.0; Q(10,10) = 1.0; Q(11,11) = 1.0; Q(12,12) = 1.0;
-
-  DVector r_v(7);
-  r_v.setAll(0.0);
-
-  OCP_problem.minimizeLSQ(Q, h, r);
+  //OCP_problem.minimizeLSQ(Q, h, r);
   //OCP_problem.minimizeLSQEndTerm(Q, t, r);
   //OCP_problem.minimizeLSQEndTerm(Q_t, t, r_t);
   //OCP_problem.minimizeLSQEndTerm(Q_v, t_v, r_v);

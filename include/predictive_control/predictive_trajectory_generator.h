@@ -128,6 +128,10 @@ private:
    DVector control_min_constraint_;
    DVector control_max_constraint_;
 
+   // lsq weight factors
+   Eigen::VectorXd lsq_state_weight_factors_;
+   Eigen::VectorXd lsq_control_weight_factors_;
+
    /**
     * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ, Langrange
     * @param OCP_problem: Current optimal control problem

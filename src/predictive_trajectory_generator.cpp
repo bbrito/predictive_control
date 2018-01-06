@@ -51,22 +51,38 @@ bool pd_frame_tracker::initialize()
   control_initialize_.resize(jacobian_matrix_columns);
   control_initialize_.setAll(0.0);
 
+  // initialize acado configuration parameters
+  max_num_iteration_ = predictive_configuration::max_num_iteration_;
+  kkt_tolerance_ = predictive_configuration::kkt_tolerance_;
+  integrator_tolerance_ = predictive_configuration::integrator_tolerance_;
+
   // initialize horizons, sampling time
   start_time_ = predictive_configuration::start_time_horizon_;
   end_time_ = predictive_configuration::end_time_horizon_;
-  sampling_time_ = predictive_configuration::sampling_time_;
   discretization_intervals_ = predictive_configuration::discretization_intervals_;
+  sampling_time_ = predictive_configuration::sampling_time_;
+
+  // optimaization type
+  use_lagrange_term_ = predictive_configuration::use_lagrange_term_;
+  use_LSQ_term_ = predictive_configuration::use_LSQ_term_;
+  use_mayer_term_ = predictive_configuration::use_mayer_term_;
+
+  // initialize state and control weight factors
+  if (use_LSQ_term_)
+  {
+    lsq_state_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_state_weight_factors_);
+    lsq_control_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_control_weight_factors_);
+  }
+
+  //state_vector_size_ = predictive_configuration::lsq_state_weight_factors_.size();
+  //control_vector_size_ = predictive_configuration::lsq_control_weight_factors_.size();
+  state_vector_size_ = lsq_state_weight_factors_.rows()* lsq_state_weight_factors_.cols();
+  control_vector_size_ = lsq_control_weight_factors_.rows()*lsq_control_weight_factors_.cols();
 
   // initialize hard constraints vector
   control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::joints_vel_min_limit_);
   control_max_constraint_ = transformStdVectorToEigenVector(predictive_configuration::joints_vel_max_limit_);
 
-  // initialize state and control weight factors
-  if (predictive_configuration::use_LSQ_term_)
-  {
-    lsq_state_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_state_weight_factors_);
-    lsq_control_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_control_weight_factors_);
-  }
 
   ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
@@ -155,7 +171,7 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
                                             const Control &v,
                                             const Eigen::VectorXd& goal_pose)
 {
-  if (predictive_configuration::use_mayer_term_)
+  if (use_mayer_term_)
   {
     OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
                                              +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
@@ -170,12 +186,12 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 
   }
 
-  if (predictive_configuration::use_lagrange_term_)
+  if (use_lagrange_term_)
   {
     ;
   }
 
-  if (predictive_configuration::use_LSQ_term_)
+  if (use_LSQ_term_)
   {
    /*
     // Solve Ax = b using LSQ method where A is weight matrix, x is function to be compute, b reference vector is zero
@@ -222,17 +238,17 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 
     Function h;
 
-    uint32_t state_vector_size = lsq_state_weight_factors_.rows()* lsq_state_weight_factors_.cols();
-    uint32_t control_vector_size = lsq_control_weight_factors_.rows()*lsq_control_weight_factors_.cols();
+    //uint32_t state_vector_size = lsq_state_weight_factors_.rows()* lsq_state_weight_factors_.cols();
+    //uint32_t control_vector_size = lsq_control_weight_factors_.rows()*lsq_control_weight_factors_.cols();
 
     // initialize function with states
-    for (int i = 0u; i < (state_vector_size ); ++i) //&& goal_vector_size
+    for (int i = 0u; i < (state_vector_size_ ); ++i) //&& goal_vector_size
     {
       h << ( x(i) - goal_pose(i) );
     }
 
     // initialize function with controls
-    for (int i = 0u; i < control_vector_size; ++i)
+    for (int i = 0u; i < control_vector_size_; ++i)
     {
       h << v(i);
     }
@@ -241,13 +257,13 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
     DMatrix Q(h.getDim(), h.getDim());
 
     // weighting of state weight
-    for (int i = 0u; i < (state_vector_size); ++i) //&& lsq_state_vector_size
+    for (int i = 0u; i < (state_vector_size_); ++i) //&& lsq_state_vector_size
     {
       Q(i,i) = lsq_state_weight_factors_(i);
     }
 
     // weighting of control weight, should filled after state wieghting factor
-    for (int i = 0u, j = (state_vector_size); i < (control_vector_size); ++i, ++j) // && lsq_control_vector_size
+    for (int i = 0u, j = (state_vector_size_); i < (control_vector_size_); ++i, ++j) // && lsq_control_vector_size
     {
       Q(j,j) = lsq_control_weight_factors_(i);
     }
@@ -386,26 +402,32 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 // setup acado algorithm options, need to set solver when calling this function
 void pd_frame_tracker::setAlgorithmOptions(RealTimeAlgorithm& OCP_solver)
 {
-  // intergrator
+ /* // intergrator
   OCP_solver.set(INTEGRATOR_TYPE, LEVENBERG_MARQUARDT);                                      // default INT_RK45: (INT_RK12, INT_RK23, INT_RK45, INT_RK78, INT_BDF)
-  OCP_solver.set(INTEGRATOR_TOLERANCE, predictive_configuration::integrator_tolerance_);     // default 1e-8
+  OCP_solver.set(INTEGRATOR_TOLERANCE, 1e-5);     // default 1e-8
 
   // SQP method
   OCP_solver.set(HESSIAN_APPROXIMATION, EXACT_HESSIAN);                                      // default BLOCK_BFGS_UPDATE: (CONSTANT_HESSIAN, FULL_BFGS_UPDATE, BLOCK_BFGS_UPDATE, GAUSS_NEWTON, EXACT_HESSIAN)
-  OCP_solver.set(MAX_NUM_ITERATIONS, predictive_configuration::max_num_iteration_);          // default 1000
-  OCP_solver.set(KKT_TOLERANCE, predictive_configuration::kkt_tolerance_);                   // default 1e-6
+  OCP_solver.set(MAX_NUM_ITERATIONS, 10);          // default 1000
+  //OCP_solver.set(KKT_TOLERANCE, predictive_configuration::kkt_tolerance_);                   // default 1e-6
 //  OCP_solver.set(HOTSTART_QP, true);                   // default true
 //  OCP_solver.set(SPARSE_QP_SOLUTION, CONDENSING);      // CONDENSING, FULL CONDENSING, SPARSE SOLVER
 
   // Discretization Type
-  OCP_solver.set(DISCRETIZATION_TYPE, MULTIPLE_SHOOTING); // default MULTIPLE_SHOOTING: (SINGLE_SHOOTING, MULTIPLE_SHOOTING)
-  OCP_solver.set(TERMINATE_AT_CONVERGENCE, true);         // default true
+  OCP_solver.set(DISCRETIZATION_TYPE, COLLOCATION); // default MULTIPLE_SHOOTING: (SINGLE_SHOOTING, MULTIPLE_SHOOTING)
+  //OCP_solver.set(TERMINATE_AT_CONVERGENCE, true);         // default true
 
   // output
-  OCP_solver.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
-  OCP_solver.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
-  OCP_solver.set(PRINT_COPYRIGHT, false);                 // default true
+  //OCP_solver.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
+  //OCP_solver.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
+  //OCP_solver.set(PRINT_COPYRIGHT, false);                 // default true
+*/
 
+  OCP_solver.set(MAX_NUM_ITERATIONS, 10);
+  OCP_solver.set(LEVENBERG_MARQUARDT, 1e-5);
+  OCP_solver.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
+  OCP_solver.set( DISCRETIZATION_TYPE, COLLOCATION);
+  OCP_solver.set(KKT_TOLERANCE, 1.000000E-06);
 }
 
 

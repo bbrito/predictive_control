@@ -24,6 +24,9 @@ void pd_frame_tracker::clearDataMember()
 
   control_min_constraint_.resize(jacobian_matrix_columns);
   control_max_constraint_.resize(jacobian_matrix_columns);
+
+  lsq_state_weight_factors_.resize(jacobian_matrix_rows);
+  lsq_control_weight_factors_.resize(jacobian_matrix_columns);
 }
 
 // initialize data member of pd_frame_tracker class
@@ -47,6 +50,12 @@ bool pd_frame_tracker::initialize()
   state_initialize_.setAll(0.0);
   control_initialize_.resize(jacobian_matrix_columns);
   control_initialize_.setAll(0.0);
+
+  // initialize horizons, sampling time
+  start_time_ = predictive_configuration::start_time_horizon_;
+  end_time_ = predictive_configuration::end_time_horizon_;
+  sampling_time_ = predictive_configuration::sampling_time_;
+  discretization_intervals_ = predictive_configuration::discretization_intervals_;
 
   // initialize hard constraints vector
   control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::joints_vel_min_limit_);
@@ -149,13 +158,13 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
   if (predictive_configuration::use_mayer_term_)
   {
     OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
-                                           +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
-                                           +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
-                                   + 1.0 *( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
-                                           +(x(4) - goal_pose(4)) * (x(4) - goal_pose(4))
-                                           +(x(5) - goal_pose(5)) * (x(5) - goal_pose(5)) )
-                                   + 10.0 * (v.transpose() * v)
-                                );
+                                             +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
+                                             +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
+                                     + 1.0 *( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
+                                             +(x(4) - goal_pose(4)) * (x(4) - goal_pose(4))
+                                             +(x(5) - goal_pose(5)) * (x(5) - goal_pose(5)) )
+                                     + 10.0 * (v.transpose() * v)
+                                  );
 
     //OCP_problem.minimizeMayerTerm( 10.0* ( (x-goal_pose) * (x-goal_pose) ) + 1.00* (v.transpose() * v) );
 
@@ -248,6 +257,11 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
     r.setAll(0.0);
 
     OCP_problem.minimizeLSQ(Q, h, r);
+    //OCP_problem.minimizeLSQ(Q, h, r);
+    //OCP_problem.minimizeLSQEndTerm(Q, t, r);
+    //OCP_problem.minimizeLSQEndTerm(Q_t, t, r_t);
+    //OCP_problem.minimizeLSQEndTerm(Q_v, t_v, r_v);
+
   }
 
 }
@@ -304,23 +318,10 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   // Optimal control problem
   // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
-  OCP OCP_problem( 0.0, 3.0, 4);
-  //generateCostFunction(OCP_problem, x, v, goal_pose);
-  /*OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
-                                         +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
-                                         +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
-                                 + 1.0 *( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
-                                         +(x(4) - goal_pose(4)) * (x(4) - goal_pose(4))
-                                         +(x(5) - goal_pose(5)) * (x(5) - goal_pose(5)) )
-                                 + 10.0 * (v.transpose() * v) + 1.0 * (p.transpose() * p)
-                              );*/
+  OCP OCP_problem( start_time_, end_time_, discretization_intervals_);
+
 
   generateCostFunction(OCP_problem, x, v, goal_pose);
-
-  //OCP_problem.minimizeLSQ(Q, h, r);
-  //OCP_problem.minimizeLSQEndTerm(Q, t, r);
-  //OCP_problem.minimizeLSQEndTerm(Q_t, t, r_t);
-  //OCP_problem.minimizeLSQEndTerm(Q_v, t_v, r_v);
 
   Function co;
   co << self_collision_vector.sum();
@@ -347,12 +348,14 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   OCP_solver.initializeDifferentialStates(state_initialize_);
   OCP_solver.initializeParameters(parameter_initialize);
 
-  OCP_solver.set(MAX_NUM_ITERATIONS, 10);
+  setAlgorithmOptions(OCP_solver);
+
+/*  OCP_solver.set(MAX_NUM_ITERATIONS, 10);
   OCP_solver.set(LEVENBERG_MARQUARDT, 1e-5);
   OCP_solver.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
   OCP_solver.set( DISCRETIZATION_TYPE, COLLOCATION);
   OCP_solver.set(KKT_TOLERANCE, 1.000000E-06);
-
+*/
   //setAlgorithmOptions<RealTimeAlgorithm>(OCP_solver);
   // setup controller
   Controller controller(OCP_solver);
@@ -378,15 +381,10 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   controlled_velocity.data[4] = u(4);
   controlled_velocity.data[5] = u(5);
   controlled_velocity.data[6] = u(6);
-/*  // resize used data members
-  Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
-  state_initialize_.setAll(0.0);
-  control_initialize_.setAll(0.0);*/
 }
 
 // setup acado algorithm options, need to set solver when calling this function
-template<typename T>
-void pd_frame_tracker::setAlgorithmOptions(T& OCP_solver)
+void pd_frame_tracker::setAlgorithmOptions(RealTimeAlgorithm& OCP_solver)
 {
   // intergrator
   OCP_solver.set(INTEGRATOR_TYPE, LEVENBERG_MARQUARDT);                                      // default INT_RK45: (INT_RK12, INT_RK23, INT_RK45, INT_RK78, INT_BDF)

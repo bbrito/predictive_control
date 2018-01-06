@@ -80,9 +80,12 @@ public:
   std::vector<double> joints_effort_min_limit_;
   std::vector<double> joints_effort_max_limit_;
   std::vector<double> goal_pose_tolerance_;
+  std::vector<double> lsq_state_weight_factors_;
+  std::vector<double> lsq_control_weight_factors_;
 
   // predictive control
   double clock_frequency_;  //hz clock Frequency
+  double sampling_time_;
 
   // self collision distance
   double ball_radius_;

@@ -21,7 +21,7 @@ tracking_frame: arm_7_link
 # predictive_config: # minimum_collision_distance should not be larger than ball radius
 self_collision:
      ball_radius: 0.15
-     minimum_collision_distance: 0.12
+     minimum_collision_distance: 0.18
      collision_weight_factor: 0.01
 constraints:
      position_constraints:
@@ -43,8 +43,16 @@ acado_config:
      kkt_tolerance: 1e-6
      integrator_tolerance: 1e-8
      start_time_horizon: 0.0
-     end_time_horizon: 1.0
+     end_time_horizon: 3.0  # control and prediction horizon
      discretization_intervals: 4
+     sampling_time: 0.025
      use_lagrange_term: false
      use_LSQ_term: false
      use_mayer_term: true
+     weight_factors:
+           lsq_state_weight_factors:
+                #always 6 component 3 linear/position and 3 angular/Euler angle
+                [3.0, 3.0, 5.0, 10.0, 10.0, 10.0]
+           lsq_control_weight_factors:
+                # same as degree of freedom
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]

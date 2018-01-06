@@ -148,9 +148,36 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     }
   }
 
+  // read and set lsq state weight factors
+  if (!nh_config.getParam ("weight_factors/lsq_state_weight_factors", lsq_state_weight_factors_) )
+  {
+    ROS_WARN(" Parameter 'weight_factors/lsq_state_weight_factors' not set on %s node " ,  ros::this_node::getName().c_str());
+    // 3 position and 3 orientation(rpy) tolerance
+    lsq_state_weight_factors_.resize(6, 5.0);
+
+    for (int i = 0u; i < lsq_state_weight_factors_.size(); ++i)
+    {
+      ROS_INFO("Defualt lsq state weight factors value %f", lsq_state_weight_factors_.at(i));
+    }
+  }
+
+  // read and set lsq control weight factors
+  if (!nh_config.getParam ("weight_factors/lsq_control_weight_factors", lsq_control_weight_factors_) )
+  {
+    ROS_WARN(" Parameter 'weight_factors/lsq_control_weight_factors' not set on %s node " ,  ros::this_node::getName().c_str());
+    // same as degree of freedom
+    lsq_control_weight_factors_.resize(degree_of_freedom_, 1.0);
+
+    for (int i = 0u; i < lsq_control_weight_factors_.size(); ++i)
+    {
+      ROS_INFO("Defualt lsq control weight factors value %f", lsq_control_weight_factors_.at(i));
+    }
+  }
+
   // check requested parameter availble on parameter server if not than set default value
   nh.param("robot_description", robot_description_, std::string("robot_description")); // robot description
   nh.param("clock_frequency", clock_frequency_, double(50.0)); // 50 hz
+  nh.param("sampling_time", sampling_time_, double(0.025)); // 0.025 second
   nh.param("activate_output", activate_output_, bool(false));  // debug
   nh.param("activate_controller_node_output", activate_controller_node_output_, bool(false));  // debug
 
@@ -206,8 +233,11 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
   joints_effort_min_limit_ = new_config.joints_effort_min_limit_;
   joints_effort_max_limit_ = new_config.joints_effort_max_limit_;
   goal_pose_tolerance_ = new_config.goal_pose_tolerance_;
+  lsq_state_weight_factors_ = new_config.lsq_state_weight_factors_;
+  lsq_control_weight_factors_ = new_config.lsq_control_weight_factors_;
 
   clock_frequency_ = new_config.clock_frequency_;
+  sampling_time_ = new_config.sampling_time_;
   ball_radius_ = new_config.ball_radius_;
   minimum_collision_distance_ = new_config.minimum_collision_distance_;
   collision_weight_factor_ = new_config.collision_weight_factor_;
@@ -245,6 +275,7 @@ void predictive_configuration::print_configuration_parameter()
   ROS_INFO_STREAM("Target_frame: " << target_frame_);
   ROS_INFO_STREAM("Tracking_frame: " << tracking_frame_);
   ROS_INFO_STREAM("Clock_frequency: " << clock_frequency_);
+  ROS_INFO_STREAM("Sampling_time: " << sampling_time_);
   ROS_INFO_STREAM("Ball_radius: " << ball_radius_);
   ROS_INFO_STREAM("Minimum collision distance: " << minimum_collision_distance_);
   ROS_INFO_STREAM("Collision weight factor: " << collision_weight_factor_);
@@ -330,6 +361,25 @@ void predictive_configuration::print_configuration_parameter()
   }
   );
   std::cout<<"]"<<std::endl;
+
+  // print lsq state weight factors
+  std::cout << "LSQ state weight factors: [";
+  for_each(lsq_state_weight_factors_.begin(), lsq_state_weight_factors_.end(), [](double& val)
+  {
+    std::cout << val << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
+
+  // print lsq control weight factors
+  std::cout << "LSQ control weight factors: [";
+  for_each(lsq_control_weight_factors_.begin(), lsq_control_weight_factors_.end(), [](double& val)
+  {
+    std::cout << val << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
+
 }
 
 // clear allocated data from vector
@@ -343,4 +393,6 @@ void predictive_configuration::free_allocated_memory()
   joints_effort_min_limit_.clear();
   joints_effort_max_limit_.clear();
   goal_pose_tolerance_.clear();
+  lsq_state_weight_factors_.clear();
+  lsq_control_weight_factors_.clear();
 }

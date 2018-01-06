@@ -244,7 +244,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   // h.getN()
   DMatrix Q(h.getDim(), h.getDim());
-  Q(0,0) = 10.0;  Q(1,1) = 10.0;  Q(2,2) = 10.0;  Q(3,3) = 10.0;  Q(4,4) = 10.0;  Q(5,5) = 10.0;
+  Q(0,0) = 3.0;  Q(1,1) = 3.0;  Q(2,2) = 5.0;  Q(3,3) = 10.0;  Q(4,4) = 10.0;  Q(5,5) = 10.0;
   Q(6,6) = 1.0; Q(7,7) = 1.0; Q(8,8) = 1.0; Q(9,9) = 1.0; Q(10,10) = 1.0; Q(11,11) = 1.0; Q(12,12) = 1.0;
 
   DVector r(h.getDim());
@@ -286,7 +286,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   // h.getN()
   DMatrix Q_v(7,7);
-  Q_v(0,0) = 1.0;  Q_v(1,1) = 1.0;  Q_v(2,2) = 1.0;  Q_v(3,3) = 10.0;  Q_v(4,4) = 10.0;  Q_v(5,5) = 10.0; Q_v(6,6) = 10.0;
+  Q_v(0,0) = 10.0;  Q_v(1,1) = 10.0;  Q_v(2,2) = 10.0;  Q_v(3,3) = 10.0;  Q_v(4,4) = 10.0;  Q_v(5,5) = 10.0; Q_v(6,6) = 10.0;
   //Q(6,6) = 1.0; Q(7,7) = 1.0; Q(8,8) = 1.0; Q(9,9) = 1.0; Q(10,10) = 1.0; Q(11,11) = 1.0; Q(12,12) = 1.0;
 
   DVector r_v(7);
@@ -297,7 +297,17 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   //OCP_problem.minimizeLSQEndTerm(Q_t, t, r_t);
   //OCP_problem.minimizeLSQEndTerm(Q_v, t_v, r_v);
 
-  //OCP_problem.minimizeMayerTerm(0.01 * (p.transpose() * p) );
+  Function co;
+  co << self_collision_vector.sum();
+
+  DMatrix Q_c(1,1);
+  Q_c(0,0) = 10.0;
+
+  DVector r_c(1);
+  r_c.setAll(0.0);
+  //OCP_problem.minimizeMayerTerm(1.0 * (p.transpose() * p) );
+
+  //OCP_problem.minimizeLSQ(Q_c, co, r_c);
 
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);

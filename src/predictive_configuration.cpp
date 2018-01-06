@@ -149,9 +149,10 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   }
 
   // read and set lsq state weight factors
-  if (!nh_config.getParam ("weight_factors/lsq_state_weight_factors", lsq_state_weight_factors_) )
+  if (!nh_config.getParam ("acado_config/weight_factors/lsq_state_weight_factors", lsq_state_weight_factors_) )
   {
-    ROS_WARN(" Parameter 'weight_factors/lsq_state_weight_factors' not set on %s node " ,  ros::this_node::getName().c_str());
+    ROS_WARN(" Parameter 'acado_config/weight_factors/lsq_state_weight_factors' not set on %s node " ,
+             ros::this_node::getName().c_str());
     // 3 position and 3 orientation(rpy) tolerance
     lsq_state_weight_factors_.resize(6, 5.0);
 
@@ -162,9 +163,10 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   }
 
   // read and set lsq control weight factors
-  if (!nh_config.getParam ("weight_factors/lsq_control_weight_factors", lsq_control_weight_factors_) )
+  if (!nh_config.getParam ("acado_config/weight_factors/lsq_control_weight_factors", lsq_control_weight_factors_) )
   {
-    ROS_WARN(" Parameter 'weight_factors/lsq_control_weight_factors' not set on %s node " ,  ros::this_node::getName().c_str());
+    ROS_WARN(" Parameter 'acado_config/weight_factors/lsq_control_weight_factors' not set on %s node " ,
+             ros::this_node::getName().c_str());
     // same as degree of freedom
     lsq_control_weight_factors_.resize(degree_of_freedom_, 1.0);
 

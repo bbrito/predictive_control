@@ -229,7 +229,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
                                  + 10.0 * (v.transpose() * v) + 1.0 * (p.transpose() * p)
                               );*/
 
-  Function h;
+  Function h, t;
   h << (x(0) - goal_pose(0));
   h << (x(1) - goal_pose(1));
   h << (x(2) - goal_pose(2));
@@ -242,6 +242,11 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   h << v(4);  h << v(5);
   h << v(6);
 
+  std::cout<<"\033[32m"<<"________________________"<<h.getN()<<"___________________"<<"\033[32;0m"<<std::endl;
+  std::cout<<"\033[32m"<<"________________________"<<h.getDim()<<"___________________"<<"\033[32;0m"<<std::endl;
+  std::cout<<"\033[32m"<<"________________________"<<h.getNDX()<<"___________________"<<"\033[32;0m"<<std::endl;
+  std::cout<<"\033[32m"<<"________________________"<<h.getNT()<<"___________________"<<"\033[32;0m"<<std::endl;
+
   // h.getN()
   DMatrix Q(13,13);
   Q(0,0) = 10.0;  Q(1,1) = 10.0;  Q(2,2) = 10.0;  Q(3,3) = 10.0;  Q(4,4) = 10.0;  Q(5,5) = 10.0;
@@ -250,7 +255,43 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   DVector r(13);
   r.setAll(0.0);
 
+  // terminal constraints
+  t << (x(0)*x(0));
+  t << (x(1)*x(1));
+  t << (x(2)*x(2));
+  t << (x(3)*x(3));
+  t << (x(4)*x(4));
+  t << (x(5)*x(5));
+
+  // h.getN()
+  DMatrix Q_t(6,6);
+  Q_t(0,0) = 10.0;  Q_t(1,1) = 10.0;  Q_t(2,2) = 10.0;  Q_t(3,3) = 10.0;  Q_t(4,4) = 10.0;  Q_t(5,5) = 10.0;
+  //Q(6,6) = 1.0; Q(7,7) = 1.0; Q(8,8) = 1.0; Q(9,9) = 1.0; Q(10,10) = 1.0; Q(11,11) = 1.0; Q(12,12) = 1.0;
+
+  DVector r_t(6);
+  r_t.setAll(0.0);
+
+  // terminal cost of velocity
+  Function t_v;
+  t_v << (v(0)*v(0));
+  t_v << (v(1)*v(1));
+  t_v << (v(2)*v(2));
+  t_v << (v(3)*v(3));
+  t_v << (v(4)*v(4));
+  t_v << (v(5)*v(5));
+  t_v << (v(6)*v(6));
+
+  // h.getN()
+  DMatrix Q_v(7,7);
+  Q_v(0,0) = 1.0;  Q_v(1,1) = 1.0;  Q_v(2,2) = 1.0;  Q_v(3,3) = 10.0;  Q_v(4,4) = 10.0;  Q_v(5,5) = 10.0; Q_v(6,6) = 10.0;
+  //Q(6,6) = 1.0; Q(7,7) = 1.0; Q(8,8) = 1.0; Q(9,9) = 1.0; Q(10,10) = 1.0; Q(11,11) = 1.0; Q(12,12) = 1.0;
+
+  DVector r_v(7);
+  r_v.setAll(0.0);
+
   OCP_problem.minimizeLSQ(Q, h, r);
+  OCP_problem.minimizeLSQEndTerm(Q_t, t, r_t);
+  OCP_problem.minimizeLSQEndTerm(Q_v, t_v, r_v);
 
   //OCP_problem.minimizeMayerTerm(0.01 * (p.transpose() * p) );
 

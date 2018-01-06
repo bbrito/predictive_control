@@ -132,8 +132,15 @@ private:
    Eigen::VectorXd lsq_state_weight_factors_;
    Eigen::VectorXd lsq_control_weight_factors_;
 
+   // start, end time/horizon, sampling time
+   double start_time_;
+   double end_time_;
+   double sampling_time_;
+   int discretization_intervals_;
+
    /**
-    * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ, Langrange
+    * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector
+    *                               Langrange
     * @param OCP_problem: Current optimal control problem
     * @param x: Differential state represent dynamic system of equations
     * @param v: Control state use to control manipulator, in our case joint velocity
@@ -149,8 +156,7 @@ private:
     * @brief setAlgorithmOptions: setup solver options, Optimal control solver or RealTimeSolver(MPC)
     * @param OCP_solver: optimal control solver used to solver system of equations
     */
-   template<typename T>
-    void setAlgorithmOptions(T& OCP_solver);
+    void setAlgorithmOptions(RealTimeAlgorithm& OCP_solver);
     //void setAlgorithmOptions(boost::shared_ptr<T> OCP_solver);
 
    /**

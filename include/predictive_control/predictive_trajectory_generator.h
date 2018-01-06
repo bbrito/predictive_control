@@ -128,15 +128,27 @@ private:
    DVector control_min_constraint_;
    DVector control_max_constraint_;
 
-   // lsq weight factors
-   Eigen::VectorXd lsq_state_weight_factors_;
-   Eigen::VectorXd lsq_control_weight_factors_;
+   //acado configuration paramter,
+   int max_num_iteration_;
+   double kkt_tolerance_;
+   double integrator_tolerance_;
 
-   // start, end time/horizon, sampling time
+   // control and/or prediction horizon parameter
    double start_time_;
    double end_time_;
-   double sampling_time_;
    int discretization_intervals_;
+   double sampling_time_;
+
+   // objective function minimization type
+   bool use_lagrange_term_;
+   bool use_LSQ_term_;
+   bool use_mayer_term_;
+
+   // lsq weight factors
+   Eigen::VectorXd lsq_state_weight_factors_;
+   uint32_t state_vector_size_;
+   Eigen::VectorXd lsq_control_weight_factors_;
+   uint32_t control_vector_size_;
 
    /**
     * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector
@@ -157,7 +169,7 @@ private:
     * @param OCP_solver: optimal control solver used to solver system of equations
     */
     void setAlgorithmOptions(RealTimeAlgorithm& OCP_solver);
-    //void setAlgorithmOptions(boost::shared_ptr<T> OCP_solver);
+    //void setAlgorithmOptions(boost::shared_ptr<RealTimeAlgorithm> OCP_solver);
 
    /**
     * @brief setupLSQWeightsAndReferences: generate LSQ weight matrix and references

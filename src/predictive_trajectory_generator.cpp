@@ -5,7 +5,7 @@
 
 pd_frame_tracker::pd_frame_tracker()
 {
-  clearDataMember();
+  //clearDataMember();
 }
 
 pd_frame_tracker::~pd_frame_tracker()
@@ -170,6 +170,7 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobian_Matrix,
                                                   const Eigen::VectorXd &last_position,
                                                   const Eigen::VectorXd &goal_pose,
+                                                  const Eigen::VectorXd& self_collision_vector,
                                                   std_msgs::Float64MultiArray& controlled_velocity)
 {
   Jacobian_Matrix_ = Jacobian_Matrix;
@@ -190,22 +191,30 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   state_initialize_(4) = last_position(4);
   state_initialize_(5) = last_position(5);
 
+  // parameter initialize
+  DVector parameter_initialize(1);
+  parameter_initialize.setAll(0.0);
+  std::cout<<"\033[95m"<<"________________________"<<self_collision_vector.sum()<<"___________________"<<"\033[36;0m"<<std::endl;
+  parameter_initialize(0) = self_collision_vector.sum();
+
   const unsigned int jacobian_matrix_rows = 6;//Jacobian_Matrix.rows();
   const unsigned int jacobian_matrix_columns = 7;//Jacobian_Matrix.cols();
 
   // OCP variables
   DifferentialState x("", jacobian_matrix_rows, 1);       // position
   Control v("", jacobian_matrix_columns, 1);            // velocity
+  Parameter p;  // parameter collision avoidance
 
   // Clear state, control variable
   x.clearStaticCounters();
   v.clearStaticCounters();
+  p.clearStaticCounters();
 
   // Differential Equation
   DifferentialEquation f;
 
   // Differential Kinematic
-  f << dot(x) == Jacobian_Matrix_ * v;
+  f << dot(x) == (Jacobian_Matrix_ * v);
 
   // Optimal control problem
   // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
@@ -217,11 +226,14 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
                                  + 1.0 *( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
                                          +(x(4) - goal_pose(4)) * (x(4) - goal_pose(4))
                                          +(x(5) - goal_pose(5)) * (x(5) - goal_pose(5)) )
-                                 + 10.0 * (v.transpose() * v)
+                                 + 10.0 * (v.transpose() * v) + 1.0 * (p.transpose() * p)
                               );
+
+  //OCP_problem.minimizeMayerTerm(0.01 * (p.transpose() * p) );
 
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
+  OCP_problem.subjectTo(0.0 <= p << 10.0);
  // OCP_problem.subjectTo(AT_START, v == );
   OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
 
@@ -230,6 +242,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   OCP_solver.initializeControls(control_initialize_);
   OCP_solver.initializeDifferentialStates(state_initialize_);
+  OCP_solver.initializeParameters(parameter_initialize);
 
   OCP_solver.set(MAX_NUM_ITERATIONS, 10);
   OCP_solver.set(LEVENBERG_MARQUARDT, 1e-5);

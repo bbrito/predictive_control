@@ -339,18 +339,6 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   generateCostFunction(OCP_problem, x, v, goal_pose);
 
-  Function co;
-  co << self_collision_vector.sum();
-
-  DMatrix Q_c(1,1);
-  Q_c(0,0) = 10.0;
-
-  DVector r_c(1);
-  r_c.setAll(0.0);
-  //OCP_problem.minimizeMayerTerm(1.0 * (p.transpose() * p) );
-
-  //OCP_problem.minimizeLSQ(Q_c, co, r_c);
-
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
   OCP_problem.subjectTo(0.0 <= p << 10.0);
@@ -366,13 +354,6 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   setAlgorithmOptions(OCP_solver);
 
-/*  OCP_solver.set(MAX_NUM_ITERATIONS, 10);
-  OCP_solver.set(LEVENBERG_MARQUARDT, 1e-5);
-  OCP_solver.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
-  OCP_solver.set( DISCRETIZATION_TYPE, COLLOCATION);
-  OCP_solver.set(KKT_TOLERANCE, 1.000000E-06);
-*/
-  //setAlgorithmOptions<RealTimeAlgorithm>(OCP_solver);
   // setup controller
   Controller controller(OCP_solver);
   controller.init(0.0, state_initialize_);
@@ -385,18 +366,18 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   u.print();
   ROS_WARN("================");
   controlled_velocity.data.resize(jacobian_matrix_columns, 0.0);
-  /*for (int i=0u; i < jacobian_matrix_columns; ++i)
+  for (int i=0u; i < jacobian_matrix_columns; ++i)
   {
-    controlled_velocity.data[i] = controlled_velocity_vector(i);
-  }*/
+    controlled_velocity.data[i] = u(i);
+  }
 
-  controlled_velocity.data[0] = u(0);
+ /* controlled_velocity.data[0] = u(0);
   controlled_velocity.data[1] = u(1);
   controlled_velocity.data[2] = u(2);
   controlled_velocity.data[3] = u(3);
   controlled_velocity.data[4] = u(4);
   controlled_velocity.data[5] = u(5);
-  controlled_velocity.data[6] = u(6);
+  controlled_velocity.data[6] = u(6);*/
 }
 
 // setup acado algorithm options, need to set solver when calling this function

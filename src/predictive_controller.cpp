@@ -162,6 +162,7 @@ void predictive_control::runNode(const ros::TimerEvent &event)
   pd_trajectory_generator_->solveOptimalControlProblem(Jacobian_Matrix_,
                                                        current_gripper_pose_,
                                                        goal_gripper_pose_,
+                                                       collision_detect_->collision_cost_vector_,
                                                        controlled_velocity_);
 
   //controlled_velocity_ = enforced_velocity_vector;

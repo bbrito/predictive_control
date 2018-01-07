@@ -65,9 +65,9 @@ bool predictive_control::initialize()
       std::cout << "States: \n"
                 << " pd_config: " << std::boolalpha << pd_config_success << "\n"
                 << " kinematic solver: " << std::boolalpha << kinematic_success << "\n"
-                << "collision detect: " << std::boolalpha << collision_success << "\n"
-                << "pd traj generator: " << std::boolalpha << pd_traj_success << "\n"
-                << "pd config init success: " << std::boolalpha << pd_config_->initialize_success_
+                << " collision detect: " << std::boolalpha << collision_success << "\n"
+                << " pd traj generator: " << std::boolalpha << pd_traj_success << "\n"
+                << " pd config init success: " << std::boolalpha << pd_config_->initialize_success_
                 << std::endl;
       return false;
     }
@@ -89,11 +89,11 @@ bool predictive_control::initialize()
     /// 3 position and 3 orientation(rpy)
     //goal_gripper_pose_.resize(6);
     goal_gripper_pose_.setConstant(6, 1, 1e-6);
-    getTransform(pd_config_->chain_root_link_, pd_config_->target_frame_, goal_gripper_pose_);
+    //getTransform(pd_config_->chain_root_link_, pd_config_->target_frame_, goal_gripper_pose_);
 
     //current_gripper_pose_.resize(6);
     current_gripper_pose_.setConstant(6, 1, 1e-6);
-    getTransform(pd_config_->chain_root_link_, pd_config_->tracking_frame_, current_gripper_pose_);
+    //getTransform(pd_config_->chain_root_link_, pd_config_->tracking_frame_, current_gripper_pose_);
 
     cartesian_dist_ = double(0.0);
     rotation_dist_ = double(0.0);

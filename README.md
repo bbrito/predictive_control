@@ -18,4 +18,11 @@ sudo apt-get install texlive-full
 - lsq_term.cpp for teminal cost
 - getting_started.cpp for self collision avoidance 
 
-  
+# Extension to robot body
+- cob_robot: mt_experiment
+- predictive_control: current
+- Note: careful with yaml file becuse base and tip link match to cartesian_control.yaml
+Therefore, it gives error about Filed kinematic chain ....
+
+Launch:
+ roslaunch predictive_control mpc_experiment_cob.launch  

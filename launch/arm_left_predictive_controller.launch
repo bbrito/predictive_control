@@ -1,25 +1,25 @@
 <?xml version="1.0"?>
 
 <launch>
-	<!-- Debug Info -->
-	<arg name="debug" default="false" />
-	<arg unless="$(arg debug)" name="launch_prefix" value="" />
-	<arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />	
-	<arg name="robot" default="cob4-10"/>
-	<arg name="robot_env" default="empty"/>	
-	<arg name="enable_gazebo_gui" default="false"/>
-	<arg name="pkg_hardware_config" default="$(find cob_hardware_config)"/>
-	<arg name="component_name" value="arm_left"/>
-	<arg name="debug_config_parameter" value="false"/>
-	<arg name="debug_kinematic_cal" value="false"/>
-	<arg name="debug_collision_detection" value="false"/>
-	
-	<!-- Simulation -->
-	<include file="$(find cob_bringup_sim)/launch/robot.launch">
-		<arg name="robot" value="$(arg robot)"/>
-		<arg name="robot_env" value="$(arg robot_env)"/>
-		<arg name="gui" value="$(arg enable_gazebo_gui)"/>
-	</include>
+    <!-- Debug Info -->
+    <arg name="debug" default="false" />
+    <arg unless="$(arg debug)" name="launch_prefix" value="" />
+    <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+    <arg name="robot" default="cob4-10"/>
+    <arg name="robot_env" default="empty"/>
+    <arg name="enable_gazebo_gui" default="false"/>
+    <arg name="pkg_hardware_config" default="$(find cob_hardware_config)"/>
+    <arg name="component_name" value="arm_left"/>
+    <arg name="debug_config_parameter" value="false"/>
+    <arg name="debug_kinematic_cal" value="false"/>
+    <arg name="debug_collision_detection" value="false"/>
+
+    <!-- Simulation -->
+    <include file="$(find cob_bringup_sim)/launch/robot.launch">
+            <arg name="robot" value="$(arg robot)"/>
+            <arg name="robot_env" value="$(arg robot_env)"/>
+            <arg name="gui" value="$(arg enable_gazebo_gui)"/>
+    </include>
 
 
     <group ns="$(arg component_name)">
@@ -34,9 +34,9 @@
         <node pkg="cob_frame_tracker" type="interactive_frame_target_node" name="interactive_target" cwd="node" respawn="false" output="screen"/>
         
         <node pkg="cob_obstacle_distance" type="cob_obstacle_distance" name="obstacle_distance" cwd="node" respawn="false" output="screen"/>
-<!-- 
+ 
         <node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/>
--->        
+        
    
         <group if="$(arg debug)">
                 <node if="$(arg debug_config_parameter)" pkg="predictive_control" type="predictive_configuration_test" name="predictive_configuration_test" cwd="node" respawn="false" output="screen"/>

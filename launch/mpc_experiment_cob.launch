@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<launch>
+	<!-- Debug Info -->
+	<arg name="debug" default="false" />
+	<arg unless="$(arg debug)" name="launch_prefix" value="" />
+	<arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />	
+	<arg name="robot" default="cob4-10"/>
+	<arg name="robot_env" default="empty"/>	
+	<arg name="enable_gazebo_gui" default="false"/>
+	
+	<!-- Simulation -->
+	<include file="$(find cob_bringup_sim)/launch/robot.launch">
+		<arg name="robot" value="$(arg robot)"/>
+		<arg name="robot_env" value="$(arg robot_env)"/>
+		<arg name="gui" value="$(arg enable_gazebo_gui)"/>
+	</include>
+
+    <!-- configured rviz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find predictive_control)/rviz_config/test_description.rviz" />
+	
+</launch>  

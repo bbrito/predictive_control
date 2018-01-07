@@ -6,7 +6,7 @@ activate_output: false
 activate_controller_node_output: false
 
 # Clock frequency //hz
-clock_frequency: 100
+clock_frequency: 50
 
 # Joint_names
 joints_name: [arm_left_1_joint, arm_left_2_joint, arm_left_3_joint, arm_left_4_joint, arm_left_5_joint, arm_left_6_joint, arm_left_7_joint]
@@ -25,8 +25,8 @@ self_collision:
      collision_weight_factor: 0.01
 constraints:
      position_constraints:
-           min: [-3.14, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14]
-           max: [3.14, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
+           min: [-1.50, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14]
+           max: [1.50, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
      velocity_constraints:
            min: [-0.100, -0.050, -0.100, -0.050, -0.100, -0.100, -0.10]
            max: [0.100, 0.050, 0.100, 0.050, 0.100, 0.100, 0.100]

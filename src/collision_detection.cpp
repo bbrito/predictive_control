@@ -46,6 +46,21 @@ void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &F
   // make sure collsion matrix and marker array should be empty
   clearDataMember();
 
+  // DEBUG
+  if (predictive_configuration::activate_output_)
+  {
+   ROS_WARN("########### Print FK HOMOGENOUS MATRIX ############");
+   for (auto it = FK_Homogenous_Matrix.begin(); it != FK_Homogenous_Matrix.end(); ++it)
+   {
+      std::cout <<"\n" <<*it << std::endl;
+   }
+   ROS_WARN("########## Print Transformation MATRIX ############");
+   for (auto it = Transformation_Matrix.begin(); it != Transformation_Matrix.end(); ++it)
+   {
+      std::cout <<"\n" <<*it << std::endl;
+   }
+  }
+
   // generate/update collision matrix
   generateCollisionVolume(FK_Homogenous_Matrix, Transformation_Matrix);
 
@@ -85,13 +100,14 @@ void CollisionRobot::updateCollisionVolume(const std::vector<Eigen::MatrixXd> &F
 void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix,
                                              const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
 {
+
   int point = 0u, counter = 0u;
   std::string key = "point_";
 
   //for (auto const& it: FK_Homogenous_Matrix)
   for (auto it = FK_Homogenous_Matrix.begin(); it != FK_Homogenous_Matrix.end(); ++it)
   {
-    if (Transformation_Matrix[counter](2,3) > 0.10)
+    if (Transformation_Matrix[counter](2,3) > 0.10 && counter != 0)
     {
       // distance between two frame are more than ball randius than add intermidate ball
       if( Transformation_Matrix[counter](2,3) > predictive_configuration::ball_radius_)

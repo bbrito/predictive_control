@@ -17,6 +17,6 @@
 	</include>
 
     <!-- configured rviz -->
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find predictive_control)/rviz_config/test_description.rviz" />
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find predictive_control)/rviz_config/arm_left_desciption.rviz" />
 	
 </launch>  

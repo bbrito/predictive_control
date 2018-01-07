@@ -4,11 +4,11 @@
         pkg="rqt_plot"
         type="rqt_plot"
         args="/arm/joint_group_velocity_controller/command/data[0]
-        /arm/joint_group_velocity_controller/command/data[1]
-        /arm/joint_group_velocity_controller/command/data[2]
-        /arm/joint_group_velocity_controller/command/data[3]
-        /arm/joint_group_velocity_controller/command/data[4]
-        /arm/joint_group_velocity_controller/command/data[5]
-        /arm/joint_group_velocity_controller/command/data[6]" />
+        /arm_left/joint_group_velocity_controller/command/data[1]
+        /arm_left/joint_group_velocity_controller/command/data[2]
+        /arm_left/joint_group_velocity_controller/command/data[3]
+        /arm_left/joint_group_velocity_controller/command/data[4]
+        /arm_left/joint_group_velocity_controller/command/data[5]
+        /arm_left/joint_group_velocity_controller/command/data[6]" />
 </launch>
 

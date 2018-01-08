@@ -349,15 +349,34 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   // Optimal control problem
   // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
   OCP OCP_problem( start_time_, end_time_, discretization_intervals_);
+  DVector test(1);
+  test.setAll(0.0);
 
-  (Jacobian_Matrix_ * v);
+  DVector test1 = -(normal.transpose() * Jacobian_Matrix_);
 
+  Expression exp(test1);
+  exp = exp.transpose() * v + self_collision_vector.sum() * cost_val(0);
+
+  //std::cout << "########### " << test1.getDim() << " ####### " << std::endl;
+  //parameter_initialize(0) = test(0) + self_collision_vector.sum() * cost_val(0);
 
   generateCostFunction(OCP_problem, x, v, goal_pose);
+  //OCP_problem.minimizeLagrangeTerm(exp.transpose()*exp);
+  //OCP_problem.minimizeMayerTerm(v.transpose()*v + exp.transpose()*exp);
+  Function h;
+  h << 1.0 * exp;
+
+  DMatrix Q(1,1);
+  Q(0,0) = 1.0;
+
+  DVector ref(1);
+  ref.setAll(0.0);
+
+  OCP_problem.minimizeLSQ(Q, h, ref);
 
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
-  OCP_problem.subjectTo(0.0 <= p << 5.0);
+  OCP_problem.subjectTo(0.0001 <= exp << 5.0);
  // OCP_problem.subjectTo(AT_START, v == );
   OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
 

@@ -165,6 +165,66 @@ bool pd_frame_tracker::getTransform(const std::string& from, const std::string& 
 }
 
 
+
+// Generate collision cost used to avoid self collision
+void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
+                                                     const Control& v,
+                                                     const Eigen::MatrixXd& Jacobian_Matrix,
+                                                     const double& total_distance,
+                                                     const double& delta_t)
+{
+  if (use_mayer_term_)
+  {
+    ;
+  }
+
+  if (use_lagrange_term_)
+  {
+
+    DVector normal_vector(Jacobian_Matrix.rows());
+    normal_vector.setAll(1.0);
+
+    DVector create_expression_vec = -(normal_vector.transpose() * Jacobian_Matrix_);
+
+    Expression expression(create_expression_vec);
+    // http://doc.aldebaran.com/2-1/naoqi/motion/reflexes-collision-avoidance.html
+    expression = expression.transpose() * v + total_distance * (discretization_intervals_/ (end_time_-start_time_) );
+    //  d / t , t = 1.0 / (L/n)
+
+    OCP_problem.minimizeLagrangeTerm(expression);
+
+  }
+
+  if (use_LSQ_term_)
+  {
+    DVector normal_vector(Jacobian_Matrix.rows());
+    normal_vector.setAll(1.0);
+
+    DVector create_expression_vec = -(normal_vector.transpose() * Jacobian_Matrix_);
+
+     Expression expression(create_expression_vec);
+     // http://doc.aldebaran.com/2-1/naoqi/motion/reflexes-collision-avoidance.html
+     expression = expression.transpose() * v + total_distance * (discretization_intervals_/ (end_time_-start_time_) );
+     //  d / t , t = 1.0 / (L/n)
+
+     Function h;
+     h << expression;
+
+     DMatrix Q(1,1);
+     Q(0,0) = 1.0;
+
+     DVector ref(1);
+     ref.setAll(0.0);
+
+     // create objective function
+     OCP_problem.minimizeLSQ(Q, h, ref);
+
+    // set constraints related to collision cost
+     OCP_problem.subjectTo(0.0 <= expression <= 5.0);
+  }
+
+}
+
 // Generate cost function of optimal control problem
 void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
                                             const DifferentialState &x,
@@ -283,6 +343,8 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 }
 
 
+
+
 void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobian_Matrix,
                                                   const Eigen::VectorXd &last_position,
                                                   const Eigen::VectorXd &goal_pose,
@@ -349,34 +411,15 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   // Optimal control problem
   // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
   OCP OCP_problem( start_time_, end_time_, discretization_intervals_);
-  DVector test(1);
-  test.setAll(0.0);
 
-  DVector test1 = -(normal.transpose() * Jacobian_Matrix_);
-
-  Expression exp(test1);
-  exp = exp.transpose() * v + self_collision_vector.sum() * cost_val(0);
-
-  //std::cout << "########### " << test1.getDim() << " ####### " << std::endl;
-  //parameter_initialize(0) = test(0) + self_collision_vector.sum() * cost_val(0);
-
+  // generate cost function
   generateCostFunction(OCP_problem, x, v, goal_pose);
-  //OCP_problem.minimizeLagrangeTerm(exp.transpose()*exp);
-  //OCP_problem.minimizeMayerTerm(v.transpose()*v + exp.transpose()*exp);
-  Function h;
-  h << exp;
 
-  DMatrix Q(1,1);
-  Q(0,0) = 1.0;
-
-  DVector ref(1);
-  ref.setAll(0.0);
-
-  OCP_problem.minimizeLSQ(Q, h, ref);
+  // generate collision cost function
+  generateCollisionCostFunction(OCP_problem, v, Jacobian_Matrix_, self_collision_vector.sum(), 0.0);
 
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
-  OCP_problem.subjectTo(0.0 <= exp << 5.0);
  // OCP_problem.subjectTo(AT_START, v == );
   OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
 

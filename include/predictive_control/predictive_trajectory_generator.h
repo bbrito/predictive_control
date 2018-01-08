@@ -173,7 +173,7 @@ private:
     * @param total_distance: total distance between center of ball, sum all distance
     * @param delta_t: time discretization (end_time - start_time / number of interval)
     */
-   void generateCostFunction(OCP& OCP_problem,
+   void generateCollisionCostFunction(OCP& OCP_problem,
                              const Control& v,
                              const Eigen::MatrixXd& Jacobian_Matrix,
                              const double& total_distance,

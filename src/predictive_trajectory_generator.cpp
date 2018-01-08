@@ -209,20 +209,20 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
      expression = expression.transpose() * v + total_distance * (self_collision_cost_constant_term_);
      //  d / t , t = 1.0 / (L/n)
 
-     Function h;
-     h << expression;
+    Function h;
+    h << expression;
 
-     DMatrix Q(1,1);
-     Q(0,0) = 1.0;
+    DMatrix Q(1,1);
+    Q(0,0) = 1.0;
 
-     DVector ref(1);
-     ref.setAll(0.0);
+    DVector ref(1);
+    ref.setAll(0.0);
 
-     // create objective function
-     OCP_problem.minimizeLSQ(Q, h, ref);
+    // create objective function
+    OCP_problem.minimizeLSQ(Q, h, ref);
 
     // set constraints related to collision cost
-     OCP_problem.subjectTo(0.0 <= expression <= 5.0);
+    OCP_problem.subjectTo(0.0 <= expression <= 5.0);
   }
 
 }
@@ -371,10 +371,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   state_initialize_(4) = last_position(4);
   state_initialize_(5) = last_position(5);
 
-  // parameter initialize
-    DVector parameter_initialize(1);
-    parameter_initialize.setAll(0.0);
-    std::cout<<"\033[95m"<<"________________________"<<self_collision_vector.sum()<<"___________________"<<"\033[36;0m"<<std::endl;
+  std::cout<<"\033[95m"<<"________________________"<<self_collision_vector.sum()<<"___________________"<<"\033[36;0m"<<std::endl;
 
   const unsigned int jacobian_matrix_rows = 6;//Jacobian_Matrix.rows();
   const unsigned int jacobian_matrix_columns = 7;//Jacobian_Matrix.cols();
@@ -383,12 +380,9 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   DifferentialState x("", jacobian_matrix_rows, 1);       // position
   Control v("", jacobian_matrix_columns, 1);            // velocity
 
-  Parameter p;  // parameter collision avoidance
-
   // Clear state, control variable
   x.clearStaticCounters();
   v.clearStaticCounters();
-  p.clearStaticCounters();
 
   // Differential Equation
   DifferentialEquation f;
@@ -405,32 +399,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   // generate collision cost function
   generateCollisionCostFunction(OCP_problem, v, Jacobian_Matrix_, self_collision_vector.sum(), 0.0);
-/*
-  DVector normal_vector(Jacobian_Matrix.rows());
-  normal_vector.setAll(1.0);
 
-  DVector create_expression_vec = -(normal_vector.transpose() * Jacobian_Matrix_);
-
-   Expression expression(create_expression_vec);
-   // http://doc.aldebaran.com/2-1/naoqi/motion/reflexes-collision-avoidance.html
-   expression = expression.transpose() * v + self_collision_vector.sum() * (discretization_intervals_/ (end_time_-start_time_) );
-   //  d / t , t = 1.0 / (L/n)
-
-   Function h;
-   h << expression;
-
-   DMatrix Q(1,1);
-   Q(0,0) = 1.0;
-
-   DVector ref(1);
-   ref.setAll(0.0);
-
-   // create objective function
-   OCP_problem.minimizeLSQ(Q, h, ref);
-
-  // set constraints related to collision cost
-   OCP_problem.subjectTo(0.0 <= expression <= 5.0);
-*/
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
  // OCP_problem.subjectTo(AT_START, v == );
@@ -441,7 +410,6 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   OCP_solver.initializeControls(control_initialize_);
   OCP_solver.initializeDifferentialStates(state_initialize_);
-  OCP_solver.initializeParameters(parameter_initialize);
 
   setAlgorithmOptions(OCP_solver);
 
@@ -495,14 +463,20 @@ void pd_frame_tracker::setAlgorithmOptions(RealTimeAlgorithm& OCP_solver)
   //OCP_solver.set(PRINT_COPYRIGHT, false);                 // default true
 
 
-  OCP_solver.set(MAX_NUM_ITERATIONS, 10);
-  OCP_solver.set(LEVENBERG_MARQUARDT, 1e-5);
+  OCP_solver.set(MAX_NUM_ITERATIONS, max_num_iteration_);
+  OCP_solver.set(LEVENBERG_MARQUARDT, integrator_tolerance_);
   OCP_solver.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
   OCP_solver.set( DISCRETIZATION_TYPE, COLLOCATION);
-  OCP_solver.set(KKT_TOLERANCE, 1.000000E-06);
+  OCP_solver.set(KKT_TOLERANCE, kkt_tolerance_);
+  OCP_solver.set(HOTSTART_QP, true);                   // default true
+  OCP_solver.set(SPARSE_QP_SOLUTION, CONDENSING);      // CONDENSING, FULL CONDENSING, SPARSE SOLVER
+
 
   OCP_solver.set(INFEASIBLE_QP_HANDLING, defaultInfeasibleQPhandling);
   OCP_solver.set(INFEASIBLE_QP_RELAXATION, defaultInfeasibleQPrelaxation);
+
+  // Discretization Type
+  //OCP_solver.set(TERMINATE_AT_CONVERGENCE, true);         // default true
 }
 
 

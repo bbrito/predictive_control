@@ -165,6 +165,23 @@ private:
                              );
 
    /**
+    * @brief generateCostFunction: generate collision cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector
+    *                               Langrange
+    * @param OCP_problem: Current optimal control problem
+    * @param v: Control state use to control manipulator, in our case joint velocity
+    * @param Jacobian_Matrix: Jacobian Matrix used to get cartesian velocity
+    * @param total_distance: total distance between center of ball, sum all distance
+    * @param delta_t: time discretization (end_time - start_time / number of interval)
+    */
+   void generateCostFunction(OCP& OCP_problem,
+                             const Control& v,
+                             const Eigen::MatrixXd& Jacobian_Matrix,
+                             const double& total_distance,
+                             const double& delta_t
+                             );
+
+
+   /**
     * @brief setAlgorithmOptions: setup solver options, Optimal control solver or RealTimeSolver(MPC)
     * @param OCP_solver: optimal control solver used to solver system of equations
     */

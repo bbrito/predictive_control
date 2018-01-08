@@ -308,10 +308,23 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   state_initialize_(5) = last_position(5);
 
   // parameter initialize
-  DVector parameter_initialize(1);
-  parameter_initialize.setAll(0.0);
-  std::cout<<"\033[95m"<<"________________________"<<self_collision_vector.sum()<<"___________________"<<"\033[36;0m"<<std::endl;
-  parameter_initialize(0) = self_collision_vector.sum();
+    DVector parameter_initialize(1);
+    parameter_initialize.setAll(0.0);
+    std::cout<<"\033[95m"<<"________________________"<<self_collision_vector.sum()<<"___________________"<<"\033[36;0m"<<std::endl;
+    //parameter_initialize(0) = self_collision_vector.sum();
+    DVector normal(6);
+    normal.setAll(1.0);
+
+    DVector cost_val(1);
+    cost_val.setAll(1.3333333);
+
+    DVector temp = ( -(normal.transpose() * Jacobian_Matrix_));
+    temp = temp.transpose()*control_initialize_;
+
+    temp = temp + ( self_collision_vector.sum() * cost_val );
+    parameter_initialize(0) = temp(0);
+    parameter_initialize.print();
+    std::cout<<"\033[95m"<<"________________________"<<parameter_initialize(0)<<"___________________"<<"\033[36;0m"<<std::endl;
 
   const unsigned int jacobian_matrix_rows = 6;//Jacobian_Matrix.rows();
   const unsigned int jacobian_matrix_columns = 7;//Jacobian_Matrix.cols();
@@ -319,6 +332,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   // OCP variables
   DifferentialState x("", jacobian_matrix_rows, 1);       // position
   Control v("", jacobian_matrix_columns, 1);            // velocity
+
   Parameter p;  // parameter collision avoidance
 
   // Clear state, control variable
@@ -336,12 +350,14 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
   OCP OCP_problem( start_time_, end_time_, discretization_intervals_);
 
+  (Jacobian_Matrix_ * v);
+
 
   generateCostFunction(OCP_problem, x, v, goal_pose);
 
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
-  OCP_problem.subjectTo(0.0 <= p << 10.0);
+  OCP_problem.subjectTo(0.0 <= p << 5.0);
  // OCP_problem.subjectTo(AT_START, v == );
   OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
 

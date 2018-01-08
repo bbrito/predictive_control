@@ -110,7 +110,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
     if (Transformation_Matrix[counter](2,3) > 0.10 && counter != 0)
     {
       // distance between two frame are more than ball randius than add intermidate ball
-      /*if( Transformation_Matrix[counter](2,3) > predictive_configuration::ball_radius_)
+      if( Transformation_Matrix[counter](2,3) > predictive_configuration::ball_radius_) //0.30
       {
         ROS_INFO("CollisionRobot: Add intermidiate volume with point: %s", (key+std::to_string(point)).c_str());
 
@@ -136,8 +136,8 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
         createStaticFrame(stamped, key + std::to_string(point));
         collision_matrix_[key + std::to_string(point)] = stamped;
         point = point + 1;
-      }*/
-
+      }
+      /*
       // as usally add ball at every joint
       geometry_msgs::PoseStamped stamped;
       KDL::Frame frame;
@@ -158,7 +158,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
                             );
 
       collision_matrix_[key + std::to_string(point)] = stamped;
-      point = point + 1;
+      point = point + 1;*/
     }
     else
     {

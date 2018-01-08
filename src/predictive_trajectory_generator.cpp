@@ -308,10 +308,10 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   state_initialize_(5) = last_position(5);
 
   // parameter initialize
-  DVector parameter_initialize(1);
+  DVector parameter_initialize(self_collision_vector.rows()*self_collision_vector.cols());
   parameter_initialize.setAll(0.0);
   std::cout<<"\033[95m"<<"________________________"<<self_collision_vector.sum()<<"___________________"<<"\033[36;0m"<<std::endl;
-  parameter_initialize(0) = self_collision_vector.sum();
+  parameter_initialize = self_collision_vector;
 
   const unsigned int jacobian_matrix_rows = 6;//Jacobian_Matrix.rows();
   const unsigned int jacobian_matrix_columns = 7;//Jacobian_Matrix.cols();
@@ -336,12 +336,23 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
   OCP OCP_problem( start_time_, end_time_, discretization_intervals_);
 
+  //generateCostFunction(OCP_problem, x, v, goal_pose);
 
-  generateCostFunction(OCP_problem, x, v, goal_pose);
+  DMatrix collision_w(v.getDim(),self_collision_vector.rows()*self_collision_vector.cols());
+  collision_w.setAll(10.0);
+
+  Function co;
+  co << (p.transpose()*p);
+  //OCP_problem.minimizeMayerTerm(10.0 * ( self_collision_vector.sum()* self_collision_vector.sum()));
+  //OCP_problem.minimizeMayerTerm(v.transpose()*collision_w*p);
+  DVector ref(1);
+  ref.setAll(0.0);
+
+  //OCP_problem.minimizeLSQ(collision_w, co, ref);
 
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
-  OCP_problem.subjectTo(0.0 <= p << 10.0);
+  //OCP_problem.subjectTo(0.0 <= p << 10.0);
  // OCP_problem.subjectTo(AT_START, v == );
   OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
 

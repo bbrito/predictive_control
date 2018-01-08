@@ -373,20 +373,6 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
     DVector parameter_initialize(1);
     parameter_initialize.setAll(0.0);
     std::cout<<"\033[95m"<<"________________________"<<self_collision_vector.sum()<<"___________________"<<"\033[36;0m"<<std::endl;
-    //parameter_initialize(0) = self_collision_vector.sum();
-    DVector normal(6);
-    normal.setAll(1.0);
-
-    DVector cost_val(1);
-    cost_val.setAll(1.3333333);
-
-    DVector temp = ( -(normal.transpose() * Jacobian_Matrix_));
-    temp = temp.transpose()*control_initialize_;
-
-    temp = temp + ( self_collision_vector.sum() * cost_val );
-    parameter_initialize(0) = temp(0);
-    parameter_initialize.print();
-    std::cout<<"\033[95m"<<"________________________"<<parameter_initialize(0)<<"___________________"<<"\033[36;0m"<<std::endl;
 
   const unsigned int jacobian_matrix_rows = 6;//Jacobian_Matrix.rows();
   const unsigned int jacobian_matrix_columns = 7;//Jacobian_Matrix.cols();
@@ -417,7 +403,32 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   // generate collision cost function
   generateCollisionCostFunction(OCP_problem, v, Jacobian_Matrix_, self_collision_vector.sum(), 0.0);
+/*
+  DVector normal_vector(Jacobian_Matrix.rows());
+  normal_vector.setAll(1.0);
 
+  DVector create_expression_vec = -(normal_vector.transpose() * Jacobian_Matrix_);
+
+   Expression expression(create_expression_vec);
+   // http://doc.aldebaran.com/2-1/naoqi/motion/reflexes-collision-avoidance.html
+   expression = expression.transpose() * v + self_collision_vector.sum() * (discretization_intervals_/ (end_time_-start_time_) );
+   //  d / t , t = 1.0 / (L/n)
+
+   Function h;
+   h << expression;
+
+   DMatrix Q(1,1);
+   Q(0,0) = 1.0;
+
+   DVector ref(1);
+   ref.setAll(0.0);
+
+   // create objective function
+   OCP_problem.minimizeLSQ(Q, h, ref);
+
+  // set constraints related to collision cost
+   OCP_problem.subjectTo(0.0 <= expression <= 5.0);
+*/
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
  // OCP_problem.subjectTo(AT_START, v == );

@@ -8,8 +8,9 @@ Panels:
         - /RobotModel1
         - /TF1/Frames1
         - /InteractiveMarkers1
+        - /MarkerArray1
       Splitter Ratio: 0.634667
-    Tree Height: 865
+    Tree Height: 921
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -369,11 +370,13 @@ Visualization Manager:
           Value: false
         odom_combined:
           Value: true
-        point_1:
+        point_0:
           Value: true
-        point_4:
+        point_3:
           Value: true
         point_6:
+          Value: true
+        point_8:
           Value: true
         sensorring_base_link:
           Value: false
@@ -409,78 +412,80 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
+        base_footprint:
+          base_link:
+            b_caster_rotation_link:
+              b_caster_r_wheel_link:
+                {}
+            base_laser_front_link:
+              {}
+            base_laser_left_link:
+              {}
+            base_laser_right_link:
+              {}
+            fl_caster_rotation_link:
+              fl_caster_r_wheel_link:
+                {}
+            fr_caster_rotation_link:
+              fr_caster_r_wheel_link:
+                {}
+            torso_base_link:
+              torso_1_link:
+                torso_2_link:
+                  torso_3_link:
+                    arm_left_base_link:
+                      arm_left_1_link:
+                        arm_left_2_link:
+                          arm_left_3_link:
+                            arm_left_4_link:
+                              arm_left_5_link:
+                                arm_left_6_link:
+                                  arm_left_7_link:
+                                    gripper_left_base_link:
+                                      gripper_left_grasp_link:
+                                        {}
+                                      gripper_left_palm_link:
+                                        gripper_left_camera_link:
+                                          gripper_left_finger_1_link:
+                                            gripper_left_finger_2_link:
+                                              {}
+                    head_base_link:
+                      head_1_link:
+                        head_2_link:
+                          head_3_link:
+                            head_cam_link:
+                              head_cam_frame:
+                                head_cam_optical_frame:
+                                  {}
+                            head_center_link:
+                              {}
+                            sensorring_base_link:
+                              sensorring_link:
+                                sensorring_cam3d_back_link:
+                                  {}
+                                sensorring_cam3d_front_link:
+                                  sensorring_cam3d_front_frame:
+                                    sensorring_cam3d_front_optical_frame:
+                                      {}
+                    torso_cam3d_down_link:
+                      {}
+                    torso_cam3d_left_link:
+                      {}
+                    torso_cam3d_right_link:
+                      {}
+                    torso_center_link:
+                      {}
+          point_0:
+            {}
+          point_3:
+            {}
+          point_6:
+            {}
+          point_8:
+            {}
         odom_combined:
           arm_left_7_target:
             {}
-          base_footprint:
-            base_link:
-              b_caster_rotation_link:
-                b_caster_r_wheel_link:
-                  {}
-              base_laser_front_link:
-                {}
-              base_laser_left_link:
-                {}
-              base_laser_right_link:
-                {}
-              fl_caster_rotation_link:
-                fl_caster_r_wheel_link:
-                  {}
-              fr_caster_rotation_link:
-                fr_caster_r_wheel_link:
-                  {}
-              point_1:
-                {}
-              point_4:
-                {}
-              point_6:
-                {}
-              torso_base_link:
-                torso_1_link:
-                  torso_2_link:
-                    torso_3_link:
-                      arm_left_base_link:
-                        arm_left_1_link:
-                          arm_left_2_link:
-                            arm_left_3_link:
-                              arm_left_4_link:
-                                arm_left_5_link:
-                                  arm_left_6_link:
-                                    arm_left_7_link:
-                                      gripper_left_base_link:
-                                        gripper_left_grasp_link:
-                                          {}
-                                        gripper_left_palm_link:
-                                          gripper_left_camera_link:
-                                            gripper_left_finger_1_link:
-                                              gripper_left_finger_2_link:
-                                                {}
-                      head_base_link:
-                        head_1_link:
-                          head_2_link:
-                            head_3_link:
-                              head_cam_link:
-                                head_cam_frame:
-                                  head_cam_optical_frame:
-                                    {}
-                              head_center_link:
-                                {}
-                              sensorring_base_link:
-                                sensorring_link:
-                                  sensorring_cam3d_back_link:
-                                    {}
-                                  sensorring_cam3d_front_link:
-                                    sensorring_cam3d_front_frame:
-                                      sensorring_cam3d_front_optical_frame:
-                                        {}
-                      torso_cam3d_down_link:
-                        {}
-                      torso_cam3d_left_link:
-                        {}
-                      torso_cam3d_right_link:
-                        {}
-                      torso_center_link:
-                        {}
       Update Interval: 0
       Value: true
     - Class: rviz/InteractiveMarkers
@@ -738,6 +743,14 @@ Visualization Manager:
       Show Highlights: true
       Value: true
       Visual Enabled: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /arm_left/predictive_control/collisionRobot/collision_ball
+      Name: MarkerArray
+      Namespaces:
+        preview: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -762,7 +775,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.71758
+      Distance: 2.82911
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -782,10 +795,10 @@ Visualization Manager:
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1000
+  Height: 1056
   Hide Left Dock: false
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd000000040000000000000189000003a2fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000003a2000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000017efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000280000017e000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000002f60000003efc0100000002fb0000000800540069006d00650000000000000002f6000002f600fffffffb0000000800540069006d0065010000000000000450000000000000000000000330000003a200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000189000003dafc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000003da000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000017efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000280000017e000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000002f60000003efc0100000002fb0000000800540069006d00650000000000000002f6000002f600fffffffb0000000800540069006d00650100000000000004500000000000000000000005b0000003da00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -794,6 +807,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 1215
-  X: 1985
+  Width: 1855
+  X: 65
   Y: 24

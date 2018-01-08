@@ -364,7 +364,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   //OCP_problem.minimizeLagrangeTerm(exp.transpose()*exp);
   //OCP_problem.minimizeMayerTerm(v.transpose()*v + exp.transpose()*exp);
   Function h;
-  h << 1.0 * exp;
+  h << exp;
 
   DMatrix Q(1,1);
   Q(0,0) = 1.0;
@@ -376,7 +376,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
-  OCP_problem.subjectTo(0.0001 <= exp << 5.0);
+  OCP_problem.subjectTo(0.0 <= exp << 5.0);
  // OCP_problem.subjectTo(AT_START, v == );
   OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
 
@@ -432,18 +432,21 @@ void pd_frame_tracker::setAlgorithmOptions(RealTimeAlgorithm& OCP_solver)
   // Discretization Type
   OCP_solver.set(DISCRETIZATION_TYPE, COLLOCATION); // default MULTIPLE_SHOOTING: (SINGLE_SHOOTING, MULTIPLE_SHOOTING)
   //OCP_solver.set(TERMINATE_AT_CONVERGENCE, true);         // default true
-
+*/
   // output
   //OCP_solver.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
   //OCP_solver.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
   //OCP_solver.set(PRINT_COPYRIGHT, false);                 // default true
-*/
+
 
   OCP_solver.set(MAX_NUM_ITERATIONS, 10);
   OCP_solver.set(LEVENBERG_MARQUARDT, 1e-5);
   OCP_solver.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
   OCP_solver.set( DISCRETIZATION_TYPE, COLLOCATION);
   OCP_solver.set(KKT_TOLERANCE, 1.000000E-06);
+
+  OCP_solver.set(INFEASIBLE_QP_HANDLING, defaultInfeasibleQPhandling);
+  OCP_solver.set(INFEASIBLE_QP_RELAXATION, defaultInfeasibleQPrelaxation);
 }
 
 

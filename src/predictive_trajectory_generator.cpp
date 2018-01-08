@@ -83,6 +83,8 @@ bool pd_frame_tracker::initialize()
   control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::joints_vel_min_limit_);
   control_max_constraint_ = transformStdVectorToEigenVector(predictive_configuration::joints_vel_max_limit_);
 
+  // slef collision cost constant term
+  self_collision_cost_constant_term_ = discretization_intervals_/ (end_time_-start_time_);
 
   ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
@@ -188,7 +190,7 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
 
     Expression expression(create_expression_vec);
     // http://doc.aldebaran.com/2-1/naoqi/motion/reflexes-collision-avoidance.html
-    expression = expression.transpose() * v + total_distance * (discretization_intervals_/ (end_time_-start_time_) );
+    expression = expression.transpose() * v + total_distance * (self_collision_cost_constant_term_);
     //  d / t , t = 1.0 / (L/n)
 
     OCP_problem.minimizeLagrangeTerm(expression);
@@ -204,7 +206,7 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
 
      Expression expression(create_expression_vec);
      // http://doc.aldebaran.com/2-1/naoqi/motion/reflexes-collision-avoidance.html
-     expression = expression.transpose() * v + total_distance * (discretization_intervals_/ (end_time_-start_time_) );
+     expression = expression.transpose() * v + total_distance * (self_collision_cost_constant_term_);
      //  d / t , t = 1.0 / (L/n)
 
      Function h;

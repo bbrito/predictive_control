@@ -144,6 +144,9 @@ private:
    bool use_LSQ_term_;
    bool use_mayer_term_;
 
+   // collioion cost weighting/constant term
+   double self_collision_cost_constant_term_;
+
    // lsq weight factors
    Eigen::VectorXd lsq_state_weight_factors_;
    uint32_t state_vector_size_;

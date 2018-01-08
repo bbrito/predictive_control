@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /RobotModel1
         - /InteractiveMarkers1
+        - /MarkerArray1
       Splitter Ratio: 0.634667
     Tree Height: 921
   - Class: rviz/Selection
@@ -171,6 +172,14 @@ Visualization Manager:
       Show Visual Aids: false
       Update Topic: /arm/marker_server/update
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /arm/predictive_control/collisionRobot/collision_ball
+      Name: MarkerArray
+      Namespaces:
+        preview: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -207,10 +216,10 @@ Visualization Manager:
         Z: 0.583252
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.225398
+      Pitch: 0.315398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.0403838
+      Yaw: 0.275384
     Saved: ~
 Window Geometry:
   Displays:

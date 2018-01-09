@@ -330,28 +330,62 @@ bool StaticCollision::initializeStaticCollisionObject()
 
   clearDataMember();
 
-  ros::NodeHandle nh_collisionRobot("predictive_control/collisionRobot");
-  marker_pub_ = nh_collisionRobot.advertise<visualization_msgs::MarkerArray>("collision_ball", 1);
+  ros::NodeHandle nh_collisionRobot("predictive_control/StaticCollision");
+  marker_pub_ = nh_collisionRobot.advertise<visualization_msgs::MarkerArray>("static_collision_object", 1);
 
-  geometry_msgs::PoseStamped stamped;
+  ROS_INFO("===== Collision Ball marker published with topic: ~/predictive_control/collisionRobot/static_collision_object =====");
+  ROS_WARN("STATICCOLLISION INITIALIZED!!");
 
   // generate static collision volume
-  generateStaticCollisionVolume(stamped);
+  generateStaticCollisionVolume();
 
-  // visualize static collision volume
-  visualizeStaticCollisionVoulme(stamped);
 
-  ROS_INFO("===== Collision Ball marker published with topic: ~/predictive_control/collisionRobot/collision_ball =====");
-  ROS_WARN("COLLISIONROBOT INITIALIZED!!");
+  // DEBUG
+  if (true)
+  {
+    ROS_WARN("===== STATIC COLLISION MATRIX =====");
+    for (auto const& it: collision_matrix_)
+    {
+      ROS_INFO_STREAM("StaticCollision: "<<it.first << " -> stamped: \n" << it.second);
+    }
+  }
 
   return true;
 }
 
+// update collsion ball position, publish new position of collision ball
+void StaticCollision::updateStaticCollisionVolume(const std::map<std::string, geometry_msgs::PoseStamped>& robot_critical_points)
+{
+
+  // DEBUG
+  if (predictive_configuration::activate_output_)
+  {
+   ROS_WARN("########### Print ROBOT CRITICLE POINT MATRIX ############");
+   for (auto it = robot_critical_points.begin(); it != robot_critical_points.end(); ++it)
+   {
+      std::cout<< it->first.c_str() <<": \n" << it->second << std::endl;
+   }
+  }
+
+  // visualize marker array
+  int id = 0u;
+  for (auto it = collision_matrix_.begin(); it != collision_matrix_.end(); ++it, ++id)
+  {
+	  visualizeStaticCollisionVoulme(it->second);
+  }
+
+  // publish
+  marker_pub_.publish(marker_array_);
+
+}
+
+
+
 // create collision cost for static objects
-void StaticCollision::generateStaticCollisionVolume(geometry_msgs::PoseStamped& stamped)
+void StaticCollision::generateStaticCollisionVolume()
 {
   // position and orientation
-
+  geometry_msgs::PoseStamped stamped;
   stamped.header.frame_id = predictive_configuration::chain_root_link_;
   stamped.header.stamp = ros::Time().now();
 
@@ -392,7 +426,7 @@ void StaticCollision::visualizeStaticCollisionVoulme(const geometry_msgs::PoseSt
   marker.scale.z = 0.30;
 
   // position into world
-  marker.id = 101;
+  marker.id = 0;
   marker.header.frame_id = stamped.header.frame_id;
   marker.pose.position.x = stamped.pose.position.x;
   marker.pose.position.y = stamped.pose.position.y;
@@ -404,4 +438,31 @@ void StaticCollision::visualizeStaticCollisionVoulme(const geometry_msgs::PoseSt
 
   // store created marker
   marker_array_.markers.push_back(marker);
+
 }
+
+// create static frame, just for visualization purpose
+void StaticCollision::createStaticFrame(const geometry_msgs::PoseStamped &stamped,
+                                       const std::string &frame_name)
+{
+  geometry_msgs::TransformStamped static_transformStamped;
+
+  // frame information
+  static_transformStamped.header.stamp = stamped.header.stamp;
+  static_transformStamped.header.frame_id = stamped.header.frame_id;
+  static_transformStamped.child_frame_id = frame_name;
+
+  // pose of frame relative to header frame_id
+  static_transformStamped.transform.translation.x = stamped.pose.position.x;
+  static_transformStamped.transform.translation.y = stamped.pose.position.y;
+  static_transformStamped.transform.translation.z = stamped.pose.position.z;
+  static_transformStamped.transform.rotation = stamped.pose.orientation;
+
+  ROS_INFO("Created intermediate 'Static Frame' with '%s' parent frame id and '%s' child frame id",
+           stamped.header.frame_id.c_str(), frame_name.c_str()
+           );
+
+  static_broadcaster_.sendTransform(static_transformStamped);
+  ros::spinOnce();
+}
+

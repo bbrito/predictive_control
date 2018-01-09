@@ -207,7 +207,9 @@ public:
    */
   bool initializeStaticCollisionObject();
 
-  void generateStaticCollisionVolume(geometry_msgs::PoseStamped& stamped);
+  void updateStaticCollisionVolume(const std::map<std::string, geometry_msgs::PoseStamped>& robot_critical_points);
+
+  void generateStaticCollisionVolume();
 
 
   /**

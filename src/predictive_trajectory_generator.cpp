@@ -222,7 +222,8 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
     OCP_problem.minimizeLSQ(Q, h, ref);
 
     // set constraints related to collision cost
-    OCP_problem.subjectTo(0.0 <= expression <= 5.0);
+    //OCP_problem.subjectTo(0.0 <= expression <= 5.0);
+    OCP_problem.subjectTo(expression <= 5.0);
   }
 
 }

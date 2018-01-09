@@ -167,6 +167,7 @@ void predictive_control::runNode(const ros::TimerEvent &event)
                                                        current_gripper_pose_,
                                                        goal_gripper_pose_,
                                                        collision_detect_->collision_cost_vector_,
+                                                       static_collision_avoidance_->collision_cost_vector_,
                                                        controlled_velocity_);
 
   //controlled_velocity_ = enforced_velocity_vector;

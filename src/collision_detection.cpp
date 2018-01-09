@@ -225,7 +225,11 @@ void CollisionRobot::computeCollisionCost(const std::map<std::string, geometry_m
         // Nonlinear Model Predictive Control for Multi-Micro Aerial Vehicle Robust Collision Avoidance
         // https://arxiv.org/pdf/1703.01164.pdf ... equation(10)
         ROS_DEBUG(" '%s'  <---> '%s'", it_out->first.c_str(),it_in->first.c_str());
-        dist += exp((collision_min_distance - std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose))) / weight_factor);
+        //dist += exp( ((collision_min_distance) -
+        //              (std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose))) ) / weight_factor);
+        dist += exp( ((collision_min_distance*collision_min_distance) -
+                      (std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose)) * std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose))) ) / weight_factor);
+
         ROS_DEBUG_STREAM("Exponential term: "<<
                          exp(collision_min_distance - std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose)) / weight_factor));
       }

@@ -78,7 +78,6 @@ public:
                              const std::vector<Eigen::MatrixXd>& Transformation_Matrix
                              );
 
-  void generateStaticCollisionVolume();
 
   /**
    * @brief visualizeCollisionVolume: visulize collision ball on given position
@@ -90,11 +89,6 @@ public:
                                const double& radius, const uint32_t& ball_id
                                );
 
-  /**
-   * @brief visualizeStaticCollisionVoulme: visulize static collision object
-   * @param collision_object: collsion object represented by size, pose, primitive_type, operation
-   */
-  void visualizeStaticCollisionVoulme(const geometry_msgs::PoseStamped& stamped);
 
   /**
    * @brief computeCollisionCost: Computation collision distance cost,
@@ -108,17 +102,6 @@ public:
                                        const double& weight_factor
                                        );
 
-  /**
-   * @brief computeStaticCollisionCost: Computation collision distance cost,
-   *                              Store Distance vectors represent distance from center of frame to other frame
-   * @param collision_matrix: Collision matrix has information about distance between frames relative to root frame
-   * @param collision_min_distance: Minimum collision distance, below that should not go
-   * @param weight_factor: convergence rate
-   */
-  void computeStaticCollisionCost(const std::map<std::string, geometry_msgs::PoseStamped> collision_matrix,
-                                       const double& collision_min_distance,
-                                       const double& weight_factor
-                                       );
 
   /**
    * @brief getEuclideanDistance: compute 2D distance called EuclideanDistance
@@ -193,5 +176,91 @@ private:
 
 };
 
+
+//------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------- Static Collision Object Avoidance -----------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------
+class StaticCollision: public predictive_configuration
+{
+  /**
+    * Class used to generate bounding volume around static object,
+    * - Development of distance cost function (logistic function) use to keep distance from robot body
+    * - Visualize collision bounding ball around StaticCollision
+    * - Creat static frame for visulize center of intermidiate ball
+    */
+
+public:
+
+  /**
+   * @brief CollisionRobot: Default constructor, allocate memory
+   */
+  StaticCollision();
+
+  /**
+    *@brief ~CollisionRobot: Default distructor, free memory
+    */
+  ~StaticCollision();
+
+  /**
+   * @brief initializeCollisionRobot: Initialize Collision Robot class
+   * @return true with success, else false
+   */
+  bool initializeStaticCollisionObject();
+
+  void generateStaticCollisionVolume(geometry_msgs::PoseStamped& stamped);
+
+
+  /**
+   * @brief visualizeStaticCollisionVoulme: visulize static collision object
+   * @param collision_object: collsion object represented by size, pose, primitive_type, operation
+   */
+  void visualizeStaticCollisionVoulme(const geometry_msgs::PoseStamped& stamped);
+
+  /**
+   * @brief computeStaticCollisionCost: Computation collision distance cost,
+   *                              Store Distance vectors represent distance from center of frame to other frame
+   * @param collision_matrix: Collision matrix has information about distance between frames relative to root frame
+   * @param collision_min_distance: Minimum collision distance, below that should not go
+   * @param weight_factor: convergence rate
+   */
+  void computeStaticCollisionCost(const std::map<std::string, geometry_msgs::PoseStamped> collision_matrix,
+                                       const double& collision_min_distance,
+                                       const double& weight_factor
+                                       );
+
+
+  /** public data member*/
+  // visulaize all volumes
+  visualization_msgs::MarkerArray marker_array_;
+
+  // collision matrix
+  std::map<std::string, geometry_msgs::PoseStamped> collision_matrix_;
+
+  // collision cost vector
+  Eigen::VectorXd collision_cost_vector_;
+
+private:
+  // marker publisher
+  ros::Publisher marker_pub_;
+
+  // static frame broadcaster
+  tf2_ros::StaticTransformBroadcaster static_broadcaster_;
+
+  /**
+   * @brief createStaticFrame: visulize intermidiate added frame, relative to root frame
+   * @param stamped: Center position of ball
+   * @param frame_name: Child frame name
+   */
+  void createStaticFrame(const geometry_msgs::PoseStamped& stamped,
+                         const std::string& frame_name
+                         );
+
+
+  /**
+   * @brief clearDataMember: clear vectors means free allocated memory
+   */
+  void clearDataMember();
+
+};
 
 #endif //PREDICTIVE_CONTROL_COLLISION_DETECTION_H_

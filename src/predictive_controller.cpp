@@ -54,18 +54,22 @@ bool predictive_control::initialize()
     collision_detect_.reset(new CollisionRobot());
     bool collision_success = collision_detect_->initializeCollisionRobot();
 
+    static_collision_avoidance_.reset(new StaticCollision());
+    bool static_collision_success = static_collision_avoidance_->initializeStaticCollisionObject();
+
     pd_trajectory_generator_.reset(new pd_frame_tracker());
     bool pd_traj_success = pd_trajectory_generator_->initialize();
 
     // check successfully initialization of all classes
     if (pd_config_success == false || kinematic_success == false
-        || collision_success == false || pd_traj_success == false || pd_config_->initialize_success_ == false)
+        || collision_success == false || static_collision_success == false || pd_traj_success == false || pd_config_->initialize_success_ == false)
     {
       ROS_ERROR("predictive_control: FAILED TO INITILIZED!!");
       std::cout << "States: \n"
                 << " pd_config: " << std::boolalpha << pd_config_success << "\n"
                 << " kinematic solver: " << std::boolalpha << kinematic_success << "\n"
                 << " collision detect: " << std::boolalpha << collision_success << "\n"
+                << " static collision avoidance: " << std::boolalpha << static_collision_success << "\n"
                 << " pd traj generator: " << std::boolalpha << pd_traj_success << "\n"
                 << " pd config init success: " << std::boolalpha << pd_config_->initialize_success_
                 << std::endl;

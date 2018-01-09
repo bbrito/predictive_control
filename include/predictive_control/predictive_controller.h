@@ -165,6 +165,9 @@ private:
   // self collision detector/avoidance
   boost::shared_ptr<CollisionRobot> collision_detect_;
 
+  // static collision detector/avoidance
+  boost::shared_ptr<StaticCollision> static_collision_avoidance_;
+
   // predictive trajectory generator
   boost::shared_ptr<pd_frame_tracker> pd_trajectory_generator_;
 

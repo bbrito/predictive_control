@@ -417,7 +417,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   h << expression;
 
   DMatrix Q(1,1);
-  Q(0,0) = 1.0;
+  Q(0,0) = 10.0;
 
   DVector ref(1);
   ref.setAll(0.0);

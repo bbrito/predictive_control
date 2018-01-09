@@ -13,6 +13,7 @@
 #include <geometry_msgs/PointStamped.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <shape_msgs/SolidPrimitive.h>
 
 // eigen includes
 #include <Eigen/Eigen>
@@ -77,6 +78,8 @@ public:
                              const std::vector<Eigen::MatrixXd>& Transformation_Matrix
                              );
 
+  void generateStaticCollisionVolume();
+
   /**
    * @brief visualizeCollisionVolume: visulize collision ball on given position
    * @param center: Pose of center of volume
@@ -88,6 +91,12 @@ public:
                                );
 
   /**
+   * @brief visualizeStaticCollisionVoulme: visulize static collision object
+   * @param collision_object: collsion object represented by size, pose, primitive_type, operation
+   */
+  void visualizeStaticCollisionVoulme(const geometry_msgs::PoseStamped& stamped);
+
+  /**
    * @brief computeCollisionCost: Computation collision distance cost,
    *                              Store Distance vectors represent distance from center of frame to other frame
    * @param collision_matrix: Collision matrix has information about distance between frames relative to root frame
@@ -95,6 +104,18 @@ public:
    * @param weight_factor: convergence rate
    */
   void computeCollisionCost(const std::map<std::string, geometry_msgs::PoseStamped> collision_matrix,
+                                       const double& collision_min_distance,
+                                       const double& weight_factor
+                                       );
+
+  /**
+   * @brief computeStaticCollisionCost: Computation collision distance cost,
+   *                              Store Distance vectors represent distance from center of frame to other frame
+   * @param collision_matrix: Collision matrix has information about distance between frames relative to root frame
+   * @param collision_min_distance: Minimum collision distance, below that should not go
+   * @param weight_factor: convergence rate
+   */
+  void computeStaticCollisionCost(const std::map<std::string, geometry_msgs::PoseStamped> collision_matrix,
                                        const double& collision_min_distance,
                                        const double& weight_factor
                                        );

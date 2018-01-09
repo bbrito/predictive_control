@@ -352,6 +352,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
                                                   const Eigen::VectorXd &last_position,
                                                   const Eigen::VectorXd &goal_pose,
                                                   const Eigen::VectorXd& self_collision_vector,
+                                                  const Eigen::VectorXd& static_collision_vector,
                                                   std_msgs::Float64MultiArray& controlled_velocity)
 {
   Jacobian_Matrix_ = Jacobian_Matrix;
@@ -401,6 +402,34 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   // generate collision cost function
   generateCollisionCostFunction(OCP_problem, v, Jacobian_Matrix_, self_collision_vector.sum(), 0.0);
 
+  //--------------------------------------------------- static collision cost ------------------
+  DVector normal_vector(Jacobian_Matrix.rows());
+  normal_vector.setAll(1.0);
+
+  DVector create_expression_vec = -(normal_vector.transpose() * Jacobian_Matrix_);
+
+   Expression expression(create_expression_vec);
+   // http://doc.aldebaran.com/2-1/naoqi/motion/reflexes-collision-avoidance.html
+   expression = expression.transpose() * v + static_collision_vector.sum() * (self_collision_cost_constant_term_);
+   //  d / t , t = 1.0 / (L/n)
+
+  Function h;
+  h << expression;
+
+  DMatrix Q(1,1);
+  Q(0,0) = 1.0;
+
+  DVector ref(1);
+  ref.setAll(0.0);
+
+  // create objective function
+  OCP_problem.minimizeLSQ(Q, h, ref);
+
+  // set constraints related to collision cost
+  //OCP_problem.subjectTo(0.0 <= expression <= 5.0);
+  OCP_problem.subjectTo(expression <= 5.0);
+
+  //-----------------------------------------------------------------------------------------------------
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);
  // OCP_problem.subjectTo(AT_START, v == );

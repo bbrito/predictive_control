@@ -136,7 +136,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
         collision_matrix_[key + std::to_string(point)] = stamped;
         point = point + 1;
       }
-      /*
+
       // as usally add ball at every joint
       geometry_msgs::PoseStamped stamped;
       KDL::Frame frame;
@@ -157,7 +157,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
                             );
 
       collision_matrix_[key + std::to_string(point)] = stamped;
-      point = point + 1;*/
+      point = point + 1;
     }
     else
     {
@@ -350,6 +350,13 @@ bool StaticCollision::initializeStaticCollisionObject()
     }
   }
 
+  // visualize marker array
+  int id = 0u;
+  for (auto it = collision_matrix_.begin(); it != collision_matrix_.end(); ++it, ++id)
+  {
+    visualizeStaticCollisionVoulme(it->second);
+  }
+
   return true;
 }
 
@@ -367,15 +374,19 @@ void StaticCollision::updateStaticCollisionVolume(const std::map<std::string, ge
    }
   }
 
-  // visualize marker array
-  int id = 0u;
-  for (auto it = collision_matrix_.begin(); it != collision_matrix_.end(); ++it, ++id)
-  {
-	  visualizeStaticCollisionVoulme(it->second);
-  }
-
   // publish
   marker_pub_.publish(marker_array_);
+
+  // compute collision cost vectors
+  computeStaticCollisionCost(collision_matrix_, robot_critical_points, predictive_configuration::minimum_collision_distance_,
+                       predictive_configuration::collision_weight_factor_);
+
+  // DEBUG
+  if (true) //predictive_configuration::activate_output_
+  {
+    ROS_WARN("===== STATIC COLLISION COST VECTOR =====");
+    std::cout << collision_cost_vector_.transpose() << std::endl;
+  }
 
 }
 
@@ -388,9 +399,9 @@ void StaticCollision::generateStaticCollisionVolume()
   stamped.header.stamp = ros::Time().now();
 
   //position of static collision object
-  stamped.pose.position.x = 1.0;
-  stamped.pose.position.y = 1.0;
-  stamped.pose.position.z = 0.0;
+  stamped.pose.position.x = 0.0;
+  stamped.pose.position.y = 0.0;
+  stamped.pose.position.z = 0.10;
 
   // orientation of static collision object
   stamped.pose.orientation.w = 1.0;
@@ -419,9 +430,9 @@ void StaticCollision::visualizeStaticCollisionVoulme(const geometry_msgs::PoseSt
   marker.color.a = 0.1;
 
   // dimension
-  marker.scale.x = 0.30;
-  marker.scale.y = 0.30;
-  marker.scale.z = 0.30;
+  marker.scale.x = 1.30;
+  marker.scale.y = 1.30;
+  marker.scale.z = 0.10;
 
   // position into world
   marker.id = 0;
@@ -464,3 +475,38 @@ void StaticCollision::createStaticFrame(const geometry_msgs::PoseStamped &stampe
   ros::spinOnce();
 }
 
+void StaticCollision::computeStaticCollisionCost(const std::map<std::string, geometry_msgs::PoseStamped> static_collision_matrix,
+                                                 const std::map<std::string, geometry_msgs::PoseStamped> robot_collision_matrix,
+                                                 const double& collision_threshold_distance,
+                                                 const double &weight_factor)
+
+{
+  collision_cost_vector_ = Eigen::VectorXd(static_collision_matrix.size());
+
+  // iterate to one by one point in collision matrix
+  int loop_counter = 0u;
+  for (auto it_out = static_collision_matrix.begin(); it_out != static_collision_matrix.end(); ++it_out, ++loop_counter)
+  {
+    double dist = 0.0;
+    for (auto it_in = robot_collision_matrix.begin(); it_in != robot_collision_matrix.end(); ++it_in)
+    {
+      // both string are not equal than execute if loop
+      if (it_out->first.find(it_in->first) == std::string::npos)
+      {
+        // logistic cost function
+        // Nonlinear Model Predictive Control for Multi-Micro Aerial Vehicle Robust Collision Avoidance
+        // https://arxiv.org/pdf/1703.01164.pdf ... equation(10)
+        ROS_ERROR(" '%s'  <---> '%s'", it_out->first.c_str(),it_in->first.c_str());
+        //dist += exp( ((collision_min_distance) -
+        //              (std::abs(getEuclideanDistance(it_out->second.pose, it_in->second.pose))) ) / weight_factor);
+        dist += exp( ((collision_threshold_distance*collision_threshold_distance) -
+                      (std::abs(CollisionRobot::getEuclideanDistance(it_out->second.pose, it_in->second.pose)) * std::abs(CollisionRobot::getEuclideanDistance(it_out->second.pose, it_in->second.pose))) ) / weight_factor);
+
+        ROS_DEBUG_STREAM("Exponential term: "<<
+                         exp(collision_threshold_distance - std::abs(CollisionRobot::getEuclideanDistance(it_out->second.pose, it_in->second.pose)) / weight_factor));
+      }
+    }
+    //store cost of each point into vector
+    collision_cost_vector_(loop_counter) = dist;
+  }
+}

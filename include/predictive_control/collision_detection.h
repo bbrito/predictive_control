@@ -232,10 +232,11 @@ public:
    * @param collision_min_distance: Minimum collision distance, below that should not go
    * @param weight_factor: convergence rate
    */
-  void computeStaticCollisionCost(const std::map<std::string, geometry_msgs::PoseStamped> collision_matrix,
-                                       const double& collision_min_distance,
-                                       const double& weight_factor
-                                       );
+  void computeStaticCollisionCost(const std::map<std::string, geometry_msgs::PoseStamped> static_collision_matrix,
+                                  const std::map<std::string, geometry_msgs::PoseStamped> robot_collision_matrix,
+                                  const double& collision_threshold_distance,
+                                  const double& weight_factor
+                                 );
 
 
   /** public data member*/

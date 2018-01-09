@@ -6,7 +6,6 @@ find_package(catkin REQUIRED COMPONENTS
     cmake_modules
     cob_control_msgs
     cob_srvs
-    #dynamic_reconfigure
     eigen_conversions
     geometry_msgs
     kdl_conversions
@@ -21,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
     trajectory_msgs
     urdf
     visualization_msgs
+    shape_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -37,13 +37,21 @@ find_package(orocos_kdl REQUIRED)
 #SET(ACADO_DIR /home/bfb-ws/ACADOtoolkit/)
 #SET(ACADO_INCLUDE_PACKAGES ${ACADO_DIR} ${ACADO_DIR}/acado ${ACADO_DIR}/external_packages)
 
+## Generate messages in the 'msg' folder
+add_message_files(
+  DIRECTORY
+    msg
+  FILES
+    CollisionObject.msg
+)
+
 ## Generate services in the 'srv' folder
-#add_service_files(
-#	DIRECTORY 
-#		srvs
-#	FILES
-#		GetFrameTrackingInfo.srv
-#)
+add_service_files(
+	DIRECTORY 
+		srv
+	FILES
+		StaticCollisionObject.srv
+)
 
 # Generate added messages and services with any dependencies listed here
 generate_messages(
@@ -52,10 +60,11 @@ generate_messages(
             geometry_msgs
             sensor_msgs
             std_msgs
+            shape_msgs
 )
 
 catkin_package(
-  CATKIN_DEPENDS cob_control_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs
+  CATKIN_DEPENDS cob_control_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs
   DEPENDS Boost CERES ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_DIRS} #${ACADO_INCLUDE_PACKAGES}
   LIBRARIES  predictive_configuration kinematic_calculations self_collision_detection predictive_trajectory_generator predictive_controller

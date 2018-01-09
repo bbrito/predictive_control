@@ -378,7 +378,7 @@ void StaticCollision::updateStaticCollisionVolume(const std::map<std::string, ge
   marker_pub_.publish(marker_array_);
 
   // compute collision cost vectors
-  computeStaticCollisionCost(collision_matrix_, robot_critical_points, 0.30,
+  computeStaticCollisionCost(collision_matrix_, robot_critical_points, 0.33,
                        predictive_configuration::collision_weight_factor_); //predictive_configuration::minimum_collision_distance_
 
   // DEBUG

@@ -32,6 +32,8 @@ bool CollisionRobot::initializeCollisionRobot()
   ros::NodeHandle nh_collisionRobot("predictive_control/collisionRobot");
   marker_pub_ = nh_collisionRobot.advertise<visualization_msgs::MarkerArray>("collision_ball", 1);
 
+  // generate static collision object into enviornment
+  generateStaticCollisionVolume();
 
   ROS_INFO("===== Collision Ball marker published with topic: ~/predictive_control/collisionRobot/collision_ball =====");
   ROS_WARN("COLLISIONROBOT INITIALIZED!!");
@@ -169,6 +171,32 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
 
 }
 
+// create collision cost for static objects
+void CollisionRobot::generateStaticCollisionVolume()
+{
+  // position and orientation
+  geometry_msgs::PoseStamped stamped;
+  stamped.header.frame_id = "box";
+  stamped.header.stamp = ros::Time().now();
+
+  //position of static collision object
+  stamped.pose.position.x = 1.0;
+  stamped.pose.position.y = 1.0;
+  stamped.pose.position.z = 0.0;
+
+  // orientation of static collision object
+  stamped.pose.orientation.w = 1.0;
+  stamped.pose.orientation.x = 0.0;
+  stamped.pose.orientation.y = 0.0;
+  stamped.pose.orientation.z = 0.0;
+
+  collision_matrix_["box"] = stamped;
+
+  // visualize static collision voulume
+  createStaticFrame(stamped, "static_collision_box");
+  visualizeStaticCollisionVoulme(stamped);
+}
+
 // generate collision around robot body
 void CollisionRobot::visualizeCollisionVolume(const geometry_msgs::PoseStamped &center,
                                               const double &radius, const uint32_t &ball_id)
@@ -199,6 +227,41 @@ void CollisionRobot::visualizeCollisionVolume(const geometry_msgs::PoseStamped &
   marker.pose.orientation.x = center.pose.orientation.x;
   marker.pose.orientation.y = center.pose.orientation.y;
   marker.pose.orientation.z = center.pose.orientation.z;
+
+  // store created marker
+  marker_array_.markers.push_back(marker);
+}
+
+
+// visualize static collision object
+void CollisionRobot::visualizeStaticCollisionVoulme(const geometry_msgs::PoseStamped &stamped)
+{
+  visualization_msgs::Marker marker;
+  marker.type = visualization_msgs::Marker::CUBE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.ns = "preview";
+
+  // texture
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.b = 0.0;
+  marker.color.a = 0.1;
+
+  // dimension
+  marker.scale.x = 0.10;
+  marker.scale.y = 0.10;
+  marker.scale.z = 0.10;
+
+  // position into world
+  marker.id = 101;
+  marker.header.frame_id = stamped.header.frame_id;
+  marker.pose.position.x = stamped.pose.position.x;
+  marker.pose.position.y = stamped.pose.position.y;
+  marker.pose.position.z = stamped.pose.position.z;
+  marker.pose.orientation.w = stamped.pose.orientation.w;
+  marker.pose.orientation.x = stamped.pose.orientation.x;
+  marker.pose.orientation.y = stamped.pose.orientation.y;
+  marker.pose.orientation.z = stamped.pose.orientation.z;
 
   // store created marker
   marker_array_.markers.push_back(marker);

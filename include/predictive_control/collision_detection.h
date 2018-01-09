@@ -202,19 +202,26 @@ public:
   ~StaticCollision();
 
   /**
-   * @brief initializeCollisionRobot: Initialize Collision Robot class
+   * @brief initializeStaticCollisionObject: Initialize Collision Robot class
    * @return true with success, else false
    */
   bool initializeStaticCollisionObject();
 
+  /**
+   * @brief updateStaticCollisionVolume: update static collision volume function at every runtime
+   * @param robot_critical_points
+   */
   void updateStaticCollisionVolume(const std::map<std::string, geometry_msgs::PoseStamped>& robot_critical_points);
 
+  /**
+   * @brief generateStaticCollisionVolume: generate static collision oject, fill collision_matrix
+   */
   void generateStaticCollisionVolume();
 
 
   /**
    * @brief visualizeStaticCollisionVoulme: visulize static collision object
-   * @param collision_object: collsion object represented by size, pose, primitive_type, operation
+   * @param stamped: collsion object represented by size, pose, primitive_type, operation
    */
   void visualizeStaticCollisionVoulme(const geometry_msgs::PoseStamped& stamped);
 

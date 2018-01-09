@@ -379,8 +379,6 @@ void StaticCollision::updateStaticCollisionVolume(const std::map<std::string, ge
 
 }
 
-
-
 // create collision cost for static objects
 void StaticCollision::generateStaticCollisionVolume()
 {

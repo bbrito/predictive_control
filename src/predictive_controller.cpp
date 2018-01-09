@@ -261,6 +261,9 @@ void predictive_control::jointStateCallBack(const sensor_msgs::JointState::Const
     // update collision ball according to joint angles
     collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
 
+    // update static collision accroding to robot critical point computed in collisionRobot class
+    static_collision_avoidance_->updateStaticCollisionVolume(collision_detect_->collision_matrix_);
+
     // Output is active, than only print joint state values
     if (pd_config_->activate_controller_node_output_)
     {

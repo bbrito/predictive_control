@@ -136,7 +136,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
         collision_matrix_[key + std::to_string(point)] = stamped;
         point = point + 1;
       }
-
+    /*
       // as usally add ball at every joint
       geometry_msgs::PoseStamped stamped;
       KDL::Frame frame;
@@ -157,7 +157,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
                             );
 
       collision_matrix_[key + std::to_string(point)] = stamped;
-      point = point + 1;
+      point = point + 1;*/
     }
     else
     {
@@ -378,8 +378,8 @@ void StaticCollision::updateStaticCollisionVolume(const std::map<std::string, ge
   marker_pub_.publish(marker_array_);
 
   // compute collision cost vectors
-  computeStaticCollisionCost(collision_matrix_, robot_critical_points, predictive_configuration::minimum_collision_distance_,
-                       predictive_configuration::collision_weight_factor_);
+  computeStaticCollisionCost(collision_matrix_, robot_critical_points, 0.30,
+                       predictive_configuration::collision_weight_factor_); //predictive_configuration::minimum_collision_distance_
 
   // DEBUG
   if (true) //predictive_configuration::activate_output_

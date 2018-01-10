@@ -136,7 +136,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
         collision_matrix_[key + std::to_string(point)] = stamped;
         point = point + 1;
       }
-      /*
+
       // as usally add ball at every joint
       geometry_msgs::PoseStamped stamped;
       KDL::Frame frame;
@@ -157,7 +157,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
                             );
 
       collision_matrix_[key + std::to_string(point)] = stamped;
-      point = point + 1;*/
+      point = point + 1;
     }
     else
     {
@@ -378,7 +378,7 @@ void StaticCollision::updateStaticCollisionVolume(const std::map<std::string, ge
   marker_pub_.publish(marker_array_);
 
   // compute collision cost vectors
-  computeStaticCollisionCost(collision_matrix_, robot_critical_points, 0.33,
+  computeStaticCollisionCost(collision_matrix_, robot_critical_points, 0.10,
                        predictive_configuration::collision_weight_factor_); //predictive_configuration::minimum_collision_distance_
 
   // DEBUG
@@ -482,7 +482,7 @@ void StaticCollision::computeStaticCollisionCost(const std::map<std::string, geo
 
 {
   collision_cost_vector_ = Eigen::VectorXd(static_collision_matrix.size());
-
+/*
   // iterate to one by one point in collision matrix
   int loop_counter = 0u;
   for (auto it_out = static_collision_matrix.begin(); it_out != static_collision_matrix.end(); ++it_out, ++loop_counter)
@@ -508,5 +508,39 @@ void StaticCollision::computeStaticCollisionCost(const std::map<std::string, geo
     }
     //store cost of each point into vector
     collision_cost_vector_(loop_counter) = dist;
+  }*/
+
+
+  int loop_counter = 0u;
+  for (auto it_out = static_collision_matrix.begin(); it_out != static_collision_matrix.end(); ++it_out, ++loop_counter)
+  {
+    double dist = 0.0;
+    for (auto it_in = robot_collision_matrix.begin(); it_in != robot_collision_matrix.end(); ++it_in)
+    {
+      // both string are not equal than execute if loop
+      if (it_out->first.find(it_in->first) == std::string::npos)
+      {
+        // penlaty + relax barrier cost function
+        dist += exp( ((collision_threshold_distance*collision_threshold_distance) - ( fabs(it_in->second.pose.position.x - ( 1.30 + 0.0)) * fabs(it_in->second.pose.position.x - ( 1.30 + 0.0)))) / 0.001);
+        dist += exp( ((collision_threshold_distance*collision_threshold_distance) - ( fabs(it_in->second.pose.position.y - ( 1.30 + 0.0)) * fabs(it_in->second.pose.position.y - ( 1.30 + 0.0)))) / 0.001);
+        dist += exp( ((collision_threshold_distance*collision_threshold_distance) - ( fabs(it_in->second.pose.position.z - ( 0.10 + 0.10)) * fabs(it_in->second.pose.position.z - ( 0.10 + 0.10)))) / 0.001);
+
+/*        // log function
+        dist += -0.01* log( collision_threshold_distance - fabs(it_in->second.pose.position.x - ( 1.30 + 0.0)));
+        double test = collision_threshold_distance - (fabs(it_in->second.pose.position.x - ( 1.30 + 0.0)) );
+        std::cout << " Log x function: " << test << std::endl;
+        std::cout << " Log x function: " << log(test) << std::endl;
+        dist += -0.01* log( collision_threshold_distance - fabs(it_in->second.pose.position.y - ( 1.30 + 0.0)));
+        std::cout << " Log y function: " << log( collision_threshold_distance) << std::endl;;
+        dist += -0.01* log( collision_threshold_distance - fabs(it_in->second.pose.position.z - ( 0.10 + 0.10)));
+        std::cout << " Log z function: " << log( collision_threshold_distance) << std::endl;*/
+      }
+    }
+    //store cost of each point into vector
+    collision_cost_vector_(loop_counter) = dist;
   }
+
+  ROS_ERROR_STREAM("=============== STATIC COLLSION DISTANCE VECRTOR ================= ");
+  std::cout << collision_cost_vector_.transpose()<< std::endl;
+
 }

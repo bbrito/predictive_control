@@ -38,6 +38,13 @@
 #include <predictive_control/collision_detection.h>
 #include <predictive_control/predictive_trajectory_generator.h>
 
+/*
+struct hold_pose
+{
+  bool hold_success_;
+  Eigen::VectorXd pose_hold_vector_;
+};*/
+
 class predictive_control
 {
   /** Managing execution of all classes of predictive control
@@ -132,6 +139,9 @@ private:
   // current end effector and goal frame pose relative to root link
   Eigen::VectorXd current_gripper_pose_;
   Eigen::VectorXd goal_gripper_pose_;
+
+  // current pose hold vector
+  //hold_pose hold_pose_;
 
   // Distance between traget frame and tracking frame relative to base link
   Eigen::VectorXd tf_traget_from_tracking_vector_;

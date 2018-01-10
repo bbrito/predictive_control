@@ -210,6 +210,22 @@ void predictive_control::runNode(const ros::TimerEvent &event)
     // publish zero controlled velocity
     publishZeroJointVelocity();
   }
+
+  /*
+  if (static_collision_avoidance_->collision_cost_vector_.sum() > 5.0)
+  {
+    ////if (!hold_pose_.hold_success_)
+    {
+      bool success = kinematic_solver_->getGripperPoseVectorFromFK(FK_Matrix_, hold_pose_.pose_hold_vector_);
+      hold_pose_.hold_success_ = success;
+    }
+
+    if ( tf_traget_from_tracking_vector_(3) < 0.0)
+    {
+      // publish zero controlled velocity
+      publishZeroJointVelocity();
+    }
+ }*/
   else
   {
     // pubish controll velocity

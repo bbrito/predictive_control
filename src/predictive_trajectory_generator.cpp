@@ -421,22 +421,14 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   DVector ref(1);
   ref.setAll(0.0);
-/*
-  if (static_collision_vector.sum() < 5.0 && static_collision_vector.sum() > 3.0)
-  {
+
   // create objective function
   OCP_problem.minimizeLSQ(Q, h, ref);
 
   // set constraints related to collision cost
   //OCP_problem.subjectTo(0.0 <= expression <= 5.0);
   OCP_problem.subjectTo(expression <= 5.0);
-  }
-  else
-  {*/
-    // generate collision cost function
-    generateCollisionCostFunction(OCP_problem, v, Jacobian_Matrix_, self_collision_vector.sum(), 0.0);
 
-  //}
   //-----------------------------------------------------------------------------------------------------
   OCP_problem.subjectTo(f);
   OCP_problem.subjectTo(-0.50 <= v <= 0.50);

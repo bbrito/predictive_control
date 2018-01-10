@@ -417,17 +417,23 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   h << expression;
 
   DMatrix Q(1,1);
-  Q(0,0) = 1.0;
+  Q(0,0) = 0.0001;
 
   DVector ref(1);
   ref.setAll(0.0);
 
-  // create objective function
-  OCP_problem.minimizeLSQ(Q, h, ref);
+  /*if (self_collision_vector.sum() >= 1000)
+  {
+    Q(0,0) = 0.001;
+  }*/
 
-  // set constraints related to collision cost
-  //OCP_problem.subjectTo(0.0 <= expression <= 5.0);
-  OCP_problem.subjectTo(expression <= 5.0);
+    // create objective function
+    //OCP_problem.minimizeLSQ(Q, h, ref);
+
+    // set constraints related to collision cost
+    //OCP_problem.subjectTo(0.0 <= expression <= 5.0);
+    //OCP_problem.subjectTo(expression <= 5.0);
+
 
   //-----------------------------------------------------------------------------------------------------
   OCP_problem.subjectTo(f);
@@ -456,12 +462,20 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   ROS_WARN("================");
   controlled_velocity.data.resize(jacobian_matrix_columns, 0.0);
 
-
+  if (static_collision_vector.sum() >= 0.15)
+  {
+    for (int i=0u; i < jacobian_matrix_columns; ++i)
+    {
+      controlled_velocity.data[i] = u(i)*0.01;
+    }
+  }
+  else
+  {
     for (int i=0u; i < jacobian_matrix_columns; ++i)
     {
       controlled_velocity.data[i] = u(i);
     }
-
+  }
  /* controlled_velocity.data[0] = u(0);
   controlled_velocity.data[1] = u(1);
   controlled_velocity.data[2] = u(2);

@@ -12,7 +12,7 @@
     <arg name="component_name" value="arm"/>
     <arg name="ipa_sim" default="true"/>
     <arg name="paused" default="false"/>
-    <arg name="sim" default="true"/>
+    <arg name="sim" default="false"/>
     <arg name="can_device" default="can0"/>
     <arg name="interval_ms" default="10"/>
     <arg name="use_external_sync" default="false"/>
@@ -24,7 +24,7 @@
     <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find schunk_lwa4p_extended)/urdf/robot.urdf.xacro'" />
 
     <!-- push robot_description to factory and spawn robot in gazebo -->
-    <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model lwa4p_extended -z 0.01 " respawn="false" output="screen" />
+    <!--node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model lwa4p_extended -z 0.01 " respawn="false" output="screen" /-->
 
     <!-- joint state publisher -->
     <node ns="arm" name="joint_states_relay" pkg="topic_tools" type="relay" args="joint_states /joint_states" cwd="node" respawn="true" output="screen"/>
@@ -92,6 +92,5 @@
 
     <!-- configured rviz -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find predictive_control)/rviz_config/test_description.rviz" />
-
 
 </launch>

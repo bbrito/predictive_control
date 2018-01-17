@@ -27,10 +27,53 @@
 
 // kdl,urdf includes
 #include <urdf/model.h>
+#include <kdl/chain.hpp>
 #include <kdl_parser/kdl_parser.hpp>
 
 // predictive includes
 #include <predictive_control/predictive_configuration.h>
+
+class SelfCollision
+{
+public:
+  SelfCollision();
+  ~SelfCollision();
+
+  bool initialize(const predictive_configuration& pd_config_param);
+
+private:
+
+  predictive_configuration pd_config_;
+
+  urdf::Model model_;
+
+  std::vector<double> ball_major_axis_;
+  //Eigen::VectorXd ball_major_axis_;
+
+  std::vector<Eigen::VectorXd> distance_vector_;
+
+  /**
+   * @brief transformKDLToEigenMatrix: transform KDL Frame to Eigen Matrix
+   * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
+   * @param matrix transformation matrix
+   */
+  void transformURDFToEigenVector(const urdf::Pose &pose,
+                                  Eigen::VectorXd& vector
+                                  );
+
+  /**
+   * @brief transformEigenMatrixToKDL: transform Eigen Matrix to KDL Frame
+   * @param matrix transformation matrix
+   * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
+   */
+  void transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix,
+                                 KDL::Frame& frame
+                                 );
+
+};
+
+
+//------------------------------------------------------------------------------------------------------------------------------
 
 class CollisionRobot: public predictive_configuration
 {

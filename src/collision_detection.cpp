@@ -1,6 +1,118 @@
 
 #include <predictive_control/collision_detection.h>
 
+
+SelfCollision::SelfCollision()
+{
+  ;
+}
+
+SelfCollision::~SelfCollision()
+{
+  ;
+}
+
+bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
+{
+  if (!pd_config_param.initialize_success_)
+  {
+    ROS_ERROR("SelfCollision::initialize: Failed because of uninitialization of predictive configuration");
+    return false;
+  }
+
+  pd_config_ = pd_config_param;
+
+
+  if (!model_.initParam("/robot_description"))
+  {
+    ROS_ERROR(" SelfCollision::initialize: Failed to parse urdf file");
+    return false;
+  }
+
+  KDL::Tree tree;
+  if (kdl_parser::treeFromUrdfModel(model_, tree))
+  {
+     ROS_ERROR("SelfCollision::initialize: Failed to construct kdl tree");
+     return false;
+  }
+
+  int segments = tree.getNrOfSegments(); //chain_.getNrOfSegments();
+  distance_vector_.resize(segments, Eigen::VectorXd(6));
+
+  std::map< std::string, boost::shared_ptr<urdf::Joint> > joints_ = model_.joints_;
+
+  if (pd_config_.activate_output_)
+  {
+    for (auto it = joints_.begin(); it != joints_.end(); ++it)
+    {
+      std::cout<<"\033[95m"<<"________________________"<< it->first <<"___________________"<<"\033[36;0m"<<std::endl;
+    }
+  }
+
+  int i = 0u;
+  for (auto it = joints_.begin(); it != joints_.end(); ++it, ++i)
+  {
+    /// convert kdl frame to eigen vector, give tranformation matrix between two concecutive frame
+    //ROS_INFO("%f, %f, %f",it->second->parent_to_joint_origin_transform.position.x,it->second->parent_to_joint_origin_transform.position.y,it->second->parent_to_joint_origin_transform.position.z);
+    transformURDFToEigenVector( it->second->parent_to_joint_origin_transform , distance_vector_[i]);
+  }
+
+  if (pd_config_.activate_output_)
+  {
+    ROS_WARN("===== TRANSFORMATION MATRIX =====");
+    int i = 0u;
+    for (auto it = joints_.begin(); it != joints_.end(); ++it, ++i)
+    {
+      std::cout<<"\033[36;1m" << it->first <<"\033[36;0m"<<std::endl;
+      std::cout << distance_vector_.at(i) << std::endl;
+    }
+  }
+  ROS_WARN("SelfCollision::initialize: SUCCESSED!!!");
+  return true;
+}
+
+//convert KDL to Eigen matrix
+void SelfCollision::transformURDFToEigenVector(const urdf::Pose &pose, Eigen::VectorXd& vector)
+{
+  // 3 position and 3 rotation called rpy
+  //vector.resize(6, 0.0);
+
+  double shift_dist = pose.position.z / 2.0;
+  ball_major_axis_.push_back(shift_dist);
+
+  // position
+  vector(0) = pose.position.x;
+  vector(1) = pose.position.y;
+  vector(2) = shift_dist;  // shift to center
+
+  // rotation
+  double roll, pitch, yaw;
+  pose.rotation.getRPY(roll, pitch, yaw);
+  vector(3) = roll;
+  vector(4) = pitch;
+  vector(5) = yaw;
+
+}
+
+//convert Eigen matrix to KDL::Frame
+void SelfCollision::transformEigenMatrixToKDL(const Eigen::MatrixXd& matrix, KDL::Frame& frame)
+{
+  // translation
+  for (unsigned int i = 0; i < 3; ++i)
+  {
+    frame.p[i] = matrix(i, 3);
+  }
+
+  // rotation matrix
+  for (unsigned int i = 0; i < 9; ++i)
+  {
+    frame.M.data[i] = matrix(i/3, i%3);
+  }
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------ Collision Robot ----------------------------------------------------
+
 CollisionRobot::CollisionRobot()
 {
 ;

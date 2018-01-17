@@ -91,11 +91,11 @@
         <node pkg="cob_frame_tracker" type="interactive_frame_target_node" name="interactive_target" cwd="node" respawn="false" output="screen"/>
         
         <node pkg="cob_obstacle_distance" type="cob_obstacle_distance" name="obstacle_distance" cwd="node" respawn="false" output="screen"/>
-		
-		<node if="$(arg debug_config_parameter)" pkg="predictive_control" type="predictive_configuration_test" name="predictive_configuration_test" cwd="node" respawn="false" output="screen"/>
+
+        <node if="$(arg debug_config_parameter)" pkg="predictive_control" type="predictive_configuration_test" name="predictive_configuration_test" cwd="node" respawn="false" output="screen"/>
         <node if="$(arg debug_kinematic_cal)" pkg="predictive_control" type="kinematic_calculations_test" name="kinematic_calculations_test" cwd="node" respawn="false" output="screen"/>
         <node if="$(arg debug_collision_detection)" pkg="predictive_control" type="collision_detection_test" name="collision_detection_test" cwd="node" respawn="false" output="screen"/>
-		
+
     </group>
 
     <!-- configured rviz -->

@@ -36,12 +36,27 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
      return false;
   }
 
+  // construct chain using tree inforamtion. Note: make sure chain root link or chain base link
+  tree.getChain( pd_config_.chain_root_link_, pd_config_.chain_tip_link_, chain);
+  if (chain.getNrOfJoints() == 0 || chain.getNrOfSegments() == 0)
+  {
+    ROS_ERROR("Failed to initialize kinematic chain");
+    return false;
+  }
+
   // get joint information from urdf model
   joints_ = model_.joints_;
 
   segments = tree.getNrOfSegments(); //chain_.getNrOfSegments();
   std::cout<<"\033[32m"<<"________________________"<< segments <<"___________________"<<"\033[36;0m"<<std::endl;
   distance_vector_.resize(segments, Eigen::VectorXd(7));
+
+  axis.resize(segments);
+  types_.resize(segments);
+  model_joint_names.resize(segments);
+  chain_joint_names.resize(chain.getNrOfSegments());
+  //Transformation_Matrix_.resize(segments, Eigen::Matrix4d::Identity()); used push back careful
+  FK_Homogenous_Matrix_.resize(segments, Eigen::Matrix4d::Identity());
 
   initializeDataMember(model_);
 
@@ -51,7 +66,7 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
 
 void SelfCollision::initializeDataMember(const urdf::Model& model)
 {
-
+  // becare ful with index i as set zero before reuse
   int i = 0u;
 
   // DEBUG
@@ -66,25 +81,39 @@ void SelfCollision::initializeDataMember(const urdf::Model& model)
 
   //joint type
   i = 0u;
-  types_.resize(segments);
   for (auto it = joints_.begin(); it != joints_.end(); ++it, ++i)
   {
 	  types_[i] = model.getJoint(it->first)->type;
   }
 
-  // DEBUG
-  /*if (pd_config_.activate_output_)
+  // chain joint name
+  i = 0u;
+  for (int i = 0u; i < chain.getNrOfSegments(); ++i)
   {
-	ROS_INFO("=========== JOINT TYPE ============");
-    for (auto it = types_.begin(); it != types_.end(); ++it)
-    {
-      std::cout<<"\033[20m"<< it->transpose() <<"\033[36;0m"<<std::endl;
-    }
-  }*/
+	  chain_joint_names[i] = (chain.getSegment(i).getJoint().getName());
+  }
+
+  // model joint names
+  i = 0u;
+  for (auto it = joints_.begin(); it != joints_.end(); ++it, ++i)
+  {
+	  model_joint_names[i] = it->first;
+  }
+
+  // DEBUG
+  if (pd_config_.activate_output_)
+  {
+	  ROS_WARN("======== MODEL JOINT NAMES ============");
+	  for (auto it = model_joint_names.begin(); it != model_joint_names.end(); ++it)
+		  ROS_INFO("%s", it->c_str());
+
+	  ROS_WARN("======== CHAIN JOINT NAMES ============");
+	  for (auto it = chain_joint_names.begin(); it != chain_joint_names.end(); ++it)
+		  ROS_INFO("%s", it->c_str());
+  }
 
   // set axis of joint rotation
   i = 0u;
-  axis.resize(segments);
   for (auto it = joints_.begin(); it != joints_.end(); ++it, ++i)
   {
     axis[i](0) = model.getJoint(it->first).get()->axis.x;
@@ -106,15 +135,8 @@ void SelfCollision::initializeDataMember(const urdf::Model& model)
   Eigen::MatrixXd transformation_matrix_lcl = Eigen::Matrix4d::Identity();
   for (auto it = joints_.begin(); it != joints_.end(); ++it)
   {
-    // if the any of position is more than distance threasold than take into consideration
-    if ( it->second->parent_to_joint_origin_transform.position.x > pd_config_.minimum_collision_distance_ ||
-        it->second->parent_to_joint_origin_transform.position.y > pd_config_.minimum_collision_distance_ ||
-        it->second->parent_to_joint_origin_transform.position.z > pd_config_.minimum_collision_distance_)
-    {
-      ROS_WARN("Add %s into collision matrix", it->first.c_str());
       transformURDFToEigenMatrix( it->second->parent_to_joint_origin_transform , transformation_matrix_lcl);
       Transformation_Matrix_.push_back(transformation_matrix_lcl);
-    }
   }
 
     // DEBUG
@@ -130,7 +152,74 @@ void SelfCollision::initializeDataMember(const urdf::Model& model)
 
 }
 
+void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
+{
 
+  // first compute fk matrix than generate collision volume
+  calculateForwardKinematics(joints_angle);
+
+  generateCollisionVolume(FK_Homogenous_Matrix_, Transformation_Matrix_);
+
+  Eigen::Vector3d ball_rad;
+  ball_rad(0) = 0.15;
+  ball_rad(1) = 0.15;
+  ball_rad(2) = 0.15;
+
+  // visualize marker array
+  int i = 0u;
+	for (auto  it_fk = collision_fk_matrix_.begin();
+			it_fk != collision_fk_matrix_.end(); it_fk++, ++i)
+	{
+		 	 KDL::Frame frame;
+			transformEigenMatrixToKDL(*it_fk, frame);
+			geometry_msgs::PoseStamped stamped;
+	        // fill up pose stamped
+	        stamped.header.frame_id = pd_config_.chain_base_link_;
+	        stamped.header.stamp = ros::Time().now();
+	        stamped.pose.position.x = frame.p.x();
+	        stamped.pose.position.y = frame.p.y();
+	        stamped.pose.position.z = frame.p.z();
+	        frame.M.GetQuaternion(stamped.pose.orientation.x,
+	                              stamped.pose.orientation.y,
+	                              stamped.pose.orientation.z,
+	                              stamped.pose.orientation.w
+	                              );
+
+	        visualizeCollisionVolume(stamped, ball_rad, i);
+	}
+
+  // publish
+  marker_pub_.publish(marker_array_);
+
+
+}
+
+// create collision detection, specifically center position of collision matrix
+void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix,
+                                             const std::vector<Eigen::MatrixXd> &Transformation_Matrix)
+{
+
+	// make sure it clear before reuse
+	collision_fk_matrix_.clear();
+	collision_trans_matrix_.clear();
+
+	for (int i= 0u; i <Transformation_Matrix.size() && FK_Homogenous_Matrix.size(); ++i)
+/*	for (auto it = Transformation_Matrix.begin(), it_fk = FK_Homogenous_Matrix.begin();
+			it != Transformation_Matrix.end(), it_fk != FK_Homogenous_Matrix.end(); ++it, it_fk++)*/
+	{
+		// checking distance is more than min threasold than take into account otherwise ignore it
+		if ( Transformation_Matrix[i](0,3) < pd_config_.minimum_collision_distance_ ||
+				Transformation_Matrix[i](1,3) < pd_config_.minimum_collision_distance_ ||
+				Transformation_Matrix[i](2,3) < pd_config_.minimum_collision_distance_)
+		{
+			collision_trans_matrix_.push_back(Transformation_Matrix[i]);
+			collision_fk_matrix_.push_back(FK_Homogenous_Matrix[i]);
+
+		}
+	}
+}
+
+/*
 // generate collision around robot body
 void SelfCollision::visualizeCollisionVolume(const Eigen::VectorXd& center,
                                              const Eigen::VectorXd &radius,
@@ -168,8 +257,42 @@ void SelfCollision::visualizeCollisionVolume(const Eigen::VectorXd& center,
   // store created marker
   marker_array_.markers.push_back(marker);
 }
+*/
+void SelfCollision::visualizeCollisionVolume(const geometry_msgs::PoseStamped &center,
+											 const Eigen::Vector3d &radius,
+                                             const uint32_t &ball_id)
+{
+  visualization_msgs::Marker marker;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.ns = "preview";
 
-/*
+  // texture
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.b = 0.0;
+  marker.color.a = 0.1;
+
+  // dimension
+  marker.scale.x = 2.0 * radius(0);
+  marker.scale.y = 2.0 * radius(1);
+  marker.scale.z = 2.0 * radius(2);
+
+  // position into world
+  marker.id = ball_id;
+  marker.header.frame_id = center.header.frame_id;
+  marker.pose.position.x = center.pose.position.x;
+  marker.pose.position.y = center.pose.position.y;
+  marker.pose.position.z = center.pose.position.z;
+  marker.pose.orientation.w = center.pose.orientation.w;
+  marker.pose.orientation.x = center.pose.orientation.x;
+  marker.pose.orientation.y = center.pose.orientation.y;
+  marker.pose.orientation.z = center.pose.orientation.z;
+
+  // store created marker
+  marker_array_.markers.push_back(marker);
+}
+
 // generate rotation matrix using joint angle and axis of rotation
 /// Note: if angle value has less floating point accuracy than gives wrong answers like wrong 1.57, correct 1.57079632679.
 void SelfCollision::generateTransformationMatrixFromJointValues(const unsigned int& current_segment_id, const double &joint_value, Eigen::MatrixXd &trans_matrix)
@@ -204,10 +327,9 @@ void SelfCollision::generateTransformationMatrixFromJointValues(const unsigned i
 }
 
 // calculate end effector pose using joint angles
-void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_angle, Eigen::MatrixXd& FK_Matrix)
+void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_angle)
 {
   // initialize local member and parameters
-  FK_Matrix = Eigen::Matrix4d::Identity();
   Eigen::MatrixXd till_joint_FK_Matrix = Eigen::Matrix4d::Identity();
   Eigen::MatrixXd dummy_RotTrans_Matrix = Eigen::Matrix4d::Identity();
 
@@ -216,50 +338,52 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
   //ROS_INFO_STREAM(joints_angle.transpose());
 
   // compute tf transformation between root frame and base link of manipulator
-  if (predictive_configuration::chain_root_link_ != predictive_configuration::chain_base_link_)
+  if (pd_config_.chain_root_link_ != pd_config_.chain_base_link_)
   {
     ROS_WARN("'%s' and '%s' are not same frame", pd_config_.chain_root_link_.c_str(), pd_config_.chain_base_link_.c_str());
   }
 
   // segments - degree_of_freedom_ gives information about fixed frame
-  for (int i = 0u, revolute_joint_number = 0u; i < segments; ++i) //(segments_- degree_of_freedom_)
+  for (int i = 0u, j = 0u, revolute_joint_number = 0u; i < segments; ++i) //(segments_- degree_of_freedom_)
   {
-    // revolute joints update
-    if (types_(i) == 0)
-    {
-      generateTransformationMatrixFromJointValues(revolute_joint_number, joints_angle(revolute_joint_number), dummy_RotTrans_Matrix);
-      till_joint_FK_Matrix = till_joint_FK_Matrix * ( Transformation_Matrix_[i] * dummy_RotTrans_Matrix);
-      FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
-      ++revolute_joint_number;
-    }
+	// whole joint matches chain joint name than execute if loop
+	if (chain_joint_names.at(j) == model_joint_names.at(i))
+	{
+		// revolute joints update
+		if (types_(i) == 0)
+		{
+		  generateTransformationMatrixFromJointValues(revolute_joint_number, joints_angle(revolute_joint_number), dummy_RotTrans_Matrix);
+		  till_joint_FK_Matrix = till_joint_FK_Matrix * ( Transformation_Matrix_[i] * dummy_RotTrans_Matrix);
+		  FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
+		  ++revolute_joint_number;
+		}
 
-    // fixed joints update
-    if (chain.getSegment(i).getJoint().getType() == 8)
-    {
-      ROS_INFO("calculateForwardKinematics: Fixed Joint");
-      till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[i];
-      FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
-    }
+		// fixed joints update
+		if (types_(i) == 8)
+		{
+		  ROS_INFO("calculateForwardKinematics: Fixed Joint");
+		  till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[i];
+		  FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
+		}
 
-    //////
-    else  // presmatic joint
-    {
-      std::cout<<"\033[36;1m" << chain.getSegment(i).getName() <<"\033[36;0m"<<std::endl;
-      till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[i];
-      FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
-    }////
+		//////
+		else  // presmatic joint
+		{
+		  //std::cout<<"\033[36;1m" << chain.getSegment(i).getName() <<"\033[36;0m"<<std::endl;
+		  till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[i];
+		  FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
+		}////
+		j = j + 1;
+	}
   }
 
   // take last segment value that is FK Matrix
-  FK_Matrix = FK_Homogenous_Matrix_[segments_-1];
-
-  if (predictive_configuration::activate_output_)
+  if (pd_config_.activate_output_)
   {
     ROS_WARN("===== FORWARD KINEMATICS MATRIX =======");
-    std::cout << FK_Matrix << std::endl;
+    std::cout << FK_Homogenous_Matrix_[segments-1] << std::endl;
   }
 }
-*/
 
 
 //convert KDL to Eigen matrix

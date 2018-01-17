@@ -42,14 +42,23 @@ public:
 
   bool initialize(const predictive_configuration& pd_config_param);
 
-  void visualizeCollisionVolume(const Eigen::VectorXd& center,
+  /*void visualizeCollisionVolume(const Eigen::VectorXd& center,
                                 const Eigen::VectorXd& radius,
                                 const std::string& header_frame_id,
                                 const uint32_t &ball_id
                                 );
+*/
+
+  void visualizeCollisionVolume(const geometry_msgs::PoseStamped &center,
+		  	  	  	  	  	  	const Eigen::Vector3d &radius,
+                                               const uint32_t &ball_id);
 
   visualization_msgs::MarkerArray marker_array_;
 
+  void updateCollisionVolume(const Eigen::VectorXd& joints_angle);
+
+  void generateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix,
+          	  	  	  	  	  const std::vector<Eigen::MatrixXd> &Transformation_Matrix);
 
 private:
 
@@ -65,13 +74,20 @@ private:
   // Forward kinematic matrix from root link till current link
   std::vector<Eigen::MatrixXd> FK_Homogenous_Matrix_;
 
+  // Forward kinematic matrix represent end effector position relative to root_link
+  Eigen::MatrixXd FK_Matrix_;
+
   //std::map<std::string, std::string> types;
-  std::map<std::string, Eigen::VectorXd> collision_matrix_;
+  std::vector<Eigen::MatrixXd> collision_fk_matrix_;
+  std::vector<Eigen::MatrixXd> collision_trans_matrix_;
   Eigen::VectorXi types_;
+  std::vector<std::string> chain_joint_names;
+  std::vector<std::string> model_joint_names;
 
   predictive_configuration pd_config_;
 
   urdf::Model model_;
+  KDL::Chain chain;
 
   int segments;
 
@@ -89,13 +105,14 @@ private:
 
   void initializeDataMember(const urdf::Model& model);
 
+
+
   /**
    * @brief calculateForwardKinematics: Calculate forward kinematics start from root frame to tip link of manipulator
    * @param joints_angle: Current joint angle
    * @param FK_Matrix: Resultant Forward Kinematic Matrix
    */
-  void calculateForwardKinematics(const Eigen::VectorXd& joints_angle,
-                                  Eigen::MatrixXd& FK_Matrix
+  void calculateForwardKinematics(const Eigen::VectorXd& joints_angle
                                   );
 
   /**

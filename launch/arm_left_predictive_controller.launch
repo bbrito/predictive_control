@@ -9,10 +9,10 @@
     <arg name="robot_env" default="empty"/>
     <arg name="enable_gazebo_gui" default="false"/>
     <arg name="pkg_hardware_config" default="$(find cob_hardware_config)"/>
-    <arg name="component_name" value="arm_left"/>
-    <arg name="debug_config_parameter" value="false"/>
-    <arg name="debug_kinematic_cal" value="false"/>
-    <arg name="debug_collision_detection" value="false"/>
+    <arg name="component_name" default="arm_left"/>
+    <arg name="debug_config_parameter" default="false"/>
+    <arg name="debug_kinematic_cal" default="false"/>
+    <arg name="debug_collision_detection" default="false"/>
 
     <!-- Simulation -->
     <include file="$(find cob_bringup_sim)/launch/robot.launch">

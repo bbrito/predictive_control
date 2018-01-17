@@ -41,16 +41,71 @@ public:
 
   bool initialize(const predictive_configuration& pd_config_param);
 
+  void visualizeCollisionVolume(const Eigen::VectorXd& center,
+                                const Eigen::VectorXd& radius,
+                                const std::string& header_frame_id,
+                                const uint32_t &ball_id
+                                );
+
+  visualization_msgs::MarkerArray marker_array_;
+
+
 private:
+
+  // marker publisher
+  ros::Publisher marker_pub_;
+
+  std::map< std::string, boost::shared_ptr<urdf::Joint> > joints_;
+
+  // collision matrix
+  // transformation matrix between two concecutive frame
+  std::vector<Eigen::MatrixXd> Transformation_Matrix_;
+
+  std::map<std::string, Eigen::VectorXd> FK_matrix_;
+  std::map<std::string, std::string> types;
+  std::map<std::string, Eigen::VectorXd> collision_matrix_;
 
   predictive_configuration pd_config_;
 
   urdf::Model model_;
 
+  int segments;
+
+  // Axis of Joints
+  std::vector<Eigen::Vector3i> axis;
+
+  // joint names
+  Eigen::VectorXd joint_names_;
+
   std::vector<double> ball_major_axis_;
   //Eigen::VectorXd ball_major_axis_;
 
   std::vector<Eigen::VectorXd> distance_vector_;
+
+
+  void initializeDataMember(const urdf::Model& model);
+
+  /**
+   * @brief calculateForwardKinematics: Calculate forward kinematics start from root frame to tip link of manipulator
+   * @param joints_angle: Current joint angle
+   * @param FK_Matrix: Resultant Forward Kinematic Matrix
+   */
+  void calculateForwardKinematics(const Eigen::VectorXd& joints_angle,
+                                  Eigen::MatrixXd& FK_Matrix
+                                  );
+
+  /**
+   * @brief generateTransformationMatrixFromJointValues: Generate transformation matrix used for computing forward kinematics,
+   *                                                     make it easy for multiplication create transformation matrix
+   * @param joint_value: Joint angle
+   * @param trans_matrix: Resultant transformation matrix
+   */
+  void generateTransformationMatrixFromJointValues(const unsigned int& current_segment_id,
+                                                   const double& joint_value,
+                                                   Eigen::MatrixXd& trans_matrix
+                                                   );
+
+
 
   /**
    * @brief transformKDLToEigenMatrix: transform KDL Frame to Eigen Matrix

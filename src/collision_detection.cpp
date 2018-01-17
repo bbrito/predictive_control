@@ -30,7 +30,7 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
   }
 
   KDL::Tree tree;
-  if (kdl_parser::treeFromUrdfModel(model_, tree))
+  if (!kdl_parser::treeFromUrdfModel(model_, tree)) //kdl_parser::treeFromParam("/robot_description", tree)) //
   {
      ROS_ERROR("SelfCollision::initialize: Failed to construct kdl tree");
      return false;
@@ -40,6 +40,7 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
   joints_ = model_.joints_;
 
   segments = tree.getNrOfSegments(); //chain_.getNrOfSegments();
+  std::cout<<"\033[32m"<<"________________________"<< segments <<"___________________"<<"\033[36;0m"<<std::endl;
   distance_vector_.resize(segments, Eigen::VectorXd(7));
 
   initializeDataMember(model_);
@@ -62,34 +63,48 @@ void SelfCollision::initializeDataMember(const urdf::Model& model)
     }
   }
 
-  // set axis of joint type
+
+  //joint type
+  i = 0u;
+  types_.resize(segments);
   for (auto it = joints_.begin(); it != joints_.end(); ++it, ++i)
   {
-    types[it->first]  = model.getJoint(it->first)->type;
+	  types_[i] = model.getJoint(it->first)->type;
   }
 
+  // DEBUG
+  /*if (pd_config_.activate_output_)
+  {
+	ROS_INFO("=========== JOINT TYPE ============");
+    for (auto it = types_.begin(); it != types_.end(); ++it)
+    {
+      std::cout<<"\033[20m"<< it->transpose() <<"\033[36;0m"<<std::endl;
+    }
+  }*/
+
   // set axis of joint rotation
+  i = 0u;
   axis.resize(segments);
   for (auto it = joints_.begin(); it != joints_.end(); ++it, ++i)
   {
-    axis[i](0) = model.getJoint(it->first)->axis.x;
-    axis[i](1) = model.getJoint(it->first)->axis.y;
-    axis[i](2) = model.getJoint(it->first)->axis.z;
+    axis[i](0) = model.getJoint(it->first).get()->axis.x;
+    axis[i](1) = model.getJoint(it->first).get()->axis.y;
+    axis[i](2) = model.getJoint(it->first).get()->axis.z;
   }
 
   // DEBUG
   if (pd_config_.activate_output_)
   {
+	ROS_INFO("=========== JOINT AXIS ============");
     for (auto it = axis.begin(); it != axis.end(); ++it)
     {
-      std::cout<<"\033[95m"<<"__"<< *it <<"__"<<"\033[36;0m"<<std::endl;
+      std::cout<<"\033[20m"<< it->transpose() <<"\033[36;0m"<<std::endl;
     }
   }
 
   // get collision matrix reference to root link in other word, transformation matrix
-  i = 0u;
-  Transformation_Matrix_.resize(segments);
-  for (auto it = joints_.begin(); it != joints_.end(); ++it, ++i)
+  Eigen::MatrixXd transformation_matrix_lcl = Eigen::Matrix4d::Identity();
+  for (auto it = joints_.begin(); it != joints_.end(); ++it)
   {
     // if the any of position is more than distance threasold than take into consideration
     if ( it->second->parent_to_joint_origin_transform.position.x > pd_config_.minimum_collision_distance_ ||
@@ -97,19 +112,18 @@ void SelfCollision::initializeDataMember(const urdf::Model& model)
         it->second->parent_to_joint_origin_transform.position.z > pd_config_.minimum_collision_distance_)
     {
       ROS_WARN("Add %s into collision matrix", it->first.c_str());
-      transformURDFToEigenVector( it->second->parent_to_joint_origin_transform , transformation_matrix_[it->first]);
+      transformURDFToEigenMatrix( it->second->parent_to_joint_origin_transform , transformation_matrix_lcl);
+      Transformation_Matrix_.push_back(transformation_matrix_lcl);
     }
   }
 
     // DEBUG
   if (pd_config_.activate_output_)
   {
-    ROS_WARN("===== COLLISION MATRIX =====");
-    i = 0u;
-    for (auto it = joints_.begin(); it != joints_.end(); ++it, ++i)
+    ROS_WARN("===== TRANSFORMATION MATRIX =====");
+    for (auto it = Transformation_Matrix_.begin(); it != Transformation_Matrix_.end(); ++it)
     {
-      std::cout<<"\033[36;1m" << it->first <<"\033[36;0m"<<std::endl;
-      std::cout << transformation_matrix_[it->first] << std::endl;
+      std::cout << *it << std::endl;
       //std::cout << distance_vector_.at(i) << std::endl;
     }
   }
@@ -155,6 +169,7 @@ void SelfCollision::visualizeCollisionVolume(const Eigen::VectorXd& center,
   marker_array_.markers.push_back(marker);
 }
 
+/*
 // generate rotation matrix using joint angle and axis of rotation
 /// Note: if angle value has less floating point accuracy than gives wrong answers like wrong 1.57, correct 1.57079632679.
 void SelfCollision::generateTransformationMatrixFromJointValues(const unsigned int& current_segment_id, const double &joint_value, Eigen::MatrixXd &trans_matrix)
@@ -210,7 +225,7 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
   for (int i = 0u, revolute_joint_number = 0u; i < segments; ++i) //(segments_- degree_of_freedom_)
   {
     // revolute joints update
-    if (types(i) == 0)
+    if (types_(i) == 0)
     {
       generateTransformationMatrixFromJointValues(revolute_joint_number, joints_angle(revolute_joint_number), dummy_RotTrans_Matrix);
       till_joint_FK_Matrix = till_joint_FK_Matrix * ( Transformation_Matrix_[i] * dummy_RotTrans_Matrix);
@@ -226,13 +241,13 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
       FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
     }
 
-    /*
+    //////
     else  // presmatic joint
     {
       std::cout<<"\033[36;1m" << chain.getSegment(i).getName() <<"\033[36;0m"<<std::endl;
       till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[i];
       FK_Homogenous_Matrix_[i] = till_joint_FK_Matrix;
-    }*/
+    }////
   }
 
   // take last segment value that is FK Matrix
@@ -244,28 +259,38 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
     std::cout << FK_Matrix << std::endl;
   }
 }
-
+*/
 
 
 //convert KDL to Eigen matrix
-void SelfCollision::transformURDFToEigenVector(const urdf::Pose &pose, Eigen::VectorXd& vector)
+void SelfCollision::transformURDFToEigenMatrix(const urdf::Pose &pose, Eigen::MatrixXd& matrix)
 {
   // 3 position and 3 rotation called rpy
-  //vector.resize(6, 0.0);
+  matrix = Eigen::Matrix4d::Identity();
 
   double shift_dist = pose.position.z / 2.0;
   ball_major_axis_.push_back(shift_dist);
 
-  // position
-  vector(0) = pose.position.x;
-  vector(1) = pose.position.y;
-  vector(2) = shift_dist;  // shift to center
+  //tf::Quaternion quat;
+  geometry_msgs::Quaternion quat;
+  quat.w = pose.rotation.w;
+  quat.x = pose.rotation.x;
+  quat.y = pose.rotation.y;
+  quat.z = pose.rotation.z;
 
-  // rotation
-  vector(3) = pose.rotation.w;
-  vector(4) = pose.rotation.x;
-  vector(5) = pose.rotation.y;
-  vector(6) = pose.rotation.z;
+  //tf::Matrix3x3 mat(quat);
+  KDL::Rotation rot;
+  tf::quaternionMsgToKDL(quat, rot);
+
+  matrix(0,0) = rot(0,0);	  matrix(0,1) = rot(0,1);	  matrix(0,2) = rot(0,2);	  matrix(0,3) = pose.position.x;
+  matrix(1,0) = rot(1,0);	  matrix(1,1) = rot(1,1);	  matrix(1,2) = rot(1,2);	  matrix(1,3) = pose.position.y;
+  matrix(2,0) = rot(2,0);	  matrix(2,1) = rot(2,1);	  matrix(2,2) = rot(2,2);	  matrix(2,3) = shift_dist; //pose.position.z;
+  matrix(3,0) = 0;	  matrix(3,1) = 0;	  matrix(3,2) = 0;	  matrix(3,3) = 1;
+
+  if (pd_config_.activate_output_)
+  {
+	  std::cout << matrix << std::endl;
+  }
 
 }
 

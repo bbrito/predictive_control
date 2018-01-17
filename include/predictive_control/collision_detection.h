@@ -28,6 +28,7 @@
 // kdl,urdf includes
 #include <urdf/model.h>
 #include <kdl/chain.hpp>
+#include <kdl_conversions/kdl_msg.h>
 #include <kdl_parser/kdl_parser.hpp>
 
 // predictive includes
@@ -61,9 +62,12 @@ private:
   // transformation matrix between two concecutive frame
   std::vector<Eigen::MatrixXd> Transformation_Matrix_;
 
-  std::map<std::string, Eigen::VectorXd> FK_matrix_;
-  std::map<std::string, std::string> types;
+  // Forward kinematic matrix from root link till current link
+  std::vector<Eigen::MatrixXd> FK_Homogenous_Matrix_;
+
+  //std::map<std::string, std::string> types;
   std::map<std::string, Eigen::VectorXd> collision_matrix_;
+  Eigen::VectorXi types_;
 
   predictive_configuration pd_config_;
 
@@ -112,8 +116,8 @@ private:
    * @param frame KDL::Frame which containts Rotation Matrix and Traslation vector
    * @param matrix transformation matrix
    */
-  void transformURDFToEigenVector(const urdf::Pose &pose,
-                                  Eigen::VectorXd& vector
+  void transformURDFToEigenMatrix(const urdf::Pose &pose,
+                                  Eigen::MatrixXd& matrix
                                   );
 
   /**

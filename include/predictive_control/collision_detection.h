@@ -54,12 +54,12 @@ public:
 
   bool initialize(const predictive_configuration& pd_config_param);
 
-  /*void visualizeCollisionVolume(const Eigen::VectorXd& center,
+  void visualizeCollisionVolume(const Eigen::VectorXd& center,
                                 const Eigen::VectorXd& radius,
                                 const std::string& header_frame_id,
                                 const uint32_t &ball_id
                                 );
-*/
+
 
   void visualizeCollisionVolume(const geometry_msgs::PoseStamped &center,
                                 const Eigen::Vector3d &radius,
@@ -72,6 +72,31 @@ public:
 
   void generateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix,
           	  	  	  	  	  const std::vector<Eigen::MatrixXd> &Transformation_Matrix);
+
+
+  static inline
+  void tranformEiegnMatrixToEigenVector(const Eigen::MatrixXd& matrix, Eigen::VectorXd& vector)
+  {
+    vector = Eigen::VectorXd(7);
+
+    // create rotation matrix
+    tf::Matrix3x3 mat(matrix(0,0), matrix(0,1), matrix(0,2),
+                      matrix(1,0), matrix(1,1), matrix(1,2),
+                      matrix(2,0), matrix(2,1), matrix(2,2));
+
+    // get quaterenion from rotation matrix
+    tf::Quaternion quat;
+    mat.getRotation(quat);
+
+    // fill eigen vector
+    vector(0) = matrix(0,3);
+    vector(1) = matrix(1,3);
+    vector(2) = matrix(2,3);
+    vector(3) = quat.w();
+    vector(4) = quat.x();
+    vector(5) = quat.y();
+    vector(6) = quat.z();
+  }
 
 private:
 

@@ -174,27 +174,36 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
   ball_rad(2) = 0.15;
 
   // visualize marker array
-  int i = 0u;
-	for (auto  it_fk = collision_fk_matrix_.begin();
-			it_fk != collision_fk_matrix_.end(); it_fk++, ++i)
-	{
-		 	 KDL::Frame frame;
-			transformEigenMatrixToKDL(*it_fk, frame);
-			geometry_msgs::PoseStamped stamped;
-	        // fill up pose stamped
-	        stamped.header.frame_id = pd_config_.chain_base_link_;
-	        stamped.header.stamp = ros::Time().now();
-	        stamped.pose.position.x = frame.p.x();
-	        stamped.pose.position.y = frame.p.y();
-	        stamped.pose.position.z = frame.p.z();
-	        frame.M.GetQuaternion(stamped.pose.orientation.x,
-	                              stamped.pose.orientation.y,
-	                              stamped.pose.orientation.z,
-	                              stamped.pose.orientation.w
-	                              );
+  /*int i = 0u;
+  for (auto  it_fk = FK_Homogenous_Matrix_.begin();
+      it_fk != FK_Homogenous_Matrix_.end(); it_fk++, ++i)
+  {
+       KDL::Frame frame;
+      transformEigenMatrixToKDL(*it_fk, frame);
+      geometry_msgs::PoseStamped stamped;
+          // fill up pose stamped
+          stamped.header.frame_id = pd_config_.chain_base_link_;
+          stamped.header.stamp = ros::Time().now();
+          stamped.pose.position.x = frame.p.x();
+          stamped.pose.position.y = frame.p.y();
+          stamped.pose.position.z = frame.p.z();
+          frame.M.GetQuaternion(stamped.pose.orientation.x,
+                                stamped.pose.orientation.y,
+                                stamped.pose.orientation.z,
+                                stamped.pose.orientation.w
+                                );
 
-	        visualizeCollisionVolume(stamped, ball_rad, i);
-	}
+          visualizeCollisionVolume(stamped, ball_rad, i);
+  }*/
+  int ball_id = 0u;
+  Eigen::VectorXd vector(7);
+  for (auto  it_fk = FK_Homogenous_Matrix_.begin(); it_fk != FK_Homogenous_Matrix_.end(); it_fk++, ball_id++)
+  {
+    tranformEiegnMatrixToEigenVector(*it_fk, vector);
+    visualizeCollisionVolume(vector, ball_rad, pd_config_.chain_root_link_, ball_id);
+  }
+
+
 
   // publish
   marker_pub_.publish(marker_array_);
@@ -216,9 +225,9 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd> &
 			it != Transformation_Matrix.end(), it_fk != FK_Homogenous_Matrix.end(); ++it, it_fk++)*/
 	{
 		// checking distance is more than min threasold than take into account otherwise ignore it
-		/*if ( Transformation_Matrix_[i](0,3) > pd_config_.minimum_collision_distance_ ||
+    if ( Transformation_Matrix_[i](0,3) > pd_config_.minimum_collision_distance_ ||
 				Transformation_Matrix_[i](1,3) > pd_config_.minimum_collision_distance_ ||
-				Transformation_Matrix_[i](2,3) > pd_config_.minimum_collision_distance_)*/
+        Transformation_Matrix_[i](2,3) > pd_config_.minimum_collision_distance_)
 		{
 			collision_trans_matrix_.push_back(Transformation_Matrix[i]);
 			collision_fk_matrix_.push_back(FK_Homogenous_Matrix[i]);
@@ -228,7 +237,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd> &
 	}
 }
 
-/*
+
 // generate collision around robot body
 void SelfCollision::visualizeCollisionVolume(const Eigen::VectorXd& center,
                                              const Eigen::VectorXd &radius,
@@ -266,9 +275,9 @@ void SelfCollision::visualizeCollisionVolume(const Eigen::VectorXd& center,
   // store created marker
   marker_array_.markers.push_back(marker);
 }
-*/
+
 void SelfCollision::visualizeCollisionVolume(const geometry_msgs::PoseStamped &center,
-											 const Eigen::Vector3d &radius,
+                                              const Eigen::Vector3d &radius,
                                              const uint32_t &ball_id)
 {
   visualization_msgs::Marker marker;

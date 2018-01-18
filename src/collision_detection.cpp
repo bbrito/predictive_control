@@ -169,9 +169,14 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
   generateCollisionVolume(FK_Homogenous_Matrix_, Transformation_Matrix_);
 
   Eigen::Vector3d ball_rad;
-  ball_rad(0) = 0.15;
-  ball_rad(1) = 0.15;
-  ball_rad(2) = 0.15;
+  ball_rad(0) = 0.15; // x
+  ball_rad(1) = 0.15; //z
+  ball_rad(2) = 0.15; //
+  /*
+    ball_rad(0) = (Transformation_Matrix_.at(ball_id)(0,3)/2.0);
+    ball_rad(1) = (Transformation_Matrix_.at(ball_id)(1,3)/2.0);
+    ball_rad(2) = (Transformation_Matrix_.at(ball_id)(2,3)/2.0);
+*/
 
   // visualize marker array
   /*int i = 0u;
@@ -199,11 +204,12 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
   Eigen::VectorXd vector(7);
   for (auto  it_fk = FK_Homogenous_Matrix_.begin(); it_fk != FK_Homogenous_Matrix_.end(); it_fk++, ball_id++)
   {
+    if (ball_major_axis_.at(ball_id) >= 0.15 )
+      ball_rad(1) = ball_major_axis_.at(ball_id);
+
     tranformEiegnMatrixToEigenVector(*it_fk, vector);
     visualizeCollisionVolume(vector, ball_rad, pd_config_.chain_root_link_, ball_id);
   }
-
-
 
   // publish
   marker_pub_.publish(marker_array_);

@@ -34,6 +34,18 @@
 // predictive includes
 #include <predictive_control/predictive_configuration.h>
 
+
+enum  	{
+  UNKNOWN,
+  REVOLUTE,
+  CONTINUOUS,
+  PRISMATIC,
+  FLOATING,
+  PLANAR,
+  FIXED
+};
+
+
 class SelfCollision
 {
 public:
@@ -50,8 +62,9 @@ public:
 */
 
   void visualizeCollisionVolume(const geometry_msgs::PoseStamped &center,
-		  	  	  	  	  	  	const Eigen::Vector3d &radius,
-                                               const uint32_t &ball_id);
+                                const Eigen::Vector3d &radius,
+                                const uint32_t &ball_id
+                                );
 
   visualization_msgs::MarkerArray marker_array_;
 

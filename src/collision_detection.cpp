@@ -37,7 +37,7 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
   }
 
   // construct chain using tree inforamtion. Note: make sure chain root link or chain base link
-  tree.getChain( pd_config_.chain_root_link_, "arm_2_link", chain); //pd_config_.chain_tip_link_
+  tree.getChain( pd_config_.chain_root_link_, pd_config_.chain_tip_link_, chain); //
   if (chain.getNrOfJoints() == 0 || chain.getNrOfSegments() == 0)
   {
     ROS_ERROR("Failed to initialize kinematic chain");
@@ -369,6 +369,7 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
           generateTransformationMatrixFromJointValues(revolute_joint_number, joints_angle(revolute_joint_number), dummy_RotTrans_Matrix);
           till_joint_FK_Matrix = till_joint_FK_Matrix * ( Transformation_Matrix_[index] * dummy_RotTrans_Matrix);
           FK_Homogenous_Matrix_[index] = till_joint_FK_Matrix;
+          FK_Homogenous_Matrix_[index] -= (Transformation_Matrix_[index] / 2.0);
           ++revolute_joint_number;
 
           if (pd_config_.activate_output_)
@@ -423,7 +424,7 @@ void SelfCollision::transformURDFToEigenMatrix(const urdf::Pose &pose, Eigen::Ma
 
   matrix(0,0) = rot(0,0);	  matrix(0,1) = rot(0,1);	  matrix(0,2) = rot(0,2);	  matrix(0,3) = pose.position.x;
   matrix(1,0) = rot(1,0);	  matrix(1,1) = rot(1,1);	  matrix(1,2) = rot(1,2);	  matrix(1,3) = pose.position.y;
-  matrix(2,0) = rot(2,0);	  matrix(2,1) = rot(2,1);	  matrix(2,2) = rot(2,2);	  matrix(2,3) = shift_dist; //pose.position.z;
+  matrix(2,0) = rot(2,0);	  matrix(2,1) = rot(2,1);	  matrix(2,2) = rot(2,2);	  matrix(2,3) = pose.position.z; //shift_dist;
   matrix(3,0) = 0;	  matrix(3,1) = 0;	  matrix(3,2) = 0;	  matrix(3,3) = 1;
 
   if (pd_config_.activate_output_)

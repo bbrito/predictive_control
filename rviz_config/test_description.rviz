@@ -9,6 +9,7 @@ Panels:
         - /InteractiveMarkers1
         - /MarkerArray1
         - /MarkerArray2
+        - /MarkerArray3
       Splitter Ratio: 0.634667
     Tree Height: 921
   - Class: rviz/Selection
@@ -141,12 +142,6 @@ Visualization Manager:
           Value: true
         arm_podest_link:
           Value: true
-        box:
-          Value: true
-        point_0:
-          Value: true
-        point_1:
-          Value: true
         world:
           Value: true
       Marker Scale: 1
@@ -168,12 +163,6 @@ Visualization Manager:
                         arm_6_link:
                           arm_7_link:
                             {}
-          box:
-            {}
-          point_0:
-            {}
-          point_1:
-            {}
       Update Interval: 0
       Value: true
     - Class: rviz/InteractiveMarkers
@@ -190,15 +179,23 @@ Visualization Manager:
       Marker Topic: /arm/predictive_control/collisionRobot/collision_ball
       Name: MarkerArray
       Namespaces:
-        preview: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /arm/predictive_control/StaticCollision/static_collision_object
+      Marker Topic: /arm/obstacle_distance/marker
       Name: MarkerArray
       Namespaces:
-        preview: true
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /arm/predictive_control/selfCollision/collision_ball
+      Name: MarkerArray
+      Namespaces:
+        {}
       Queue Size: 100
       Value: true
   Enabled: true

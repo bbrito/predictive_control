@@ -23,7 +23,6 @@ void SelfCollision::clearDataMember()
   Transformation_Matrix_.resize(segments_, Eigen::Matrix4d::Identity()); //used push back careful
   FK_Homogenous_Matrix_.resize(segments_, Eigen::Matrix4d::Identity());
   distance_vector_.resize(segments_, Eigen::VectorXd(7));
-
 }
 
 bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
@@ -79,16 +78,15 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
   marker_pub_ = nh_selfCollision.advertise<visualization_msgs::MarkerArray>("collision_ball", 1);
   ROS_INFO("===== Collision Ball marker published with topic: ~/predictive_control/selfCollision/collision_ball =====");
 
-
   // TEMPORARY SOLUTION TO CHANGE JOINT VALUES
-  std::cout << "CONFIRM FOR START TIME EXECUTION: 'y' " << std::endl;
+  /*std::cout << "CONFIRM FOR START TIME EXECUTION: 'y' " << std::endl;
   char ch;
   std::cin >> ch;
   while (ch != 'y')
   {
     std::cout << "CONFIRM AGAIN FOR TIME EXECUTION: 'y' " << std::endl;
     std::cin >> ch;
-  }
+  }*/
 
   ROS_WARN("SelfCollision::initialize: SUCCESSED!!!");
   return true;

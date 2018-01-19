@@ -48,12 +48,13 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
   }
 
   segments = tree.getNrOfSegments(); //chain_.getNrOfSegments();
+  degree_of_freedom_ = chain.getNrOfSegments();
 
   // resize all data members
   axis.resize(segments);
   types_.resize(segments);
   model_joint_names.resize(segments);
-  chain_joint_names.resize(chain.getNrOfSegments());
+  chain_joint_names.resize(degree_of_freedom_);
   Transformation_Matrix_.resize(segments, Eigen::Matrix4d::Identity()); //used push back careful
   FK_Homogenous_Matrix_.resize(segments, Eigen::Matrix4d::Identity());
   distance_vector_.resize(segments, Eigen::VectorXd(7));
@@ -97,7 +98,7 @@ void SelfCollision::initializeDataMember(const std::map< std::string, boost::sha
 
   // joint name extract from chain model
   i = 0u;
-  for (int i = 0u; i < chain.getNrOfSegments(); ++i)
+  for (int i = 0u; i < degree_of_freedom_; ++i)
   {
     chain_joint_names[i] = (chain.getSegment(i).getJoint().getName());
   }
@@ -197,7 +198,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
     //auto it = std::find(model_joint_names.begin(), model_joint_names.end(), chain_joint_names.at(id));
     //auto index = std::distance(model_joint_names.begin(), it);
 
-    if (id < chain_joint_names.size())
+    if (id < degree_of_freedom_)
     {
       auto index = computeIndexFromVector(model_joint_names, chain_joint_names.at(id));
 
@@ -276,7 +277,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
   }*/
 
   // generate collision matrix
-  for (int i = 0u; i < chain_joint_names.size(); ++i)
+  for (int i = 0u; i < degree_of_freedom_; ++i)
   {
     auto index = computeIndexFromVector(model_joint_names, chain_joint_names.at(i));
     matrix = FK_Homogenous_Matrix[index];
@@ -435,10 +436,10 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
   }
 
   // seraching for one joint at one time than start loop again for searching next joint
-  //for (int j = 0u; j < chain_joint_names.size();)
+  //for (int j = 0u; j < degree_of_freedom_;)
   {
     // iterate to all joints
-    for (int i = 0u, j = 0u, revolute_joint_number = 0u; i < segments && j < chain_joint_names.size(); ++i) //segments (segments_- degree_of_freedom_)
+    for (int i = 0u, j = 0u, revolute_joint_number = 0u; i < segments && j < degree_of_freedom_; ++i) //segments (segments_- degree_of_freedom_)
     {
       //auto it = std::find(model_joint_names.begin(), model_joint_names.end(), chain_joint_names.at(i));
       //auto index = std::distance(model_joint_names.begin(), it);
@@ -472,7 +473,7 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
   {
     ROS_WARN("===== FORWARD KINEMATICS MATRIX =======");
     std::cout << FK_Homogenous_Matrix_[computeIndexFromVector(model_joint_names,
-                                                              chain_joint_names.at(0))] << std::endl;
+                                                              chain_joint_names.at(degree_of_freedom_-1))] << std::endl;
   }
 }
 

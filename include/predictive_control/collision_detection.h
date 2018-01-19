@@ -129,6 +129,9 @@ private:
   // number of segments
   int segments;
 
+  // degree of freedom, calculate from chain segment
+  int degree_of_freedom_;
+
   // Axis of Joints
   std::vector<Eigen::Vector3i> axis;
 
@@ -147,8 +150,6 @@ private:
    * @param chain: kinematic chain of robotic description, usually it's full desciption of robots
    */
   void initializeDataMember(const std::map< std::string, boost::shared_ptr<urdf::Joint> >& joints);
-
-  void boostFunctionInitialize();
 
   /**
    * @brief calculateForwardKinematics: Calculate forward kinematics start from root frame to tip link of manipulator

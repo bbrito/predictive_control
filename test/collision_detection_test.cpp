@@ -18,7 +18,7 @@ try
     kin_solver.initialize();
 
     Eigen::VectorXd joint_angles(7);
-    joint_angles(0) = 1.57;	joint_angles(1) = 0.60;	joint_angles(2) = -1.57;
+    joint_angles(0) = 1.57;	joint_angles(1) = 0.60;	joint_angles(2) = 1.57;
     joint_angles(3) = 1.57;	joint_angles(4) = 0.0;	joint_angles(5) = 0.0;
     joint_angles(6) = 0.0; //1.57079632679
     //joint_angles.resize(7,0.0);
@@ -44,14 +44,14 @@ try
     SelfCollision self_collision_check_;
     self_collision_check_.initialize(pd_config);
 
-    ros::Duration(5.0).sleep();
+    ros::Duration(1.0).sleep();
 
     int i = 0;
     while(i<5)
     {
     	self_collision_check_.updateCollisionVolume(joint_angles);
     	i++;
-    	ros::Duration(3.0).sleep();
+    	//ros::Duration(3.0).sleep();
     }
     //-----------------------------------------------------------------------------------------
     /*CollisionRobot collision_robot;

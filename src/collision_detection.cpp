@@ -176,7 +176,8 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
   // first compute fk matrix than generate collision volume
   calculateForwardKinematics(joints_angle);
 
-  generateCollisionVolume(FK_Homogenous_Matrix_, Transformation_Matrix_);
+  collision_fk_matrix_.clear();
+  //generateCollisionVolume(FK_Homogenous_Matrix_, Transformation_Matrix_);
 
   Eigen::Vector3d ball_rad;
   ball_rad(0) = 0.15; // x
@@ -226,22 +227,31 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
 
       if (index != 0 && Transformation_Matrix_[index](2,3) > 0.12)
       {
-      ball_rad(0) = 0.5*(Transformation_Matrix_[index](0,3) - Transformation_Matrix_[index-1](0,3));
+/*      ball_rad(0) = 0.5*(Transformation_Matrix_[index](0,3) - Transformation_Matrix_[index-1](0,3));
       ball_rad(1) = 0.5*(Transformation_Matrix_[index](1,3) - Transformation_Matrix_[index-1](1,3));
       ball_rad(2) = 0.5*(Transformation_Matrix_[index](2,3) - Transformation_Matrix_[index-1](2,3));
 
       if ( ball_rad(0) == 0) ball_rad(0) = 0.15;
       if ( ball_rad(1) == 0) ball_rad(1) = 0.15; //ball_rad(1) == 0 ? 0.15: ball_rad(1);
       if ( ball_rad(2) == 0) ball_rad(2) = 0.15; //ball_rad(2) == 0 ? 0.15: ball_rad(2);
-
+*/
       matrix(0,3) = FK_Homogenous_Matrix_[index-1](0,3) + 0.5*(FK_Homogenous_Matrix_[index](0,3) - FK_Homogenous_Matrix_[index-1](0,3));//(Transformation_Matrix_[index](2,3) / 2.0);
       matrix(1,3) = FK_Homogenous_Matrix_[index-1](1,3) + 0.5*(FK_Homogenous_Matrix_[index](1,3) - FK_Homogenous_Matrix_[index-1](1,3));//(Transformation_Matrix_[index](2,3) / 2.0);
       matrix(2,3) = FK_Homogenous_Matrix_[index-1](2,3) + 0.5*(FK_Homogenous_Matrix_[index](2,3) - FK_Homogenous_Matrix_[index-1](2,3));//(Transformation_Matrix_[index](2,3) / 2.0);
 
+      collision_fk_matrix_.push_back(matrix);
+
       }
+
       tranformEiegnMatrixToEigenVector(matrix, vector);
       visualizeCollisionVolume(vector, ball_rad, pd_config_.chain_root_link_, ball_id);
   }
+
+  for (auto it = collision_fk_matrix_.begin(); it != collision_fk_matrix_.end(); ++it)
+  {
+    std::cout << *it << std::endl;
+  }
+
 
   // publish
   marker_pub_.publish(marker_array_);

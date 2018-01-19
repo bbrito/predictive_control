@@ -188,16 +188,97 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
   ball_rad(1) = pd_config_.ball_radius_; //z
   ball_rad(2) = pd_config_.ball_radius_; //
 
+  /*
   int id = 0u;
   // iterate all element of forward kinematic matrix
   for (auto  it_fk = FK_Homogenous_Matrix_.begin(); it_fk != FK_Homogenous_Matrix_.end(); it_fk++, id++)
   {
-
     // find index of joint name in model joint name
-    /*auto it = std::find(model_joint_names.begin(), model_joint_names.end(), chain_joint_names.at(id));
-    auto index = std::distance(model_joint_names.begin(), it);*/
-    auto index = computeIndexFromVector(model_joint_names, chain_joint_names.at(id));
+    //auto it = std::find(model_joint_names.begin(), model_joint_names.end(), chain_joint_names.at(id));
+    //auto index = std::distance(model_joint_names.begin(), it);
 
+    if (id < chain_joint_names.size())
+    {
+      auto index = computeIndexFromVector(model_joint_names, chain_joint_names.at(id));
+
+      matrix = FK_Homogenous_Matrix[index];
+
+      // generate collision matrix
+      if (index != 0 && Transformation_Matrix[index](2,3) > pd_config_.ball_radius_)
+      {
+        matrix(0,3) = FK_Homogenous_Matrix[index-1](0,3)
+                      + 0.5*(FK_Homogenous_Matrix[index](0,3) - FK_Homogenous_Matrix[index-1](0,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+        matrix(1,3) = FK_Homogenous_Matrix[index-1](1,3)
+                      + 0.5*(FK_Homogenous_Matrix[index](1,3) - FK_Homogenous_Matrix[index-1](1,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+        matrix(2,3) = FK_Homogenous_Matrix[index-1](2,3)
+                      + 0.5*(FK_Homogenous_Matrix[index](2,3) - FK_Homogenous_Matrix[index-1](2,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+
+        // filled collision matrix
+        ROS_WARN("%s added to collision matrix", model_joint_names.at(index).c_str());
+        collision_matrix_.push_back(matrix);
+
+        tranformEiegnMatrixToEigenVector(matrix, bounding_vector);
+        if (pd_config_.activate_output_)
+          createStaticFrame(bounding_vector, "point_" + std::to_string(id));
+
+        // visualize bounding ball
+        visualizeCollisionVolume(bounding_vector, ball_rad, pd_config_.chain_root_link_, id);
+      }
+    }
+    else
+    {
+      // visualize remaning bounding ball which are not part of kinematic tree
+      tranformEiegnMatrixToEigenVector(*it_fk, bounding_vector);
+      visualizeCollisionVolume(bounding_vector, ball_rad, pd_config_.chain_root_link_, id);
+    }
+  }*/
+
+
+  // visulaization of collision voulme
+  /*for (int i = 0u; i < segments; ++i)
+  {
+
+    auto it = std::find(chain_joint_names.begin(), chain_joint_names.end(), model_joint_names.at(i));
+    // found chain joint name in model joint name so skip below executution inorder to avoid redundancy
+    if (it != chain_joint_names.end())
+    {
+      continue;
+    }
+
+    matrix = FK_Homogenous_Matrix[i];
+
+    // update collision bounding ball
+    if (i != segments && ( Transformation_Matrix[i](0,3) > pd_config_.ball_radius_
+                          || Transformation_Matrix[i](1,3) > pd_config_.ball_radius_
+                          || Transformation_Matrix[i](2,3) > pd_config_.ball_radius_) )
+    {
+      ball_rad(0) = 0.5*(Transformation_Matrix[i+1](0,3) - Transformation_Matrix[i](0,3));
+      ball_rad(1) = 0.5*(Transformation_Matrix[i+1](1,3) - Transformation_Matrix[i](1,3));
+      ball_rad(2) = 0.5*(Transformation_Matrix[i+1](2,3) - Transformation_Matrix[i](2,3));
+
+      matrix(0,3) = FK_Homogenous_Matrix[i-1](0,3)
+                    + 0.5*(FK_Homogenous_Matrix[i](0,3) - FK_Homogenous_Matrix[i-1](0,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+      matrix(1,3) = FK_Homogenous_Matrix[i-1](1,3)
+                    + 0.5*(FK_Homogenous_Matrix[i](1,3) - FK_Homogenous_Matrix[i-1](1,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+      matrix(2,3) = FK_Homogenous_Matrix[i-1](2,3)
+                    + 0.5*(FK_Homogenous_Matrix[i](2,3) - FK_Homogenous_Matrix[i-1](2,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+
+      tranformEiegnMatrixToEigenVector(matrix, bounding_vector);
+      if (pd_config_.activate_output_)
+        createStaticFrame(bounding_vector, "point_" + std::to_string(i));
+      visualizeCollisionVolume(bounding_vector, ball_rad, pd_config_.chain_root_link_,i);
+    }
+    else
+    {
+      tranformEiegnMatrixToEigenVector(matrix, bounding_vector);
+      visualizeCollisionVolume(bounding_vector, ball_rad, pd_config_.chain_root_link_,i);
+    }
+  }*/
+
+  // generate collision matrix
+  for (int i = 0u; i < chain_joint_names.size(); ++i)
+  {
+    auto index = computeIndexFromVector(model_joint_names, chain_joint_names.at(i));
     matrix = FK_Homogenous_Matrix[index];
 
     // generate collision matrix
@@ -213,17 +294,20 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
       // filled collision matrix
       ROS_WARN("%s added to collision matrix", model_joint_names.at(index).c_str());
       collision_matrix_.push_back(matrix);
-
+      ROS_WARN_STREAM("****************** "<<i << "****************** ");
       tranformEiegnMatrixToEigenVector(matrix, bounding_vector);
       if (pd_config_.activate_output_)
-        createStaticFrame(bounding_vector, "point_" + std::to_string(id));
-
+        createStaticFrame(bounding_vector, "point_" + std::to_string(i));
+      visualizeCollisionVolume(bounding_vector, ball_rad, pd_config_.chain_root_link_,i);
     }
-
-    // visualize bounding ball
-    tranformEiegnMatrixToEigenVector(matrix, bounding_vector);
-    visualizeCollisionVolume(bounding_vector, ball_rad, pd_config_.chain_root_link_, id);
+    else
+    {
+      // visualize remaning bounding ball which are not part of kinematic tree
+      tranformEiegnMatrixToEigenVector(FK_Homogenous_Matrix[index], bounding_vector);
+      visualizeCollisionVolume(bounding_vector, ball_rad, pd_config_.chain_root_link_, i);
+    }
   }
+
 }
 
 
@@ -351,10 +435,9 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
   }
 
   // seraching for one joint at one time than start loop again for searching next joint
-  for (int j = 0u; j < chain_joint_names.size();)
   {
     // iterate to all joints
-    for (int i = 0u, revolute_joint_number = 0u; i < segments; ++i) //segments (segments_- degree_of_freedom_)
+    for (int i = 0u, j = 0u, revolute_joint_number = 0u; i < segments && j < chain_joint_names.size(); ++i) //segments (segments_- degree_of_freedom_)
     {
       //auto it = std::find(model_joint_names.begin(), model_joint_names.end(), chain_joint_names.at(i));
       //auto index = std::distance(model_joint_names.begin(), it);

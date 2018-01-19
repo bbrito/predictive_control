@@ -35,7 +35,7 @@
         
         <node pkg="cob_obstacle_distance" type="cob_obstacle_distance" name="obstacle_distance" cwd="node" respawn="false" output="screen"/>
  
-        <node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/>
+        <!--node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/-->
         
    
         <group if="$(arg debug)">

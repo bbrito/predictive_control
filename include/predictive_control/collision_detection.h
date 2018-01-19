@@ -116,8 +116,7 @@ private:
   Eigen::MatrixXd FK_Matrix_;
 
   //std::map<std::string, std::string> types;
-  std::vector<Eigen::MatrixXd> collision_fk_matrix_;
-  std::vector<Eigen::MatrixXd> collision_trans_matrix_;
+  std::vector<Eigen::MatrixXd> collision_matrix_;
   Eigen::VectorXi types_;
   std::vector<std::string> chain_joint_names;
   std::vector<std::string> model_joint_names;
@@ -132,18 +131,19 @@ private:
   // Axis of Joints
   std::vector<Eigen::Vector3i> axis;
 
-  // joint names
-  Eigen::VectorXd joint_names_;
-
   std::vector<double> ball_major_axis_;
   //Eigen::VectorXd ball_major_axis_;
 
   std::vector<Eigen::VectorXd> distance_vector_;
 
+  // static frame broadcaster
+  tf2_ros::StaticTransformBroadcaster static_broadcaster_;
+
+
 
   void initializeDataMember(const urdf::Model& model);
 
-
+  void boostFunctionInitialize();
 
   /**
    * @brief calculateForwardKinematics: Calculate forward kinematics start from root frame to tip link of manipulator
@@ -165,6 +165,15 @@ private:
                                                    );
 
 
+  /**
+   * @brief createStaticFrame: visulize intermidiate added frame, relative to root frame
+   * @param stamped: Center position of ball
+   * @param frame_name: Child frame name
+   */
+  void createStaticFrame(const Eigen::VectorXd& vector,
+                         const std::string& frame_name
+                         );
+
 
   /**
    * @brief transformKDLToEigenMatrix: transform KDL Frame to Eigen Matrix
@@ -184,6 +193,19 @@ private:
                                  KDL::Frame& frame
                                  );
 
+  template<typename PARAMETER_TYPE, typename RETURN_TYPE>
+  void computeIndexFromVector(const std::vector<PARAMETER_TYPE>& vector, const PARAMETER_TYPE& search_for, RETURN_TYPE& index)
+  {
+    auto it = std::find(vector.begin(), vector.end(), search_for);
+    index = static_cast<RETURN_TYPE>(std::distance(vector.begin(), it));
+  }
+
+  template<typename PARAMETER_TYPE=std::string, typename RETURN_TYPE=int>
+  RETURN_TYPE computeIndexFromVector(const std::vector<PARAMETER_TYPE>& vector, const PARAMETER_TYPE& search_for)
+  {
+    auto it = std::find(vector.begin(), vector.end(), search_for);
+    return static_cast<RETURN_TYPE>(std::distance(vector.begin(), it));
+  }
 };
 
 

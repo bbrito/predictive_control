@@ -103,7 +103,7 @@ private:
   // marker publisher
   ros::Publisher marker_pub_;
 
-  std::map< std::string, boost::shared_ptr<urdf::Joint> > joints_;
+  //std::map< std::string, boost::shared_ptr<urdf::Joint> > joints_;
 
   // collision matrix
   // transformation matrix between two concecutive frame
@@ -112,8 +112,6 @@ private:
   // Forward kinematic matrix from root link till current link
   std::vector<Eigen::MatrixXd> FK_Homogenous_Matrix_;
 
-  // Forward kinematic matrix represent end effector position relative to root_link
-  Eigen::MatrixXd FK_Matrix_;
 
   //std::map<std::string, std::string> types;
   std::vector<Eigen::MatrixXd> collision_matrix_;
@@ -121,11 +119,14 @@ private:
   std::vector<std::string> chain_joint_names;
   std::vector<std::string> model_joint_names;
 
+  // Predictive configuration
   predictive_configuration pd_config_;
 
+  // Kinematic configuration
   urdf::Model model_;
   KDL::Chain chain;
 
+  // number of segments
   int segments;
 
   // Axis of Joints
@@ -140,8 +141,12 @@ private:
   tf2_ros::StaticTransformBroadcaster static_broadcaster_;
 
 
-
-  void initializeDataMember(const urdf::Model& model);
+  /**
+   * @brief initializeDataMember: initialize data member from kinematic chain and model
+   * @param model: robot model extracted form robot desription
+   * @param chain: kinematic chain of robotic description, usually it's full desciption of robots
+   */
+  void initializeDataMember(const std::map< std::string, boost::shared_ptr<urdf::Joint> >& joints);
 
   void boostFunctionInitialize();
 
@@ -193,6 +198,12 @@ private:
                                  KDL::Frame& frame
                                  );
 
+  /** Templated paramter function
+   * @brief computeIndexFromVector: compute location of string into vector
+   * @param vector: vector from searching string
+   * @param search_for: key use to search from vector
+   * @param index: location of index into vector
+   */
   template<typename PARAMETER_TYPE, typename RETURN_TYPE>
   void computeIndexFromVector(const std::vector<PARAMETER_TYPE>& vector, const PARAMETER_TYPE& search_for, RETURN_TYPE& index)
   {
@@ -200,6 +211,12 @@ private:
     index = static_cast<RETURN_TYPE>(std::distance(vector.begin(), it));
   }
 
+  /** Templated paramter function and also defualt initialized
+   * @brief computeIndexFromVector: compute location of string into vector
+   * @param vector: vector from searching string
+   * @param search_for: key use to search from vector
+   * @return index: location of index into vector
+   */
   template<typename PARAMETER_TYPE=std::string, typename RETURN_TYPE=int>
   RETURN_TYPE computeIndexFromVector(const std::vector<PARAMETER_TYPE>& vector, const PARAMETER_TYPE& search_for)
   {

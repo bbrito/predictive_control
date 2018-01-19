@@ -10,7 +10,7 @@ SelfCollision::SelfCollision()
 
 SelfCollision::~SelfCollision()
 {
-  clearDataMember();
+  //clearDataMember();
 }
 
 void SelfCollision::clearDataMember()
@@ -19,6 +19,7 @@ void SelfCollision::clearDataMember()
   axis_.resize(segments_);
   types_.resize(segments_);
   model_joint_names_.resize(segments_);
+  model_link_names_.resize(segments_);
   chain_joint_names_.resize(degree_of_freedom_);
   Transformation_Matrix_.resize(segments_, Eigen::Matrix4d::Identity()); //used push back careful
   FK_Homogenous_Matrix_.resize(segments_, Eigen::Matrix4d::Identity());
@@ -67,10 +68,23 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
   axis_.resize(segments_);
   types_.resize(segments_);
   model_joint_names_.resize(segments_);
+  model_link_names_.resize(segments_);
   chain_joint_names_.resize(degree_of_freedom_);
   Transformation_Matrix_.resize(segments_, Eigen::Matrix4d::Identity()); //used push back careful
   FK_Homogenous_Matrix_.resize(segments_, Eigen::Matrix4d::Identity());
   distance_vector_.resize(segments_, Eigen::VectorXd(7));
+
+  int i = 0u;
+  for (auto it = model_.links_.begin(); it != model_.links_.end(); ++it, ++i)
+  {
+    model_link_names_[i] = it->first;
+  }
+
+  ROS_WARN("======= MODEL LINK NAMES  ========== ");
+  for (auto it = model_link_names_.begin(); it != model_link_names_.end(); ++it)
+  {
+     std::cout << *it << std::endl;
+  }
 
   // intialize data member of class
   initializeDataMember(model_.joints_);
@@ -171,18 +185,18 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
   calculateForwardKinematics(joints_angle);
 
   // generate collision matrix and viualize bounding ball
-  //generateCollisionVolume(FK_Homogenous_Matrix_, Transformation_Matrix_);
+  generateCollisionVolume(FK_Homogenous_Matrix_, Transformation_Matrix_);
 
   // DEBUG
-  if (pd_config_.activate_output_)
+  /*if (pd_config_.activate_output_)
   {
     ROS_WARN("========= COLLISION MATRIX ==========");
     for (int i = 0u; i < FK_Homogenous_Matrix_.size(); ++i)
     {
-      ROS_WARN("------ FK_Matrix ------ %s ", model_joint_names_.at(i).c_str());
+      ROS_WARN("------ FK_Matrix ------ %s ", model_link_names_.at(i).c_str());
       std::cout << FK_Homogenous_Matrix_.at(i) << std::endl;
     }
-  }
+  }*/
 /*
   // DEBUG
   if (pd_config_.activate_output_)
@@ -470,9 +484,11 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
         continue;
       }
 
-      ROS_INFO("calculateForwardKinematics: Fixed Joint");
+      /*ROS_INFO("calculateForwardKinematics: Fixed Joint");
       till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[index];
-      FK_Homogenous_Matrix_[index] = till_joint_FK_Matrix;
+      FK_Homogenous_Matrix_[index] = till_joint_FK_Matrix;*/
+
+      getTransform(pd_config_.chain_root_link_, model_link_names_.at(index), FK_Homogenous_Matrix_[index]);
     }
 
     ROS_INFO("============================");

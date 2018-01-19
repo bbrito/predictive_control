@@ -4,12 +4,26 @@
 
 SelfCollision::SelfCollision()
 {
-  ;
+  segments_ = 6;
+  degree_of_freedom_ = 6;
 }
 
 SelfCollision::~SelfCollision()
 {
-  ;
+  clearDataMember();
+}
+
+void SelfCollision::clearDataMember()
+{
+  // resize all data members
+  axis_.resize(segments_);
+  types_.resize(segments_);
+  model_joint_names_.resize(segments_);
+  chain_joint_names_.resize(degree_of_freedom_);
+  Transformation_Matrix_.resize(segments_, Eigen::Matrix4d::Identity()); //used push back careful
+  FK_Homogenous_Matrix_.resize(segments_, Eigen::Matrix4d::Identity());
+  distance_vector_.resize(segments_, Eigen::VectorXd(7));
+
 }
 
 bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
@@ -47,17 +61,17 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
     return false;
   }
 
-  segments = tree.getNrOfSegments(); //chain_.getNrOfSegments();
+  segments_ = tree.getNrOfSegments(); //chain_.getNrOfSegments();
   degree_of_freedom_ = chain.getNrOfSegments();
 
   // resize all data members
-  axis.resize(segments);
-  types_.resize(segments);
-  model_joint_names.resize(segments);
-  chain_joint_names.resize(degree_of_freedom_);
-  Transformation_Matrix_.resize(segments, Eigen::Matrix4d::Identity()); //used push back careful
-  FK_Homogenous_Matrix_.resize(segments, Eigen::Matrix4d::Identity());
-  distance_vector_.resize(segments, Eigen::VectorXd(7));
+  axis_.resize(segments_);
+  types_.resize(segments_);
+  model_joint_names_.resize(segments_);
+  chain_joint_names_.resize(degree_of_freedom_);
+  Transformation_Matrix_.resize(segments_, Eigen::Matrix4d::Identity()); //used push back careful
+  FK_Homogenous_Matrix_.resize(segments_, Eigen::Matrix4d::Identity());
+  distance_vector_.resize(segments_, Eigen::VectorXd(7));
 
   // intialize data member of class
   initializeDataMember(model_.joints_);
@@ -100,7 +114,7 @@ void SelfCollision::initializeDataMember(const std::map< std::string, boost::sha
   i = 0u;
   for (int i = 0u; i < degree_of_freedom_; ++i)
   {
-    chain_joint_names[i] = (chain.getSegment(i).getJoint().getName());
+    chain_joint_names_[i] = (chain.getSegment(i).getJoint().getName());
   }
 
   //mode joint information
@@ -108,12 +122,12 @@ void SelfCollision::initializeDataMember(const std::map< std::string, boost::sha
   for (auto it = joints.begin(); it != joints.end(); ++it, ++i)
   {
     types_(i) = model_.getJoint(it->first)->type;
-    model_joint_names[i] = it->first;
+    model_joint_names_[i] = it->first;
 
     // set axis of joint rotation
-    axis[i](0) = model_.getJoint(it->first).get()->axis.x;
-    axis[i](1) = model_.getJoint(it->first).get()->axis.y;
-    axis[i](2) = model_.getJoint(it->first).get()->axis.z;
+    axis_[i](0) = model_.getJoint(it->first).get()->axis.x;
+    axis_[i](1) = model_.getJoint(it->first).get()->axis.y;
+    axis_[i](2) = model_.getJoint(it->first).get()->axis.z;
 
     // transformation matrix
     transformURDFToEigenMatrix( it->second->parent_to_joint_origin_transform , Transformation_Matrix_[i]);
@@ -128,15 +142,15 @@ void SelfCollision::initializeDataMember(const std::map< std::string, boost::sha
 
 
     ROS_WARN("======== MODEL JOINT NAMES ============");
-    for (auto it = model_joint_names.begin(); it != model_joint_names.end(); ++it)
+    for (auto it = model_joint_names_.begin(); it != model_joint_names_.end(); ++it)
       ROS_INFO("%s", it->c_str());
 
     ROS_WARN("======== CHAIN JOINT NAMES ============");
-    for (auto it = chain_joint_names.begin(); it != chain_joint_names.end(); ++it)
+    for (auto it = chain_joint_names_.begin(); it != chain_joint_names_.end(); ++it)
     ROS_INFO("%s", it->c_str());
 
     ROS_INFO("=========== JOINT AXIS ============");
-    for (auto it = axis.begin(); it != axis.end(); ++it)
+    for (auto it = axis_.begin(); it != axis_.end(); ++it)
     {
       std::cout<<"\033[20m"<< it->transpose() <<"\033[36;0m"<<std::endl;
     }
@@ -145,7 +159,7 @@ void SelfCollision::initializeDataMember(const std::map< std::string, boost::sha
     int i = 0u;
     for (auto it = Transformation_Matrix_.begin(); it != Transformation_Matrix_.end(); ++it, ++i)
     {
-      std::cout<< model_joint_names.at(i) << "\n" << *it << std::endl;
+      std::cout<< model_joint_names_.at(i) << "\n" << *it << std::endl;
       //std::cout << distance_vector_.at(i) << std::endl;
     }
   }
@@ -195,12 +209,12 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
   for (auto  it_fk = FK_Homogenous_Matrix_.begin(); it_fk != FK_Homogenous_Matrix_.end(); it_fk++, id++)
   {
     // find index of joint name in model joint name
-    //auto it = std::find(model_joint_names.begin(), model_joint_names.end(), chain_joint_names.at(id));
-    //auto index = std::distance(model_joint_names.begin(), it);
+    //auto it = std::find(model_joint_names_.begin(), model_joint_names_.end(), chain_joint_names_.at(id));
+    //auto index = std::distance(model_joint_names_.begin(), it);
 
     if (id < degree_of_freedom_)
     {
-      auto index = computeIndexFromVector(model_joint_names, chain_joint_names.at(id));
+      auto index = computeIndexFromVector(model_joint_names_, chain_joint_names_.at(id));
 
       matrix = FK_Homogenous_Matrix[index];
 
@@ -215,7 +229,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
                       + 0.5*(FK_Homogenous_Matrix[index](2,3) - FK_Homogenous_Matrix[index-1](2,3));//(Transformation_Matrix_[index](2,3) / 2.0);
 
         // filled collision matrix
-        ROS_WARN("%s added to collision matrix", model_joint_names.at(index).c_str());
+        ROS_WARN("%s added to collision matrix", model_joint_names_.at(index).c_str());
         collision_matrix_.push_back(matrix);
 
         tranformEiegnMatrixToEigenVector(matrix, bounding_vector);
@@ -236,12 +250,12 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
 
 
   // visulaization of collision voulme
-  /*for (int i = 0u; i < segments; ++i)
+  /*for (int i = 0u; i < segments_; ++i)
   {
 
-    auto it = std::find(chain_joint_names.begin(), chain_joint_names.end(), model_joint_names.at(i));
+    auto it = std::find(chain_joint_names_.begin(), chain_joint_names_.end(), model_joint_names_.at(i));
     // found chain joint name in model joint name so skip below executution inorder to avoid redundancy
-    if (it != chain_joint_names.end())
+    if (it != chain_joint_names_.end())
     {
       continue;
     }
@@ -249,7 +263,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
     matrix = FK_Homogenous_Matrix[i];
 
     // update collision bounding ball
-    if (i != segments && ( Transformation_Matrix[i](0,3) > pd_config_.ball_radius_
+    if (i != segments_ && ( Transformation_Matrix[i](0,3) > pd_config_.ball_radius_
                           || Transformation_Matrix[i](1,3) > pd_config_.ball_radius_
                           || Transformation_Matrix[i](2,3) > pd_config_.ball_radius_) )
     {
@@ -279,7 +293,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
   // generate collision matrix
   for (int i = 0u; i < degree_of_freedom_; ++i)
   {
-    auto index = computeIndexFromVector(model_joint_names, chain_joint_names.at(i));
+    auto index = computeIndexFromVector(model_joint_names_, chain_joint_names_.at(i));
     matrix = FK_Homogenous_Matrix[index];
 
     // generate collision matrix
@@ -293,7 +307,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
                     + 0.5*(FK_Homogenous_Matrix[index](2,3) - FK_Homogenous_Matrix[index-1](2,3));//(Transformation_Matrix_[index](2,3) / 2.0);
 
       // filled collision matrix
-      ROS_WARN("%s added to collision matrix", model_joint_names.at(index).c_str());
+      ROS_WARN("%s added to collision matrix", model_joint_names_.at(index).c_str());
       collision_matrix_.push_back(matrix);
       ROS_WARN_STREAM("****************** "<<i << "****************** ");
       tranformEiegnMatrixToEigenVector(matrix, bounding_vector);
@@ -392,21 +406,21 @@ void SelfCollision::generateTransformationMatrixFromJointValues(const unsigned i
   trans_matrix = Eigen::Matrix4d::Identity();
 
   // check axis of ration about x-axis
-  if (axis.at(current_segment_id) == Eigen::Vector3i(1, 0, 0))
+  if (axis_.at(current_segment_id) == Eigen::Vector3i(1, 0, 0))
   {
     trans_matrix(1,1) = cos(joint_value);	trans_matrix(1,2) = -1*sin(joint_value);
     trans_matrix(2,1) = sin(joint_value);	trans_matrix(2,2) = cos(joint_value);
   }
 
   // check axis of ration about y-axis
-  if (axis.at(current_segment_id) == Eigen::Vector3i(0, 1, 0))
+  if (axis_.at(current_segment_id) == Eigen::Vector3i(0, 1, 0))
   {
     trans_matrix(0,0) = cos(joint_value);    trans_matrix(0,2) = sin(joint_value);
     trans_matrix(2,0) = -1*sin(joint_value); trans_matrix(2,2) = cos(joint_value);
   }
 
   // check axis of ration about z-axis
-  if (axis.at(current_segment_id) == Eigen::Vector3i(0, 0, 1))
+  if (axis_.at(current_segment_id) == Eigen::Vector3i(0, 0, 1))
   {
     trans_matrix(0,0) = cos(joint_value);	trans_matrix(0,1) = -1*sin(joint_value);
     trans_matrix(1,0) = sin(joint_value);	trans_matrix(1,1) = cos(joint_value);
@@ -439,11 +453,11 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
   //for (int j = 0u; j < degree_of_freedom_;)
   {
     // iterate to all joints
-    for (int i = 0u, j = 0u, revolute_joint_number = 0u; i < segments && j < degree_of_freedom_; ++i) //segments (segments_- degree_of_freedom_)
+    for (int i = 0u, j = 0u, revolute_joint_number = 0u; i < segments_ && j < degree_of_freedom_; ++i) //segments_ (segments_- degree_of_freedom_)
     {
-      //auto it = std::find(model_joint_names.begin(), model_joint_names.end(), chain_joint_names.at(i));
-      //auto index = std::distance(model_joint_names.begin(), it);
-      int index = computeIndexFromVector(model_joint_names, chain_joint_names.at(j));
+      //auto it = std::find(model_joint_names_.begin(), model_joint_names_.end(), chain_joint_names_.at(i));
+      //auto index = std::distance(model_joint_names_.begin(), it);
+      int index = computeIndexFromVector(model_joint_names_, chain_joint_names_.at(j));
 
       // revolute joints update
       if (types_(index) == REVOLUTE)
@@ -472,8 +486,8 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
   if (pd_config_.activate_output_)
   {
     ROS_WARN("===== FORWARD KINEMATICS MATRIX =======");
-    std::cout << FK_Homogenous_Matrix_[computeIndexFromVector(model_joint_names,
-                                                              chain_joint_names.at(degree_of_freedom_-1))] << std::endl;
+    std::cout << FK_Homogenous_Matrix_[computeIndexFromVector(model_joint_names_,
+                                                              chain_joint_names_.at(degree_of_freedom_-1))] << std::endl;
   }
 }
 

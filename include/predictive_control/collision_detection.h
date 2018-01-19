@@ -35,7 +35,7 @@
 #include <predictive_control/predictive_configuration.h>
 
 
-enum  	{
+enum  {
   UNKNOWN,
   REVOLUTE,
   CONTINUOUS,
@@ -48,32 +48,79 @@ enum  	{
 
 class SelfCollision
 {
+  /**
+    * Class used to generate bounding volume around robot body,
+    * - Development of distance cost function (logistic function) use to keep distance from robot body
+    * - Visualize collision bounding ball aroung robot body
+    * - Creat static frame for visulize center of intermidiate ball
+    * Info: static member for computation of getEuclideanDistance
+    */
+
 public:
+
+  /**
+   * @brief SelfCollision: Default constructor, allocate memory
+   */
   SelfCollision();
+
+  /**
+   * @brief ~SelfCollision: Default distractor, remove memory
+   */
   ~SelfCollision();
 
+
+  /**
+   * @brief initialize: Initialize self collision class
+   * @param pd_config_param: predictive congiguration parameters
+   * @return true with success, else false
+   */
   bool initialize(const predictive_configuration& pd_config_param);
 
+  /**
+   * @brief visualizeCollisionVolume: visulize collision ball on given position
+   * @param center: Pose of center of volume
+   * @param radius: Ball radius
+   * @param header_frame_id: header frame id for bounding ball
+   * @param ball_id: Ball id should be unique for each ball
+   */
   void visualizeCollisionVolume(const Eigen::VectorXd& center,
                                 const Eigen::VectorXd& radius,
                                 const std::string& header_frame_id,
                                 const uint32_t &ball_id
                                 );
 
-
+  /**
+   * @brief visualizeCollisionVolume: visulize collision ball on given position
+   * @param center: Pose of center of volume
+   * @param radius: Ball radius
+   * @param ball_id: Ball id should be unique for each ball
+   */
   void visualizeCollisionVolume(const geometry_msgs::PoseStamped &center,
                                 const Eigen::Vector3d &radius,
                                 const uint32_t &ball_id
                                 );
 
-  visualization_msgs::MarkerArray marker_array_;
 
+  /**
+   * @brief updateCollisionVolume: Update collsion matrix using joint angles
+   * @param joints_angle: joint angle used to compute forward kinematics
+   */
   void updateCollisionVolume(const Eigen::VectorXd& joints_angle);
 
+  /**
+   * @brief generateCollisionVolume: Create collsion matrix using forward kinematic relative to root link
+   * @param FK_Homogenous_Matrix: Forward kinematic replative to root link
+   * @param Transformation_Matrix: Transformation matrix between two concecutive frame
+   */
   void generateCollisionVolume(const std::vector<Eigen::MatrixXd> &FK_Homogenous_Matrix,
-          	  	  	  	  	  const std::vector<Eigen::MatrixXd> &Transformation_Matrix);
+                              const std::vector<Eigen::MatrixXd> &Transformation_Matrix);
 
 
+  /**
+   * @brief tranformEiegnMatrixToEigenVector: convert Eigen Matrix to Eigen Vector
+   * @param matrix: eigen matrix from convert
+   * @param vector: eigen vector to store converted vector data
+   */
   static inline
   void tranformEiegnMatrixToEigenVector(const Eigen::MatrixXd& matrix, Eigen::VectorXd& vector)
   {
@@ -98,6 +145,10 @@ public:
     vector(6) = quat.z();
   }
 
+
+  // Public Data Member of class
+  visualization_msgs::MarkerArray marker_array_;
+
 private:
 
   // marker publisher
@@ -116,8 +167,8 @@ private:
   //std::map<std::string, std::string> types;
   std::vector<Eigen::MatrixXd> collision_matrix_;
   Eigen::VectorXi types_;
-  std::vector<std::string> chain_joint_names;
-  std::vector<std::string> model_joint_names;
+  std::vector<std::string> chain_joint_names_;
+  std::vector<std::string> model_joint_names_;
 
   // Predictive configuration
   predictive_configuration pd_config_;
@@ -127,13 +178,13 @@ private:
   KDL::Chain chain;
 
   // number of segments
-  int segments;
+  int segments_;
 
   // degree of freedom, calculate from chain segment
   int degree_of_freedom_;
 
   // Axis of Joints
-  std::vector<Eigen::Vector3i> axis;
+  std::vector<Eigen::Vector3i> axis_;
 
   std::vector<double> ball_major_axis_;
   //Eigen::VectorXd ball_major_axis_;
@@ -224,6 +275,11 @@ private:
     auto it = std::find(vector.begin(), vector.end(), search_for);
     return static_cast<RETURN_TYPE>(std::distance(vector.begin(), it));
   }
+
+  /**
+   * @brief clearDataMember: clear vectors means free allocated memory
+   */
+  void clearDataMember();
 };
 
 

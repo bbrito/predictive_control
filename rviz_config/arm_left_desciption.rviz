@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /RobotModel1
-        - /TF1/Frames1
+        - /TF1
         - /InteractiveMarkers1
         - /MarkerArray1
       Splitter Ratio: 0.634667
@@ -301,23 +301,23 @@ Visualization Manager:
       Frames:
         All Enabled: false
         arm_left_1_link:
-          Value: true
+          Value: false
         arm_left_2_link:
-          Value: true
+          Value: false
         arm_left_3_link:
-          Value: true
+          Value: false
         arm_left_4_link:
-          Value: true
+          Value: false
         arm_left_5_link:
-          Value: true
+          Value: false
         arm_left_6_link:
-          Value: true
+          Value: false
         arm_left_7_link:
-          Value: true
+          Value: false
         arm_left_7_target:
-          Value: true
+          Value: false
         arm_left_base_link:
-          Value: true
+          Value: false
         b_caster_r_wheel_link:
           Value: false
         b_caster_rotation_link:
@@ -331,7 +331,7 @@ Visualization Manager:
         base_laser_right_link:
           Value: false
         base_link:
-          Value: true
+          Value: false
         fl_caster_r_wheel_link:
           Value: false
         fl_caster_rotation_link:
@@ -369,15 +369,7 @@ Visualization Manager:
         head_center_link:
           Value: false
         odom_combined:
-          Value: true
-        point_0:
-          Value: true
-        point_3:
-          Value: true
-        point_6:
-          Value: true
-        point_8:
-          Value: true
+          Value: false
         sensorring_base_link:
           Value: false
         sensorring_cam3d_back_link:
@@ -391,13 +383,13 @@ Visualization Manager:
         sensorring_link:
           Value: false
         torso_1_link:
-          Value: true
+          Value: false
         torso_2_link:
-          Value: true
+          Value: false
         torso_3_link:
-          Value: true
+          Value: false
         torso_base_link:
-          Value: true
+          Value: false
         torso_cam3d_down_link:
           Value: false
         torso_cam3d_left_link:
@@ -475,14 +467,6 @@ Visualization Manager:
                       {}
                     torso_center_link:
                       {}
-          point_0:
-            {}
-          point_3:
-            {}
-          point_6:
-            {}
-          point_8:
-            {}
         odom_combined:
           arm_left_7_target:
             {}
@@ -745,10 +729,10 @@ Visualization Manager:
       Visual Enabled: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /arm_left/predictive_control/collisionRobot/collision_ball
+      Marker Topic: /arm_left/predictive_control/selfCollision/collision_ball
       Name: MarkerArray
       Namespaces:
-        preview: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true

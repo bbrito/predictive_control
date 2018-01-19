@@ -172,6 +172,7 @@ private:
   Eigen::VectorXi types_;
   std::vector<std::string> chain_joint_names_;
   std::vector<std::string> model_joint_names_;
+  std::vector<std::string> model_link_names_;
 
   // Predictive configuration
   predictive_configuration pd_config_;

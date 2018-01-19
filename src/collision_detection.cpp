@@ -188,7 +188,7 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
   generateCollisionVolume(FK_Homogenous_Matrix_, Transformation_Matrix_);
 
   // DEBUG
-  /*if (pd_config_.activate_output_)
+  if (pd_config_.activate_output_)
   {
     ROS_WARN("========= COLLISION MATRIX ==========");
     for (int i = 0u; i < FK_Homogenous_Matrix_.size(); ++i)
@@ -196,7 +196,7 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
       ROS_WARN("------ FK_Matrix ------ %s ", model_link_names_.at(i).c_str());
       std::cout << FK_Homogenous_Matrix_.at(i) << std::endl;
     }
-  }*/
+  }
 /*
   // DEBUG
   if (pd_config_.activate_output_)
@@ -286,7 +286,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
     matrix = FK_Homogenous_Matrix[i];
 
     // update collision bounding ball, segments_-1
-    if (i != 0 && ( Transformation_Matrix[i](0,3) > pd_config_.ball_radius_) )
+    if (i != 0 && ( Transformation_Matrix[i](2,3) > pd_config_.ball_radius_) )
                           //|| Transformation_Matrix[i](1,3) > pd_config_.ball_radius_
                           //|| Transformation_Matrix[i](2,3) > pd_config_.ball_radius_) )
     {
@@ -484,16 +484,16 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
         continue;
       }
 
-      /*ROS_INFO("calculateForwardKinematics: Fixed Joint");
-      till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[index];
-      FK_Homogenous_Matrix_[index] = till_joint_FK_Matrix;*/
+      //ROS_INFO("calculateForwardKinematics: Fixed Joint");
+      //till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[index];
+      //FK_Homogenous_Matrix_[index] = till_joint_FK_Matrix;
 
       getTransform(pd_config_.chain_root_link_, model_link_names_.at(index), FK_Homogenous_Matrix_[index]);
     }
 
     ROS_INFO("============================");
     till_joint_FK_Matrix = Eigen::Matrix4d::Identity();
-    int index = computeIndexFromVector(model_link_names_, pd_config_.chain_root_link_);
+    int index = computeIndexFromVector(model_link_names_, pd_config_.chain_base_link_);
     ROS_WARN_STREAM("*****------*******"<<index);
     till_joint_FK_Matrix = FK_Homogenous_Matrix_[index];
   }

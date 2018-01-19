@@ -171,8 +171,19 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
   calculateForwardKinematics(joints_angle);
 
   // generate collision matrix and viualize bounding ball
-  generateCollisionVolume(FK_Homogenous_Matrix_, Transformation_Matrix_);
+  //generateCollisionVolume(FK_Homogenous_Matrix_, Transformation_Matrix_);
 
+  // DEBUG
+  if (pd_config_.activate_output_)
+  {
+    ROS_WARN("========= COLLISION MATRIX ==========");
+    for (int i = 0u; i < FK_Homogenous_Matrix_.size(); ++i)
+    {
+      ROS_WARN("------ FK_Matrix ------ %s ", model_joint_names_.at(i).c_str());
+      std::cout << FK_Homogenous_Matrix_.at(i) << std::endl;
+    }
+  }
+/*
   // DEBUG
   if (pd_config_.activate_output_)
   {
@@ -181,7 +192,7 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
     {
       std::cout << *it << std::endl;
     }
-  }
+  }*/
 
   // publish
   marker_pub_.publish(marker_array_);
@@ -251,23 +262,23 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
   for (int i = 0u; i < segments_; ++i)
   {
 
-    auto it = std::find(chain_joint_names_.begin(), chain_joint_names_.end(), model_joint_names_.at(i));
+    /*auto it = std::find(chain_joint_names_.begin(), chain_joint_names_.end(), model_joint_names_.at(i));
     // found chain joint name in model joint name so skip below executution inorder to avoid redundancy
     if (it != chain_joint_names_.end())
     {
       continue;
-    }
+    }*/
 
     matrix = FK_Homogenous_Matrix[i];
 
-    // update collision bounding ball
-    if (i != segments_ && ( Transformation_Matrix[i](0,3) > pd_config_.ball_radius_
+    // update collision bounding ball, segments_-1
+    if (i != 0 && ( Transformation_Matrix[i](0,3) > pd_config_.ball_radius_
                           || Transformation_Matrix[i](1,3) > pd_config_.ball_radius_
                           || Transformation_Matrix[i](2,3) > pd_config_.ball_radius_) )
     {
-      ball_rad(0) = 0.5*(Transformation_Matrix[i+1](0,3) - Transformation_Matrix[i](0,3));
+      /*ball_rad(0) = 0.5*(Transformation_Matrix[i+1](0,3) - Transformation_Matrix[i](0,3));
       ball_rad(1) = 0.5*(Transformation_Matrix[i+1](1,3) - Transformation_Matrix[i](1,3));
-      ball_rad(2) = 0.5*(Transformation_Matrix[i+1](2,3) - Transformation_Matrix[i](2,3));
+      ball_rad(2) = 0.5*(Transformation_Matrix[i+1](2,3) - Transformation_Matrix[i](2,3));*/
 
       matrix(0,3) = FK_Homogenous_Matrix[i-1](0,3)
                     + 0.5*(FK_Homogenous_Matrix[i](0,3) - FK_Homogenous_Matrix[i-1](0,3));//(Transformation_Matrix_[index](2,3) / 2.0);
@@ -279,6 +290,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
       tranformEiegnMatrixToEigenVector(matrix, bounding_vector);
       if (pd_config_.activate_output_)
         createStaticFrame(bounding_vector, "point_" + std::to_string(i));
+      collision_matrix_.push_back(matrix);
       visualizeCollisionVolume(bounding_vector, ball_rad, pd_config_.chain_root_link_,i);
     }
     else
@@ -288,8 +300,12 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
     }
   }
 
+  ROS_INFO("======================");
+  ROS_INFO("======================");
+  ROS_INFO("======================");
+
   // generate collision matrix
-  for (int i = 0u; i < degree_of_freedom_; ++i)
+  /*for (int i = 0u; i < degree_of_freedom_; ++i)
   {
     auto index = computeIndexFromVector(model_joint_names_, chain_joint_names_.at(i));
     matrix = FK_Homogenous_Matrix[index];
@@ -319,7 +335,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
       tranformEiegnMatrixToEigenVector(FK_Homogenous_Matrix[index], bounding_vector);
       visualizeCollisionVolume(bounding_vector, ball_rad, pd_config_.chain_root_link_, i);
     }
-  }
+  }*/
 
 }
 
@@ -445,8 +461,28 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
   if (pd_config_.chain_root_link_ != pd_config_.chain_base_link_)
   {
     ROS_WARN("'%s' and '%s' are not same frame", pd_config_.chain_root_link_.c_str(), pd_config_.chain_base_link_.c_str());
-  }
+    for (int index = 0u; index < segments_; ++index)
+    {
+      auto it = std::find(chain_joint_names_.begin(), chain_joint_names_.end(), model_joint_names_.at(index));
+      // found chain joint name in model joint name so skip below executution inorder to avoid redundancy
+      if (it != chain_joint_names_.end())
+      {
+        continue;
+      }
 
+      ROS_INFO("calculateForwardKinematics: Fixed Joint");
+      till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[index];
+      FK_Homogenous_Matrix_[index] = till_joint_FK_Matrix;
+    }
+
+    ROS_INFO("============================");
+    till_joint_FK_Matrix = Eigen::Matrix4d::Identity();
+    int index = computeIndexFromVector(model_joint_names_, std::string("arm_left_base_joint"));
+    ROS_INFO_STREAM("============================" << index << "========================");
+    till_joint_FK_Matrix = FK_Homogenous_Matrix_[index];
+    ROS_INFO("============================");
+  }
+   ROS_WARN("Calculating FK Matrix from '%s' to '%s '", pd_config_.chain_base_link_.c_str(), pd_config_.chain_tip_link_.c_str());
   // seraching for one joint at one time than start loop again for searching next joint
   //for (int j = 0u; j < degree_of_freedom_;)
   {
@@ -488,6 +524,58 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
                                                               chain_joint_names_.at(degree_of_freedom_-1))] << std::endl;
   }
 }
+
+bool SelfCollision::getTransform(const std::string& from, const std::string& to, Eigen::MatrixXd& matrix)
+{
+  bool transform = false;
+  matrix = Eigen::Matrix4d::Identity();
+  tf::StampedTransform stamped_tf;
+
+  // make sure source and target frame exist
+  if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
+  {
+    try
+    {
+      // find transforamtion between souce and target frame
+      tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
+      tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
+
+      // convert quternion to rpy
+      geometry_msgs::Quaternion quat;
+      quat.w = stamped_tf.getRotation().getW();
+      quat.x = stamped_tf.getRotation().getX();
+      quat.y = stamped_tf.getRotation().getY();
+      quat.z = stamped_tf.getRotation().getZ();
+
+      KDL::Rotation rot;
+      tf::quaternionMsgToKDL(quat, rot);
+
+      matrix(0,0) = rot(0,0);	  matrix(0,1) = rot(0,1);	  matrix(0,2) = rot(0,2);	  matrix(0,3) = stamped_tf.getOrigin().x();
+      matrix(1,0) = rot(1,0);	  matrix(1,1) = rot(1,1);	  matrix(1,2) = rot(1,2);	  matrix(1,3) = stamped_tf.getOrigin().y();
+      matrix(2,0) = rot(2,0);	  matrix(2,1) = rot(2,1);	  matrix(2,2) = rot(2,2);	  matrix(2,3) = stamped_tf.getOrigin().z();
+      matrix(3,0) = 0;	  matrix(3,1) = 0;	  matrix(3,2) = 0;	  matrix(3,3) = 1;
+
+      if (pd_config_.activate_output_)
+      {
+        std::cout << matrix << std::endl;
+      }
+      transform = true;
+    }
+    catch (tf::TransformException& ex)
+    {
+      ROS_ERROR("pd_frame_tracker::getTransform: %s", ex.what());
+    }
+  }
+
+  else
+  {
+    ROS_WARN("pd_frame_tracker::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
+             from.c_str(), to.c_str());
+  }
+
+  return transform;
+}
+
 
 // create static frame, just for visualization purpose
 void SelfCollision::createStaticFrame(const Eigen::VectorXd& vector,

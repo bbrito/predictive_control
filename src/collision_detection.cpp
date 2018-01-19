@@ -79,14 +79,14 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
   ROS_INFO("===== Collision Ball marker published with topic: ~/predictive_control/selfCollision/collision_ball =====");
 
   // TEMPORARY SOLUTION TO CHANGE JOINT VALUES
-  /*std::cout << "CONFIRM FOR START TIME EXECUTION: 'y' " << std::endl;
+  std::cout << "CONFIRM FOR START TIME EXECUTION: 'y' " << std::endl;
   char ch;
   std::cin >> ch;
   while (ch != 'y')
   {
     std::cout << "CONFIRM AGAIN FOR TIME EXECUTION: 'y' " << std::endl;
     std::cin >> ch;
-  }*/
+  }
 
   ROS_WARN("SelfCollision::initialize: SUCCESSED!!!");
   return true;
@@ -248,7 +248,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
 
 
   // visulaization of collision voulme
-  /*for (int i = 0u; i < segments_; ++i)
+  for (int i = 0u; i < segments_; ++i)
   {
 
     auto it = std::find(chain_joint_names_.begin(), chain_joint_names_.end(), model_joint_names_.at(i));
@@ -286,7 +286,7 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
       tranformEiegnMatrixToEigenVector(matrix, bounding_vector);
       visualizeCollisionVolume(bounding_vector, ball_rad, pd_config_.chain_root_link_,i);
     }
-  }*/
+  }
 
   // generate collision matrix
   for (int i = 0u; i < degree_of_freedom_; ++i)
@@ -451,7 +451,7 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
   //for (int j = 0u; j < degree_of_freedom_;)
   {
     // iterate to all joints
-    for (int i = 0u, j = 0u, revolute_joint_number = 0u; i < segments_ && j < degree_of_freedom_; ++i) //segments_ (segments_- degree_of_freedom_)
+    for (int j = 0u, revolute_joint_number = 0u; j < degree_of_freedom_;) //segments_ (segments_- degree_of_freedom_)
     {
       //auto it = std::find(model_joint_names_.begin(), model_joint_names_.end(), chain_joint_names_.at(i));
       //auto index = std::distance(model_joint_names_.begin(), it);

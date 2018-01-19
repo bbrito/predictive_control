@@ -14,7 +14,7 @@ joints_name: [arm_left_1_joint, arm_left_2_joint, arm_left_3_joint, arm_left_4_j
 # Kinematic chain parameter
 #chain_base_link: arm_base_link
 #chain_tip_link: arm_7_link
-chain_root_link: arm_left_base_link
+chain_root_link: base_footprint #arm_left_base_link
 target_frame: arm_left_7_target
 tracking_frame: arm_left_7_link
 

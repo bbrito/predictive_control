@@ -65,6 +65,16 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
 
   ROS_INFO("===== Collision Ball marker published with topic: ~/predictive_control/selfCollision/collision_ball =====");
 
+  // TEMPORARY SOLUTION TO CHANGE JOINT VALUES
+  std::cout << "CONFIRM FOR START TIME EXECUTION: 'y' " << std::endl;
+  char ch;
+  std::cin >> ch;
+  while (ch != 'y')
+  {
+    std::cout << "CONFIRM AGAIN FOR TIME EXECUTION: 'y' " << std::endl;
+    std::cin >> ch;
+  }
+
   ROS_WARN("SelfCollision::initialize: SUCCESSED!!!");
   return true;
 }
@@ -202,13 +212,35 @@ void SelfCollision::updateCollisionVolume(const Eigen::VectorXd& joints_angle)
   }*/
   int ball_id = 0u;
   Eigen::VectorXd vector(7);
+  Eigen::Matrix4d matrix;
   for (auto  it_fk = FK_Homogenous_Matrix_.begin(); it_fk != FK_Homogenous_Matrix_.end(); it_fk++, ball_id++)
   {
-    if (ball_major_axis_.at(ball_id) >= 0.15 )
+/*    if (ball_major_axis_.at(ball_id) >= 0.15 )
       ball_rad(1) = ball_major_axis_.at(ball_id);
+*/
+      auto it = std::find(model_joint_names.begin(), model_joint_names.end(), chain_joint_names.at(ball_id));
+      auto index = std::distance(model_joint_names.begin(), it);
+      std::cout << "index: "<< index << std::endl;
 
-    tranformEiegnMatrixToEigenVector(*it_fk, vector);
-    visualizeCollisionVolume(vector, ball_rad, pd_config_.chain_root_link_, ball_id);
+      matrix = FK_Homogenous_Matrix_[index];
+
+      if (index != 0 && Transformation_Matrix_[index](2,3) > 0.12)
+      {
+      ball_rad(0) = 0.5*(Transformation_Matrix_[index](0,3) - Transformation_Matrix_[index-1](0,3));
+      ball_rad(1) = 0.5*(Transformation_Matrix_[index](1,3) - Transformation_Matrix_[index-1](1,3));
+      ball_rad(2) = 0.5*(Transformation_Matrix_[index](2,3) - Transformation_Matrix_[index-1](2,3));
+
+      if ( ball_rad(0) == 0) ball_rad(0) = 0.15;
+      if ( ball_rad(1) == 0) ball_rad(1) = 0.15; //ball_rad(1) == 0 ? 0.15: ball_rad(1);
+      if ( ball_rad(2) == 0) ball_rad(2) = 0.15; //ball_rad(2) == 0 ? 0.15: ball_rad(2);
+
+      matrix(0,3) = FK_Homogenous_Matrix_[index-1](0,3) + 0.5*(FK_Homogenous_Matrix_[index](0,3) - FK_Homogenous_Matrix_[index-1](0,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+      matrix(1,3) = FK_Homogenous_Matrix_[index-1](1,3) + 0.5*(FK_Homogenous_Matrix_[index](1,3) - FK_Homogenous_Matrix_[index-1](1,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+      matrix(2,3) = FK_Homogenous_Matrix_[index-1](2,3) + 0.5*(FK_Homogenous_Matrix_[index](2,3) - FK_Homogenous_Matrix_[index-1](2,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+
+      }
+      tranformEiegnMatrixToEigenVector(matrix, vector);
+      visualizeCollisionVolume(vector, ball_rad, pd_config_.chain_root_link_, ball_id);
   }
 
   // publish
@@ -378,16 +410,21 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
         if (types_(index) == REVOLUTE)
         {
 
-          ROS_WARN("===== TILL JOINT FK MATRIX =====");
-          std::cout<< model_joint_names.at(index) << "\n" << till_joint_FK_Matrix << std::endl;
+          //ROS_WARN("===== TILL JOINT FK MATRIX =====");
+          //std::cout<< model_joint_names.at(index) << "\n" << till_joint_FK_Matrix << std::endl;
 
           generateTransformationMatrixFromJointValues(revolute_joint_number, joints_angle(revolute_joint_number), dummy_RotTrans_Matrix);
           till_joint_FK_Matrix = till_joint_FK_Matrix * ( Transformation_Matrix_[index] * dummy_RotTrans_Matrix);
           FK_Homogenous_Matrix_[index] = till_joint_FK_Matrix;
-          FK_Homogenous_Matrix_[index] -= (Transformation_Matrix_[index] / 2.0);
+/*          if (index != 0)
+          {
+          FK_Homogenous_Matrix_[index](0,3) = FK_Homogenous_Matrix_[index-1](0,3) + 0.5*(FK_Homogenous_Matrix_[index](0,3) - FK_Homogenous_Matrix_[index-1](0,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+          FK_Homogenous_Matrix_[index](1,3) = FK_Homogenous_Matrix_[index-1](1,3) + 0.5*(FK_Homogenous_Matrix_[index](1,3) - FK_Homogenous_Matrix_[index-1](1,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+          FK_Homogenous_Matrix_[index](2,3) = FK_Homogenous_Matrix_[index-1](2,3) + 0.5*(FK_Homogenous_Matrix_[index](2,3) - FK_Homogenous_Matrix_[index-1](2,3));//(Transformation_Matrix_[index](2,3) / 2.0);
+          }*/
           ++revolute_joint_number;
 
-          if (pd_config_.activate_output_)
+          /*if (pd_config_.activate_output_)
           {
             ROS_WARN("===== TRANSFORMATION MATRIX =====");
             std::cout<< model_joint_names.at(index) << "\n" << Transformation_Matrix_[index] << std::endl;
@@ -396,7 +433,7 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
             ROS_WARN("===== FK MATRIX =====");
             std::cout<< model_joint_names.at(index) << "\n" << FK_Homogenous_Matrix_[index] << std::endl;
               //std::cout << distance_vector_.at(i) << std::endl;
-            }
+            }*/
           }
 
         // fixed joints update

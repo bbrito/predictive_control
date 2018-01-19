@@ -4,8 +4,8 @@
 
 SelfCollision::SelfCollision()
 {
-  segments_ = 6;
-  degree_of_freedom_ = 6;
+//  segments_ = 6;
+//  degree_of_freedom_ = 6;
 }
 
 SelfCollision::~SelfCollision()
@@ -68,7 +68,7 @@ bool SelfCollision::initialize(const predictive_configuration& pd_config_param)
   axis_.resize(segments_);
   types_.resize(segments_);
   model_joint_names_.resize(segments_);
-  model_link_names_.resize(segments_);
+  model_link_names_.resize(segments_+1);  // number of links always 1 higer than joints
   chain_joint_names_.resize(degree_of_freedom_);
   Transformation_Matrix_.resize(segments_, Eigen::Matrix4d::Identity()); //used push back careful
   FK_Homogenous_Matrix_.resize(segments_, Eigen::Matrix4d::Identity());
@@ -286,14 +286,14 @@ void SelfCollision::generateCollisionVolume(const std::vector<Eigen::MatrixXd>& 
     matrix = FK_Homogenous_Matrix[i];
 
     // update collision bounding ball, segments_-1
-    if (i != 0 && ( Transformation_Matrix[i](0,3) > pd_config_.ball_radius_
-                          || Transformation_Matrix[i](1,3) > pd_config_.ball_radius_
-                          || Transformation_Matrix[i](2,3) > pd_config_.ball_radius_) )
+    if (i != 0 && ( Transformation_Matrix[i](0,3) > pd_config_.ball_radius_) )
+                          //|| Transformation_Matrix[i](1,3) > pd_config_.ball_radius_
+                          //|| Transformation_Matrix[i](2,3) > pd_config_.ball_radius_) )
     {
-      /*ball_rad(0) = 0.5*(Transformation_Matrix[i+1](0,3) - Transformation_Matrix[i](0,3));
+/*      ball_rad(0) = 0.5*(Transformation_Matrix[i+1](0,3) - Transformation_Matrix[i](0,3));
       ball_rad(1) = 0.5*(Transformation_Matrix[i+1](1,3) - Transformation_Matrix[i](1,3));
-      ball_rad(2) = 0.5*(Transformation_Matrix[i+1](2,3) - Transformation_Matrix[i](2,3));*/
-
+      ball_rad(2) = 0.5*(Transformation_Matrix[i+1](2,3) - Transformation_Matrix[i](2,3));
+*/
       matrix(0,3) = FK_Homogenous_Matrix[i-1](0,3)
                     + 0.5*(FK_Homogenous_Matrix[i](0,3) - FK_Homogenous_Matrix[i-1](0,3));//(Transformation_Matrix_[index](2,3) / 2.0);
       matrix(1,3) = FK_Homogenous_Matrix[i-1](1,3)
@@ -493,10 +493,9 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
 
     ROS_INFO("============================");
     till_joint_FK_Matrix = Eigen::Matrix4d::Identity();
-    int index = computeIndexFromVector(model_joint_names_, std::string("arm_left_base_joint"));
-    ROS_INFO_STREAM("============================" << index << "========================");
+    int index = computeIndexFromVector(model_link_names_, pd_config_.chain_root_link_);
+    ROS_WARN_STREAM("*****------*******"<<index);
     till_joint_FK_Matrix = FK_Homogenous_Matrix_[index];
-    ROS_INFO("============================");
   }
    ROS_WARN("Calculating FK Matrix from '%s' to '%s '", pd_config_.chain_base_link_.c_str(), pd_config_.chain_tip_link_.c_str());
   // seraching for one joint at one time than start loop again for searching next joint

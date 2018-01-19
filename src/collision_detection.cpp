@@ -435,6 +435,7 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
   }
 
   // seraching for one joint at one time than start loop again for searching next joint
+  //for (int j = 0u; j < chain_joint_names.size();)
   {
     // iterate to all joints
     for (int i = 0u, j = 0u, revolute_joint_number = 0u; i < segments && j < chain_joint_names.size(); ++i) //segments (segments_- degree_of_freedom_)
@@ -451,7 +452,7 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
         FK_Homogenous_Matrix_[index] = till_joint_FK_Matrix;
         ++revolute_joint_number;
         ++j;
-        break;
+        //break;
       }
 
       // fixed joints update
@@ -461,7 +462,7 @@ void SelfCollision::calculateForwardKinematics(const Eigen::VectorXd& joints_ang
         till_joint_FK_Matrix = till_joint_FK_Matrix * Transformation_Matrix_[index];
         FK_Homogenous_Matrix_[index] = till_joint_FK_Matrix;
         ++j;
-        break;
+        //break;
       }
     }
   }

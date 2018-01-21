@@ -13,16 +13,16 @@ def move_action_client():
     move_client.wait_for_server()
 
     goal = predictive_control.msg.moveGoal()
-    goal.target_frame_id = "arm_7_target"
+    goal.target_frame_id = "object_1"
 
     # header
     goal.target_endeffector_pose.header.frame_id = "world"
     goal.target_endeffector_pose.header.stamp = rospy.Time.now()
 
     # position
-    goal.target_endeffector_pose.pose.position.x = 1.23605
+    goal.target_endeffector_pose.pose.position.x = 0.30605
     goal.target_endeffector_pose.pose.position.y = -0.3269
-    goal.target_endeffector_pose.pose.position.z = 1.19359
+    goal.target_endeffector_pose.pose.position.z = 0.70605
 
     # orientation
     goal.target_endeffector_pose.pose.orientation.w = 0.99997

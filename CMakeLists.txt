@@ -3,6 +3,8 @@ project(predictive_control)
 
 add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
+    actionlib
+    actionlib_msgs
     cmake_modules
     cob_control_msgs
     cob_srvs
@@ -72,7 +74,7 @@ generate_messages(
 )
 
 catkin_package(
-  CATKIN_DEPENDS cob_control_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs
+  CATKIN_DEPENDS actionlib_msgs cob_control_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs
   DEPENDS Boost CERES ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_DIRS} #${ACADO_INCLUDE_PACKAGES}
   LIBRARIES  predictive_configuration kinematic_calculations self_collision_detection predictive_trajectory_generator predictive_controller

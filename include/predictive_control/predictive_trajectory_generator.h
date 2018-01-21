@@ -231,7 +231,8 @@ private:
    */
   bool getTransform(const std::string& from,
                     const std::string& to,
-                    Eigen::VectorXd& stamped_pose
+                    Eigen::VectorXd& stamped_pose,
+                    geometry_msgs::Quaternion &quat_msg
                     );
 
   /**

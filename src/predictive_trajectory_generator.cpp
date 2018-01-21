@@ -19,11 +19,16 @@ void pd_frame_tracker::clearDataMember()
   // resize matrix and vectors
   const int jacobian_matrix_rows = 6, jacobian_matrix_columns = predictive_configuration::degree_of_freedom_;
   Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
+  Jacobian_Matrix_.setAll(0.0);
   state_initialize_.resize(jacobian_matrix_rows);
+  state_initialize_.setAll(0.0);
   control_initialize_.resize(jacobian_matrix_columns);
+  control_initialize_.setAll(0.0);
 
   control_min_constraint_.resize(jacobian_matrix_columns);
+  control_min_constraint_.setAll(0.0);
   control_max_constraint_.resize(jacobian_matrix_columns);
+  control_max_constraint_.setAll(0.0);
 
   lsq_state_weight_factors_.resize(jacobian_matrix_rows);
   lsq_control_weight_factors_.resize(jacobian_matrix_columns);
@@ -46,10 +51,11 @@ bool pd_frame_tracker::initialize()
   // intialize data members
   const int jacobian_matrix_rows = 6, jacobian_matrix_columns = predictive_configuration::degree_of_freedom_;
   Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
+  Jacobian_Matrix_.setAll(1E-5);
   state_initialize_.resize(jacobian_matrix_rows);
-  state_initialize_.setAll(0.0);
+  state_initialize_.setAll(1E-5);
   control_initialize_.resize(jacobian_matrix_columns);
-  control_initialize_.setAll(0.0);
+  control_initialize_.setAll(1E-5);
 
   // initialize acado configuration parameters
   max_num_iteration_ = predictive_configuration::max_num_iteration_;
@@ -120,7 +126,9 @@ void pd_frame_tracker::calculateQuaternionInverse(const geometry_msgs::Quaternio
 }
 
 // get transformation matrix between source and target frame
-bool pd_frame_tracker::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
+bool pd_frame_tracker::getTransform(const std::string& from, const std::string& to,
+                                    Eigen::VectorXd& stamped_pose,
+                                    geometry_msgs::Quaternion &quat_msg)
 {
   bool transform = false;
   stamped_pose = Eigen::VectorXd(6);
@@ -146,6 +154,13 @@ bool pd_frame_tracker::getTransform(const std::string& from, const std::string& 
                           stamped_tf.getRotation().getZ(),
                           stamped_tf.getRotation().getW()
                           );
+
+      // filled quaternion stamped pose
+      quat_msg.w = quat.w();
+      quat_msg.x = quat.x();
+      quat_msg.y = quat.y();
+      quat_msg.z = quat.z();
+
       tf::Matrix3x3 quat_matrix(quat);
       quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
 
@@ -355,6 +370,11 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
                                                   const Eigen::VectorXd& static_collision_vector,
                                                   std_msgs::Float64MultiArray& controlled_velocity)
 {
+
+  state_initialize_.setAll(1E-5);
+  control_initialize_.setAll(1E-5);
+  Jacobian_Matrix_.setAll(1E-5);
+
   Jacobian_Matrix_ = Jacobian_Matrix;
   // control initialize
   control_initialize_(0) = controlled_velocity.data[0];
@@ -372,6 +392,30 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   state_initialize_(3) = last_position(3);
   state_initialize_(4) = last_position(4);
   state_initialize_(5) = last_position(5);
+
+  std::cout<<"\033[32m"<<"____OLD GOAL POSE _______"<<goal_pose.transpose()<<"______"<<"\033[36;0m"<<std::endl;
+
+
+  //calculate quaternion error
+  Eigen::VectorXd pose = goal_pose;
+  Eigen::VectorXd temp = last_position;
+  geometry_msgs::Quaternion quat_tracking, quat_target, quat_inv, quat_error;
+  // current gripper pose
+  getTransform(predictive_configuration::chain_root_link_, predictive_configuration::tracking_frame_, temp, quat_tracking);
+  // current frame tracker pose
+  getTransform(predictive_configuration::chain_root_link_, predictive_configuration::target_frame_, temp, quat_target);
+
+  calculateQuaternionInverse(quat_tracking, quat_inv);
+  calculateQuaternionProduct(quat_inv, quat_target, quat_error);
+
+  tf::Quaternion quat(quat_error.x, quat_error.y, quat_error.z, quat_error.w);
+  tf::Matrix3x3 matrix(quat);
+  double r, p, y;
+  matrix.getRPY(r, p, y);
+  pose(3) = r;
+  pose(4) = p;
+  pose(5) = y;
+  std::cout<<"\033[32m"<<"____NEW GOAL POSE _______"<<pose.transpose()<<"______"<<"\033[36;0m"<<std::endl;
 
   std::cout<<"\033[95m"<<"________________________"<<self_collision_vector.sum()<<"___________________"<<"\033[36;0m"<<std::endl;
 
@@ -397,7 +441,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   OCP OCP_problem( start_time_, end_time_, discretization_intervals_);
 
   // generate cost function
-  generateCostFunction(OCP_problem, x, v, goal_pose);
+  generateCostFunction(OCP_problem, x, v, pose);
 
   // generate collision cost function
   if (self_collision_vector.sum() > (ball_radius_ + 0.10))

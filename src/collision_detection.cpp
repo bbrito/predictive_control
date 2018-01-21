@@ -121,7 +121,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
         transformEigenMatrixToKDL(*it, frame);
 
         // fill up pose stamped
-        stamped.header.frame_id = predictive_configuration::chain_base_link_;
+        stamped.header.frame_id = predictive_configuration::chain_root_link_;
         stamped.header.stamp = ros::Time().now();
         stamped.pose.position.x = previous_frame.p.x() + ((frame.p.x() - previous_frame.p.x())*0.5);
         stamped.pose.position.y = previous_frame.p.y() + ((frame.p.y() - previous_frame.p.y())*0.5);

@@ -112,6 +112,7 @@ target_link_libraries(self_collision_detection
 add_library(predictive_trajectory_generator src/predictive_trajectory_generator.cpp)
 add_dependencies(predictive_trajectory_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(predictive_trajectory_generator
+    predictive_configuration
     ${catkin_LIBRARIES}
     ${orocos_kdl_LIBRARIES}
     ${CERES_LIBRARIES}

@@ -3,7 +3,9 @@
 #define PREDICTIVE_CONTROL_PREDICTIVE_CONTROLLER_H
 
 // ros includes
+#include <pluginlib/class_loader.h>
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <sensor_msgs/JointState.h>
 #include <tf/tf.h>
@@ -27,6 +29,7 @@
 
 // boost includes
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 
 // yaml parsing
 #include <fstream>
@@ -37,6 +40,12 @@
 #include <predictive_control/kinematic_calculations.h>
 #include <predictive_control/collision_detection.h>
 #include <predictive_control/predictive_trajectory_generator.h>
+
+// actions, srvs, msgs
+#include <actionlib/server/simple_action_server.h>
+#include <actionlib/client/simple_action_client.h>
+#include <predictive_control/moveAction.h>
+#include <predictive_control/moveActionGoal.h>
 
 /*
 struct hold_pose
@@ -116,6 +125,8 @@ public:
 
 private:
 
+  ros::NodeHandle nh;
+
    tf::TransformListener tf_listener_;
 
    // degree of freedom
@@ -180,6 +191,12 @@ private:
 
   // predictive trajectory generator
   boost::shared_ptr<pd_frame_tracker> pd_trajectory_generator_;
+
+  // move to goal position action
+  boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::moveAction> > move_action_server_;
+
+  //actionlib::SimpleActionServer<predictive_control::moveAction> move_action_server_;
+  int moveCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr);
 
   /**
    * @brief spinNode: spin node means ROS is still running

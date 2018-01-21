@@ -5,7 +5,12 @@
 
 predictive_control_ros::predictive_control_ros()
 {
-;
+  /*
+  static const std::string MOVE_ACTION_NAME = "move_action";
+  move_action_server_(nh, MOVE_ACTION_NAME, boost::bind(&predictive_control_ros::moveCallBack, this, _1), false);
+  move_action_server_.start();
+  //move_action_server_->start();*/
+  ;
 }
 
 predictive_control_ros::~predictive_control_ros()
@@ -39,8 +44,6 @@ void predictive_control_ros::clearDataMember()
 // initialize all helper class of predictive control and subscibe joint state and publish controlled joint velocity
 bool predictive_control_ros::initialize()
 {
-  ros::NodeHandle nh;
-
   // make sure node is still running
   if (ros::ok())
   {
@@ -126,6 +129,10 @@ bool predictive_control_ros::initialize()
       controlled_velocity_.data[i] = last_velocity_(i);
 
     // ros interfaces
+    static const std::string MOVE_ACTION_NAME = "move_action";
+    move_action_server_.reset(new actionlib::SimpleActionServer<predictive_control::moveAction>(nh, MOVE_ACTION_NAME, boost::bind(&predictive_control_ros::moveCallBack, this, _1), false));
+    move_action_server_->start();
+
     joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control_ros::jointStateCallBack, this);
     controlled_velocity_pub_ = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
 
@@ -231,6 +238,17 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
     // pubish controll velocity
     controlled_velocity_pub_.publish(controlled_velocity_);
   }
+}
+
+int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr)
+{
+  std::string id = move_action_goal_ptr->target_frame_id;
+
+  /*
+  predictive_control::moveResult result;
+  result.reach = true;
+  move_action_server_.setSucceeded(result, "move to target pose successful ");
+  return 0;*/
 }
 
 // read current position and velocity of robot joints
@@ -411,6 +429,7 @@ bool predictive_control_ros::getTransform(const std::string& from, const std::st
                           stamped_tf.getRotation().getZ(),
                           stamped_tf.getRotation().getW()
                           );
+
       tf::Matrix3x3 quat_matrix(quat);
       quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
 

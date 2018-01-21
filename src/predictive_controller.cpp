@@ -5,12 +5,7 @@
 
 predictive_control_ros::predictive_control_ros()
 {
-  /*
-  static const std::string MOVE_ACTION_NAME = "move_action";
-  move_action_server_(nh, MOVE_ACTION_NAME, boost::bind(&predictive_control_ros::moveCallBack, this, _1), false);
-  move_action_server_.start();
-  //move_action_server_->start();*/
-  ;
+;
 }
 
 predictive_control_ros::~predictive_control_ros()
@@ -85,6 +80,8 @@ bool predictive_control_ros::initialize()
 
     //DEBUG
     activate_output_ = pd_config_->activate_controller_node_output_;
+    use_interactive_marker_ = true;
+    tracking_ = true;
 
     /// INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
     goal_tolerance_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(pd_config_->goal_pose_tolerance_);
@@ -215,6 +212,7 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
   if (checkInfinitesimalPose(tf_traget_from_tracking_vector_))
   {
     // publish zero controlled velocity
+    reach = true;
     publishZeroJointVelocity();
   }
 
@@ -236,14 +234,70 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
   else
   {
     // pubish controll velocity
+    reach = false;
     controlled_velocity_pub_.publish(controlled_velocity_);
   }
 }
 
 int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr)
 {
-  std::string id = move_action_goal_ptr->target_frame_id;
+  predictive_control::moveResult result;
+  predictive_control::moveFeedback feedback;
+  goal_gripper_pose_.resize(6);
 
+  // asume that not any target frame id set than it should use interative marker node
+  if (move_action_goal_ptr->target_frame_id.empty() || move_action_goal_ptr->target_endeffector_pose.header.frame_id.empty())
+  {
+    tracking_ = true;
+    use_interactive_marker_ = true;
+    result.reach = false;
+    move_action_server_->setAborted(result, " Not set desired goal and frame id, Now use to intractive marker to set desired goal");
+  }
+
+  else
+  {
+    tracking_ = false;
+    use_interactive_marker_ = false;
+
+    // extract goal gripper position and orientation
+    goal_gripper_pose_(0) = move_action_goal_ptr->target_endeffector_pose.pose.position.x;
+    goal_gripper_pose_(1) = move_action_goal_ptr->target_endeffector_pose.pose.position.y;
+    goal_gripper_pose_(2) = move_action_goal_ptr->target_endeffector_pose.pose.position.z;
+
+    tf::Quaternion quat(move_action_goal_ptr->target_endeffector_pose.pose.orientation.x,
+                        move_action_goal_ptr->target_endeffector_pose.pose.orientation.y,
+                        move_action_goal_ptr->target_endeffector_pose.pose.orientation.z,
+                        move_action_goal_ptr->target_endeffector_pose.pose.orientation.w);
+
+    tf::Matrix3x3 matrix(quat);
+    double r(0.0), p(0.0), y(0.0);
+    matrix.getRPY(r, p, y);
+
+    goal_gripper_pose_(3) = r;
+    goal_gripper_pose_(4) = p;
+    goal_gripper_pose_(5) = y;
+
+    // set result for validation
+    result.reach = reach;
+    move_action_server_->setSucceeded(result, "successfully reach to desired pose");
+
+    // publish feed to tracking information
+    tf::Matrix3x3 return_matrix;
+    tf::Quaternion current_quat;
+    return_matrix.setRPY(current_gripper_pose_(3), current_gripper_pose_(4), current_gripper_pose_(5));
+    return_matrix.getRotation(current_quat);
+
+    feedback.current_endeffector_pose.position.x = current_gripper_pose_(0);
+    feedback.current_endeffector_pose.position.y = current_gripper_pose_(1);
+    feedback.current_endeffector_pose.position.z = current_gripper_pose_(2);
+    feedback.current_endeffector_pose.orientation.w = current_quat.w();
+    feedback.current_endeffector_pose.orientation.x = current_quat.x();
+    feedback.current_endeffector_pose.orientation.y = current_quat.y();
+    feedback.current_endeffector_pose.orientation.z = current_quat.z();
+    move_action_server_->publishFeedback(feedback);
+
+  }
+    return 0;
   /*
   predictive_control::moveResult result;
   result.reach = true;
@@ -291,7 +345,10 @@ void predictive_control_ros::jointStateCallBack(const sensor_msgs::JointState::C
 
     // get current and goal pose of gripper, w.r.t root link
     kinematic_solver_->getGripperPoseVectorFromFK(FK_Matrix_, current_gripper_pose_);
-    getTransform(pd_config_->chain_root_link_, pd_config_->target_frame_, goal_gripper_pose_);
+
+    // use intrative marker to set desired goal pose, else set it by mannually
+    if (use_interactive_marker_ || tracking_)
+      getTransform(pd_config_->chain_root_link_, pd_config_->target_frame_, goal_gripper_pose_);
 
     // update collision ball according to joint angles
     collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);

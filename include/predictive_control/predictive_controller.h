@@ -148,7 +148,8 @@ private:
   bool activate_output_;
   bool use_interactive_marker_; // used to set desired position by mannually or using interactive marker node
   bool tracking_;
-  bool reach;
+  bool execution_complete_;
+  std::string target_frame_;
 
   // current end effector and goal frame pose relative to root link
   Eigen::VectorXd current_gripper_pose_;

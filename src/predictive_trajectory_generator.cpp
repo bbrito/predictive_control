@@ -441,7 +441,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   OCP OCP_problem( start_time_, end_time_, discretization_intervals_);
 
   // generate cost function
-  generateCostFunction(OCP_problem, x, v, pose);
+  generateCostFunction(OCP_problem, x, v, goal_pose);
 
   // generate collision cost function
   if (self_collision_vector.sum() > (ball_radius_ + 0.10))

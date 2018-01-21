@@ -395,7 +395,6 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   std::cout<<"\033[32m"<<"____OLD GOAL POSE _______"<<goal_pose.transpose()<<"______"<<"\033[36;0m"<<std::endl;
 
-
   //calculate quaternion error
   Eigen::VectorXd pose = goal_pose;
   Eigen::VectorXd temp = last_position;
@@ -410,6 +409,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   tf::Quaternion quat(quat_error.x, quat_error.y, quat_error.z, quat_error.w);
   tf::Matrix3x3 matrix(quat);
+
   double r, p, y;
   matrix.getRPY(r, p, y);
   pose(3) = r;

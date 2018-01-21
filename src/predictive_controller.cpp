@@ -163,6 +163,8 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
 {
   std::cout.precision(20);
 
+  ROS_WARN_STREAM(goal_gripper_pose_.transpose());
+
   //std_msgs::Float64MultiArray enforced_velocity_vector;
   //enforceVelocityInLimits(controlled_velocity_, enforced_velocity_vector);
 
@@ -241,6 +243,7 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
 
 int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr)
 {
+
   predictive_control::moveResult result;
   predictive_control::moveFeedback feedback;
   goal_gripper_pose_.resize(6);
@@ -256,8 +259,11 @@ int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConst
 
   else
   {
+    ROS_WARN("==========***********============ predictive_control_ros::moveCallBack: recieving new goal request ==========***********============");
     tracking_ = false;
     use_interactive_marker_ = false;
+
+    ros::Duration(15.0).sleep();
 
     // extract goal gripper position and orientation
     goal_gripper_pose_(0) = move_action_goal_ptr->target_endeffector_pose.pose.position.x;

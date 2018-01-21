@@ -102,6 +102,14 @@ public:
                                        const double& weight_factor
                                        );
 
+  /**
+   * @brief createStaticFrame: visulize intermidiate added frame, relative to root frame
+   * @param stamped: Center position of ball
+   * @param frame_name: Child frame name
+   */
+  void createStaticFrame(const geometry_msgs::PoseStamped& stamped,
+                         const std::string& frame_name
+                         );
 
   /**
    * @brief getEuclideanDistance: compute 2D distance called EuclideanDistance
@@ -142,14 +150,7 @@ private:
   // static frame broadcaster
   tf2_ros::StaticTransformBroadcaster static_broadcaster_;
 
-  /**
-   * @brief createStaticFrame: visulize intermidiate added frame, relative to root frame
-   * @param stamped: Center position of ball
-   * @param frame_name: Child frame name
-   */
-  void createStaticFrame(const geometry_msgs::PoseStamped& stamped,
-                         const std::string& frame_name
-                         );
+
 
   /**
    * @brief transformKDLToEigenMatrix: transform KDL Frame to Eigen Matrix

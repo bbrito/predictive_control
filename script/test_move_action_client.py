@@ -42,6 +42,41 @@ def move_action_client():
         print "Action finished: %s"%state
     else:
         print "Action did not finish within timeout"
+
+    while state != 3:
+        print
+    # ----------------------- send new goal -----------------------------
+    goal = predictive_control.msg.moveGoal()
+    goal.target_frame_id = "object_1"
+
+    # header
+    goal.target_endeffector_pose.header.frame_id = "world"
+    goal.target_endeffector_pose.header.stamp = rospy.Time.now()
+
+    # position
+    goal.target_endeffector_pose.pose.position.x = 0.10605
+    goal.target_endeffector_pose.pose.position.y = 0.3269
+    goal.target_endeffector_pose.pose.position.z = 0.70605
+
+    # orientation
+    goal.target_endeffector_pose.pose.orientation.w = 0.99997
+    goal.target_endeffector_pose.pose.orientation.x = 0.00120
+    goal.target_endeffector_pose.pose.orientation.y = 0.005199
+    goal.target_endeffector_pose.pose.orientation.z = 0.00450
+
+    # Sends the goal to the action server
+    rospy.loginfo("Now sending goal")
+    move_client.send_goal(goal)
+
+    # Waits for the server to finish performing the action
+    finished_before_timeout = move_client.wait_for_result(rospy.Duration(50, 0))
+
+    if finished_before_timeout:
+        state=move_client.get_state()
+        print "Action finished: %s"%state
+    else:
+        print "Action did not finish within timeout"
+
     return
 
 if __name__ == '__main__':

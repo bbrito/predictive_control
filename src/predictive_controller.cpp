@@ -3,12 +3,12 @@
 
 #include <predictive_control/predictive_controller.h>
 
-predictive_control::predictive_control()
+predictive_control_ros::predictive_control_ros()
 {
 ;
 }
 
-predictive_control::~predictive_control()
+predictive_control_ros::~predictive_control_ros()
 {
   clearDataMember();
   //delete pd_config_;
@@ -16,14 +16,14 @@ predictive_control::~predictive_control()
   //delete collision_detect_;
 }
 
-void predictive_control::spinNode()
+void predictive_control_ros::spinNode()
 {
   ROS_INFO(" Predictive control node is running, now it's 'Spinning Node'");
   ros::spin();
 }
 
 // diallocated memory
-void predictive_control::clearDataMember()
+void predictive_control_ros::clearDataMember()
 {
   //current_position_ = Eigen::VectorXd(1.0);
   last_position_ = Eigen::VectorXd(degree_of_freedom_);
@@ -37,7 +37,7 @@ void predictive_control::clearDataMember()
 }
 
 // initialize all helper class of predictive control and subscibe joint state and publish controlled joint velocity
-bool predictive_control::initialize()
+bool predictive_control_ros::initialize()
 {
   ros::NodeHandle nh;
 
@@ -64,7 +64,7 @@ bool predictive_control::initialize()
     if (pd_config_success == false || kinematic_success == false
         || collision_success == false || static_collision_success == false || pd_traj_success == false || pd_config_->initialize_success_ == false)
     {
-      ROS_ERROR("predictive_control: FAILED TO INITILIZED!!");
+      ROS_ERROR("predictive_control_ros: FAILED TO INITILIZED!!");
       std::cout << "States: \n"
                 << " pd_config: " << std::boolalpha << pd_config_success << "\n"
                 << " kinematic solver: " << std::boolalpha << kinematic_success << "\n"
@@ -126,7 +126,7 @@ bool predictive_control::initialize()
       controlled_velocity_.data[i] = last_velocity_(i);
 
     // ros interfaces
-    joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control::jointStateCallBack, this);
+    joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control_ros::jointStateCallBack, this);
     controlled_velocity_pub_ = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
 
     ros::Duration(1).sleep();
@@ -141,7 +141,7 @@ bool predictive_control::initialize()
       std::cin >> ch;
     }
 
-    timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &predictive_control::runNode, this);
+    timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &predictive_control_ros::runNode, this);
     timer_.start();
 
     ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
@@ -149,13 +149,13 @@ bool predictive_control::initialize()
   }
   else
   {
-    ROS_ERROR("predictive_control: Failed to initialize as ROS Node is shoutdown");
+    ROS_ERROR("predictive_control_ros: Failed to initialize as ROS Node is shoutdown");
     return false;
   }
 }
 
 // update this function 1/colck_frequency
-void predictive_control::runNode(const ros::TimerEvent &event)
+void predictive_control_ros::runNode(const ros::TimerEvent &event)
 {
   std::cout.precision(20);
 
@@ -234,7 +234,7 @@ void predictive_control::runNode(const ros::TimerEvent &event)
 }
 
 // read current position and velocity of robot joints
-void predictive_control::jointStateCallBack(const sensor_msgs::JointState::ConstPtr& msg)
+void predictive_control_ros::jointStateCallBack(const sensor_msgs::JointState::ConstPtr& msg)
 {
   Eigen::VectorXd current_position = Eigen::VectorXd(degree_of_freedom_);
   Eigen::VectorXd current_velocity = Eigen::VectorXd(degree_of_freedom_);
@@ -304,7 +304,7 @@ void predictive_control::jointStateCallBack(const sensor_msgs::JointState::Const
 }
 
 /*
-void predictive_control_node::run_node(const ros::TimerEvent& event)
+void predictive_control_ros_node::run_node(const ros::TimerEvent& event)
 {
 	ros::Duration period = event.current_real - event.last_real;
 
@@ -367,7 +367,7 @@ void predictive_control_node::run_node(const ros::TimerEvent& event)
 }
 */
 
-void predictive_control::publishZeroJointVelocity()
+void predictive_control_ros::publishZeroJointVelocity()
 {
   if (activate_output_)
   {
@@ -385,7 +385,7 @@ void predictive_control::publishZeroJointVelocity()
   controlled_velocity_pub_.publish(controlled_velocity_);
 }
 
-bool predictive_control::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
+bool predictive_control_ros::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
 {
   bool transform = false;
   stamped_pose = Eigen::VectorXd(6);
@@ -418,13 +418,13 @@ bool predictive_control::getTransform(const std::string& from, const std::string
     }
     catch (tf::TransformException& ex)
     {
-      ROS_ERROR("predictive_control::getTransform: %s", ex.what());
+      ROS_ERROR("predictive_control_ros::getTransform: %s", ex.what());
     }
   }
 
   else
   {
-    ROS_WARN("predictive_control::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
+    ROS_WARN("predictive_control_ros::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
              from.c_str(), to.c_str());
   }
 
@@ -432,7 +432,7 @@ bool predictive_control::getTransform(const std::string& from, const std::string
 }
 
 /*
-bool predictive_control::getTransform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
+bool predictive_control_ros::getTransform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
 {
   bool transform = false;
   tf::StampedTransform stamped_tf;
@@ -465,7 +465,7 @@ bool predictive_control::getTransform(const std::string& from, const std::string
     }
     catch (tf::TransformException& ex)
     {
-      ROS_ERROR("predictive_control_node::getTransform: \n%s", ex.what());
+      ROS_ERROR("predictive_control_ros_node::getTransform: \n%s", ex.what());
     }
   }
 
@@ -479,7 +479,7 @@ bool predictive_control::getTransform(const std::string& from, const std::string
 */
 
 // check infitisimal distance creteria
-bool predictive_control::checkInfinitesimalPose(const Eigen::VectorXd &pose)
+bool predictive_control_ros::checkInfinitesimalPose(const Eigen::VectorXd &pose)
 {
   // check infinitesimal distance in position
   if (fabs(pose(0)) > pd_config_->goal_pose_tolerance_.at(0))
@@ -517,7 +517,7 @@ bool predictive_control::checkInfinitesimalPose(const Eigen::VectorXd &pose)
 }
 
 // check position lower and upper limit violation
-bool predictive_control::checkPositionLimitViolation(const Eigen::VectorXd &joint_position, const double &position_tolerance)
+bool predictive_control_ros::checkPositionLimitViolation(const Eigen::VectorXd &joint_position, const double &position_tolerance)
 {
   int size = joint_position.cols() * joint_position.rows();
   // confirm size using conditional operator
@@ -557,7 +557,7 @@ bool predictive_control::checkPositionLimitViolation(const Eigen::VectorXd &join
 }
 
 // check position lower and upper limit violation
-bool predictive_control::checkVelocityLimitViolation(const std_msgs::Float64MultiArray &joint_velocity, const double &velocity_tolerance)
+bool predictive_control_ros::checkVelocityLimitViolation(const std_msgs::Float64MultiArray &joint_velocity, const double &velocity_tolerance)
 {
   int size = joint_velocity.data.size();
   // confirm size using conditional operator
@@ -597,7 +597,7 @@ bool predictive_control::checkVelocityLimitViolation(const std_msgs::Float64Mult
 }
 
 // enforcing joint to be in position limits
-void predictive_control::enforcePositionInLimits(const Eigen::VectorXd &joint_position,
+void predictive_control_ros::enforcePositionInLimits(const Eigen::VectorXd &joint_position,
                                                  Eigen::VectorXd &enforced_joint_position,
                                                  const double& position_tolerance)
 {
@@ -651,7 +651,7 @@ void predictive_control::enforcePositionInLimits(const Eigen::VectorXd &joint_po
 }
 
 // enforcing joint locity to be in velocity limits
-void predictive_control::enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
+void predictive_control_ros::enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
                                                  std_msgs::Float64MultiArray& enforced_joint_velocity,
                                                  const double &velocity_tolerance)
 {

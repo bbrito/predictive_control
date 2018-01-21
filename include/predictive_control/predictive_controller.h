@@ -45,7 +45,7 @@ struct hold_pose
   Eigen::VectorXd pose_hold_vector_;
 };*/
 
-class predictive_control
+class predictive_control_ros
 {
   /** Managing execution of all classes of predictive control
    * - Handle self collsion avoidance
@@ -57,14 +57,14 @@ class predictive_control
 public:
 
   /**
-   * @brief predictive_control: Default constructor, allocate memory
+   * @brief predictive_control_ros: Default constructor, allocate memory
    */
-  predictive_control();
+  predictive_control_ros();
 
   /**
-   * @brief ~predictive_control: Default distructor, free memory
+   * @brief ~predictive_control_ros: Default distructor, free memory
    */
-  ~predictive_control();
+  ~predictive_control_ros();
 
   /**
    * @brief initialize: Initialize all helper class of predictive control and subscibe joint state and publish controlled joint velocity

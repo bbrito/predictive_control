@@ -7,7 +7,7 @@ int main(int argc, char **argv)
   try
   {
     ros::init(argc, argv, ros::this_node::getName());
-    predictive_control pd_control_;
+    predictive_control_ros pd_control_;
 
     // initialize predictive control node
     if (!pd_control_.initialize())

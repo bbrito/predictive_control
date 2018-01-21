@@ -20,7 +20,7 @@
     <arg name="pkg_hardware_config" default="$(find cob_hardware_config)"/>
 
     <!-- This configuration file will use for predictive control -->
-    <!--rosparam command="load" file="$(find predictive_control)/config/predictive_config_parameter.yaml"/-->
+    <rosparam command="load" file="$(find predictive_control)/planning_queries/test_object_database.yaml"/>
 
     <!-- start gazebo with empty world -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">

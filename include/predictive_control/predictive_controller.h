@@ -200,7 +200,15 @@ private:
   boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::moveAction> > move_action_server_;
 
   //actionlib::SimpleActionServer<predictive_control::moveAction> move_action_server_;
-  int moveCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr);
+  //int moveGoalCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr);
+
+  /// Action interface
+  predictive_control::moveResult move_action_result_;
+  predictive_control::moveFeedback move_action_feedback_;
+  void moveGoalCB();
+  void movePreemptCB();
+  void actionSuccess();
+  void actionAbort();
 
   /**
    * @brief spinNode: spin node means ROS is still running

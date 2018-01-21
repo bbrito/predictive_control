@@ -83,6 +83,8 @@ bool predictive_control_ros::initialize()
     use_interactive_marker_ = true;
     tracking_ = true;
     execution_complete_ = false;
+    move_action_result_.reach = false;
+
     target_frame_ = pd_config_->target_frame_;
 
     /// INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
@@ -129,7 +131,9 @@ bool predictive_control_ros::initialize()
 
     // ros interfaces
     static const std::string MOVE_ACTION_NAME = "move_action";
-    move_action_server_.reset(new actionlib::SimpleActionServer<predictive_control::moveAction>(nh, MOVE_ACTION_NAME, boost::bind(&predictive_control_ros::moveCallBack, this, _1), false));
+    move_action_server_.reset(new actionlib::SimpleActionServer<predictive_control::moveAction>(nh, MOVE_ACTION_NAME, false));
+    move_action_server_->registerGoalCallback(boost::bind(&predictive_control_ros::moveGoalCB, this));
+    move_action_server_->registerPreemptCallback(boost::bind(&predictive_control_ros::movePreemptCB, this));
     move_action_server_->start();
 
     joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control_ros::jointStateCallBack, this);
@@ -217,6 +221,7 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
   {
     // publish zero controlled velocity
     execution_complete_ = true;
+    actionSuccess();
     publishZeroJointVelocity();
   }
 
@@ -243,6 +248,44 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
   }
 }
 
+void predictive_control_ros::moveGoalCB()
+{
+  if(move_action_server_->isNewGoalAvailable())
+  {
+    boost::shared_ptr<const predictive_control::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
+    tracking_ = false;
+    use_interactive_marker_ = false;
+    collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
+    target_frame_ = move_action_goal_ptr->target_frame_id;
+  }
+}
+
+void predictive_control_ros::movePreemptCB()
+{
+  move_action_result_.reach = true;
+  move_action_server_->setPreempted(move_action_result_, "Action has been preempted");
+  tracking_ = true;
+  execution_complete_ = false;
+  target_frame_ = pd_config_->target_frame_;
+}
+
+void predictive_control_ros::actionSuccess()
+{
+  move_action_server_->setSucceeded(move_action_result_, "Goal succeeded!");
+  tracking_ = true;
+  execution_complete_ = false;
+  target_frame_ = pd_config_->target_frame_;
+}
+
+void predictive_control_ros::actionAbort()
+{
+  move_action_server_->setAborted(move_action_result_, "Action has been aborted");
+  tracking_ = true;
+  execution_complete_ = false;
+  target_frame_ = pd_config_->target_frame_;
+}
+
+/*
 int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr)
 {
 
@@ -270,7 +313,7 @@ int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConst
 
     target_frame_ = move_action_goal_ptr->target_frame_id;
 
-    /*
+    ////
     // extract goal gripper position and orientation
     goal_gripper_pose_(0) = move_action_goal_ptr->target_endeffector_pose.pose.position.x;
     goal_gripper_pose_(1) = move_action_goal_ptr->target_endeffector_pose.pose.position.y;
@@ -288,7 +331,7 @@ int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConst
     goal_gripper_pose_(3) = r;
     goal_gripper_pose_(4) = p;
     goal_gripper_pose_(5) = y;
-*/
+////
     // set result for validation
     result.reach = execution_complete_;
     move_action_server_->setSucceeded(result, "successfully reach to desired pose");
@@ -310,13 +353,13 @@ int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConst
 
   }
     return 0;
-  /*
+  /////
   predictive_control::moveResult result;
   result.reach = true;
   move_action_server_.setSucceeded(result, "move to target pose successful ");
-  return 0;*/
+  return 0;////
 }
-
+*/
 // read current position and velocity of robot joints
 void predictive_control_ros::jointStateCallBack(const sensor_msgs::JointState::ConstPtr& msg)
 {

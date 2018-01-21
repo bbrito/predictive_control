@@ -41,7 +41,7 @@ bool Kinematic_calculations::initialize(const std::string rbt_description)
   }
 
   // construct chain using tree inforamtion. Note: make sure chain root link or chain base link
-  tree.getChain( predictive_configuration::chain_root_link_, predictive_configuration::chain_tip_link_, chain);
+  tree.getChain( predictive_configuration::chain_base_link_, predictive_configuration::chain_tip_link_, chain);
   if (chain.getNrOfJoints() == 0 || chain.getNrOfSegments() == 0)
   {
     ROS_ERROR("Failed to initialize kinematic chain");

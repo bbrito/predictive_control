@@ -16,7 +16,7 @@ import geometry_msgs.msg
 from numpy import linalg as LA
 import random
 
-def add_environment():
+def add_environment(object_id):
     rospy.loginfo("Calling static object service ... ")
     rospy.wait_for_service("/arm/predictive_control/StaticCollision/add_static_object")
     rospy.loginfo("Now all services are available ... ")
@@ -24,9 +24,9 @@ def add_environment():
     try:
         client = rospy.ServiceProxy("/arm/predictive_control/StaticCollision/add_static_object", predictive_control.srv.StaticCollisionObject)
         request = predictive_control.srv.StaticCollisionObjectRequest()
-        
-        request.object_name = "box"
-        request.object_id = "box"
+
+        request.object_name = object_id
+        request.object_id = object_id
 
         # dimension of object
         dimension = geometry_msgs.msg.Vector3()
@@ -43,7 +43,7 @@ def add_environment():
         # position
         pose.pose.position.x = 0.0
         pose.pose.position.y = 0.0
-        pose.pose.position.z = 0.10
+        pose.pose.position.z = 0.05
 
         # object orientation
         pose.pose.orientation.w = 1.0
@@ -70,7 +70,7 @@ def add_environment():
             rospy.logerr(" Service did not process request " + str(exc))
 
 
-def remove_environment():
+def remove_environment(object_id):
     rospy.loginfo("Calling static object service ... ")
     rospy.wait_for_service("/arm/predictive_control/StaticCollision/remove_static_object")
     rospy.loginfo("Now all services are available ... ")
@@ -80,8 +80,9 @@ def remove_environment():
                                     predictive_control.srv.StaticCollisionObject)
         request = predictive_control.srv.StaticCollisionObjectRequest()
 
-        request.object_name = "box"
-        request.object_id = "box"
+        # Note: problem with removing cylindrical objects
+        request.object_name = object_id
+        request.object_id = object_id
 
         # call service to add static object into environments
         success = client(request)
@@ -99,6 +100,9 @@ def remove_environment():
 
 if __name__ == '__main__':
     rospy.init_node("pd_static_object_service")
-    add_environment()
+
+    object_id = "box"
+
+    add_environment(object_id)
     rospy.sleep(3.0)
-    remove_environment()
+    remove_environment(object_id)

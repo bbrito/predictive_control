@@ -1,0 +1,52 @@
+bookshelves
+* bookshelf_bottom
+1
+box
+1.06 0.56 0.03		# size of each rack
+0.53 0.28 0.0225	# position of each rack
+0 0 0 1				# quternion of each rack
+0 0 0 0
+* bookshelf_shelf1	# id of each rack
+1
+box
+1.06 0.56 0.03
+0.53 0.28 0.552
+0 0 0 1
+0 0 0 0
+* bookshelf_shelf2
+1
+box
+1.06 0.56 0.03
+0.53 0.28 1.030
+0 0 0 1
+0 0 0 0
+* bookshelf_shelf3
+1
+box
+1.06 0.56 0.03
+0.53 0.28 1.514
+0 0 0 1
+0 0 0 0
+* bookshelf_top
+1
+box
+1.06 0.56 0.03
+0.53 0.28 2.00
+0 0 0 1
+0 0 0 0
+* bookshelf_left_wall
+1
+box
+0.06 0.56 2.0
+1.06 0.28 1.0
+0 0 0 1
+0 0 0 0
+* bookshelf_right_wall
+1
+box
+0.06 0.56 2.0
+0 0.28 1.0
+0 0 0 1
+0 0 0 0
+.
+

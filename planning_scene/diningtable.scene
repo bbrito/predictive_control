@@ -1,0 +1,10 @@
+tableshelves
+* diningtable		# id of each rack
+1
+box
+0.90 0.90 0.74		# size of each diningtable, #0.5 1.5 0.78	
+0.45 0.45 0.37		# position of diningtable, 0.25 0.75 0.39
+0 0 0 1				# quternion of diningtable
+0 0 0 0	
+.
+

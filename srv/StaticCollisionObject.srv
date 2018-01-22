@@ -1,6 +1,15 @@
 # static collision object request
 # collision object 
-CollisionObject collision_object
+#CollisionObject collision_object
+
+# add static object from file 
+string file_name
+
+# the name of the object
+string object_name
+string object_id
+
+geometry_msgs/PoseStamped primitive_pose
 
 # current position of robot/other object, current poition means it should be center of object
 #geometry_msgs/Point current_position
@@ -14,5 +23,6 @@ CollisionObject collision_object
 # Respose of static collision object service
 #float64[] static_collision_cost_vector
 bool success
+string message
 
 

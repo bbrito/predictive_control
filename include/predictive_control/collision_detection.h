@@ -3,7 +3,9 @@
 #define PREDICTIVE_CONTROL_COLLISION_DETECTION_H_
 
 // ros include
+#include <pluginlib/class_loader.h>
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf2_kdl/tf2_kdl.h>
@@ -24,6 +26,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <fstream>
 
 // kdl,urdf includes
 #include <urdf/model.h>

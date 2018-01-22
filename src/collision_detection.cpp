@@ -370,31 +370,163 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
                                                predictive_control::StaticCollisionObjectResponse &response)
 {
 
-  // add object into collision matrix for cost calculation
-  collision_matrix_[request.collision_object.object_name] = request.collision_object.primitive_poses.at(0);
-  createStaticFrame(request.collision_object.primitive_poses.at(0), request.collision_object.object_name);
+  // read data from service request
+  if (request.file_name.empty())
+  {
+    ROS_WARN("Recieved add static object service call ...");
 
-  visualization_msgs::Marker marker;
+  // id should be unique
+  std::string object_id = request.collision_object.object_id;
 
-  marker.type = visualization_msgs::Marker::CUBE;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.ns = "preview";
+  if (request.collision_object.object_id.empty())
+    object_id = request.collision_object.object_name;
 
-  // texture
-  marker.color.r = 1.0;
-  marker.color.g = 0.0;
-  marker.color.b = 0.0;
-  marker.color.a = 0.1;
+    // add object into collision matrix for cost calculation
+    collision_matrix_[object_id] = request.collision_object.primitive_poses.at(0);
+    createStaticFrame(request.collision_object.primitive_poses.at(0), object_id);
 
-  // dimension
-  marker.scale.x = 1.30;
-  marker.scale.y = 1.30;
-  marker.scale.z = 0.10;
+    visualization_msgs::Marker marker;
 
+    // box
+    if (request.collision_object.object_name == "box" || request.collision_object.object_name == "BOX")
+    {
+    	marker.type = marker.CUBE;
+    }
 
-  // store created marker
-  marker_array_.markers.push_back(marker);
+    // cylinder
+    else if (request.collision_object.object_name == "cylinder" || request.collision_object.object_name == "CYLINDER")
+    {
+    	marker.type = marker.CYLINDER;
+    }
 
+    // sphere
+    else if (request.collision_object.object_name == "sphere" || request.collision_object.object_name == "SPHERE")
+    {
+    	marker.type = marker.SPHERE;
+    }
+
+    else
+    {
+    	response.success = false;
+	    std::string message("Shape of object is not defined correctly");
+	    ROS_ERROR("StaticCollision: %s", message.c_str());
+    	response.message = message;
+    	return false;
+    }
+
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.ns = "preview";
+
+    // texture
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+    marker.color.a = 0.1;
+
+    // dimension
+    marker.scale.x = request.collision_object.visualize_marker_array.markers.at(0).scale.x;
+    marker.scale.y = request.collision_object.visualize_marker_array.markers.at(0).scale.y;
+    marker.scale.z = request.collision_object.visualize_marker_array.markers.at(0).scale.z;
+
+    /*marker.pose.position.x = request.collision_object.primitive_poses.at(0).pose.position.x;
+    marker.pose.position.y = request.collision_object.primitive_poses.at(0).pose.position.y;
+    marker.pose.position.z = request.collision_object.primitive_poses.at(0).pose.position.z;
+
+    marker.pose.orientation.w = 1.0;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;*/
+
+    marker.pose = request.collision_object.primitive_poses.at(0).pose;
+
+    // store created marker
+    marker_array_.markers.push_back(marker);
+  }
+
+  // read static object dimenstion from files
+  if (!request.file_name.empty())
+  {
+    // initialize static objects
+    std::ifstream myfile;
+    std::string line, id;
+    geometry_msgs::PoseStamped object_pose;
+    shape_msgs::SolidPrimitive primitive;
+    visualization_msgs::Marker marker;
+    primitive.dimensions.resize(3);
+    std::string object_id;
+
+    std::string filename = ros::package::getPath("predictive_control") + "/planning_scene/"+ request.file_name + ".scene";
+    myfile.open(filename.c_str());
+
+    // check file is open
+    if (myfile.is_open())
+    {
+      getline(myfile, line);  //1 line
+
+      while(!myfile.eof())
+          {
+            getline(myfile, id);  //2 line
+
+            if(id == ".")	break;
+            object_id = id;
+
+            getline(myfile, line);  // 3 line not useful line
+            getline(myfile, line);  // 4 line
+
+            if(line.compare("box") == 0)
+            {
+              primitive.type = primitive.BOX;
+              marker.type = marker.CUBE;
+            }
+
+            else if( line.compare("cylinder") == 0)
+            {
+              primitive.type = primitive.CYLINDER;
+              marker.type = marker.CYLINDER;
+            }
+
+            else if( line.compare("sphere") == 0)
+            {
+              primitive.type = primitive.SPHERE;
+              marker.type = marker.SPHERE;
+            }
+
+            else
+            {
+            	response.success = false;
+        	    std::string message("Shape of object is not defined correctly, check file on location " + filename);
+        	    ROS_ERROR("StaticCollision: %s", message.c_str());
+            	response.message = message;
+            	return false;
+            }
+
+            //myfile>>primitive.dimensions[0]>>primitive.dimensions[1]>>primitive.dimensions[2];  //5 line
+            myfile>>marker.scale.x >>marker.scale.y>>marker.scale.z;  //5 line
+            getline (myfile,line);
+
+            myfile>>object_pose.pose.position.x>>object_pose.pose.position.y>>object_pose.pose.position.z;   //6 line
+            getline (myfile,line);
+            myfile>>object_pose.pose.orientation.x>>object_pose.pose.orientation.y>>object_pose.pose.orientation.z >> object_pose.pose.orientation.w; //7 line
+            object_pose.header.stamp = ros::Time(0);
+            object_pose.header.frame_id = request.file_name;
+
+            getline(myfile, line);	// 8 line not useful line
+            getline(myfile, line);	// 9 line not useful line
+
+            marker_array_.markers.push_back(marker);
+      }
+    }
+  }
+
+  // response
+  response.success = true;
+  std::string message("Successfully add to the environment");
+  ROS_WARN("StaticCollision: %s", message.c_str());
+  response.message = message;
+
+  marker_pub_.publish(marker_array_);
+
+  return true;
 }
 
 bool StaticCollision::removeStaticObjectServiceCB(predictive_control::StaticCollisionObjectRequest &request,

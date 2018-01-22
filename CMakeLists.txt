@@ -71,6 +71,7 @@ generate_messages(
             sensor_msgs
             std_msgs
             shape_msgs
+            visualization_msgs
 )
 
 catkin_package(

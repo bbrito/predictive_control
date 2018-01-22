@@ -1,6 +1,4 @@
 # static collision object request
-# collision object 
-#CollisionObject collision_object
 
 # add static object from file 
 string file_name
@@ -9,7 +7,11 @@ string file_name
 string object_name
 string object_id
 
+# position of object
 geometry_msgs/PoseStamped primitive_pose
+
+# dimension of object
+geometry_msgs/Vector3 dimension
 
 # current position of robot/other object, current poition means it should be center of object
 #geometry_msgs/Point current_position

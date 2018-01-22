@@ -3,11 +3,12 @@ Header header
 
 # the name of the object 
 string object_name
+string object_id
 
 # solid geometric primitives
 #shape_msgs/SolidPrimitive[] primitives
 geometry_msgs/PoseStamped[] primitive_poses
-visualization_msgs/Marker visualize_marker_array
+visualization_msgs/MarkerArray visualize_marker_array
 
 # Adds the object to the planning scene. If the object previously existed, it is replaced.
 #byte ADD=0

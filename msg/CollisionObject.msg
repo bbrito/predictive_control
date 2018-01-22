@@ -5,8 +5,9 @@ Header header
 string object_name
 
 # solid geometric primitives
-shape_msgs/SolidPrimitive[] primitives
-geometry_msgs/Pose[] primitive_poses
+#shape_msgs/SolidPrimitive[] primitives
+geometry_msgs/PoseStamped[] primitive_poses
+visualization_msgs/Marker visualize_marker_array
 
 # Adds the object to the planning scene. If the object previously existed, it is replaced.
 #byte ADD=0

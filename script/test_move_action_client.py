@@ -37,9 +37,9 @@ class moveActionClient:
 
         #rospy.spin()
 
-        for i in range(1, runs, 1):
+        for i in range(0, runs, 1):
             print ('\033[94m' + "Current no. of runs is " + str(i) + '\033[0m')
-            grasp_object = "pose_" + str(i)
+            grasp_object = "pose_" + str(random.randint(start_random, end_random))
             print "object_name: ", grasp_object
 
             data_info_obj = ReadDataFromList(item_list=object.items_list, object_name=grasp_object)
@@ -64,7 +64,7 @@ class moveActionClient:
         goal.target_endeffector_pose.pose.position.y = object_position[1]
         goal.target_endeffector_pose.pose.position.z = object_position[2]
 
-        # orientation
+        # orientation, -0.128, -0.628, -0.034, 0.767
         goal.target_endeffector_pose.pose.orientation.x = object_orientation[0] #0.00120
         goal.target_endeffector_pose.pose.orientation.y = object_orientation[1] #0.005199
         goal.target_endeffector_pose.pose.orientation.z = object_orientation[2] #0.00450

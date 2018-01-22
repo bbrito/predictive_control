@@ -554,9 +554,9 @@ void pd_frame_tracker::setAlgorithmOptions(RealTimeAlgorithm& OCP_solver)
   //OCP_solver.set(TERMINATE_AT_CONVERGENCE, true);         // default true
 */
   // output
-  //OCP_solver.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
-  //OCP_solver.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
-  //OCP_solver.set(PRINT_COPYRIGHT, false);                 // default true
+  OCP_solver.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
+  OCP_solver.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
+  OCP_solver.set(PRINT_COPYRIGHT, false);                 // default true
 
 
   OCP_solver.set(MAX_NUM_ITERATIONS, max_num_iteration_);

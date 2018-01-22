@@ -335,8 +335,8 @@ bool StaticCollision::initializeStaticCollisionObject()
   ROS_INFO("===== static collision marker published with topic: ~/predictive_control/collisionRobot/static_collision_object =====");
 
   // serice publisher
-  //add_static_object_ = nh_collisionRobot.advertiseService("add_static_object", &StaticCollision::addStaticObjectServiceCB, this);
-  //remove_static_object_ = nh_collisionRobot.advertiseService("remove_static_object", &StaticCollision::removeStaticObjectServiceCB, this);
+  add_static_object_ = nh_collisionRobot.advertiseService("add_static_object", &StaticCollision::addStaticObjectServiceCB, this);
+  remove_static_object_ = nh_collisionRobot.advertiseService("remove_static_object", &StaticCollision::removeStaticObjectServiceCB, this);
   ROS_INFO("===== add static object published with topic: ~/predictive_control/collisionRobot/add_static_object =====");
   ROS_INFO("===== remove static object published with topic: ~/predictive_control/collisionRobot/remove_static_object =====");
 
@@ -366,6 +366,7 @@ bool StaticCollision::initializeStaticCollisionObject()
   return true;
 }
 
+// add collision object into environement
 bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisionObjectRequest &request,
                                                predictive_control::StaticCollisionObjectResponse &response)
 {
@@ -390,33 +391,35 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
     // box
     if (request.object_name == "box" || request.object_name == "BOX")
     {
-    	marker.type = marker.CUBE;
+      marker.type = marker.CUBE;
     }
 
     // cylinder
     else if (request.object_name == "cylinder" || request.object_name == "CYLINDER")
     {
-    	marker.type = marker.CYLINDER;
+      marker.type = marker.CYLINDER;
     }
 
     // sphere
     else if (request.object_name == "sphere" || request.object_name == "SPHERE")
     {
-    	marker.type = marker.SPHERE;
+      marker.type = marker.SPHERE;
     }
 
     else
     {
-    	response.success = false;
-	    std::string message("Shape of object is not defined correctly");
-	    ROS_ERROR("StaticCollision: %s", message.c_str());
-    	response.message = message;
-    	return false;
+      response.success = false;
+      std::string message("Shape of object is not defined correctly");
+      ROS_ERROR("StaticCollision: %s", message.c_str());
+      response.message = message;
+      return false;
     }
 
     marker.action = visualization_msgs::Marker::ADD;
     marker.ns = "preview";
-    marker.header.frame_id = object_id;
+    marker.header.frame_id = request.primitive_pose.header.frame_id;
+    marker.header.stamp = request.primitive_pose.header.stamp;
+    marker.text = object_id;
 
     // texture
     marker.color.r = 1.0;
@@ -437,7 +440,7 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
     marker.pose.orientation.x = 0.0;
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;*/
-    ROS_WARN_STREAM(request.primitive_pose);
+
     marker.pose = request.primitive_pose.pose;
 
     // store created marker
@@ -494,11 +497,11 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
 
             else
             {
-            	response.success = false;
-        	    std::string message("Shape of object is not defined correctly, check file on location " + filename);
-        	    ROS_ERROR("StaticCollision: %s", message.c_str());
-            	response.message = message;
-            	return false;
+              response.success = false;
+              std::string message("Shape of object is not defined correctly, check file on location " + filename);
+              ROS_ERROR("StaticCollision: %s", message.c_str());
+              response.message = message;
+              return false;
             }
 
             //myfile>>primitive.dimensions[0]>>primitive.dimensions[1]>>primitive.dimensions[2];  //5 line
@@ -530,6 +533,7 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
   return true;
 }
 
+// remove collision object from environment
 bool StaticCollision::removeStaticObjectServiceCB(predictive_control::StaticCollisionObjectRequest &request,
                                                   predictive_control::StaticCollisionObjectResponse &response)
 {
@@ -543,18 +547,21 @@ bool StaticCollision::removeStaticObjectServiceCB(predictive_control::StaticColl
   auto it = collision_matrix_.find(object_id);
   collision_matrix_.erase(it);
 
-  for (auto it: collision_matrix_)
-    ROS_INFO_STREAM(it.second);
-
   // remove that object form marker list, we can requst only one object to remove
   for (auto it = marker_array_.markers.begin(); it != marker_array_.markers.end(); ++it)
   {
-    if (it->header.frame_id == request.object_id)
+    if (it->text == request.object_id)
     {
+      it->action = visualization_msgs::Marker::DELETE;
+      it->ns = "preview";
+
+      // make sure first publish it and than remove from list to maintain list
+      marker_pub_.publish(marker_array_);
       marker_array_.markers.erase(it);
       break;
     }
 
+    // iteration reach to end, considering not found requested object
     if (it == marker_array_.markers.end())
     {
       response.success = false;
@@ -563,88 +570,13 @@ bool StaticCollision::removeStaticObjectServiceCB(predictive_control::StaticColl
     }
   }
 
-  marker_pub_.publish(marker_array_);
-
-  /*
-  if (request.file_name.empty())
-  {
-    ROS_WARN("Recieved add static object service call ...");
-
-  // id should be unique
-  std::string object_id = request.object_id;
-
-  if (request.object_id.empty())
-    object_id = request.object_name;
-
-    // add object into collision matrix for cost calculation
-    collision_matrix_[object_id] = request.primitive_pose;
-    createStaticFrame(request.primitive_pose, object_id);
-
-    visualization_msgs::Marker marker;
-
-    // box
-    if (request.object_name == "box" || request.object_name == "BOX")
-    {
-      marker.type = marker.CUBE;
-    }
-
-    // cylinder
-    else if (request.object_name == "cylinder" || request.object_name == "CYLINDER")
-    {
-      marker.type = marker.CYLINDER;
-    }
-
-    // sphere
-    else if (request.object_name == "sphere" || request.object_name == "SPHERE")
-    {
-      marker.type = marker.SPHERE;
-    }
-
-    else
-    {
-      response.success = false;
-      std::string message("Shape of object is not defined correctly");
-      ROS_ERROR("StaticCollision: %s", message.c_str());
-      response.message = message;
-      return false;
-    }
-
-    marker.action = visualization_msgs::Marker::DELETE;
-    marker.ns = "preview";
-
-    // texture
-    marker.color.r = 1.0;
-    marker.color.g = 0.0;
-    marker.color.b = 0.0;
-    marker.color.a = 0.1;
-
-    // dimension
-    marker.scale.x = request.dimension.x;
-    marker.scale.y = request.dimension.y;
-    marker.scale.z = request.dimension.z;
-
-    /*marker.pose.position.x = request.collision_object.primitive_poses.at(0).pose.position.x;
-    marker.pose.position.y = request.collision_object.primitive_poses.at(0).pose.position.y;
-    marker.pose.position.z = request.collision_object.primitive_poses.at(0).pose.position.z;
-
-    marker.pose.orientation.w = 1.0;
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;///
-
-    marker.pose = request.primitive_pose.pose;
-
-    // store created marker
-    marker_array_.markers.erase(marker);
-    marker_array_.markers.push_back(marker);
-  }
-*/
   // response
   response.success = true;
   response.message = ("Successfully remove to the environment");
 
   return true;
 }
+
 // update collsion ball position, publish new position of collision ball
 void StaticCollision::updateStaticCollisionVolume(const std::map<std::string, geometry_msgs::PoseStamped>& robot_critical_points)
 {

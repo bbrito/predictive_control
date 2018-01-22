@@ -376,31 +376,31 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
     ROS_WARN("Recieved add static object service call ...");
 
   // id should be unique
-  std::string object_id = request.collision_object.object_id;
+  std::string object_id = request.object_id;
 
-  if (request.collision_object.object_id.empty())
-    object_id = request.collision_object.object_name;
+  if (request.object_id.empty())
+    object_id = request.object_name;
 
     // add object into collision matrix for cost calculation
-    collision_matrix_[object_id] = request.collision_object.primitive_poses.at(0);
-    createStaticFrame(request.collision_object.primitive_poses.at(0), object_id);
+    collision_matrix_[object_id] = request.primitive_pose;
+    createStaticFrame(request.primitive_pose, object_id);
 
     visualization_msgs::Marker marker;
 
     // box
-    if (request.collision_object.object_name == "box" || request.collision_object.object_name == "BOX")
+    if (request.object_name == "box" || request.object_name == "BOX")
     {
     	marker.type = marker.CUBE;
     }
 
     // cylinder
-    else if (request.collision_object.object_name == "cylinder" || request.collision_object.object_name == "CYLINDER")
+    else if (request.object_name == "cylinder" || request.object_name == "CYLINDER")
     {
     	marker.type = marker.CYLINDER;
     }
 
     // sphere
-    else if (request.collision_object.object_name == "sphere" || request.collision_object.object_name == "SPHERE")
+    else if (request.object_name == "sphere" || request.object_name == "SPHERE")
     {
     	marker.type = marker.SPHERE;
     }
@@ -424,9 +424,9 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
     marker.color.a = 0.1;
 
     // dimension
-    marker.scale.x = request.collision_object.visualize_marker_array.markers.at(0).scale.x;
-    marker.scale.y = request.collision_object.visualize_marker_array.markers.at(0).scale.y;
-    marker.scale.z = request.collision_object.visualize_marker_array.markers.at(0).scale.z;
+    marker.scale.x = request.dimension.x;
+    marker.scale.y = request.dimension.y;
+    marker.scale.z = request.dimension.z;
 
     /*marker.pose.position.x = request.collision_object.primitive_poses.at(0).pose.position.x;
     marker.pose.position.y = request.collision_object.primitive_poses.at(0).pose.position.y;
@@ -437,12 +437,12 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;*/
 
-    marker.pose = request.collision_object.primitive_poses.at(0).pose;
+    marker.pose = request.primitive_pose.pose;
 
     // store created marker
     marker_array_.markers.push_back(marker);
   }
-
+/*
   // read static object dimenstion from files
   if (!request.file_name.empty())
   {
@@ -517,7 +517,7 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
       }
     }
   }
-
+*/
   // response
   response.success = true;
   std::string message("Successfully add to the environment");

@@ -10,12 +10,11 @@ from predictive_control.srv import *
 import sys
 import tf
 
-# static trans
+#static trans
 import tf2_ros
 import geometry_msgs.msg
 from numpy import linalg as LA
 import random
-
 
 def add_environment():
     rospy.loginfo("Calling static object service ... ")
@@ -23,18 +22,24 @@ def add_environment():
     rospy.loginfo("Now all services are available ... ")
 
     try:
-        client = rospy.ServiceProxy("/arm/predictive_control/StaticCollision/add_static_object",
-                                    predictive_control.srv.StaticCollisionObject)
+        client = rospy.ServiceProxy("/arm/predictive_control/StaticCollision/add_static_object", predictive_control.srv.StaticCollisionObject)
         request = predictive_control.srv.StaticCollisionObjectRequest()
+        
+        request.object_name = "box"
+        request.object_id = "box"
 
-        request.collision_object.object_name = "box"
-        request.collision_object.object_id = "box"
+        # dimension of object
+        dimension = geometry_msgs.msg.Vector3
+        dimension.x = 1.30
+        dimension.y = 1.30
+        dimension.z = 0.10
+        request.dimension = dimension
 
-        # object pose
+        # set object position and orientation
         pose = geometry_msgs.msg.PoseStamped()
         pose.header.frame_id = "world"
         pose.header.stamp = rospy.Time().now()
-
+        
         # position
         pose.pose.position.x = 0.0
         pose.pose.position.y = 0.0
@@ -46,21 +51,22 @@ def add_environment():
         pose.pose.orientation.y = 0.0
         pose.pose.orientation.z = 0.0
 
-        request.collision_object.primitive_poses.append(pose)
+        request.primitive_pose = pose
 
-        rospy.loginfo("Now sending goal requst to service server")
         # call service to add static object into environments
         success = client(request)
-
+        """
         if (success):
-            rospy.loginfo("Successfully added " + request.collision_object.object_id + " into environment")
+            rospy.loginfo("Successfully added " + request.object_id + " into environment")
 
         else:
-            rospy.logerr("Failed to add " + request.collision_object.object_id + " into environment")
+            rospy.logerr("Failed to add " + request.object_id + " into environment")   
 
+        response = predictive_control.srv.StaticCollisionObjectResponse()
+        rospy.loginfo(" Service status ", response.success, " with message ", response.message)
+        """
     except rospy.ServiceException as exc:
-        rospy.logerr(" Service did not process request " + str(exc))
-
+            rospy.logerr(" Service did not process request " + str(exc))
 
 
 if __name__ == '__main__':

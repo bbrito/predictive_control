@@ -31,6 +31,11 @@
 
 // predictive includes
 #include <predictive_control/predictive_configuration.h>
+#include <predictive_control/CollisionObject.h>
+#include <predictive_control/StaticCollisionObject.h>
+#include <predictive_control/StaticCollisionObjectRequest.h>
+#include <predictive_control/StaticCollisionObjectResponse.h>
+
 
 class CollisionRobot: public predictive_configuration
 {
@@ -254,8 +259,20 @@ private:
   // marker publisher
   ros::Publisher marker_pub_;
 
+  // service
+  ros::ServiceServer add_static_object_;
+  ros::ServiceServer remove_static_object_;
+
   // static frame broadcaster
   tf2_ros::StaticTransformBroadcaster static_broadcaster_;
+
+  bool addStaticObjectServiceCB(predictive_control::StaticCollisionObjectRequest &request,
+                                predictive_control::StaticCollisionObjectResponse &response
+                                );
+
+  bool removeStaticObjectServiceCB(predictive_control::StaticCollisionObjectRequest &request,
+                                   predictive_control::StaticCollisionObjectResponse &response
+                                  );
 
   /**
    * @brief createStaticFrame: visulize intermidiate added frame, relative to root frame

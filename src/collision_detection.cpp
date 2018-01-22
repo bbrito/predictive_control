@@ -332,9 +332,15 @@ bool StaticCollision::initializeStaticCollisionObject()
 
   ros::NodeHandle nh_collisionRobot("predictive_control/StaticCollision");
   marker_pub_ = nh_collisionRobot.advertise<visualization_msgs::MarkerArray>("static_collision_object", 1);
+  ROS_INFO("===== static collision marker published with topic: ~/predictive_control/collisionRobot/static_collision_object =====");
 
-  ROS_INFO("===== Collision Ball marker published with topic: ~/predictive_control/collisionRobot/static_collision_object =====");
-  ROS_WARN("STATICCOLLISION INITIALIZED!!");
+  // serice publisher
+  add_static_object_ = nh_collisionRobot.advertiseService("add_static_object", &StaticCollision::addStaticObjectServiceCB, this);
+  remove_static_object_ = nh_collisionRobot.advertiseService("remove_static_object", &StaticCollision::removeStaticObjectServiceCB, this);
+  ROS_INFO("===== add static object published with topic: ~/predictive_control/collisionRobot/add_static_object =====");
+  ROS_INFO("===== remove static object published with topic: ~/predictive_control/collisionRobot/remove_static_object =====");
+
+  ROS_WARN("STATIC COLLISION INITIALIZED!!");
 
   // generate static collision volume
   generateStaticCollisionVolume();
@@ -360,6 +366,42 @@ bool StaticCollision::initializeStaticCollisionObject()
   return true;
 }
 
+bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisionObjectRequest &request,
+                                               predictive_control::StaticCollisionObjectResponse &response)
+{
+
+  // add object into collision matrix for cost calculation
+  collision_matrix_[request.collision_object.object_name] = request.collision_object.primitive_poses.at(0);
+  createStaticFrame(request.collision_object.primitive_poses.at(0), request.collision_object.object_name);
+
+  visualization_msgs::Marker marker;
+
+  marker.type = visualization_msgs::Marker::CUBE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.ns = "preview";
+
+  // texture
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.b = 0.0;
+  marker.color.a = 0.1;
+
+  // dimension
+  marker.scale.x = 1.30;
+  marker.scale.y = 1.30;
+  marker.scale.z = 0.10;
+
+
+  // store created marker
+  marker_array_.markers.push_back(marker);
+
+}
+
+bool StaticCollision::removeStaticObjectServiceCB(predictive_control::StaticCollisionObjectRequest &request,
+                                                  predictive_control::StaticCollisionObjectResponse &response)
+{
+;
+}
 // update collsion ball position, publish new position of collision ball
 void StaticCollision::updateStaticCollisionVolume(const std::map<std::string, geometry_msgs::PoseStamped>& robot_critical_points)
 {

@@ -2,17 +2,17 @@
 # collision object 
 CollisionObject collision_object
 
-# current position of robot/other object 
-geometry_msgs/Point current_position
+# current position of robot/other object, current poition means it should be center of object
+#geometry_msgs/Point current_position
 
 # threshold value used to be keep distance from robot body/other object 
-geometry_msgs/Vector3 distance_threshold
+#geometry_msgs/Vector3 distance_threshold
 
 # collision cost weighting factor
-float64 collision_cost_weight_factor
+#float64 collision_cost_weight_factor
 ---
 # Respose of static collision object service
-float64[] static_collision_cost_vector
+#float64[] static_collision_cost_vector
 bool success
 
 

@@ -80,9 +80,7 @@ bool predictive_control_ros::initialize()
 
     //DEBUG
     activate_output_ = pd_config_->activate_controller_node_output_;
-    use_interactive_marker_ = true;
     tracking_ = true;
-    execution_complete_ = false;
     move_action_result_.reach = false;
 
     target_frame_ = pd_config_->target_frame_;
@@ -220,8 +218,10 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
   if (checkInfinitesimalPose(tf_traget_from_tracking_vector_))
   {
     // publish zero controlled velocity
-    execution_complete_ = true;
-    actionSuccess();
+    if (!tracking_)
+    {
+      actionSuccess();
+    }
     publishZeroJointVelocity();
   }
 
@@ -243,7 +243,6 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
   else
   {
     // pubish controll velocity
-    execution_complete_ = false;
     controlled_velocity_pub_.publish(controlled_velocity_);
   }
 }
@@ -254,7 +253,6 @@ void predictive_control_ros::moveGoalCB()
   {
     boost::shared_ptr<const predictive_control::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
     tracking_ = false;
-    use_interactive_marker_ = false;
     collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
     target_frame_ = move_action_goal_ptr->target_frame_id;
   }
@@ -265,7 +263,6 @@ void predictive_control_ros::movePreemptCB()
   move_action_result_.reach = true;
   move_action_server_->setPreempted(move_action_result_, "Action has been preempted");
   tracking_ = true;
-  execution_complete_ = false;
   target_frame_ = pd_config_->target_frame_;
 }
 
@@ -273,7 +270,6 @@ void predictive_control_ros::actionSuccess()
 {
   move_action_server_->setSucceeded(move_action_result_, "Goal succeeded!");
   tracking_ = true;
-  execution_complete_ = false;
   target_frame_ = pd_config_->target_frame_;
 }
 
@@ -281,7 +277,6 @@ void predictive_control_ros::actionAbort()
 {
   move_action_server_->setAborted(move_action_result_, "Action has been aborted");
   tracking_ = true;
-  execution_complete_ = false;
   target_frame_ = pd_config_->target_frame_;
 }
 
@@ -297,7 +292,6 @@ int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConst
   if (move_action_goal_ptr->target_frame_id.empty() || move_action_goal_ptr->target_endeffector_pose.header.frame_id.empty())
   {
     tracking_ = true;
-    use_interactive_marker_ = true;
     result.reach = false;
     move_action_server_->setAborted(result, " Not set desired goal and frame id, Now use to intractive marker to set desired goal");
     //target_frame_ = pd_config_->target_frame_;
@@ -307,7 +301,6 @@ int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConst
   {
     ROS_WARN("==========***********============ predictive_control_ros::moveCallBack: recieving new goal request ==========***********============");
     tracking_ = false;
-    use_interactive_marker_ = false;
 
     collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
 
@@ -333,7 +326,6 @@ int predictive_control_ros::moveCallBack(const predictive_control::moveGoalConst
     goal_gripper_pose_(5) = y;
 ////
     // set result for validation
-    result.reach = execution_complete_;
     move_action_server_->setSucceeded(result, "successfully reach to desired pose");
 
     // publish feed to tracking information

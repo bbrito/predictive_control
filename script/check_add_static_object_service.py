@@ -175,6 +175,34 @@ def remove_environment_from_file(object_id):
     except rospy.ServiceException as exc:
         rospy.logerr(" Service did not process request " + str(exc))
 
+def remove_all_environmental_object(object_id):
+    rospy.loginfo("Calling static object service ... ")
+    rospy.wait_for_service("/arm/predictive_control/StaticCollision/remove_all_static_objects")
+    rospy.loginfo("Now all services are available ... ")
+
+    try:
+        client = rospy.ServiceProxy("/arm/predictive_control/StaticCollision/remove_all_static_objects",
+                                    predictive_control.srv.StaticCollisionObject)
+        request = predictive_control.srv.StaticCollisionObjectRequest()
+
+        # Note: problem with removing cylindrical objects
+        request.object_name = object_id
+        request.object_id = object_id
+        request.file_name = object_id
+
+        # call service to add static object into environments
+        success = client(request)
+
+        if (success):
+            rospy.loginfo("Successfully removed " + request.object_id + " into environment")
+
+        else:
+            rospy.logerr("Failed to remove " + request.object_id + " into environment")
+
+
+    except rospy.ServiceException as exc:
+        rospy.logerr(" Service did not process request " + str(exc))
+
 
 if __name__ == '__main__':
     rospy.init_node("pd_static_object_service")
@@ -184,4 +212,14 @@ if __name__ == '__main__':
     #add_environment(object_id)
     rospy.sleep(3.0)
     #remove_environment(object_id)
-    remove_environment_from_file(object_id=object_id)
+    #remove_environment_from_file(object_id=object_id)
+
+    object_id = "bookshelves"
+    add_environment_from_file(object_id=object_id)
+    #add_environment(object_id)
+    rospy.sleep(3.0)
+    #remove_environment(object_id)
+    #remove_environment_from_file(object_id=object_id)
+
+    remove_all_environmental_object(object_id=object_id)
+

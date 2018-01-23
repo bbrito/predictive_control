@@ -370,6 +370,9 @@ bool StaticCollision::initializeStaticCollisionObject()
 bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisionObjectRequest &request,
                                                predictive_control::StaticCollisionObjectResponse &response)
 {
+  // default response
+  response.success = true;
+  response.message = "Default set added";
 
   // read data from service request
   if (request.file_name.empty())
@@ -448,18 +451,18 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
   }
 
   // read static object dimenstion from files
-  /*if (!request.file_name.empty())
+  if (!request.file_name.empty())
   {
 
     // initialize static objects
     std::ifstream myfile;
     std::string line, id;
-    visualization_msgs::Marker marker;
+
     std::string object_id;
     object_id = request.object_id;
+    geometry_msgs::PoseStamped stamped;
 
     std::string filename = ros::package::getPath("predictive_control") + "/planning_scene/"+ request.file_name + ".scene";
-    ROS_WARN("%s", filename.c_str());
     myfile.open(filename.c_str());
 
     // check file is open
@@ -469,9 +472,14 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
 
       while(!myfile.eof())
           {
+            visualization_msgs::Marker marker;
+
             getline(myfile, id);  //2 line
 
-            if(id == ".")	break;
+            if(id == ".")
+              break;
+
+            ROS_ERROR_STREAM("object id:"<<id);
             object_id = id;
 
             getline(myfile, line);  // 3 line not useful line
@@ -506,36 +514,49 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
             getline (myfile,line);
 
             myfile>>marker.pose.position.x>>marker.pose.position.y>>marker.pose.position.z;   //6 line
-            marker.pose.position.x += request.primitive_pose.pose.position.x;
-            marker.pose.position.y += request.primitive_pose.pose.position.y;
-            marker.pose.position.z += request.primitive_pose.pose.position.z;
+            marker.pose.position.x += request.primitive_pose.pose.position.x ;
+            marker.pose.position.y += request.primitive_pose.pose.position.y ;
+            marker.pose.position.z += request.primitive_pose.pose.position.z ;
 
             getline (myfile,line);
             myfile>>marker.pose.orientation.x>>marker.pose.orientation.y>>marker.pose.orientation.z >> marker.pose.orientation.w; //7 line
-            ///marker.pose.orientation.w += request.primitive_pose.pose.orientation.w;
-            marker.pose.orientation.x += request.primitive_pose.pose.orientation.x;
-            marker.pose.orientation.y += request.primitive_pose.pose.orientation.y;
-            marker.pose.orientation.z += request.primitive_pose.pose.orientation.z;///
+
+            if( (sqrt(request.primitive_pose.pose.orientation.w*request.primitive_pose.pose.orientation.w +
+                request.primitive_pose.pose.orientation.x*request.primitive_pose.pose.orientation.x +
+                request.primitive_pose.pose.orientation.y*request.primitive_pose.pose.orientation.y +
+                request.primitive_pose.pose.orientation.z*request.primitive_pose.pose.orientation.z) ) != 0.0)
+            {
+                marker.pose.orientation.w = request.primitive_pose.pose.orientation.w;
+                marker.pose.orientation.x = request.primitive_pose.pose.orientation.x;
+                marker.pose.orientation.y = request.primitive_pose.pose.orientation.y;
+                marker.pose.orientation.z = request.primitive_pose.pose.orientation.z;
+            }
 
             marker.header.stamp = request.primitive_pose.header.stamp;
-            marker.header.frame_id = request.file_name;
+            marker.header.frame_id = request.primitive_pose.header.frame_id;
+
+            // add object into collision matrix for cost calculation
+            stamped.header = request.primitive_pose.header;
+            stamped.pose = marker.pose;
+            collision_matrix_[object_id] = stamped; //request.primitive_pose;
+            createStaticFrame(stamped, object_id);
 
             getline(myfile, line);	// 8 line not useful line
             getline(myfile, line);	// 9 line not useful line
 
-            ROS_ERROR_STREAM(marker.pose);
             // texture
             marker.color.r = 1.0;
             marker.color.g = 0.0;
             marker.color.b = 0.0;
             marker.color.a = 0.1;
             marker.action = visualization_msgs::Marker::ADD;
-            marker.ns = "preview";
+            marker.ns = "preview" + object_id;
             marker.text = request.file_name;
             marker_array_.markers.push_back(marker);
       }
+      myfile.close();
     }
-  }*/
+  }
 
   marker_pub_.publish(marker_array_);
 

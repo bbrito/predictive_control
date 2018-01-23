@@ -452,6 +452,7 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
 
 
   //---------------------------------------------- READ DATA FROM FILES -----------------------------
+  // Here assume that at this moment object name is same as frame name
   // read static object dimenstion from files
   if (!request.file_name.empty())
   {
@@ -519,51 +520,6 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
             getline (myfile,line);
 
             myfile>>marker.pose.position.x>>marker.pose.position.y>>marker.pose.position.z;   //6 line
-            stamped.pose.position.x += marker.pose.position.x;
-            stamped.pose.position.y += marker.pose.position.y;
-            stamped.pose.position.z += marker.pose.position.z;
-
-            ROS_WARN_STREAM(stamped);
-            // add according to direction of vector, can be improve by changing to direction vector
-            /*if (stamped.pose.position.x < 0.0)
-                stamped.pose.position.x -= marker.pose.position.x;
-            if (stamped.pose.position.x >= 0.0)
-                stamped.pose.position.x += marker.pose.position.x;
-
-            if (stamped.pose.position.y < 0.0)
-                stamped.pose.position.y -= marker.pose.position.y;
-            if (stamped.pose.position.y >= 0.0)
-                stamped.pose.position.y += marker.pose.position.y;
-
-            if (stamped.pose.position.z < 0.0)
-                stamped.pose.position.z -= marker.pose.position.z;
-            if (stamped.pose.position.z >= 0.0)
-                stamped.pose.position.z += marker.pose.position.z;*/
-            /*
-            if (stamped.pose.position.x >= 0.0 && stamped.pose.position.y >= 0.0)
-            {
-              stamped.pose.position.x += marker.pose.position.x;
-              stamped.pose.position.y += marker.pose.position.y;
-              stamped.pose.position.z += marker.pose.position.z;
-            }
-            if (stamped.pose.position.x <= 0.0 && stamped.pose.position.y >= 0.0)
-            {
-              stamped.pose.position.x -= marker.pose.position.x;
-              stamped.pose.position.y += marker.pose.position.y;
-              stamped.pose.position.z += marker.pose.position.z;
-            }
-            if (stamped.pose.position.x <= 0.0 && stamped.pose.position.y <= 0.0)
-            {
-              stamped.pose.position.x -= marker.pose.position.x;
-              stamped.pose.position.y -= marker.pose.position.y;
-              stamped.pose.position.z += marker.pose.position.z;
-            }
-            if (stamped.pose.position.x >= 0.0 && stamped.pose.position.y <= 0.0)
-            {
-              stamped.pose.position.x += marker.pose.position.x;
-              stamped.pose.position.y -= marker.pose.position.y;
-              stamped.pose.position.z += marker.pose.position.z;
-            }*/
 
             getline (myfile,line);
             myfile>>marker.pose.orientation.x>>marker.pose.orientation.y>>marker.pose.orientation.z >> marker.pose.orientation.w; //7 line
@@ -580,12 +536,14 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
             }
 
             marker.header.stamp = stamped.header.stamp; //request.primitive_pose.header.stamp;
-            marker.header.frame_id = stamped.header.frame_id; //request.primitive_pose.header.frame_id;
-            marker.pose = stamped.pose;
+            marker.header.frame_id = request.object_name; //request.primitive_pose.header.frame_id;
+            //marker.pose = stamped.pose;
 
             // add object into collision matrix for cost calculation
             collision_matrix_[object_id] = stamped; //request.primitive_pose;
-            //createStaticFrame(stamped, object_id);
+
+            if (predictive_configuration::activate_output_)
+                createStaticFrame(stamped, object_id);
 
             getline(myfile, line);	// 8 line not useful line
             getline(myfile, line);	// 9 line not useful line
@@ -773,7 +731,7 @@ bool StaticCollision::getTransform(const std::string& from, const std::string& t
       stamped_pose.pose.position.z = stamped_tf.getOrigin().z();
 
       // header frame_id should be parent frame
-      stamped_pose.header.frame_id = from; //stamped_tf.frame_id_;  //from or to
+      stamped_pose.header.frame_id = stamped_tf.frame_id_;  //from or to
       stamped_pose.header.stamp = ros::Time(0);
 
       transform = true;

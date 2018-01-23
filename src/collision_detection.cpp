@@ -554,7 +554,7 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
             marker.color.a = 0.1;
             marker.action = visualization_msgs::Marker::ADD;
             marker.ns = "preview" + object_id;
-            marker.text = request.file_name;
+            marker.text = request.file_name+ " " + object_id;
             marker_array_.markers.push_back(marker);
       }
       myfile.close();
@@ -574,44 +574,105 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
 bool StaticCollision::removeStaticObjectServiceCB(predictive_control::StaticCollisionObjectRequest &request,
                                                   predictive_control::StaticCollisionObjectResponse &response)
 {
-  // id should be unique
-  std::string object_id = request.object_id;
-
-  if (request.object_id.empty())
-    object_id = request.object_name;
-
-  // erase that object from collision matrix list
-  auto it = collision_matrix_.find(object_id);
-  collision_matrix_.erase(it);
-
-  // remove that object form marker list, we can requst only one object to remove
-  for (auto it = marker_array_.markers.begin(); it != marker_array_.markers.end(); ++it)
+  if (request.file_name.empty())
   {
-    if (it->text == request.object_id)
-    {
-      it->action = visualization_msgs::Marker::DELETE;
-      it->ns = "preview";
+    // id should be unique
+    std::string object_id = request.object_id;
 
-      // make sure first publish it and than remove from list to maintain list
-      marker_pub_.publish(marker_array_);
-      marker_array_.markers.erase(it);
-      break;
+    if (request.object_id.empty())
+      object_id = request.object_name;
+
+    // erase that object from collision matrix list
+    auto it = collision_matrix_.find(object_id);
+    collision_matrix_.erase(it);
+
+    // remove that object form marker list, we can requst only one object to remove
+    for (auto it = marker_array_.markers.begin(); it != marker_array_.markers.end(); ++it)
+    {
+      if (it->text == request.object_id)
+      {
+        it->action = visualization_msgs::Marker::DELETE;
+        it->ns = "preview";
+
+        // make sure first publish it and than remove from list to maintain list
+        marker_pub_.publish(marker_array_);
+        marker_array_.markers.erase(it);
+        break;
+      }
+
+      // iteration reach to end, considering not found requested object
+      if (it == marker_array_.markers.end())
+      {
+        response.success = false;
+        response.message = (" Not find requsted object into list ");
+        return false;
+      }
     }
 
-    // iteration reach to end, considering not found requested object
-    if (it == marker_array_.markers.end())
-    {
-      response.success = false;
-      response.message = (" Not find requsted object into list ");
-      return false;
-    }
+    // response
+    response.success = true;
+    response.message = ("Successfully remove to the environment");
+
+    return true;
   }
+  //------------------------ REMOVE OBJECT WHICH HAS BEEN LOADED FROM FILE ----------------------------
+  else
+  {
+    // id should be unique
+    std::string object_id = request.object_id;
 
-  // response
-  response.success = true;
-  response.message = ("Successfully remove to the environment");
+    if (request.object_id.empty())
+      object_id = request.object_name;
 
-  return true;
+    ROS_WARN("Hello");
+
+    // erase that object from collision matrix list
+    for (std::map<std::string, geometry_msgs::PoseStamped>::const_iterator it = collision_matrix_.begin();
+         it != collision_matrix_.end(); ++it)
+    {
+      //  just check required char inside the string, if yes than remove it
+      if (it->first.find(request.file_name) !=std::string::npos)
+      {
+        collision_matrix_.erase(it);
+      }
+    }
+    ROS_WARN("Hello");
+    // remove that object form marker list, we can requst only one object to remove
+    // Be careful, here we are erasing iteration so do not put increment of iteration in for loop
+    for (auto it = marker_array_.markers.begin(); it != marker_array_.markers.end();)
+    {
+      // just check required char inside the string, if yes than remove it
+      if (it->text.find(request.file_name) != std::string::npos)
+      {
+        it->action = visualization_msgs::Marker::DELETE;
+        //it->ns = it->ns;
+
+        // make sure first publish it and than remove from list to maintain list
+        marker_pub_.publish(marker_array_);
+        marker_array_.markers.erase(it);
+      }
+
+      // iteration reach to end, considering not found requested object
+      else if (it == marker_array_.markers.end())
+      {
+        response.success = false;
+        response.message = (" Not find requsted object into list ");
+        return false;
+      }
+
+      else
+      {
+         ++it;
+      }
+    }
+    ROS_WARN("Hello");
+    // response
+    response.success = true;
+    response.message = ("Successfully remove to the environment");
+
+    return true;
+
+  }
 }
 
 // update collsion ball position, publish new position of collision ball

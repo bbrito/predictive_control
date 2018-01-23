@@ -535,15 +535,14 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
                 stamped.pose.orientation.z = 0.0;
             }
 
+            ROS_WARN_STREAM(stamped);
+
             marker.header.stamp = stamped.header.stamp; //request.primitive_pose.header.stamp;
             marker.header.frame_id = request.object_name; //request.primitive_pose.header.frame_id;
             //marker.pose = stamped.pose;
 
             // add object into collision matrix for cost calculation
             collision_matrix_[object_id] = stamped; //request.primitive_pose;
-
-            if (predictive_configuration::activate_output_)
-                createStaticFrame(stamped, object_id);
 
             getline(myfile, line);	// 8 line not useful line
             getline(myfile, line);	// 9 line not useful line

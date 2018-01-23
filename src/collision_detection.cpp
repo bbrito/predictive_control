@@ -450,9 +450,15 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
     marker_array_.markers.push_back(marker);
   }
 
+
+  //---------------------------------------------- READ DATA FROM FILES -----------------------------
   // read static object dimenstion from files
   if (!request.file_name.empty())
   {
+    geometry_msgs::PoseStamped stamped;
+
+    // get transformation
+    getTransform(predictive_configuration::chain_root_link_, request.object_name, stamped);
 
     // initialize static objects
     std::ifstream myfile;
@@ -460,7 +466,6 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
 
     std::string object_id;
     object_id = request.object_id;
-    geometry_msgs::PoseStamped stamped;
 
     std::string filename = ros::package::getPath("predictive_control") + "/planning_scene/"+ request.file_name + ".scene";
     myfile.open(filename.c_str());
@@ -514,32 +519,31 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
             getline (myfile,line);
 
             myfile>>marker.pose.position.x>>marker.pose.position.y>>marker.pose.position.z;   //6 line
-            marker.pose.position.x += request.primitive_pose.pose.position.x ;
-            marker.pose.position.y += request.primitive_pose.pose.position.y ;
-            marker.pose.position.z += request.primitive_pose.pose.position.z ;
+            stamped.pose.position.x += marker.pose.position.x;
+            stamped.pose.position.y += marker.pose.position.y;
+            stamped.pose.position.z += marker.pose.position.z;
 
             getline (myfile,line);
             myfile>>marker.pose.orientation.x>>marker.pose.orientation.y>>marker.pose.orientation.z >> marker.pose.orientation.w; //7 line
 
-            if( (sqrt(request.primitive_pose.pose.orientation.w*request.primitive_pose.pose.orientation.w +
-                request.primitive_pose.pose.orientation.x*request.primitive_pose.pose.orientation.x +
-                request.primitive_pose.pose.orientation.y*request.primitive_pose.pose.orientation.y +
-                request.primitive_pose.pose.orientation.z*request.primitive_pose.pose.orientation.z) ) != 0.0)
+            if( (sqrt(stamped.pose.orientation.w*stamped.pose.orientation.w +
+                stamped.pose.orientation.x*stamped.pose.orientation.x +
+                stamped.pose.orientation.y*stamped.pose.orientation.y +
+                stamped.pose.orientation.z*stamped.pose.orientation.z) ) == 0.0)
             {
-                marker.pose.orientation.w = request.primitive_pose.pose.orientation.w;
-                marker.pose.orientation.x = request.primitive_pose.pose.orientation.x;
-                marker.pose.orientation.y = request.primitive_pose.pose.orientation.y;
-                marker.pose.orientation.z = request.primitive_pose.pose.orientation.z;
+                stamped.pose.orientation.w = 1.0;
+                stamped.pose.orientation.x = 0.0;
+                stamped.pose.orientation.y = 0.0;
+                stamped.pose.orientation.z = 0.0;
             }
 
-            marker.header.stamp = request.primitive_pose.header.stamp;
-            marker.header.frame_id = request.primitive_pose.header.frame_id;
+            marker.header.stamp = stamped.header.stamp; //request.primitive_pose.header.stamp;
+            marker.header.frame_id = stamped.header.frame_id; //request.primitive_pose.header.frame_id;
+            marker.pose = stamped.pose;
 
             // add object into collision matrix for cost calculation
-            stamped.header = request.primitive_pose.header;
-            stamped.pose = marker.pose;
             collision_matrix_[object_id] = stamped; //request.primitive_pose;
-            createStaticFrame(stamped, object_id);
+            //createStaticFrame(stamped, object_id);
 
             getline(myfile, line);	// 8 line not useful line
             getline(myfile, line);	// 9 line not useful line
@@ -700,6 +704,52 @@ void StaticCollision::visualizeStaticCollisionVoulme(const geometry_msgs::PoseSt
   marker_array_.markers.push_back(marker);
 
 }
+
+bool StaticCollision::getTransform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
+{
+  bool transform = false;
+  tf::StampedTransform stamped_tf;
+
+  // make sure source and target frame exist
+  if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
+  {
+    try
+    {
+      // find transforamtion between souce and target frame
+      tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
+      tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
+
+      // rotation
+      stamped_pose.pose.orientation.w =  stamped_tf.getRotation().getW();
+      stamped_pose.pose.orientation.x =  stamped_tf.getRotation().getX();
+      stamped_pose.pose.orientation.y =  stamped_tf.getRotation().getY();
+      stamped_pose.pose.orientation.z =  stamped_tf.getRotation().getZ();
+
+      // translation
+      stamped_pose.pose.position.x = stamped_tf.getOrigin().x();
+      stamped_pose.pose.position.y = stamped_tf.getOrigin().y();
+      stamped_pose.pose.position.z = stamped_tf.getOrigin().z();
+
+      // header frame_id should be parent frame
+      stamped_pose.header.frame_id = from; //stamped_tf.frame_id_;  //from or to
+      stamped_pose.header.stamp = ros::Time(0);
+
+      transform = true;
+    }
+    catch (tf::TransformException& ex)
+    {
+      ROS_ERROR("predictive_control_ros_node::getTransform: \n%s", ex.what());
+    }
+  }
+
+  else
+  {
+    ROS_WARN("%s or %s frame doesn't exist, pass existing frame", from.c_str(), to.c_str());
+  }
+
+  return transform;
+}
+
 
 // create static frame, just for visualization purpose
 void StaticCollision::createStaticFrame(const geometry_msgs::PoseStamped &stamped,

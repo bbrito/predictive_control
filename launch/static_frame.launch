@@ -1,3 +1,14 @@
+<?xml version="1.0"?>
 <launch>
+
+    <!-- Static Frame -->
+    <node pkg="tf" type="static_transform_publisher" name="static_transform_publisher_world_box" output="screen" args="0.60 -0.30 0.0 0.0 0.0 0.0 1 world box 100"/>
+
+    <!-- This configuration file will use for predictive control -->
+    <rosparam command="load" file="$(find predictive_control)/planning_queries/test_object_database.yaml"/>
+
+    <!-- configured rviz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find predictive_control)/rviz_config/test_description.rviz" />
+
 
 </launch>

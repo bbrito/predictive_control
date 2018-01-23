@@ -265,6 +265,7 @@ private:
   // service
   ros::ServiceServer add_static_object_;
   ros::ServiceServer remove_static_object_;
+  ros::ServiceServer remove_all_static_objects_;
 
   // transform listerner
   tf::TransformListener tf_listener_;
@@ -289,6 +290,10 @@ private:
                                 );
 
   bool removeStaticObjectServiceCB(predictive_control::StaticCollisionObjectRequest &request,
+                                   predictive_control::StaticCollisionObjectResponse &response
+                                  );
+
+  bool removeAllStaticObjectsServiceCB(predictive_control::StaticCollisionObjectRequest &request,
                                    predictive_control::StaticCollisionObjectResponse &response
                                   );
 

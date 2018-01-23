@@ -337,8 +337,11 @@ bool StaticCollision::initializeStaticCollisionObject()
   // serice publisher
   add_static_object_ = nh_collisionRobot.advertiseService("add_static_object", &StaticCollision::addStaticObjectServiceCB, this);
   remove_static_object_ = nh_collisionRobot.advertiseService("remove_static_object", &StaticCollision::removeStaticObjectServiceCB, this);
+  remove_all_static_objects_ = nh_collisionRobot.advertiseService("remove_all_static_objects", &StaticCollision::removeAllStaticObjectsServiceCB, this);
   ROS_INFO("===== add static object published with topic: ~/predictive_control/collisionRobot/add_static_object =====");
   ROS_INFO("===== remove static object published with topic: ~/predictive_control/collisionRobot/remove_static_object =====");
+  ROS_INFO("===== remove static object published with topic: ~/predictive_control/collisionRobot/remove_all_static_objects =====");
+
 
   ROS_WARN("STATIC COLLISION INITIALIZED!!");
 
@@ -675,6 +678,29 @@ bool StaticCollision::removeStaticObjectServiceCB(predictive_control::StaticColl
   }
 }
 
+
+bool StaticCollision::removeAllStaticObjectsServiceCB(predictive_control::StaticCollisionObjectRequest &request,
+                                                      predictive_control::StaticCollisionObjectResponse &response)
+{
+  // remove all object from collision matrix list
+  for (std::map<std::string, geometry_msgs::PoseStamped>::const_iterator it = collision_matrix_.begin();
+       it != collision_matrix_.end(); ++it)
+  {
+    collision_matrix_.erase(it);
+  }
+
+  // remove all object from environment
+  for (auto it = marker_array_.markers.begin(); it != marker_array_.markers.end(); ++it)
+  {
+    it->action = visualization_msgs::Marker::DELETE;
+    marker_pub_.publish(marker_array_);
+    marker_array_.markers.erase(it);
+  }
+
+  response.success = true;
+  response.message = "Successfully remove all objects from environment";
+  return true;
+}
 // update collsion ball position, publish new position of collision ball
 void StaticCollision::updateStaticCollisionVolume(const std::map<std::string, geometry_msgs::PoseStamped>& robot_critical_points)
 {

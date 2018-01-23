@@ -1,5 +1,5 @@
 tableshelves
-* box # id of each rack
+box
 1
 box
 0.40 0.60 0.80		# size of each box, #0.5 1.5 0.78	
@@ -7,4 +7,8 @@ box
 0 0 0 1				# quternion of box
 0 0 0 0
 .
+
+
+# box is object id of each rack
+
 

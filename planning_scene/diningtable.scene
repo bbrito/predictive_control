@@ -1,5 +1,5 @@
 tableshelves
-* diningtable		# id of each rack
+diningtable
 1
 box
 0.90 0.90 0.74		# size of each diningtable, #0.5 1.5 0.78	
@@ -8,3 +8,4 @@ box
 0 0 0 0	
 .
 
+# dinningtable is id of each rack

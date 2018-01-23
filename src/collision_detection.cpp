@@ -523,6 +523,48 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
             stamped.pose.position.y += marker.pose.position.y;
             stamped.pose.position.z += marker.pose.position.z;
 
+            ROS_WARN_STREAM(stamped);
+            // add according to direction of vector, can be improve by changing to direction vector
+            /*if (stamped.pose.position.x < 0.0)
+                stamped.pose.position.x -= marker.pose.position.x;
+            if (stamped.pose.position.x >= 0.0)
+                stamped.pose.position.x += marker.pose.position.x;
+
+            if (stamped.pose.position.y < 0.0)
+                stamped.pose.position.y -= marker.pose.position.y;
+            if (stamped.pose.position.y >= 0.0)
+                stamped.pose.position.y += marker.pose.position.y;
+
+            if (stamped.pose.position.z < 0.0)
+                stamped.pose.position.z -= marker.pose.position.z;
+            if (stamped.pose.position.z >= 0.0)
+                stamped.pose.position.z += marker.pose.position.z;*/
+            /*
+            if (stamped.pose.position.x >= 0.0 && stamped.pose.position.y >= 0.0)
+            {
+              stamped.pose.position.x += marker.pose.position.x;
+              stamped.pose.position.y += marker.pose.position.y;
+              stamped.pose.position.z += marker.pose.position.z;
+            }
+            if (stamped.pose.position.x <= 0.0 && stamped.pose.position.y >= 0.0)
+            {
+              stamped.pose.position.x -= marker.pose.position.x;
+              stamped.pose.position.y += marker.pose.position.y;
+              stamped.pose.position.z += marker.pose.position.z;
+            }
+            if (stamped.pose.position.x <= 0.0 && stamped.pose.position.y <= 0.0)
+            {
+              stamped.pose.position.x -= marker.pose.position.x;
+              stamped.pose.position.y -= marker.pose.position.y;
+              stamped.pose.position.z += marker.pose.position.z;
+            }
+            if (stamped.pose.position.x >= 0.0 && stamped.pose.position.y <= 0.0)
+            {
+              stamped.pose.position.x += marker.pose.position.x;
+              stamped.pose.position.y -= marker.pose.position.y;
+              stamped.pose.position.z += marker.pose.position.z;
+            }*/
+
             getline (myfile,line);
             myfile>>marker.pose.orientation.x>>marker.pose.orientation.y>>marker.pose.orientation.z >> marker.pose.orientation.w; //7 line
 

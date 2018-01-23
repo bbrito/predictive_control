@@ -91,12 +91,12 @@ def add_environment_from_file(object_id):
         pose.header.stamp = rospy.Time().now()
 
         # position
-        pose.pose.position.x = 0.50
-        pose.pose.position.y = 0.0
-        pose.pose.position.z = 0.00
+        pose.pose.position.x = -0.53 # half of dimension of box(0.20) + some distance
+        pose.pose.position.y = 0.53
+        pose.pose.position.z = 0.00 # half of dimension of box(0.40)
 
         # object orientation
-        pose.pose.orientation.w = 1.0
+        pose.pose.orientation.w = 0.0
         pose.pose.orientation.x = 0.0
         pose.pose.orientation.y = 0.0
         pose.pose.orientation.z = 0.0
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     rospy.init_node("pd_static_object_service")
 
     object_id = "box"
-    #add_environment_from_file(object_id=object_id)
-    add_environment(object_id)
+    add_environment_from_file(object_id=object_id)
+    #add_environment(object_id)
     #rospy.sleep(3.0)
     #remove_environment(object_id)

@@ -21,6 +21,12 @@ class moveActionClient:
         pass
 
 
+    def move_to_pregasping_pose(self, object_name, object_list):
+        data_info_obj = ReadDataFromList(item_list=object_list.items_list, object_name=object_name)
+        [object_position, object_orientation] = data_info_obj.getObjectInfo()
+
+        self.move_action_client(object_position=object_position, object_orientation=object_orientation,object_name=object_name)
+
     def Run(self):
         runs = int(sys.argv[1])
         start_random = int(sys.argv[2])
@@ -39,9 +45,13 @@ class moveActionClient:
 
         for i in range(0, runs, 1):
             print ('\033[94m' + "Current no. of runs is " + str(i) + '\033[0m')
-            grasp_object = "pose_" + str(random.randint(start_random, end_random))
+            grasp_object = "pose_" + str(i+1) #str(random.randint(start_random, end_random))
             print "object_name: ", grasp_object
 
+            # move to pregraping position
+            self.move_to_pregasping_pose(object_name="pose_0", object_list=object)
+
+            # extract information of object
             data_info_obj = ReadDataFromList(item_list=object.items_list, object_name=grasp_object)
             [object_position, object_orientation] = data_info_obj.getObjectInfo()
 

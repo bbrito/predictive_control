@@ -446,20 +446,20 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
     // store created marker
     marker_array_.markers.push_back(marker);
   }
-/*
+
   // read static object dimenstion from files
-  if (!request.file_name.empty())
+  /*if (!request.file_name.empty())
   {
+
     // initialize static objects
     std::ifstream myfile;
     std::string line, id;
-    geometry_msgs::PoseStamped object_pose;
-    shape_msgs::SolidPrimitive primitive;
     visualization_msgs::Marker marker;
-    primitive.dimensions.resize(3);
     std::string object_id;
+    object_id = request.object_id;
 
     std::string filename = ros::package::getPath("predictive_control") + "/planning_scene/"+ request.file_name + ".scene";
+    ROS_WARN("%s", filename.c_str());
     myfile.open(filename.c_str());
 
     // check file is open
@@ -479,19 +479,16 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
 
             if(line.compare("box") == 0)
             {
-              primitive.type = primitive.BOX;
               marker.type = marker.CUBE;
             }
 
             else if( line.compare("cylinder") == 0)
             {
-              primitive.type = primitive.CYLINDER;
               marker.type = marker.CYLINDER;
             }
 
             else if( line.compare("sphere") == 0)
             {
-              primitive.type = primitive.SPHERE;
               marker.type = marker.SPHERE;
             }
 
@@ -508,27 +505,43 @@ bool StaticCollision::addStaticObjectServiceCB(predictive_control::StaticCollisi
             myfile>>marker.scale.x >>marker.scale.y>>marker.scale.z;  //5 line
             getline (myfile,line);
 
-            myfile>>object_pose.pose.position.x>>object_pose.pose.position.y>>object_pose.pose.position.z;   //6 line
+            myfile>>marker.pose.position.x>>marker.pose.position.y>>marker.pose.position.z;   //6 line
+            marker.pose.position.x += request.primitive_pose.pose.position.x;
+            marker.pose.position.y += request.primitive_pose.pose.position.y;
+            marker.pose.position.z += request.primitive_pose.pose.position.z;
+
             getline (myfile,line);
-            myfile>>object_pose.pose.orientation.x>>object_pose.pose.orientation.y>>object_pose.pose.orientation.z >> object_pose.pose.orientation.w; //7 line
-            object_pose.header.stamp = ros::Time(0);
-            object_pose.header.frame_id = request.file_name;
+            myfile>>marker.pose.orientation.x>>marker.pose.orientation.y>>marker.pose.orientation.z >> marker.pose.orientation.w; //7 line
+            ///marker.pose.orientation.w += request.primitive_pose.pose.orientation.w;
+            marker.pose.orientation.x += request.primitive_pose.pose.orientation.x;
+            marker.pose.orientation.y += request.primitive_pose.pose.orientation.y;
+            marker.pose.orientation.z += request.primitive_pose.pose.orientation.z;///
+
+            marker.header.stamp = request.primitive_pose.header.stamp;
+            marker.header.frame_id = request.file_name;
 
             getline(myfile, line);	// 8 line not useful line
             getline(myfile, line);	// 9 line not useful line
 
+            ROS_ERROR_STREAM(marker.pose);
+            // texture
+            marker.color.r = 1.0;
+            marker.color.g = 0.0;
+            marker.color.b = 0.0;
+            marker.color.a = 0.1;
+            marker.action = visualization_msgs::Marker::ADD;
+            marker.ns = "preview";
+            marker.text = request.file_name;
             marker_array_.markers.push_back(marker);
       }
     }
-  }
-*/
-  // response
-  response.success = true;
-  std::string message("Successfully add to the environment");
-  ROS_WARN("StaticCollision: %s", message.c_str());
-  response.message = message;
+  }*/
 
   marker_pub_.publish(marker_array_);
+
+  // response
+  response.success = true;
+  response.message = ("Successfully add to the environment");
 
   return true;
 }

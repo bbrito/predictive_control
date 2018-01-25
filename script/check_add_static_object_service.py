@@ -214,12 +214,12 @@ if __name__ == '__main__':
     #remove_environment(object_id)
     #remove_environment_from_file(object_id=object_id)
 
-    object_id = "bookshelves"
-    add_environment_from_file(object_id=object_id)
+    #object_id = "bookshelves"
+    #add_environment_from_file(object_id=object_id)
     #add_environment(object_id)
-    rospy.sleep(3.0)
+    #rospy.sleep(3.0)
     #remove_environment(object_id)
     #remove_environment_from_file(object_id=object_id)
 
-    remove_all_environmental_object(object_id=object_id)
+    #remove_all_environmental_object(object_id=object_id)
 

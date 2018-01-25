@@ -868,7 +868,16 @@ void StaticCollision::computeStaticCollisionCost(const std::map<std::string, geo
                                                  const double &weight_factor)
 
 {
-  collision_cost_vector_ = Eigen::VectorXd(static_collision_matrix.size());
+  collision_cost_vector_ = Eigen::VectorXd(robot_collision_matrix.size());
+  collision_cost_vector_.resize(robot_collision_matrix.size());
+
+  for (auto it: static_collision_matrix)
+  {
+    ROS_WARN_STREAM(it.first);
+        ROS_WARN_STREAM(it.second);
+  }
+
+
 /*
   // iterate to one by one point in collision matrix
   int loop_counter = 0u;
@@ -899,28 +908,52 @@ void StaticCollision::computeStaticCollisionCost(const std::map<std::string, geo
 
 
   int loop_counter = 0u;
-  for (auto it_out = static_collision_matrix.begin(); it_out != static_collision_matrix.end(); ++it_out, ++loop_counter)
+  for (auto it_out = robot_collision_matrix.begin(); it_out != robot_collision_matrix.end(); ++it_out, ++loop_counter)
   {
     double dist = 0.0;
-    for (auto it_in = robot_collision_matrix.begin(); it_in != robot_collision_matrix.end(); ++it_in)
+    int static_object_counter = 0u;
+    for (auto it_in = static_collision_matrix.begin(); it_in != static_collision_matrix.end(); ++it_in, ++static_object_counter)
     {
+
+      // dimension should half of scale
+      double dim_x = marker_array_.markers.at(static_object_counter).scale.x*0.5;
+      double dim_y = marker_array_.markers.at(static_object_counter).scale.y*0.5;
+      double dim_z = marker_array_.markers.at(static_object_counter).scale.z*0.5;
+
+      // move to center of object
+
+      ROS_INFO_STREAM((it_in->second.pose.position.x));
+
+      double v_x = (it_in->second.pose.position.x) + dim_x;
+      double v_y = (it_in->second.pose.position.y) + dim_y;
+      double v_z = (it_in->second.pose.position.z) + dim_z;
+
+      // distance threasold by considering dimensions
+      double dist_threasold_x = dim_x; //marker_array_.markers.at(static_object_counter).scale.x;
+      double dist_threasold_y = dim_y; //marker_array_.markers.at(static_object_counter).scale.y;
+      double dist_threasold_z = dim_z; //marker_array_.markers.at(static_object_counter).scale.z;
+
       // both string are not equal than execute if loop
       if (it_out->first.find(it_in->first) == std::string::npos)
       {
         // penlaty + relax barrier cost function
-        dist += exp( ((collision_threshold_distance*collision_threshold_distance) - ( fabs(it_in->second.pose.position.x - ( 1.30 + 0.0)) * fabs(it_in->second.pose.position.x - ( 1.30 + 0.0)))) / 0.001);
-        dist += exp( ((collision_threshold_distance*collision_threshold_distance) - ( fabs(it_in->second.pose.position.y - ( 1.30 + 0.0)) * fabs(it_in->second.pose.position.y - ( 1.30 + 0.0)))) / 0.001);
-        dist += exp( ((collision_threshold_distance*collision_threshold_distance) - ( fabs(it_in->second.pose.position.z - ( 0.10 + 0.10)) * fabs(it_in->second.pose.position.z - ( 0.10 + 0.10)))) / 0.001);
+        dist += exp( ((dist_threasold_x*dist_threasold_x) -
+                      ( (it_out->second.pose.position.x - v_x) *
+                        (it_out->second.pose.position.x - v_x))) / weight_factor);
 
-/*        // log function
-        dist += -0.01* log( collision_threshold_distance - fabs(it_in->second.pose.position.x - ( 1.30 + 0.0)));
-        double test = collision_threshold_distance - (fabs(it_in->second.pose.position.x - ( 1.30 + 0.0)) );
-        std::cout << " Log x function: " << test << std::endl;
-        std::cout << " Log x function: " << log(test) << std::endl;
-        dist += -0.01* log( collision_threshold_distance - fabs(it_in->second.pose.position.y - ( 1.30 + 0.0)));
-        std::cout << " Log y function: " << log( collision_threshold_distance) << std::endl;;
-        dist += -0.01* log( collision_threshold_distance - fabs(it_in->second.pose.position.z - ( 0.10 + 0.10)));
-        std::cout << " Log z function: " << log( collision_threshold_distance) << std::endl;*/
+        ROS_WARN_STREAM("distance_x: "<< (it_out->second.pose.position.x));
+        ROS_WARN_STREAM("distance_y: "<< (v_x));
+        ROS_WARN_STREAM("distance_z: "<< (it_out->second.pose.position.x - v_x));
+        /*dist += exp( ((dist_threasold_y*dist_threasold_y) -
+                      ( (it_out->second.pose.position.x - v_y) *
+                        (it_out->second.pose.position.x - v_y))) / weight_factor);
+        ROS_WARN_STREAM("distance_y: "<< (it_out->second.pose.position.y - v_y));
+
+        dist += exp( ((dist_threasold_z*dist_threasold_z) -
+                      ( (it_out->second.pose.position.x - v_z) *
+                        (it_out->second.pose.position.x - v_z))) / weight_factor);
+        ROS_WARN_STREAM("distance_z: "<< (it_out->second.pose.position.z - v_z));*/
+
       }
     }
     //store cost of each point into vector

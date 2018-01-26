@@ -78,7 +78,7 @@ catkin_package(
   CATKIN_DEPENDS actionlib_msgs cob_control_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs
   DEPENDS Boost CERES ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_DIRS} #${ACADO_INCLUDE_PACKAGES}
-  LIBRARIES  predictive_configuration kinematic_calculations self_collision_detection predictive_trajectory_generator predictive_controller
+  LIBRARIES  predictive_configuration kinematic_calculations self_collision_detection collision_avoidance predictive_trajectory_generator predictive_controller
 )
 
 ### BUILD ###
@@ -120,6 +120,15 @@ target_link_libraries(self_collision_detection
     ${CERES_LIBRARIES}
     )
 
+add_library(collision_avoidance src/collision_avoidance.cpp)
+add_dependencies(collision_avoidance ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(collision_avoidance
+    predictive_configuration
+    ${catkin_LIBRARIES}
+    ${orocos_kdl_LIBRARIES}
+    ${CERES_LIBRARIES}
+    )
+
 add_library(predictive_trajectory_generator src/predictive_trajectory_generator.cpp)
 add_dependencies(predictive_trajectory_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(predictive_trajectory_generator
@@ -136,6 +145,7 @@ target_link_libraries(predictive_controller
     predictive_configuration
     kinematic_calculations
     self_collision_detection
+    collision_avoidance
     predictive_trajectory_generator
     ${catkin_LIBRARIES}
     ${orocos_kdl_LIBRARIES}
@@ -193,6 +203,6 @@ install(
 )
 
 install(
-  TARGETS predictive_configuration kinematic_calculations self_collision_detection predictive_trajectory_generator predictive_controller
+  TARGETS predictive_configuration kinematic_calculations self_collision_detection collision_avoidance predictive_trajectory_generator predictive_controller
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )

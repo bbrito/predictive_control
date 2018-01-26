@@ -60,9 +60,9 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   // initialize degree of freedom, assume that number of joint equal to degree of freedom
   degree_of_freedom_ = joints_name_.size();
 
-  if (!nh.getParam ("self_collision_map", collision_check_links_) )
+  if (!nh.getParam ("self_collision/collision_check_links", collision_check_links_) )
   {
-    ROS_WARN(" Parameter 'self_collision_map' not set on %s node please look at ../self_collision.yaml" , ros::this_node::getName().c_str());
+    ROS_WARN(" Parameter 'self_collision/collision_check_links' not set on %s node please look at ../self_collision.yaml" , ros::this_node::getName().c_str());
     collision_check_links_.resize(degree_of_freedom_, std::string(""));
   }
 

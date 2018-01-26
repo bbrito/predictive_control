@@ -26,3 +26,5 @@ Therefore, it gives error about Filed kinematic chain ....
 
 Launch:
  roslaunch predictive_control mpc_experiment_cob.launch  
+
+MIN_DISTANCE: for obstracle avoidance is 0.50 define in obstacle_distance_data_types.hpp

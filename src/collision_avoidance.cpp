@@ -51,6 +51,69 @@ bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configura
   return true;
 }
 
+void CollisionAvoidance::obstaclesDistanceCallBack(const cob_control_msgs::ObstacleDistances::ConstPtr &msg)
+{
+  relevant_obstacle_distances_.clear();
+
+  for (uint32_t i = 0; i < msg->distances.size(); ++i)
+  {
+    const std::string id = msg->distances.at(i).link_of_interest;
+    if (relevant_obstacle_distances_.count(id) > 0)
+    {
+      if (relevant_obstacle_distances_[id].distance > msg->distances[i].distance)
+      {
+        relevant_obstacle_distances_[id] = msg->distances[i];
+      }
+    }
+    else
+    {
+      relevant_obstacle_distances_[id] = msg->distances.at(i);
+    }
+  }
+
+  // DEBUG
+  if (pd_config_->activate_output_)
+  {
+    for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();
+         it != relevant_obstacle_distances_.end(); ++it)
+    {
+      ROS_WARN_STREAM("link of interest: "<< it->second.link_of_interest);
+      ROS_WARN_STREAM("Obstacle_id: "<< it->second.obstacle_id);
+      ROS_INFO_STREAM("Frame Vector: "<<it->second.frame_vector);
+      ROS_INFO_STREAM("Nearest_point_frame_vector: " <<it->second.nearest_point_obstacle_vector);
+      ROS_INFO_STREAM("Nearest_point_obstacle_vector: "<<it->second.nearest_point_obstacle_vector);
+    }
+  }
+
+  this->getDistanceCostFunction();
+
+  this->visualizeObstacleDistance(relevant_obstacle_distances_);
+
+}
+
+
+
+double CollisionAvoidance::getDistanceCostFunction()
+{
+  double cost_distance(0.0);
+
+  for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();
+       it != relevant_obstacle_distances_.end(); ++it)
+  {
+    //ROS_ERROR_STREAM(it->second.link_of_interest);
+    //ROS_ERROR_STREAM(it->second.obstacle_id);
+    // ROS_WARN_STREAM(it->second.distance);
+
+    cost_distance += exp( (pd_config_->minimum_collision_distance_*pd_config_->minimum_collision_distance_ -
+                           it->second.distance * it->second.distance) / pd_config_->collision_weight_factor_);
+
+  }
+
+  ROS_WARN_STREAM("COLLISION COST: "<<cost_distance);
+
+  return cost_distance;
+}
+
 bool CollisionAvoidance::registerCollisionOjbect(const std::string& obstacle_name)
 {
 
@@ -117,39 +180,6 @@ bool CollisionAvoidance::registerCollisionLinks()
     return true;
 }
 
-void CollisionAvoidance::obstaclesDistanceCallBack(const cob_control_msgs::ObstacleDistances::ConstPtr &msg)
-{
-  relevant_obstacle_distances_.clear();
-
-  for (uint32_t i = 0; i < msg->distances.size(); ++i)
-  {
-    const std::string id = msg->distances.at(i).link_of_interest;
-    if (relevant_obstacle_distances_.count(id) > 0)
-    {
-      if (relevant_obstacle_distances_[id].distance > msg->distances[i].distance)
-      {
-        relevant_obstacle_distances_[id] = msg->distances[i];
-      }
-    }
-    else
-    {
-      relevant_obstacle_distances_[id] = msg->distances.at(i);
-    }
-  }
-
-  for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();
-       it != relevant_obstacle_distances_.end(); ++it)
-  {
-    ROS_WARN_STREAM("link of interest: "<< it->second.link_of_interest);
-    ROS_WARN_STREAM("Obstacle_id: "<< it->second.obstacle_id);
-    ROS_INFO_STREAM("Frame Vector: "<<it->second.frame_vector);
-    ROS_INFO_STREAM("Nearest_point_frame_vector: " <<it->second.nearest_point_obstacle_vector);
-    ROS_INFO_STREAM("Nearest_point_obstacle_vector: "<<it->second.nearest_point_obstacle_vector);
-  }
-
-  this->visualizeObstacleDistance(relevant_obstacle_distances_);
-
-}
 
 void CollisionAvoidance::visualizeObstacleDistance(const std::map<std::string, cob_control_msgs::ObstacleDistance> &distnace_matrix)
 {
@@ -176,7 +206,7 @@ void CollisionAvoidance::visualizeObstacleDistance(const std::map<std::string, c
     start.y = it->second.nearest_point_obstacle_vector.y;
     start.z = it->second.nearest_point_obstacle_vector.z;
 
-    ROS_WARN_STREAM(start);
+    //ROS_WARN_STREAM(start);
 
     // Vector pointing to the nearest point on the link collision geometry (e.g. mesh)
     geometry_msgs::Point end;
@@ -184,7 +214,7 @@ void CollisionAvoidance::visualizeObstacleDistance(const std::map<std::string, c
     end.y = it->second.nearest_point_frame_vector.y;
     end.z = it->second.nearest_point_frame_vector.z;
 
-    ROS_WARN_STREAM(end);
+    //ROS_WARN_STREAM(end);
 
     marker_vector.color.a = 1.0;
     marker_vector.color.g = 1.0;

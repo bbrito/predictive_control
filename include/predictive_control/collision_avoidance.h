@@ -58,6 +58,8 @@ public:
 
   bool registerCollisionOjbect(const std::string &obstacle_name);
 
+  double getDistanceCostFunction();
+
 private:
 
   ros::NodeHandle nh_;

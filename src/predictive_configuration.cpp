@@ -60,6 +60,12 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   // initialize degree of freedom, assume that number of joint equal to degree of freedom
   degree_of_freedom_ = joints_name_.size();
 
+  if (!nh.getParam ("self_collision_map", collision_check_links_) )
+  {
+    ROS_WARN(" Parameter 'self_collision_map' not set on %s node please look at ../self_collision.yaml" , ros::this_node::getName().c_str());
+    collision_check_links_.resize(degree_of_freedom_, std::string(""));
+  }
+
   // read and set joint constrints
   if (!nh_config.getParam ("constraints/position_constraints/min", joints_min_limit_) )
   {
@@ -228,6 +234,7 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
   tracking_frame_ = new_config.tracking_frame_;
 
   joints_name_ = new_config.joints_name_;
+  collision_check_links_ = new_config.collision_check_links_;
   joints_min_limit_ = new_config.joints_min_limit_;
   joints_max_limit_ = new_config.joints_max_limit_;
   joints_vel_min_limit_ = new_config.joints_vel_min_limit_;
@@ -295,6 +302,15 @@ void predictive_configuration::print_configuration_parameter()
   // print joints name
   std::cout << "Joint names: [";
   for_each(joints_name_.begin(), joints_name_.end(), [](std::string& str)
+  {
+    std::cout << str << ", " ;
+  }
+  );
+  std::cout<<"]"<<std::endl;
+
+  // print joints name
+  std::cout << "self collision map: [";
+  for_each(collision_check_links_.begin(), collision_check_links_.end(), [](std::string& str)
   {
     std::cout << str << ", " ;
   }
@@ -388,6 +404,7 @@ void predictive_configuration::print_configuration_parameter()
 void predictive_configuration::free_allocated_memory()
 {
   joints_name_.clear();
+  collision_check_links_.clear();
   joints_min_limit_.clear();
   joints_max_limit_.clear();
   joints_vel_min_limit_.clear();

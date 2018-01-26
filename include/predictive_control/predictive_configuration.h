@@ -73,6 +73,7 @@ public:
 
   // limiting parameter, use to enforce joint to be in limit
   std::vector<std::string> joints_name_;
+  std::vector<std::string> collision_check_links_;
   std::vector<double> joints_min_limit_;
   std::vector<double> joints_max_limit_;
   std::vector<double> joints_vel_min_limit_;

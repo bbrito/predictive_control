@@ -13,9 +13,9 @@ CollisionAvoidance::~CollisionAvoidance()
 
 bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configuration> &pd_config_ptr)
 {
-  /*pd_config_.reset(new predictive_configuration());
-  pd_config_->initialize();*/
-  pd_config_ = pd_config_ptr;
+  pd_config_.reset(new predictive_configuration());
+  pd_config_->initialize();
+  //pd_config_ = pd_config_ptr;
   chain_base_link_ = pd_config_->chain_base_link_;
 
   // visulize distance information just for debugging purpose
@@ -28,16 +28,18 @@ bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configura
   // subscribe obstacle distances
   obstacle_distance_sub_ = this->nh_.subscribe("obstacle_distance", 1 , &CollisionAvoidance::obstaclesDistanceCallBack, this);
 
-  return 0;
+  ROS_WARN("COLLIISION_AVOIDANCE SUCCESFFULLY INITIALIZED!!");
+
+  return true;
 }
-/*
-bool CobTwistController::registerCollisionLinks()
+
+bool CollisionAvoidance::registerCollisionLinks()
 {
-    ROS_WARN_COND(twist_controller_params_.collision_check_links.size() <= 0,
+    ROS_WARN_COND( this->pd_config_->collision_check_links_.size() <= 0,
                   "No collision_check_links set for this chain. Nothing will be registered. Ensure parameters are set correctly.");
 
-    for (std::vector<std::string>::const_iterator it = twist_controller_params_.collision_check_links.begin();
-         it != twist_controller_params_.collision_check_links.end();
+    for (std::vector<std::string>::const_iterator it = this->pd_config_->collision_check_links_.begin();
+         it != this->pd_config_->collision_check_links_.end();
          it++)
     {
         ROS_INFO_STREAM("Trying to register for " << *it);
@@ -60,7 +62,7 @@ bool CobTwistController::registerCollisionLinks()
 
     return true;
 }
-*/
+
 void CollisionAvoidance::obstaclesDistanceCallBack(const cob_control_msgs::ObstacleDistances::ConstPtr &msg)
 {
   relevant_obstacle_distances_.clear();

@@ -25,6 +25,18 @@ bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configura
   register_link_client_ = nh_.serviceClient<cob_srvs::SetString>("obstacle_distance/registerLinkOfInterest");
   register_link_client_.waitForExistence(ros::Duration(5.0));
 
+  if (register_link_client_.exists())
+  {
+    ROS_INFO("Collision Avoidance has been activated! Register links!");
+    if (!this->registerCollisionLinks())
+    {
+        ROS_ERROR("Registration of links failed. CA not possible");
+    }
+  }
+  else
+  {
+    ROS_ERROR("Service is not exist yet");
+  }
   // subscribe obstacle distances
   obstacle_distance_sub_ = this->nh_.subscribe("obstacle_distance", 1 , &CollisionAvoidance::obstaclesDistanceCallBack, this);
 

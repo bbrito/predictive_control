@@ -79,7 +79,7 @@ public:
    void solveOptimalControlProblem(const Eigen::MatrixXd& Jacobian_Matrix,
                                   const Eigen::VectorXd& last_position,
                                   const Eigen::VectorXd& goal_pose,
-                                  const Eigen::VectorXd& self_collision_vector,
+                                  const double& self_collision_vector,
                                   const Eigen::VectorXd& static_collision_vector,
                                   std_msgs::Float64MultiArray& controlled_velocity
                                   );

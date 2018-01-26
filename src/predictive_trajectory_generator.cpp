@@ -366,7 +366,7 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobian_Matrix,
                                                   const Eigen::VectorXd &last_position,
                                                   const Eigen::VectorXd &goal_pose,
-                                                  const Eigen::VectorXd& self_collision_vector,
+                                                  const double &self_collision_vector,
                                                   const Eigen::VectorXd& static_collision_vector,
                                                   std_msgs::Float64MultiArray& controlled_velocity)
 {
@@ -417,7 +417,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   pose(5) = y;
   std::cout<<"\033[32m"<<"____NEW GOAL POSE _______"<<pose.transpose()<<"______"<<"\033[36;0m"<<std::endl;
 
-  std::cout<<"\033[95m"<<"________________________"<<self_collision_vector.sum()<<"___________________"<<"\033[36;0m"<<std::endl;
+  std::cout<<"\033[95m"<<"________________________"<<self_collision_vector<<"___________________"<<"\033[36;0m"<<std::endl;
 
   const unsigned int jacobian_matrix_rows = 6;//Jacobian_Matrix.rows();
   const unsigned int jacobian_matrix_columns = 7;//Jacobian_Matrix.cols();
@@ -444,9 +444,9 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   generateCostFunction(OCP_problem, x, v, goal_pose);
 
   // generate collision cost function
-  if (self_collision_vector.sum() > (ball_radius_ + 0.10))
+  //if (self_collision_vector > (ball_radius_ + 0.10))
   {
-    generateCollisionCostFunction(OCP_problem, v, Jacobian_Matrix_, self_collision_vector.sum(), 0.0);
+    generateCollisionCostFunction(OCP_problem, v, Jacobian_Matrix_, self_collision_vector, 0.0);
   }
   //--------------------------------------------------- static collision cost ------------------
   DVector normal_vector(Jacobian_Matrix.rows());

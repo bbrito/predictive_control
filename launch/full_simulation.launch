@@ -19,12 +19,6 @@
     <arg name="start_external_sync" default="$(arg use_external_sync)"/>
     <arg name="pkg_hardware_config" default="$(find cob_hardware_config)"/>
 
-    <!-- Static Frame -->
-    <!--node pkg="tf" type="static_transform_publisher" name="static_transform_publisher_world_box" output="screen" args="0.20 -0.30 0.0 -0.7071068 0.0 0.0 0.7071068 world box 100"/-->
-
-    <!-- This configuration file will use for predictive control -->
-    <!--rosparam command="load" file="$(find predictive_control)/planning_queries/test_object_database.yaml"/-->
-
     <!-- start gazebo with empty world -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
       <arg name="paused" value="$(arg paused)" />

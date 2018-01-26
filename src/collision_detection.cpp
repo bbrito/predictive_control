@@ -915,53 +915,66 @@ void StaticCollision::computeStaticCollisionCost(const std::map<std::string, geo
     for (auto it_in = static_collision_matrix.begin(); it_in != static_collision_matrix.end(); ++it_in, ++static_object_counter)
     {
 
+      if (it_out->first.find(it_in->first) == std::string::npos)
+      {
+
       // dimension should half of scale
       double dim_x = marker_array_.markers.at(static_object_counter).scale.x*0.5;
       double dim_y = marker_array_.markers.at(static_object_counter).scale.y*0.5;
       double dim_z = marker_array_.markers.at(static_object_counter).scale.z*0.5;
 
       // move to center of object
-      geometry_msgs::Pose pose = it_in->second.pose;
-      //pose.position.x += dim_x;
-      //pose.position.y += dim_y;
-      pose.position.z += dim_z;
-      double v_x = (it_in->second.pose.position.x) + dim_x;
-      double v_y = (it_in->second.pose.position.y) + dim_y;
-      double v_z = (it_in->second.pose.position.z) + dim_z;
-      ROS_WARN_STREAM("Z: "<<v_z);
-      // distance threasold by considering dimensions
-      double dist_threasold_x = 0.10+dim_x; //marker_array_.markers.at(static_object_counter).scale.x;
-      double dist_threasold_y = 0.10+dim_y; //marker_array_.markers.at(static_object_counter).scale.y;
-      double dist_threasold_z = 0.10+dim_z; //marker_array_.markers.at(static_object_counter).scale.z;
+      geometry_msgs::Pose center_pose = it_in->second.pose;
+      center_pose.position.x = (it_in->second.pose.position.x) + dim_x;
+      center_pose.position.y = (it_in->second.pose.position.y) + dim_y;
+      center_pose.position.z = (it_in->second.pose.position.z) + dim_z;
 
-      // both string are not equal than execute if loop
-      if (it_out->first.find(it_in->first) == std::string::npos)
-      {
-        // penlaty + relax barrier cost function
-        /*dist += exp( ((dist_threasold_x*dist_threasold_x) -
-                      ( (it_out->second.pose.position.x - v_x) *
-                        (it_out->second.pose.position.x - v_x))) / weight_factor);*/
+      // compute error vector from x_negative
+      geometry_msgs::Pose x_negative(center_pose);
+      x_negative.position.x -= dim_x;
+      double dist_x_neg = CollisionRobot::getEuclideanDistance(it_out->second.pose, x_negative);
+      dist += exp( (0.010 - dist_x_neg*dist_x_neg)/weight_factor );
+      ROS_WARN_STREAM("dist_x_neg: "<< CollisionRobot::getEuclideanDistance(it_out->second.pose, x_negative));
 
-        /*dist += exp( ((dist_threasold_y*dist_threasold_y) -
-                      ( (it_out->second.pose.position.x - v_y) *
-                        (it_out->second.pose.position.x - v_y))) / weight_factor);*/
+      // compute error vector from x_positive
+      geometry_msgs::Pose x_positive(center_pose);
+      x_positive.position.x += dim_x;
+      double dist_x_pos = CollisionRobot::getEuclideanDistance(it_out->second.pose, x_positive);
+      dist += exp( (0.010 - dist_x_pos*dist_x_pos)/weight_factor );
+      ROS_WARN_STREAM("dist_x_pos: "<< CollisionRobot::getEuclideanDistance(it_out->second.pose, x_positive));
 
-        /*dist += exp( ((dist_threasold_z*dist_threasold_z) -
-                      ( (it_out->second.pose.position.x - v_z) *
-                        (it_out->second.pose.position.x - v_z))) / weight_factor);*/
+      // compute error vector from y_negative
+      geometry_msgs::Pose y_negative(center_pose);
+      y_negative.position.y -= dim_y;
+      double dist_y_neg = CollisionRobot::getEuclideanDistance(it_out->second.pose, y_negative);
+      dist += exp( (0.010 - dist_y_neg*dist_y_neg)/weight_factor );
+      ROS_WARN_STREAM("dist_y_neg: "<< CollisionRobot::getEuclideanDistance(it_out->second.pose, y_negative));
 
-        dist = CollisionRobot::getEuclideanDistance(it_out->second.pose, pose); //it_in->second.pose
-        ROS_INFO_STREAM("-------"<<dist);
-        dist = exp(((0.10*0.10 - dist*dist) / weight_factor));
-        ROS_WARN_STREAM(exp(((0.15*0.15 - dist*dist) / weight_factor)));
+      // compute error vector from y_positive
+      geometry_msgs::Pose y_positive(center_pose);
+      y_positive.position.y += dim_y;
+      double dist_y_pos = CollisionRobot::getEuclideanDistance(it_out->second.pose, y_positive);
+      dist += exp( (0.010 - dist_y_pos*dist_y_pos)/weight_factor );
+      ROS_WARN_STREAM("dist_y_pos: "<< CollisionRobot::getEuclideanDistance(it_out->second.pose, y_positive));
 
+      // compute error vector from y_negative
+      geometry_msgs::Pose z_negative(center_pose);
+      z_negative.position.z -= dim_z;
+      double dist_z_neg = CollisionRobot::getEuclideanDistance(it_out->second.pose, z_negative);
+      dist += exp( (0.010 - dist_z_neg*dist_z_neg)/weight_factor );
+      ROS_WARN_STREAM("dist_z_neg: "<< CollisionRobot::getEuclideanDistance(it_out->second.pose, z_negative));
 
+      // compute error vector from y_positive
+      geometry_msgs::Pose z_positive(center_pose);
+      z_positive.position.z += dim_z;
+      double dist_z_pos = CollisionRobot::getEuclideanDistance(it_out->second.pose, z_positive);
+      dist += exp( (0.010 - dist_z_pos*dist_z_pos)/weight_factor );
+      ROS_WARN_STREAM("dist_z_pos: "<< CollisionRobot::getEuclideanDistance(it_out->second.pose, z_positive));
       }
     }
     //store cost of each point into vector
     collision_cost_vector_(loop_counter) = dist;
   }
-
   ROS_ERROR_STREAM("=============== STATIC COLLSION DISTANCE VECRTOR ================= ");
   std::cout << collision_cost_vector_.transpose()<< std::endl;
 

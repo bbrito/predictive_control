@@ -182,10 +182,10 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /arm/predictive_control/StaticCollision/static_collision_object
+      Marker Topic: /arm/CollisionAvoidance/obstacle_distance_markers
       Name: MarkerArray
       Namespaces:
-        {}
+        arm_3_link: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -224,10 +224,10 @@ Visualization Manager:
         Z: 0.583252
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.190398
+      Pitch: 0.225398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.080384
+      Yaw: 5.51857
     Saved: ~
 Window Geometry:
   Displays:

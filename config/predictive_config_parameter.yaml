@@ -23,6 +23,10 @@ self_collision:
      ball_radius: 0.15
      minimum_collision_distance: 0.10
      collision_weight_factor: 0.01
+
+     # the following links of the chain are considered for collision avoidance
+     collision_check_links: [arm_1_link, arm_2_link, arm_3_link, arm_4_link, arm_5_link, arm_6_link, arm_7_link]
+
 constraints:
      position_constraints:
            min: [-3.14, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14]

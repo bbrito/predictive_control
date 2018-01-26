@@ -52,6 +52,9 @@ bool predictive_control_ros::initialize()
     collision_detect_.reset(new CollisionRobot());
     bool collision_success = collision_detect_->initializeCollisionRobot();
 
+    collision_avoidance_.reset(new CollisionAvoidance());
+    bool collision_avoidance_success = collision_avoidance_->initialize(pd_config_);
+
     static_collision_avoidance_.reset(new StaticCollision());
     bool static_collision_success = static_collision_avoidance_->initializeStaticCollisionObject();
 
@@ -397,10 +400,10 @@ void predictive_control_ros::jointStateCallBack(const sensor_msgs::JointState::C
     getTransform(pd_config_->chain_root_link_, target_frame_, goal_gripper_pose_);
 
     // update collision ball according to joint angles
-    collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
+    //collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
 
     // update static collision accroding to robot critical point computed in collisionRobot class
-    static_collision_avoidance_->updateStaticCollisionVolume(collision_detect_->collision_matrix_);
+    //static_collision_avoidance_->updateStaticCollisionVolume(collision_detect_->collision_matrix_);
 
     // Output is active, than only print joint state values
     if (pd_config_->activate_controller_node_output_)

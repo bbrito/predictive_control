@@ -46,6 +46,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <predictive_control/moveAction.h>
 #include <predictive_control/moveActionGoal.h>
+#include <predictive_control/collision_avoidance.h>
 
 /*
 struct hold_pose
@@ -188,6 +189,8 @@ private:
 
   // self collision detector/avoidance
   boost::shared_ptr<CollisionRobot> collision_detect_;
+  boost::shared_ptr<CollisionAvoidance> collision_avoidance_;
+
 
   // static collision detector/avoidance
   boost::shared_ptr<StaticCollision> static_collision_avoidance_;

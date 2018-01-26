@@ -180,7 +180,7 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
   pd_trajectory_generator_->solveOptimalControlProblem(Jacobian_Matrix_,
                                                        current_gripper_pose_,
                                                        goal_gripper_pose_,
-                                                       collision_detect_->collision_cost_vector_,
+                                                       collision_avoidance_->getDistanceCostFunction(),
                                                        static_collision_avoidance_->collision_cost_vector_,
                                                        controlled_velocity_);
 

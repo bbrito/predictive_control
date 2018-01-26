@@ -102,7 +102,7 @@ double CollisionAvoidance::getDistanceCostFunction()
   {
     //ROS_ERROR_STREAM(it->second.link_of_interest);
     //ROS_ERROR_STREAM(it->second.obstacle_id);
-    // ROS_WARN_STREAM(it->second.distance);
+    ROS_WARN_STREAM(it->second.distance);
 
     cost_distance += exp( (pd_config_->minimum_collision_distance_*pd_config_->minimum_collision_distance_ -
                            it->second.distance * it->second.distance) / pd_config_->collision_weight_factor_);

@@ -21,8 +21,11 @@ tracking_frame: arm_left_7_link
 # predictive_config: # minimum_collision_distance should not be larger than ball radius
 self_collision:
      ball_radius: 0.15
-     minimum_collision_distance: 0.18
+     minimum_collision_distance: 0.08
      collision_weight_factor: 0.01
+     # the following links of the chain are considered for collision avoidance
+     collision_check_links: [arm_left_3_link, arm_left_4_link, arm_left_5_link, arm_left_6_link, arm_left_7_link]
+
 constraints:
      position_constraints:
            min: [-1.50, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14]

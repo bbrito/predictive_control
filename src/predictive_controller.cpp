@@ -62,13 +62,14 @@ bool predictive_control_ros::initialize()
     bool pd_traj_success = pd_trajectory_generator_->initialize();
 
     // check successfully initialization of all classes
-    if (pd_config_success == false || kinematic_success == false
+    if (pd_config_success == false || kinematic_success == false || collision_avoidance_success == false
         || collision_success == false || static_collision_success == false || pd_traj_success == false || pd_config_->initialize_success_ == false)
     {
       ROS_ERROR("predictive_control_ros: FAILED TO INITILIZED!!");
       std::cout << "States: \n"
                 << " pd_config: " << std::boolalpha << pd_config_success << "\n"
                 << " kinematic solver: " << std::boolalpha << kinematic_success << "\n"
+                << " collision avoidance: " << std::boolalpha << collision_avoidance_success << "\n"
                 << " collision detect: " << std::boolalpha << collision_success << "\n"
                 << " static collision avoidance: " << std::boolalpha << static_collision_success << "\n"
                 << " pd traj generator: " << std::boolalpha << pd_traj_success << "\n"

@@ -21,6 +21,9 @@ bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configura
   // visulize distance information just for debugging purpose
   marker_pub_ = this->nh_.advertise<visualization_msgs::MarkerArray>("CollisionAvoidance/obstacle_distance_markers", 1, true);
 
+  add_obstacle_pub_ = this->nh_.advertise<moveit_msgs::CollisionObject>("obstacle_distance/registerObstacle", 1, true);
+  //add_obstracle_pub_.getNumSubscribers() < 1
+
   // register collision links
   register_link_client_ = nh_.serviceClient<cob_srvs::SetString>("obstacle_distance/registerLinkOfInterest");
   register_link_client_.waitForExistence(ros::Duration(5.0));
@@ -37,12 +40,51 @@ bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configura
   {
     ROS_ERROR("Service is not exist yet");
   }
+
+  //ia_server_ = new interactive_markers::InteractiveMarkerServer("marker_server", "", false);
+
   // subscribe obstacle distances
   obstacle_distance_sub_ = this->nh_.subscribe("obstacle_distance", 1 , &CollisionAvoidance::obstaclesDistanceCallBack, this);
 
   ROS_WARN("COLLIISION_AVOIDANCE SUCCESFFULLY INITIALIZED!!");
 
   return true;
+}
+
+bool CollisionAvoidance::registerCollisionOjbect(const std::string& obstacle_name)
+{
+
+  moveit_msgs::CollisionObject collision_object;
+  collision_object.id = "Interactive Box";
+  collision_object.header.frame_id =  obstacle_name;
+  collision_object.operation = moveit_msgs::CollisionObject::ADD;
+
+  shape_msgs::SolidPrimitive primitive;
+  primitive.type = primitive.SPHERE;
+  primitive.dimensions.push_back(0.15);
+  collision_object.primitives.push_back(primitive);
+
+  geometry_msgs::Pose pose;
+  pose.orientation.w = 1.0;
+  collision_object.primitive_poses.push_back(pose);
+
+  //compose interactive marker
+  geometry_msgs::PoseStamped stamped;
+  stamped.header.frame_id = pd_config_->chain_root_link_;
+  stamped.header.stamp = ros::Time(0).now();
+
+  // updated with service
+  stamped.pose.position.x = -0.5;
+  stamped.pose.position.y = 0.3;
+  stamped.pose.position.z = 0.8;
+  stamped.pose.orientation.w = 1.0;
+
+  this->configureInteractiveMarker();
+}
+
+void CollisionAvoidance::configureInteractiveMarker()
+{
+  int_marker_.header.frame_id = pd_config_->chain_root_link_;
 }
 
 bool CollisionAvoidance::registerCollisionLinks()

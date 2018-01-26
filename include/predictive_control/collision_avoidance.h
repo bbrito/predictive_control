@@ -13,6 +13,8 @@
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/InteractiveMarker.h>
+#include <visualization_msgs/InteractiveMarkerControl.h>
 #include <shape_msgs/SolidPrimitive.h>
 
 // eigen includes
@@ -32,6 +34,11 @@
 #include <cob_srvs/SetString.h>
 #include <cob_srvs/SetStringRequest.h>
 #include <cob_srvs/SetStringResponse.h>
+#include <interactive_markers/interactive_marker_server.h>
+#include <interactive_markers/menu_handler.h>
+
+// include movit_msgs collision msgs type
+#include <moveit_msgs/CollisionObject.h>
 
 // predictive includes
 #include <predictive_control/predictive_configuration.h>
@@ -49,15 +56,33 @@ public:
 
   bool registerCollisionLinks();
 
+  bool registerCollisionOjbect(const std::string &obstacle_name);
+
 private:
 
   ros::NodeHandle nh_;
+
+  std::string obstacle_name_;
+
+  // static frame broadcaster
+  tf2_ros::StaticTransformBroadcaster static_broadcaster_;
+
+  tf::TransformListener tf_listener_;
+
+  tf::StampedTransform target_pose_;
+
+  interactive_markers::InteractiveMarkerServer* ia_server_;
+  visualization_msgs::InteractiveMarker int_marker_;
+  visualization_msgs::InteractiveMarker int_marker_menu_;
+  //interactive_markers::MenuHandler menu_handler_;
 
   // chain base_link
   std::string chain_base_link_;
 
   // DEBUG
   ros::Publisher marker_pub_;
+
+  ros::Publisher add_obstacle_pub_;
 
   ros::ServiceClient register_link_client_;
 
@@ -71,6 +96,8 @@ private:
   std::map<std::string, cob_control_msgs::ObstacleDistance> relevant_obstacle_distances_;
 
   void visualizeObstacleDistance(const std::map<std::string, cob_control_msgs::ObstacleDistance>& distnace_matrix);
+
+  void configureInteractiveMarker();
 
 };
 

@@ -95,6 +95,16 @@ void CollisionAvoidance::obstaclesDistanceCallBack(const cob_control_msgs::Obsta
     }
   }
 
+  for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();
+       it != relevant_obstacle_distances_.end(); ++it)
+  {
+    ROS_WARN_STREAM("link of interest: "<< it->second.link_of_interest);
+    ROS_WARN_STREAM("Obstacle_id: "<< it->second.obstacle_id);
+    ROS_INFO_STREAM("Frame Vector: "<<it->second.frame_vector);
+    ROS_INFO_STREAM("Nearest_point_frame_vector: " <<it->second.nearest_point_obstacle_vector);
+    ROS_INFO_STREAM("Nearest_point_obstacle_vector: "<<it->second.nearest_point_obstacle_vector);
+  }
+
   this->visualizeObstacleDistance(relevant_obstacle_distances_);
 
 }

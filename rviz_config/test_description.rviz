@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /RobotModel1
-        - /InteractiveMarkers1
         - /MarkerArray1
         - /MarkerArray2
       Splitter Ratio: 0.634667
@@ -122,33 +121,27 @@ Visualization Manager:
       Frames:
         All Enabled: false
         arm_1_link:
-          Value: true
+          Value: false
         arm_2_link:
-          Value: true
+          Value: false
         arm_3_link:
-          Value: true
+          Value: false
         arm_4_link:
-          Value: true
+          Value: false
         arm_5_link:
-          Value: true
+          Value: false
         arm_6_link:
-          Value: true
+          Value: false
         arm_7_link:
           Value: true
         arm_7_target:
           Value: true
         arm_base_link:
-          Value: true
+          Value: false
         arm_podest_link:
-          Value: true
-        box:
-          Value: true
-        point_0:
-          Value: true
-        point_1:
-          Value: true
+          Value: false
         world:
-          Value: true
+          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: true
@@ -168,12 +161,6 @@ Visualization Manager:
                         arm_6_link:
                           arm_7_link:
                             {}
-          box:
-            {}
-          point_0:
-            {}
-          point_1:
-            {}
       Update Interval: 0
       Value: true
     - Class: rviz/InteractiveMarkers
@@ -190,7 +177,7 @@ Visualization Manager:
       Marker Topic: /arm/predictive_control/collisionRobot/collision_ball
       Name: MarkerArray
       Namespaces:
-        preview: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -198,7 +185,7 @@ Visualization Manager:
       Marker Topic: /arm/predictive_control/StaticCollision/static_collision_object
       Name: MarkerArray
       Namespaces:
-        preview: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -237,10 +224,10 @@ Visualization Manager:
         Z: 0.583252
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.315398
+      Pitch: 0.190398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.275384
+      Yaw: 0.080384
     Saved: ~
 Window Geometry:
   Displays:

@@ -91,8 +91,6 @@ void CollisionAvoidance::obstaclesDistanceCallBack(const cob_control_msgs::Obsta
 
 }
 
-
-
 double CollisionAvoidance::getDistanceCostFunction()
 {
   double cost_distance(0.0);
@@ -100,15 +98,15 @@ double CollisionAvoidance::getDistanceCostFunction()
   for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();
        it != relevant_obstacle_distances_.end(); ++it)
   {
-    //ROS_ERROR_STREAM(it->second.link_of_interest);
-    //ROS_ERROR_STREAM(it->second.obstacle_id);
+    ROS_ERROR_STREAM(it->second.link_of_interest);
+    ROS_ERROR_STREAM(it->second.obstacle_id);
     ROS_WARN_STREAM(it->second.distance);
     ROS_INFO_STREAM("Frame Vector: "<<it->second.frame_vector);
     ROS_INFO_STREAM("Nearest_point_frame_vector: " <<it->second.nearest_point_obstacle_vector);
     ROS_INFO_STREAM("Nearest_point_obstacle_vector: "<<it->second.nearest_point_obstacle_vector);
 
-    cost_distance += exp( (pd_config_->minimum_collision_distance_*pd_config_->minimum_collision_distance_ -
-                           it->second.distance * it->second.distance) / pd_config_->collision_weight_factor_);
+    cost_distance += exp( ( (pd_config_->minimum_collision_distance_*pd_config_->minimum_collision_distance_) -
+                           (it->second.distance * it->second.distance) )/ pd_config_->collision_weight_factor_);
 
   }
 

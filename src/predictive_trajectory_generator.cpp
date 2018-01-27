@@ -214,6 +214,8 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
 
   if (use_LSQ_term_)
   {
+    ROS_ERROR_STREAM("************ CALLING COLLISION COST FUNCTION *****************");
+
     DVector normal_vector(Jacobian_Matrix.rows());
     normal_vector.setAll(1.0);
 
@@ -227,10 +229,22 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
     Function h;
     h << expression;
 
-    DMatrix Q(1,1);
-    Q(0,0) = 1.0;
+    // initialize function with controls
+    for (int i = 0u; i < control_vector_size_; ++i)
+    {
+      h << v(i);
+    }
 
-    DVector ref(1);
+    DMatrix Q(h.getDim(), h.getDim());
+    Q(0,0) = 10.0;
+
+    // weighting of control weight, should filled after state wieghting factor
+    for (int i = 0u, j = 1; i < (control_vector_size_); ++i, ++j) // && lsq_control_vector_size
+    {
+      Q(j,j) = lsq_control_weight_factors_(i);
+    }
+
+    DVector ref(h.getDim());
     ref.setAll(0.0);
 
     // create objective function
@@ -238,7 +252,7 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
 
     // set constraints related to collision cost
     //OCP_problem.subjectTo(0.0 <= expression <= 5.0);
-    OCP_problem.subjectTo(expression <= 5.0);
+    //OCP_problem.subjectTo(expression <= 5.0);
   }
 
 }
@@ -444,7 +458,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
   generateCostFunction(OCP_problem, x, v, goal_pose);
 
   // generate collision cost function
-  //if (self_collision_vector > (ball_radius_ + 0.10))
+  if (self_collision_vector > (0.15 + 0.10))
   {
     generateCollisionCostFunction(OCP_problem, v, Jacobian_Matrix_, self_collision_vector, 0.0);
   }

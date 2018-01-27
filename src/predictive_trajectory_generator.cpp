@@ -226,6 +226,14 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
      expression = expression.transpose() * v + total_distance * (self_collision_cost_constant_term_);
      //  d / t , t = 1.0 / (L/n)
 
+     ROS_ERROR("====================================================================");
+     ROS_WARN_STREAM( expression.print(std::cout) );
+     ROS_ERROR("====================================================================");
+
+    //Expression expression(1.0);
+    //expression = total_distance + 0.5*(v.transpose()*v);
+
+
     Function h;
     h << expression;
 
@@ -236,7 +244,7 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
     }
 
     DMatrix Q(h.getDim(), h.getDim());
-    Q(0,0) = 10.0;
+    Q(0,0) = 3.0;
 
     // weighting of control weight, should filled after state wieghting factor
     for (int i = 0u, j = 1; i < (control_vector_size_); ++i, ++j) // && lsq_control_vector_size

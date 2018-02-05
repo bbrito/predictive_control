@@ -142,6 +142,8 @@ bool predictive_control_ros::initialize()
     joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control_ros::jointStateCallBack, this);
     controlled_velocity_pub_ = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
     cartesian_error_pub_ = nh.advertise<geometry_msgs::PoseStamped>("cartesian_error",1);
+    //traj_pub_ = nh.advertise<geometry_msgs::PoseArray>("trajectory",1);
+    traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
 
     ros::Duration(1).sleep();
 
@@ -221,8 +223,9 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
   //Eigen::VectorXd distance_vector;
   getTransform(pd_config_->tracking_frame_, target_frame_, tf_traget_from_tracking_vector_);
 
-  // publishes error stamped for plot
+  // publishes error stamped for plot, trajectory
   this->publishErrorPose(tf_traget_from_tracking_vector_);
+  this->publishTrajectory();
 
   if (checkInfinitesimalPose(tf_traget_from_tracking_vector_))
   {
@@ -232,6 +235,7 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
       actionSuccess();
     }
     publishZeroJointVelocity();
+    //traj_pose_array_.poses.clear();
   }
 
   /*
@@ -525,27 +529,7 @@ void predictive_control_ros::publishErrorPose(const Eigen::VectorXd& error)
   stamped.header.frame_id = pd_config_->chain_root_link_;
   stamped.header.stamp = ros::Time(0).now();
 
-  // traslation
-  stamped.pose.position.x = error(0);
-  stamped.pose.position.y = error(1);
-  stamped.pose.position.z = error(2);
-
-  tf::Matrix3x3 quat_matrix;
-  quat_matrix.setRPY(error(3), error(4), error(5));
-
-  if (activate_output_)
-  {
-  std::cout << "\033[32m" << "publishErrorPose:" << " roll:" << error(3) << " pitch:" << error(4) << " yaw:" << error(5)<< "\033[0m" <<std::endl;
-  }
-
-  tf::Quaternion quat_tf;
-  quat_matrix.getRotation(quat_tf);
-
-  // rotation
-  stamped.pose.orientation.w = quat_tf.w();
-  stamped.pose.orientation.x = quat_tf.x();
-  stamped.pose.orientation.y = quat_tf.y();
-  stamped.pose.orientation.z = quat_tf.z();
+  this->transformEigenToGeometryPose(error, stamped.pose);
 
   if (activate_output_)
   {
@@ -558,6 +542,57 @@ void predictive_control_ros::publishErrorPose(const Eigen::VectorXd& error)
   cartesian_error_pub_.publish(stamped);
 
 }
+
+// publishes trajectory
+void predictive_control_ros::publishTrajectory()
+{
+  geometry_msgs::Pose pose;
+
+  // header
+  traj_pose_array_.header.frame_id = pd_config_->chain_root_link_;
+  traj_pose_array_.header.stamp = ros::Time(0).now();
+
+  // convert pose from eigen vector
+  this->transformEigenToGeometryPose(current_gripper_pose_, pose);
+
+  // pose array
+  traj_pose_array_.poses.push_back(pose);
+
+  //publishes
+  traj_pub_.publish(traj_pose_array_);
+
+}
+
+// convert Eigen Vector to geomentry Pose
+bool predictive_control_ros::transformEigenToGeometryPose(const Eigen::VectorXd &eigen_vector, geometry_msgs::Pose &pose)
+{
+  // traslation
+  pose.position.x = eigen_vector(0);
+  pose.position.y = eigen_vector(1);
+  pose.position.z = eigen_vector(2);
+
+  tf::Matrix3x3 quat_matrix;
+  quat_matrix.setRPY(eigen_vector(3), eigen_vector(4), eigen_vector(5));
+
+  if (activate_output_)
+  {
+  std::cout << "\033[32m" << "publishErrorPose:" << " roll:" << eigen_vector(3)
+            << " pitch:" << eigen_vector(4)
+            << " yaw:" << eigen_vector(5)<< "\033[0m" <<std::endl;
+  }
+
+  tf::Quaternion quat_tf;
+  quat_matrix.getRotation(quat_tf);
+
+  // rotation
+  pose.orientation.w = quat_tf.w();
+  pose.orientation.x = quat_tf.x();
+  pose.orientation.y = quat_tf.y();
+  pose.orientation.z = quat_tf.z();
+
+  return true;
+}
+
 
 bool predictive_control_ros::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
 {

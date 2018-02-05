@@ -7,6 +7,7 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseArray.h>
 #include <sensor_msgs/JointState.h>
 #include <tf/tf.h>
 #include <std_msgs/Float64.h>
@@ -117,6 +118,9 @@ public:
                     Eigen::VectorXd& stamped_pose
                     );
 
+
+  bool transformEigenToGeometryPose(const Eigen::VectorXd& eigen_vector, geometry_msgs::Pose& pose);
+
   /** public data member */
   // joint state subsciber to get current joint value
   ros::Subscriber joint_state_sub_;
@@ -126,6 +130,9 @@ public:
 
   // publishes error vector between tracking and target frame
   ros::Publisher cartesian_error_pub_;
+
+  // publish trajectory
+  ros::Publisher traj_pub_;
 
 private:
 
@@ -163,6 +170,9 @@ private:
 
   // current pose hold vector
   //hold_pose hold_pose_;
+
+  // store pose value for visualize trajectory
+  geometry_msgs::PoseArray traj_pose_array_;
 
   // Distance between traget frame and tracking frame relative to base link
   Eigen::VectorXd tf_traget_from_tracking_vector_;
@@ -237,6 +247,9 @@ private:
    * @brief publishErrorPose: published error pose between traget pose and tracking frame, it should approach to zero
    */
   void publishErrorPose(const Eigen::VectorXd& error);
+
+
+  void publishTrajectory(void);
 
   /**
    * @brief checkPositionLimitViolation: check position limit violate, limit containts lower and upper limit

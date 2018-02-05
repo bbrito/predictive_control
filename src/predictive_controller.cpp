@@ -257,6 +257,7 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
   {
     // pubish controll velocity
     controlled_velocity_pub_.publish(controlled_velocity_);
+
   }
 }
 
@@ -268,6 +269,16 @@ void predictive_control_ros::moveGoalCB()
     tracking_ = false;
     collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
     target_frame_ = move_action_goal_ptr->target_frame_id;
+
+    //erase previous trajectory
+    for (auto it = traj_marker_array_.markers.begin(); it != traj_marker_array_.markers.end(); ++it)
+    {
+      it->action = visualization_msgs::Marker::DELETE;
+      traj_pub_.publish(traj_marker_array_);
+      //traj_marker_array_.markers.erase(it);
+    }
+
+    traj_marker_array_.markers.clear();
   }
 }
 

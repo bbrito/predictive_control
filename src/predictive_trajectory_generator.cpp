@@ -221,13 +221,13 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
 
     DVector create_expression_vec = -(normal_vector.transpose() * Jacobian_Matrix_);
 
-     //Expression expression(create_expression_vec);
+     Expression expression(create_expression_vec);
      // http://doc.aldebaran.com/2-1/naoqi/motion/reflexes-collision-avoidance.html
-     //expression = expression.transpose() * v + total_distance * (self_collision_cost_constant_term_);
+     expression = expression.transpose() * v + total_distance * (self_collision_cost_constant_term_);
      //  d / t , t = 1.0 / (L/n)
 
-    Expression expression(1);
-    expression = total_distance + v.transpose()*v;
+    //Expression expression(1);
+    //expression = total_distance + v.transpose()*v;
 
      ROS_ERROR("====================================================================");
      ROS_WARN_STREAM( expression.print(std::cout) );

@@ -10,6 +10,7 @@ Panels:
         - /MarkerArray2
         - /InteractiveMarkers2
         - /MarkerArray3
+        - /MarkerArray4
       Splitter Ratio: 0.634667
     Tree Height: 921
   - Class: rviz/Selection
@@ -122,8 +123,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        arm/interactive_box_frame:
-          Value: true
         arm_1_link:
           Value: false
         arm_2_link:
@@ -153,8 +152,6 @@ Visualization Manager:
       Show Names: false
       Tree:
         world:
-          arm/interactive_box_frame:
-            {}
           arm_7_target:
             {}
           arm_podest_link:
@@ -191,10 +188,7 @@ Visualization Manager:
       Marker Topic: /arm/CollisionAvoidance/obstacle_distance_markers
       Name: MarkerArray
       Namespaces:
-        arm_3_link: true
-        arm_4_link: true
-        arm_5_link: true
-        arm_6_link: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/InteractiveMarkers
@@ -211,7 +205,15 @@ Visualization Manager:
       Marker Topic: /arm/obstacle_distance/marker
       Name: MarkerArray
       Namespaces:
-        collision_object: true
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /arm/pd_trajectory
+      Name: MarkerArray
+      Namespaces:
+        preview: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -238,7 +240,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.19681
+      Distance: 2.32174
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -250,10 +252,10 @@ Visualization Manager:
         Z: 0.583252
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.315398
+      Pitch: 0.205397
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.61856
+      Yaw: 3.3467
     Saved: ~
 Window Geometry:
   Displays:

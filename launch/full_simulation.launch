@@ -19,6 +19,9 @@
     <arg name="start_external_sync" default="$(arg use_external_sync)"/>
     <arg name="pkg_hardware_config" default="$(find cob_hardware_config)"/>
 
+    # test queries
+    <rosparam command="load" file="$(find predictive_control)/planning_queries/test_object_database.yaml"/>
+
     <!-- start gazebo with empty world -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
       <arg name="paused" value="$(arg paused)" />
@@ -87,7 +90,8 @@
         <node pkg="cob_obstacle_distance" type="cob_obstacle_distance" name="obstacle_distance" cwd="node" respawn="false" output="screen"/>
         <node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/>
 
-        <node pkg="predictive_control" type="interactive_obstacle_node.py" name="interactive_obstacle_node" cwd="node" respawn="false" output="screen"/>
+        # register external obstacles
+        <!--node pkg="predictive_control" type="interactive_obstacle_node.py" name="interactive_obstacle_node" cwd="node" respawn="false" output="screen"/-->
 
         <!--
         <node pkg="cob_cartesian_controller" type="cartesian_controller_node" name="cartesian_controller"  cwd="node" respawn="false" output="screen">

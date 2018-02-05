@@ -86,6 +86,7 @@ bool predictive_control_ros::initialize()
     activate_output_ = pd_config_->activate_controller_node_output_;
     tracking_ = true;
     move_action_result_.reach = false;
+    plotting_result_ = pd_config_->plotting_result_;
 
     target_frame_ = pd_config_->target_frame_;
 
@@ -140,6 +141,7 @@ bool predictive_control_ros::initialize()
 
     joint_state_sub_ = nh.subscribe("joint_states", 1, &predictive_control_ros::jointStateCallBack, this);
     controlled_velocity_pub_ = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
+    cartesian_error_pub_ = nh.advertise<geometry_msgs::PoseStamped>("cartesian_error",1);
 
     ros::Duration(1).sleep();
 
@@ -218,6 +220,9 @@ void predictive_control_ros::runNode(const ros::TimerEvent &event)
   // check infinitesimal distance
   //Eigen::VectorXd distance_vector;
   getTransform(pd_config_->tracking_frame_, target_frame_, tf_traget_from_tracking_vector_);
+
+  // publishes error stamped for plot
+  this->publishErrorPose(tf_traget_from_tracking_vector_);
 
   if (checkInfinitesimalPose(tf_traget_from_tracking_vector_))
   {
@@ -510,6 +515,50 @@ void predictive_control_ros::publishZeroJointVelocity()
   controlled_velocity_pub_.publish(controlled_velocity_);
 }
 
+
+// publishes error vector
+void predictive_control_ros::publishErrorPose(const Eigen::VectorXd& error)
+{
+  //ROS_ERROR_STREAM("Errror_vector: " << error);
+
+  geometry_msgs::PoseStamped stamped;
+  stamped.header.frame_id = pd_config_->chain_root_link_;
+  stamped.header.stamp = ros::Time(0).now();
+
+  // traslation
+  stamped.pose.position.x = error(0);
+  stamped.pose.position.y = error(1);
+  stamped.pose.position.z = error(2);
+
+  tf::Matrix3x3 quat_matrix;
+  quat_matrix.setRPY(error(3), error(4), error(5));
+
+  if (activate_output_)
+  {
+  std::cout << "\033[32m" << "publishErrorPose:" << " roll:" << error(3) << " pitch:" << error(4) << " yaw:" << error(5)<< "\033[0m" <<std::endl;
+  }
+
+  tf::Quaternion quat_tf;
+  quat_matrix.getRotation(quat_tf);
+
+  // rotation
+  stamped.pose.orientation.w = quat_tf.w();
+  stamped.pose.orientation.x = quat_tf.x();
+  stamped.pose.orientation.y = quat_tf.y();
+  stamped.pose.orientation.z = quat_tf.z();
+
+  if (activate_output_)
+  {
+  std::cout << "\033[94m" << "publishErrorPose:" << " qx:" << stamped.pose.orientation.x
+            << "qy:" << stamped.pose.orientation.y
+            << "qz:" << stamped.pose.orientation.z
+            << "qw:" << stamped.pose.orientation.w << "\033[0m" <<std::endl;
+  }
+  // publish
+  cartesian_error_pub_.publish(stamped);
+
+}
+
 bool predictive_control_ros::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
 {
   bool transform = false;
@@ -537,8 +586,24 @@ bool predictive_control_ros::getTransform(const std::string& from, const std::st
                           stamped_tf.getRotation().getW()
                           );
 
+      if (activate_output_)
+      {
+      std::cout << "\033[94m" << "getTransform:" << " qx:" << stamped_tf.getRotation().getX()
+                << "qy:" << stamped_tf.getRotation().getY()
+                << "qz:" << stamped_tf.getRotation().getZ()
+                << "qw:" << stamped_tf.getRotation().getW() << "\033[0m" <<std::endl;
+      }
+
       tf::Matrix3x3 quat_matrix(quat);
       quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
+
+      if (activate_output_)
+      {
+      std::cout << "\033[32m" << "getTransform:" << " roll:" << stamped_pose(3)
+                << " pitch:" << stamped_pose(4)
+                << " yaw:" << stamped_pose(5)
+                << "\033[0m" <<std::endl;
+      }
 
       transform = true;
     }

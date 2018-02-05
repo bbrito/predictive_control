@@ -124,9 +124,15 @@ public:
   // controlled joint velocity, should be control velocity of controller
   ros::Publisher controlled_velocity_pub_;
 
+  // publishes error vector between tracking and target frame
+  ros::Publisher cartesian_error_pub_;
+
 private:
 
   ros::NodeHandle nh;
+
+  // DEBUG
+  bool plotting_result_;
 
    tf::TransformListener tf_listener_;
 
@@ -191,7 +197,6 @@ private:
   boost::shared_ptr<CollisionRobot> collision_detect_;
   boost::shared_ptr<CollisionAvoidance> collision_avoidance_;
 
-
   // static collision detector/avoidance
   boost::shared_ptr<StaticCollision> static_collision_avoidance_;
 
@@ -227,6 +232,11 @@ private:
    * @brief publishZeroJointVelocity: published zero joint velocity is statisfied cartesian distance
    */
   void publishZeroJointVelocity();
+
+  /**
+   * @brief publishErrorPose: published error pose between traget pose and tracking frame, it should approach to zero
+   */
+  void publishErrorPose(const Eigen::VectorXd& error);
 
   /**
    * @brief checkPositionLimitViolation: check position limit violate, limit containts lower and upper limit

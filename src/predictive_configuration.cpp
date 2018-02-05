@@ -188,6 +188,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   nh.param("sampling_time", sampling_time_, double(0.025)); // 0.025 second
   nh.param("activate_output", activate_output_, bool(false));  // debug
   nh.param("activate_controller_node_output", activate_controller_node_output_, bool(false));  // debug
+  nh.param("plotting_result", plotting_result_, bool(false));  // plotting
 
   // self collision avoidance parameter
   nh_config.param("self_collision/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
@@ -225,6 +226,7 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
   set_position_constrints_ = new_config.set_position_constrints_;
   set_velocity_constrints_ = new_config.set_velocity_constrints_;
   set_effort_constraints_ = new_config.set_effort_constraints_;
+  plotting_result_ = new_config.plotting_result_;
 
   degree_of_freedom_ = new_config.degree_of_freedom_;
   chain_base_link_ = new_config.chain_base_link_;
@@ -277,6 +279,7 @@ void predictive_configuration::print_configuration_parameter()
   ROS_INFO_STREAM("Set position constrints: " << std::boolalpha << set_position_constrints_);
   ROS_INFO_STREAM("Set velocity constrints: " << std::boolalpha << set_velocity_constrints_);
   ROS_INFO_STREAM("Set effort constraints: " << std::boolalpha << set_effort_constraints_);
+  ROS_INFO_STREAM("Plotting results: " << std::boolalpha << plotting_result_);
   ROS_INFO_STREAM("Degree_of_freedom: " << degree_of_freedom_);
   ROS_INFO_STREAM("Chain_base_link: " << chain_base_link_);
   ROS_INFO_STREAM("Chain_tip_link: " << chain_tip_link_);

@@ -4,6 +4,7 @@
 # Debug mode
 activate_output: false
 activate_controller_node_output: false
+plotting_result: true
 
 # Clock frequency //hz
 clock_frequency: 100

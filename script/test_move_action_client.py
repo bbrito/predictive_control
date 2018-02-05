@@ -50,6 +50,7 @@ class moveActionClient:
 
             # move to pregraping position
             self.move_to_pregasping_pose(object_name="pose_0", object_list=object)
+            rospy.sleep(5.0)
 
             # extract information of object
             data_info_obj = ReadDataFromList(item_list=object.items_list, object_name=grasp_object)

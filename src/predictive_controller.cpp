@@ -547,20 +547,40 @@ void predictive_control_ros::publishErrorPose(const Eigen::VectorXd& error)
 void predictive_control_ros::publishTrajectory()
 {
   geometry_msgs::Pose pose;
+  visualization_msgs::Marker marker;
 
-  // header
-  traj_pose_array_.header.frame_id = pd_config_->chain_root_link_;
-  traj_pose_array_.header.stamp = ros::Time(0).now();
+
+  marker.type = visualization_msgs::Marker::SPHERE;
+  //marker.lifetime = ros::Duration(5.0);
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.ns = "preview";
+  marker.id = traj_marker_array_.markers.size();
+
+  //scale
+  marker.scale.x = 0.01;
+  marker.scale.y = 0.01;
+  marker.scale.z = 0.01;
+
+  // color
+  marker.color.a = 1.0;
+  marker.color.g = 1.0;
+  marker.color.r = 0.0;
+  marker.color.b = 0.0;
+
+  //header
+  marker.header.frame_id = pd_config_->chain_root_link_;
+  //marker.header.stamp = ros::Time(0).now();
 
   // convert pose from eigen vector
   this->transformEigenToGeometryPose(current_gripper_pose_, pose);
 
   // pose array
-  traj_pose_array_.poses.push_back(pose);
+  marker.pose = pose;
+
+  traj_marker_array_.markers.push_back(marker);
 
   //publishes
-  traj_pub_.publish(traj_pose_array_);
-
+  traj_pub_.publish(traj_marker_array_);
 }
 
 // convert Eigen Vector to geomentry Pose

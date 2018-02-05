@@ -172,7 +172,8 @@ private:
   //hold_pose hold_pose_;
 
   // store pose value for visualize trajectory
-  geometry_msgs::PoseArray traj_pose_array_;
+  //geometry_msgs::PoseArray traj_pose_array_;
+    visualization_msgs::MarkerArray traj_marker_array_;
 
   // Distance between traget frame and tracking frame relative to base link
   Eigen::VectorXd tf_traget_from_tracking_vector_;

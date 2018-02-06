@@ -49,9 +49,8 @@ bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configura
   // initialize ros services
   add_static_obstacles_ = this->nh_.advertiseService("pd_control/add_static_obstacles", &CollisionAvoidance::addStaticObstacleServiceCallBack, this);
   delete_static_obstacles_ = this->nh_.advertiseService("pd_control/delete_static_obstacles", &CollisionAvoidance::deleteStaticObstacleServiceCallBack, this);
-  delete_static_obstacles_ = this->nh_.advertiseService("pd_control/delete_static_obstacles", &CollisionAvoidance::deleteStaticObstacleServiceCallBack, this);
-  delete_static_obstacles_ = this->nh_.advertiseService("pd_control/delete_static_obstacles", &CollisionAvoidance::deleteStaticObstacleServiceCallBack, this);
-
+  allowed_static_obstacles_ = this->nh_.advertiseService("pd_control/allowed_static_obstacles", &CollisionAvoidance::allowedStaticObstacleServiceCallBack, this);
+  disallowed_static_obstacles_ = this->nh_.advertiseService("pd_control/disallowed_static_obstacles", &CollisionAvoidance::disAllwedStaticObstacleServiceCallBack, this);
 
 
   ROS_WARN("COLLIISION_AVOIDANCE SUCCESFFULLY INITIALIZED!!");
@@ -293,6 +292,9 @@ void CollisionAvoidance::visualizeObstacleDistance(const std::map<std::string, c
 bool CollisionAvoidance::addStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest &request,
                                                           predictive_control::StaticObstacleResponse &response)
 {
+
+  std::cout << "\033[94m" << " Calling add static obstacles service call back " << "\033[0m" << std::endl;
+
   if (request.file_name.empty())
   {
     add_obstacle_pub_.publish(request.static_collision_object);
@@ -302,9 +304,60 @@ bool CollisionAvoidance::addStaticObstacleServiceCallBack(predictive_control::St
   return true;
 }
 
+bool CollisionAvoidance::allowedStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest &request,
+                                                              predictive_control::StaticObstacleResponse &response)
+{
+  std::cout << "\033[32m" << " Calling allowed static obstacles service call back " << "\033[0m" << std::endl;
+
+  if (request.file_name.empty())
+  {
+
+    // first remove form environment
+    moveit_msgs::CollisionObject co = request.static_collision_object;
+    co.operation = moveit_msgs::CollisionObject::REMOVE;
+    add_obstacle_pub_.publish(co);
+
+    // check already exist into environment, this operation known as disallowed collision object
+    for (auto it = ignore_obstacles_.begin(); it != ignore_obstacles_.end(); ++it)
+    {
+      // already exist that remove from allowed collision matrix list
+      if (it->find(request.static_collision_object.id) != std::string::npos)
+      {
+        ROS_INFO("%s already exist", it->c_str());
+        ignore_obstacles_.erase(it);
+        --it;
+      }
+    }
+    add_obstacle_pub_.publish(request.static_collision_object);
+    response.message = "Allowed static obstacles Successfully!!";
+    response.success = true;
+  }
+  return true;
+}
+
+
+bool CollisionAvoidance::disAllwedStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest &request,
+                                                                  predictive_control::StaticObstacleResponse &response)
+{
+
+  std::cout << "\033[94m" << " Calling disallowed static obstacles service call back " << "\033[0m" << std::endl;
+
+  if (request.file_name.empty())
+  {
+    ignore_obstacles_.push_back(request.static_collision_object.id);
+    add_obstacle_pub_.publish(request.static_collision_object);
+    response.message = "Allowed static obstacles Successfully!!";
+    response.success = true;
+  }
+  return true;
+}
+
+
 bool CollisionAvoidance::deleteStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest &request,
                                                              predictive_control::StaticObstacleResponse &response)
 {
+  std::cout << "\033[94m" << " Calling delete static obstacles service call back " << "\033[0m" << std::endl;
+
   if (request.file_name.empty())
   {
 /*    for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();

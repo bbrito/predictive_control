@@ -116,6 +116,12 @@ private:
   bool addStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest& request,
                                         predictive_control::StaticObstacleResponse& response);
 
+  bool allowedStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest& request,
+                                        predictive_control::StaticObstacleResponse& response);
+
+  bool disAllwedStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest& request,
+                                        predictive_control::StaticObstacleResponse& response);
+
 
   bool deleteStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest& request,
                                            predictive_control::StaticObstacleResponse& response);

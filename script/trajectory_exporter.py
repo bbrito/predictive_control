@@ -49,9 +49,9 @@ class moveActionClient:
 
         self.base_frame = args.base_frame
         self.end_effector_frame = args.eef_frame
-        self.runs = args.runs
-        self.start_random = args.start_random
-        self.end_random = args.end_random
+        self.runs = int(args.runs)
+        self.start_random = int(args.start_random)
+        self.end_random = int(args.end_random)
 
         if args.eef_frame is None:
             if rospy.get_param('/arm/chain_tip_link', default=''):
@@ -78,7 +78,7 @@ class moveActionClient:
         self.move_action_client(object_position=object_position, object_orientation=object_orientation,object_name=object_name)
 
     def getTrajectoryCB(self, msg):
-        print ('\033[1m' + '\033[92m' + "######### " + " Got a new STOMP trajectory" + " ########### " + '\033[0m')
+        #print ('\033[1m' + '\033[92m' + "######### " + " Got a new STOMP trajectory" + " ########### " + '\033[0m')
         rospy.sleep(0.5)
         self.traj_data = msg
 
@@ -91,8 +91,10 @@ class moveActionClient:
         return px, py, pz
 
     def extractDataFromMarkerArray(self, marker_array):
-        for marker in marker_array:
-            pose_plus_quat = list(marker.pose)
+        for marker in marker_array.markers:
+            pose = list()
+            pose_plus_quat = [marker.pose.position.x, marker.pose.position.y, marker.pose.position.z,
+                              marker.pose.orientation.w, marker.pose.orientation.x, marker.pose.orientation.y, marker.pose.orientation.z]
             self.poses_to_export.append(pose_plus_quat)
 
     def storeTrajectoryWithPlanSuccess(self):
@@ -103,7 +105,7 @@ class moveActionClient:
 # -----------------------------------------------------------------------------------------------------------------------
     def storeToCSV(self):
         axis_name = ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz']
-        filename_with_path = self.file_path + '/' + self.object_name + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + str('.csv')
+        filename_with_path = self.file_path  + self.object_name + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + str('.csv')
         # filename_with_path = "/home/bfb-ws/gstomp_ws/src/gstomp/gstomp_experiments/output_data/" + self.file_path + str('.csv')
 
         # print('\033[1m' + '\033[31m' + "############ " + " Exporting File " + "############## " + '\033[0m')
@@ -134,14 +136,14 @@ class moveActionClient:
         self.move_client = actionlib.SimpleActionClient('/arm/move_action', predictive_control.msg.moveAction)
         self.move_client.wait_for_server()
 
-        rospy.Subscriber("/arm/pd_trajectory", Marker, self.getTrajectoryCB)
+        rospy.Subscriber("/arm/pd_trajectory", MarkerArray, self.getTrajectoryCB)
         rospy.sleep(0.2)
         rospy.loginfo("All services and action server are available")
 
         item_list_obj = rospy.get_param("/queries")
 
         # create static frame of all object
-        self.createStaticFrame(obj_list=item_list_obj)
+        #self.createStaticFrame(obj_list=item_list_obj)
 
 
         for i in range(0, runs, 1):
@@ -156,7 +158,7 @@ class moveActionClient:
             rospy.sleep(5.0)
 
             # extract information of object
-            data_info_obj = ReadDataFromList(item_list=object.item_list_obj, object_name=grasp_object)
+            data_info_obj = ReadDataFromList(item_list=item_list_obj, object_name=grasp_object)
             [object_position, object_orientation] = data_info_obj.getObjectInfo()
 
             success = self.move_action_client(object_position=object_position, object_orientation=object_orientation, object_name=grasp_object)
@@ -213,7 +215,7 @@ class moveActionClient:
         #    print
         #return
 
-    # -----------------------------------------------------------------------------------------------------------------------
+        # -----------------------------------------------------------------------------------------------------------------------
     """
         @description: create static frame of all list of object 
         @param: obj_list: list of object
@@ -226,12 +228,12 @@ class moveActionClient:
 
         # list of static frame object that want to broadcast
         static_frame_list = []
-        for i in range(0, len(obj_list.items_list)):
+        for i in range(0, len(obj_list)-1):
             static_transformStamped = geometry_msgs.msg.TransformStamped()
             static_frame_list.append(static_transformStamped)
 
         # iterate every object position inside the list
-        for i in range(0, len(obj_list.items_list)):
+        for i in range(0, len(obj_list)-1):
             static_frame_list[i].header.stamp = rospy.Time.now()
             static_frame_list[i].header.frame_id = "world"
 
@@ -256,13 +258,15 @@ class moveActionClient:
 
         # list of frames that have to broadcast
         brd_list = []
-        for i in range(0, len(obj_list.items_list)):
+        for i in range(0, len(obj_list)-1):
             brd_list.append(static_frame_list[i])
 
         # broadcast all frame together
         broadcaster.sendTransform(brd_list)
 
-########################################################################################################################
+        ########################################################################################################################
+
+
 class Utilities:
     """"
         Set pre-define value or trajectory for simulation

@@ -1,5 +1,6 @@
 # static collision object request
 moveit_msgs/CollisionObject static_collision_object
+string file_name
 ---
 # add successfully into environment
 bool success

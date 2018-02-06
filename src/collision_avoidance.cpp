@@ -17,6 +17,7 @@ bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configura
   pd_config_->initialize();
   //pd_config_ = pd_config_ptr;
   chain_base_link_ = pd_config_->chain_base_link_;
+  chain_root_link_ = pd_config_->chain_root_link_;
 
   // visulize distance information just for debugging purpose
   marker_pub_ = this->nh_.advertise<visualization_msgs::MarkerArray>("CollisionAvoidance/obstacle_distance_markers", 1, true);
@@ -312,6 +313,35 @@ bool CollisionAvoidance::addStaticObstacleServiceCallBack(predictive_control::St
     response.message = "Allowed static obstacles Successfully!!";
     response.success = true;
   }
+
+  else if (!request.file_name.empty())
+  {
+
+    moveit_msgs::CollisionObject co;
+    this->readDataFromFile(request.file_name, request.static_collision_object.id, co);
+
+    /*for (auto it = co.begin(); it != co.end(); ++it)
+    {
+      ROS_WARN_STREAM(it->primitive_poses);
+
+      add_obstacle_pub_.publish(*it);
+      ros::Duration(2.0).sleep();
+      response.message = "Add static obstacles Successfully!!";
+      response.success = true;
+    }*/
+
+    add_obstacle_pub_.publish(co);
+    response.message = "Add static obstacles Successfully!!";
+    response.success = true;
+  }
+
+  else
+  {
+    response.message = "No specific correct formate of file!!";
+    response.success = false;
+    return false;
+  }
+
   return true;
 }
 
@@ -326,4 +356,156 @@ bool CollisionAvoidance::deleteStaticObstacleServiceCallBack(predictive_control:
     response.success = true;
   }
   return true;
+}
+
+
+void CollisionAvoidance::readDataFromFile(const std::string &file_name,
+                                          const std::string &object_name,
+                                          moveit_msgs::CollisionObject &co)
+{
+    geometry_msgs::PoseStamped stamped;
+    shape_msgs::SolidPrimitive primitive;
+    primitive.dimensions.resize(3);
+
+    // get transformation, assume object name same as frame of object
+    getTransform(chain_root_link_, object_name, stamped);
+
+    // initialize static objects
+    std::ifstream myfile;
+    std::string line, id;
+
+    std::string object_id;
+    object_id = object_name;
+
+    std::string filename = ros::package::getPath("predictive_control") + "/planning_scene/"+ file_name + ".scene";
+    myfile.open(filename.c_str());
+
+    // check file is open
+    if (myfile.is_open())
+    {
+      getline(myfile, line);  //1 line
+
+      while(!myfile.eof())
+          {
+
+            getline(myfile, id);  //2 line
+
+            if(id == ".")
+              break;
+
+            ROS_ERROR_STREAM("object id:"<<id);
+            co.id = id;
+
+            getline(myfile, line);  // 3 line not useful line
+            getline(myfile, line);  // 4 line
+
+            if(line.compare("box") == 0)
+            {
+              primitive.type = shape_msgs::SolidPrimitive::BOX;
+            }
+
+            else if( line.compare("cylinder") == 0)
+            {
+              primitive.type = shape_msgs::SolidPrimitive::CYLINDER;
+            }
+
+            else if( line.compare("sphere") == 0)
+            {
+              primitive.type = shape_msgs::SolidPrimitive::SPHERE;
+            }
+
+            else
+            {
+              std::string message("Shape of object is not defined correctly, check file on location " + filename);
+              ROS_ERROR("StaticCollision: %s", message.c_str());
+              return;
+            }
+
+            //myfile>>primitive.dimensions[0]>>primitive.dimensions[1]>>primitive.dimensions[2];  //5 line
+            myfile>>primitive.dimensions[0] >>primitive.dimensions[1]>>primitive.dimensions[2];  //5 line
+            getline (myfile,line);
+
+            // primitive shapes
+            co.primitives.push_back(primitive);
+
+            myfile>>stamped.pose.position.x>>stamped.pose.position.y>>stamped.pose.position.z;   //6 line
+
+            getline (myfile,line);
+            myfile>>stamped.pose.orientation.x>>stamped.pose.orientation.y>>stamped.pose.orientation.z >> stamped.pose.orientation.w; //7 line
+
+            if( (sqrt(stamped.pose.orientation.w*stamped.pose.orientation.w +
+                stamped.pose.orientation.x*stamped.pose.orientation.x +
+                stamped.pose.orientation.y*stamped.pose.orientation.y +
+                stamped.pose.orientation.z*stamped.pose.orientation.z) ) == 0.0)
+            {
+                stamped.pose.orientation.w = 1.0;
+                stamped.pose.orientation.x = 0.0;
+                stamped.pose.orientation.y = 0.0;
+                stamped.pose.orientation.z = 0.0;
+            }
+
+            ROS_WARN_STREAM(stamped);
+
+            co.operation = moveit_msgs::CollisionObject::ADD;
+
+            // primitive poses
+            co.header.stamp = stamped.header.stamp; //request.primitive_pose.header.stamp;
+            co.header.frame_id = object_name; //request.primitive_pose.header.frame_id;
+            // add object into collision matrix for cost calculation
+            co.primitive_poses.push_back(stamped.pose); //request.primitive_pose;
+
+            getline(myfile, line);	// 8 line not useful line
+            getline(myfile, line);	// 9 line not useful line
+
+            //add_obstacle_pub_.publish(co);
+            //ros::Duration(2.0).sleep();
+      }
+      myfile.close();
+    }
+}
+
+
+bool CollisionAvoidance::getTransform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
+{
+  bool transform = false;
+  tf::StampedTransform stamped_tf;
+
+  // make sure source and target frame exist
+  if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
+  {
+    try
+    {
+      // find transforamtion between souce and target frame
+      tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
+      tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
+
+      // rotation
+      stamped_pose.pose.orientation.w =  stamped_tf.getRotation().getW();
+      stamped_pose.pose.orientation.x =  stamped_tf.getRotation().getX();
+      stamped_pose.pose.orientation.y =  stamped_tf.getRotation().getY();
+      stamped_pose.pose.orientation.z =  stamped_tf.getRotation().getZ();
+
+      // translation
+      stamped_pose.pose.position.x = stamped_tf.getOrigin().x();
+      stamped_pose.pose.position.y = stamped_tf.getOrigin().y();
+      stamped_pose.pose.position.z = stamped_tf.getOrigin().z();
+
+      // header frame_id should be parent frame
+      stamped_pose.header.frame_id = stamped_tf.frame_id_;  //from or to
+      stamped_pose.header.stamp = ros::Time(0);
+
+      transform = true;
+    }
+    catch (tf::TransformException& ex)
+    {
+      ROS_ERROR("predictive_control_ros_node::getTransform: \n%s", ex.what());
+    }
+  }
+
+  else
+  {
+    ROS_WARN("%s or %s frame doesn't exist, pass existing frame", from.c_str(), to.c_str());
+  }
+
+  return transform;
 }

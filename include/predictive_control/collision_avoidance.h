@@ -81,6 +81,7 @@ private:
 
   // chain base_link
   std::string chain_base_link_;
+  std::string chain_root_link_;
 
   // DEBUG
   ros::Publisher marker_pub_;
@@ -117,6 +118,15 @@ private:
 
   bool deleteStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest& request,
                                            predictive_control::StaticObstacleResponse& response);
+
+  void readDataFromFile(const std::string& file_name,
+                        const std::string& object_name,
+                        moveit_msgs::CollisionObject &co);
+
+  bool getTransform(const std::string& from,
+                    const std::string& to,
+                    geometry_msgs::PoseStamped& stamped_pose);
+
 };
 
 

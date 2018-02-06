@@ -49,6 +49,8 @@ bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configura
   // initialize ros services
   add_static_obstacles_ = this->nh_.advertiseService("pd_control/add_static_obstacles", &CollisionAvoidance::addStaticObstacleServiceCallBack, this);
   delete_static_obstacles_ = this->nh_.advertiseService("pd_control/delete_static_obstacles", &CollisionAvoidance::deleteStaticObstacleServiceCallBack, this);
+  delete_static_obstacles_ = this->nh_.advertiseService("pd_control/delete_static_obstacles", &CollisionAvoidance::deleteStaticObstacleServiceCallBack, this);
+  delete_static_obstacles_ = this->nh_.advertiseService("pd_control/delete_static_obstacles", &CollisionAvoidance::deleteStaticObstacleServiceCallBack, this);
 
 
 
@@ -81,14 +83,15 @@ void CollisionAvoidance::obstaclesDistanceCallBack(const cob_control_msgs::Obsta
   if (pd_config_->activate_output_)
   {
     for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();
-         it != relevant_obstacle_distances_.end(); ++it)
+             it != relevant_obstacle_distances_.end(); ++it)
     {
       ROS_WARN_STREAM("link of interest: "<< it->second.link_of_interest);
       ROS_WARN_STREAM("Obstacle_id: "<< it->second.obstacle_id);
       ROS_INFO_STREAM("Frame Vector: "<<it->second.frame_vector);
       ROS_INFO_STREAM("Nearest_point_frame_vector: " <<it->second.nearest_point_obstacle_vector);
       ROS_INFO_STREAM("Nearest_point_obstacle_vector: "<<it->second.nearest_point_obstacle_vector);
-    }
+      }
+
   }
 
   this->getDistanceCostFunction();
@@ -101,20 +104,46 @@ double CollisionAvoidance::getDistanceCostFunction()
 {
   double cost_distance(0.0);
 
-  for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();
-       it != relevant_obstacle_distances_.end(); ++it)
-  {
-    ROS_ERROR_STREAM(it->second.link_of_interest);
-    ROS_ERROR_STREAM(it->second.obstacle_id);
-    ROS_WARN_STREAM(it->second.distance);
-    ROS_INFO_STREAM("Frame Vector: "<<it->second.frame_vector);
-    ROS_INFO_STREAM("Nearest_point_frame_vector: " <<it->second.nearest_point_obstacle_vector);
-    ROS_INFO_STREAM("Nearest_point_obstacle_vector: "<<it->second.nearest_point_obstacle_vector);
 
-    cost_distance += exp( ( (pd_config_->minimum_collision_distance_*pd_config_->minimum_collision_distance_) -
-                           (it->second.distance * it->second.distance) )/ pd_config_->collision_weight_factor_);
+  if (ignore_obstacles_.empty())
+    {
+    for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();
+         it != relevant_obstacle_distances_.end(); ++it)
+    {
+      ROS_ERROR_STREAM(it->second.link_of_interest);
+      ROS_ERROR_STREAM(it->second.obstacle_id);
+      ROS_WARN_STREAM(it->second.distance);
+      ROS_INFO_STREAM("Frame Vector: "<<it->second.frame_vector);
+      ROS_INFO_STREAM("Nearest_point_frame_vector: " <<it->second.nearest_point_obstacle_vector);
+      ROS_INFO_STREAM("Nearest_point_obstacle_vector: "<<it->second.nearest_point_obstacle_vector);
 
+      cost_distance += exp( ( (pd_config_->minimum_collision_distance_*pd_config_->minimum_collision_distance_) -
+                             (it->second.distance * it->second.distance) )/ pd_config_->collision_weight_factor_);
+
+    }
   }
+  else
+  {
+    // ignoring obstacles which recieved request of allowed collision
+    for (auto it = ignore_obstacles_.begin(); it != ignore_obstacles_.end(); ++it)
+    {
+      for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it_map = relevant_obstacle_distances_.begin();
+           it_map != relevant_obstacle_distances_.end(); ++it_map)
+      {
+        // both string are equal than execute if loop
+        ROS_WARN_STREAM(it_map->second.obstacle_id);
+        if (it->find(it_map->second.obstacle_id) != std::string::npos || it->find(it_map->second.link_of_interest) != std::string::npos)
+        {
+          ROS_INFO("Ignoring %s obstacle from list", it->c_str());
+        }
+        else
+        {
+          cost_distance += exp( ( (pd_config_->minimum_collision_distance_*pd_config_->minimum_collision_distance_) -
+                                 (it_map->second.distance * it_map->second.distance) )/ pd_config_->collision_weight_factor_);
+        }
+      }
+     }
+    }
 
   ROS_WARN_STREAM("COLLISION COST: "<<cost_distance);
 
@@ -278,6 +307,17 @@ bool CollisionAvoidance::deleteStaticObstacleServiceCallBack(predictive_control:
 {
   if (request.file_name.empty())
   {
+/*    for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();
+         it != relevant_obstacle_distances_.end(); ++it)
+    {
+      // both string are equal than execute if loop
+      if (it->first.find(request.static_collision_object.id) != std::string::npos)
+      {
+        relevant_obstacle_distances_.erase(it);
+      }
+    }
+*/
+    ignore_obstacles_.push_back(request.static_collision_object.id);
     add_obstacle_pub_.publish(request.static_collision_object);
     response.message = "Delete Successfully!!";
     response.success = true;

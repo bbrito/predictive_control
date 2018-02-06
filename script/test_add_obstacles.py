@@ -123,7 +123,8 @@ class StaticObstacles:
             co.id = object_id
 
             request.static_collision_object = co
-            request.file_name = "bookshelves"
+            #request.file_name = "bookshelves"
+            request.file_name = "box"
 
             # call service to add static object into environments
             success = client(request)
@@ -144,7 +145,7 @@ class StaticObstacles:
 if __name__ == '__main__':
     rospy.init_node("pd_static_obstacles_service")
 
-    object_id = "bookshelves"
+    object_id = "box" #"bookshelves"
     OBJECT = StaticObstacles()
     OBJECT.add_environment_from_file(object_id=object_id)
     #OBJECT.add_static_obstacles(object_id=object_id)

@@ -176,6 +176,91 @@ class StaticObstacles:
         except rospy.ServiceException as exc:
             rospy.logerr(" Service did not process request " + str(exc))
 
+    def add_box(self):
+        rospy.loginfo("Calling static obstacle service ... ")
+        rospy.wait_for_service("/arm/pd_control/add_static_obstacles")
+        rospy.loginfo("Now all services are available ... ")
+
+        print ('\033[94m' + " ----- Add static collision obstracles... ----- " + '\033[0m')
+        client = rospy.ServiceProxy("/arm/pd_control/add_static_obstacles", predictive_control.srv.StaticObstacle)
+        request = predictive_control.srv.StaticObstacleRequest()
+        response = predictive_control.srv.StaticObstacleResponse()
+
+        co = moveit_msgs.msg.CollisionObject()
+
+        co.id = object_id
+        co.header.frame_id = "world"
+        co.operation = moveit_msgs.msg.CollisionObject.ADD
+
+        primitive = shape_msgs.msg.SolidPrimitive()
+        primitive.type = shape_msgs.msg.SolidPrimitive.BOX
+        primitive.dimensions = [0.40, 0.60, 0.60]  # extent x, y, z
+        co.primitives.append(primitive)
+
+        pose = geometry_msgs.msg.Pose()
+        pose.position.x = 0.45
+        pose.position.y =  0.00
+        pose.position.z =  0.30
+        pose.orientation.w = 1.0
+        co.primitive_poses.append(pose)
+
+        # fill request of static collision obstacle
+        request.static_collision_object = co
+
+        # call service to add static obstacle into environments
+        success = client(request)
+
+        if (success):
+            rospy.loginfo("Successfully added " + object_id + " into environment")
+
+        else:
+            rospy.logerr("Failed to add " + object_id + " into environment")
+
+        print (response.success)
+        print (response.message)
+
+    def remove_box(self):
+        rospy.loginfo("Calling static obstacle service ... ")
+        rospy.wait_for_service("/arm/pd_control/delete_static_obstacles")
+        rospy.loginfo("Now all services are available ... ")
+
+        print ('\033[94m' + " ----- Delete static collision obstracles... ----- " + '\033[0m')
+        client = rospy.ServiceProxy("/arm/pd_control/delete_static_obstacles", predictive_control.srv.StaticObstacle)
+        request = predictive_control.srv.StaticObstacleRequest()
+        response = predictive_control.srv.StaticObstacleResponse()
+
+        co = moveit_msgs.msg.CollisionObject()
+
+        co.id = object_id
+        co.header.frame_id = "world"
+        co.operation = moveit_msgs.msg.CollisionObject.REMOVE
+
+        primitive = shape_msgs.msg.SolidPrimitive()
+        primitive.type = shape_msgs.msg.SolidPrimitive.BOX
+        primitive.dimensions = [0.20, 0.30, 0.30]  # extent x, y, z
+        co.primitives.append(primitive)
+
+        pose = geometry_msgs.msg.Pose()
+        pose.position.x = 0.45
+        pose.position.y = -0.30
+        pose.position.z = 0.30
+        pose.orientation.w = 1.0
+        co.primitive_poses.append(pose)
+
+        # fill request of static collision obstacle
+        request.static_collision_object = co
+
+        # call service to add static obstacle into environments
+        success = client(request)
+
+        if (success):
+            rospy.loginfo("Successfully remove " + object_id + " into environment")
+
+        else:
+            rospy.logerr("Failed to remove " + object_id + " into environment")
+
+        print (response.success)
+        print (response.message)
 
 
 if __name__ == '__main__':
@@ -183,8 +268,10 @@ if __name__ == '__main__':
 
     object_id = "box" #"bookshelves"
     OBJECT = StaticObstacles()
-    OBJECT.add_environment_from_file(object_id=object_id)
+    OBJECT.add_box()
+    #OBJECT.add_environment_from_file(object_id=object_id)
     #OBJECT.add_static_obstacles(object_id=object_id)
-    rospy.sleep(5.0)
-    OBJECT.delete_environment_from_file(object_id=object_id)
+    #rospy.sleep(5.0)
+    #OBJECT.remove_box()
+    #OBJECT.delete_environment_from_file(object_id=object_id)
     #OBJECT.delete_static_obstacles(object_id=object_id)

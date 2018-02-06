@@ -60,4 +60,4 @@ acado_config:
                 [5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
            lsq_control_weight_factors:
                 # same as degree of freedom
-                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+                [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 1.0]

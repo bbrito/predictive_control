@@ -295,8 +295,25 @@ bool CollisionAvoidance::addStaticObstacleServiceCallBack(predictive_control::St
 {
   if (request.file_name.empty())
   {
+
+    // first remove form environment
+    moveit_msgs::CollisionObject co = request.static_collision_object;
+    co.operation = moveit_msgs::CollisionObject::REMOVE;
+    add_obstacle_pub_.publish(co);
+
+    // check already exist into environment, this operation known as disallowed collision object
+    for (auto it = ignore_obstacles_.begin(); it != ignore_obstacles_.end(); ++it)
+    {
+      // already exist that remove from allowed collision matrix list
+      if (it->find(request.static_collision_object.id) != std::string::npos)
+      {
+        ROS_INFO("%s already exist", it->c_str());
+        ignore_obstacles_.erase(it);
+        --it;
+      }
+    }
     add_obstacle_pub_.publish(request.static_collision_object);
-    response.message = "Add Successfully!!";
+    response.message = "Allowed static obstacles Successfully!!";
     response.success = true;
   }
   return true;
@@ -307,16 +324,6 @@ bool CollisionAvoidance::deleteStaticObstacleServiceCallBack(predictive_control:
 {
   if (request.file_name.empty())
   {
-/*    for (std::map<std::string, cob_control_msgs::ObstacleDistance>::const_iterator it = relevant_obstacle_distances_.begin();
-         it != relevant_obstacle_distances_.end(); ++it)
-    {
-      // both string are equal than execute if loop
-      if (it->first.find(request.static_collision_object.id) != std::string::npos)
-      {
-        relevant_obstacle_distances_.erase(it);
-      }
-    }
-*/
     ignore_obstacles_.push_back(request.static_collision_object.id);
     add_obstacle_pub_.publish(request.static_collision_object);
     response.message = "Delete Successfully!!";

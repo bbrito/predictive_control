@@ -105,7 +105,8 @@ class moveActionClient:
 # -----------------------------------------------------------------------------------------------------------------------
     def storeToCSV(self):
         axis_name = ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz']
-        filename_with_path = self.file_path  + self.object_name + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + str('.csv')
+        object_name = self.object_name.replace('_','-')
+        filename_with_path = self.file_path  + object_name + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + str('.csv')
         # filename_with_path = "/home/bfb-ws/gstomp_ws/src/gstomp/gstomp_experiments/output_data/" + self.file_path + str('.csv')
 
         # print('\033[1m' + '\033[31m' + "############ " + " Exporting File " + "############## " + '\033[0m')

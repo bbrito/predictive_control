@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
     urdf
     visualization_msgs
     shape_msgs
+    moveit_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -61,6 +62,7 @@ add_service_files(
      srv
   FILES
      StaticCollisionObject.srv
+     StaticObstacle.srv
 )
 
 # Generate added messages and services with any dependencies listed here
@@ -72,6 +74,7 @@ generate_messages(
             std_msgs
             shape_msgs
             visualization_msgs
+            moveit_msgs
 )
 
 catkin_package(

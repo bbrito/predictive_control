@@ -98,10 +98,15 @@ private:
   // obstracle distances
   std::map<std::string, cob_control_msgs::ObstacleDistance> relevant_obstacle_distances_;
 
+  // vector of removing objects which alredy added
+  // becasuse of bug in cob_obstracle --> gives distance information after removing object
+  std::vector<std::string> ignore_obstacles_;
 
   // add ros services
   ros::ServiceServer add_static_obstacles_;
   ros::ServiceServer delete_static_obstacles_;
+  ros::ServiceServer allowed_static_obstacles_;
+  ros::ServiceServer disallowed_static_obstacles_;
 
   void visualizeObstacleDistance(const std::map<std::string, cob_control_msgs::ObstacleDistance>& distnace_matrix);
 

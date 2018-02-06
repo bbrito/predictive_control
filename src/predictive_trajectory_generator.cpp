@@ -508,7 +508,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::MatrixXd &Jacobia
 
   //-----------------------------------------------------------------------------------------------------
   OCP_problem.subjectTo(f);
-  OCP_problem.subjectTo(-0.50 <= v <= 0.50);
+  OCP_problem.subjectTo(-1.00 <= v <= 1.00);
  // OCP_problem.subjectTo(AT_START, v == );
   OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
 

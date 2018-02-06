@@ -330,7 +330,7 @@ bool CollisionAvoidance::addStaticObstacleServiceCallBack(predictive_control::St
       response.success = true;
     }*/
 
-    add_obstacle_pub_.publish(co);
+    //add_obstacle_pub_.publish(co);
     response.message = "Add static obstacles Successfully!!";
     response.success = true;
   }
@@ -364,8 +364,6 @@ void CollisionAvoidance::readDataFromFile(const std::string &file_name,
                                           moveit_msgs::CollisionObject &co)
 {
     geometry_msgs::PoseStamped stamped;
-    shape_msgs::SolidPrimitive primitive;
-    primitive.dimensions.resize(3);
 
     // get transformation, assume object name same as frame of object
     getTransform(chain_root_link_, object_name, stamped);
@@ -387,6 +385,9 @@ void CollisionAvoidance::readDataFromFile(const std::string &file_name,
 
       while(!myfile.eof())
           {
+            moveit_msgs::CollisionObject collision_obstacle;
+            shape_msgs::SolidPrimitive primitive;
+            primitive.dimensions.resize(3);
 
             getline(myfile, id);  //2 line
 
@@ -394,7 +395,7 @@ void CollisionAvoidance::readDataFromFile(const std::string &file_name,
               break;
 
             ROS_ERROR_STREAM("object id:"<<id);
-            co.id = id;
+            collision_obstacle.id = id;
 
             getline(myfile, line);  // 3 line not useful line
             getline(myfile, line);  // 4 line
@@ -426,7 +427,7 @@ void CollisionAvoidance::readDataFromFile(const std::string &file_name,
             getline (myfile,line);
 
             // primitive shapes
-            co.primitives.push_back(primitive);
+            collision_obstacle.primitives.push_back(primitive);
 
             myfile>>stamped.pose.position.x>>stamped.pose.position.y>>stamped.pose.position.z;   //6 line
 
@@ -446,19 +447,20 @@ void CollisionAvoidance::readDataFromFile(const std::string &file_name,
 
             ROS_WARN_STREAM(stamped);
 
-            co.operation = moveit_msgs::CollisionObject::ADD;
+            collision_obstacle.operation = moveit_msgs::CollisionObject::ADD;
 
             // primitive poses
-            co.header.stamp = stamped.header.stamp; //request.primitive_pose.header.stamp;
-            co.header.frame_id = object_name; //request.primitive_pose.header.frame_id;
+            collision_obstacle.header.stamp = stamped.header.stamp; //request.primitive_pose.header.stamp;
+            collision_obstacle.header.frame_id = object_name; //request.primitive_pose.header.frame_id;
             // add object into collision matrix for cost calculation
-            co.primitive_poses.push_back(stamped.pose); //request.primitive_pose;
+            collision_obstacle.primitive_poses.push_back(stamped.pose); //request.primitive_pose;
 
             getline(myfile, line);	// 8 line not useful line
             getline(myfile, line);	// 9 line not useful line
 
-            //add_obstacle_pub_.publish(co);
-            //ros::Duration(2.0).sleep();
+            // publishes
+            add_obstacle_pub_.publish(collision_obstacle);
+            ros::Duration(0.5).sleep();
       }
       myfile.close();
     }

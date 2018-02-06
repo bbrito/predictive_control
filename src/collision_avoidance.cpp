@@ -49,10 +49,6 @@ bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configura
   // initialize ros services
   add_static_obstacles_ = this->nh_.advertiseService("pd_control/add_static_obstacles", &CollisionAvoidance::addStaticObstacleServiceCallBack, this);
   delete_static_obstacles_ = this->nh_.advertiseService("pd_control/delete_static_obstacles", &CollisionAvoidance::deleteStaticObstacleServiceCallBack, this);
-  delete_static_obstacles_ = this->nh_.advertiseService("pd_control/delete_static_obstacles", &CollisionAvoidance::deleteStaticObstacleServiceCallBack, this);
-  delete_static_obstacles_ = this->nh_.advertiseService("pd_control/delete_static_obstacles", &CollisionAvoidance::deleteStaticObstacleServiceCallBack, this);
-
-
 
   ROS_WARN("COLLIISION_AVOIDANCE SUCCESFFULLY INITIALIZED!!");
 

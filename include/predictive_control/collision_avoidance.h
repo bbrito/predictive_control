@@ -105,8 +105,6 @@ private:
   // add ros services
   ros::ServiceServer add_static_obstacles_;
   ros::ServiceServer delete_static_obstacles_;
-  ros::ServiceServer allowed_static_obstacles_;
-  ros::ServiceServer disallowed_static_obstacles_;
 
   void visualizeObstacleDistance(const std::map<std::string, cob_control_msgs::ObstacleDistance>& distnace_matrix);
 

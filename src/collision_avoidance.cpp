@@ -46,6 +46,12 @@ bool CollisionAvoidance::initialize(const boost::shared_ptr<predictive_configura
   // subscribe obstacle distances
   obstacle_distance_sub_ = this->nh_.subscribe("obstacle_distance", 1 , &CollisionAvoidance::obstaclesDistanceCallBack, this);
 
+  // initialize ros services
+  add_static_obstacles_ = this->nh_.advertiseService("pd_control/add_static_obstacles", &CollisionAvoidance::addStaticObstacleServiceCallBack, this);
+  delete_static_obstacles_ = this->nh_.advertiseService("pd_control/delete_static_obstacles", &CollisionAvoidance::deleteStaticObstacleServiceCallBack, this);
+
+
+
   ROS_WARN("COLLIISION_AVOIDANCE SUCCESFFULLY INITIALIZED!!");
 
   return true;
@@ -181,7 +187,6 @@ bool CollisionAvoidance::registerCollisionLinks()
     return true;
 }
 
-
 void CollisionAvoidance::visualizeObstacleDistance(const std::map<std::string, cob_control_msgs::ObstacleDistance> &distnace_matrix)
 {
   visualization_msgs::MarkerArray marker_array;
@@ -254,4 +259,28 @@ void CollisionAvoidance::visualizeObstacleDistance(const std::map<std::string, c
   }
 
   this->marker_pub_.publish(marker_array);
+}
+
+bool CollisionAvoidance::addStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest &request,
+                                                          predictive_control::StaticObstacleResponse &response)
+{
+  if (request.file_name.empty())
+  {
+    add_obstacle_pub_.publish(request.static_collision_object);
+    response.message = "Add Successfully!!";
+    response.success = true;
+  }
+  return true;
+}
+
+bool CollisionAvoidance::deleteStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest &request,
+                                                             predictive_control::StaticObstacleResponse &response)
+{
+  if (request.file_name.empty())
+  {
+    add_obstacle_pub_.publish(request.static_collision_object);
+    response.message = "Delete Successfully!!";
+    response.success = true;
+  }
+  return true;
 }

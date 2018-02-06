@@ -42,6 +42,7 @@
 
 // predictive includes
 #include <predictive_control/predictive_configuration.h>
+#include <predictive_control/StaticObstacle.h>
 
 class CollisionAvoidance
 {
@@ -97,10 +98,22 @@ private:
   // obstracle distances
   std::map<std::string, cob_control_msgs::ObstacleDistance> relevant_obstacle_distances_;
 
+
+  // add ros services
+  ros::ServiceServer add_static_obstacles_;
+  ros::ServiceServer delete_static_obstacles_;
+
   void visualizeObstacleDistance(const std::map<std::string, cob_control_msgs::ObstacleDistance>& distnace_matrix);
 
   void configureInteractiveMarker();
 
+
+  bool addStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest& request,
+                                        predictive_control::StaticObstacleResponse& response);
+
+
+  bool deleteStaticObstacleServiceCallBack(predictive_control::StaticObstacleRequest& request,
+                                           predictive_control::StaticObstacleResponse& response);
 };
 
 

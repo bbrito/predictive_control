@@ -355,6 +355,17 @@ bool CollisionAvoidance::deleteStaticObstacleServiceCallBack(predictive_control:
     response.message = "Delete Successfully!!";
     response.success = true;
   }
+
+  else if (!request.file_name.empty())
+  {
+    // todo: need to ne improved for all kind of objects, at this moment it works with one collision obstacle only
+    ROS_WARN_STREAM("Currently it can remove only one obstacle");
+    ignore_obstacles_.push_back(request.file_name);
+    add_obstacle_pub_.publish(request.static_collision_object);
+    response.message = "Delete Successfully!!";
+    response.success = true;
+  }
+
   return true;
 }
 

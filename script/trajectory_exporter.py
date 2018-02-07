@@ -117,12 +117,13 @@ class moveActionClient:
     # get the current position of the robot
     def robotCurrentPose(self):
         t = rospy.Time(0)
-        print self.object_name
+        #print self.object_name
         self.listener.waitForTransform(self.object_name, self.end_effector_frame, t, rospy.Duration(10))
         (trans, rot) = self.listener.lookupTransform(self.object_name, self.end_effector_frame, t)
         cartesian_error = [trans[0], trans[1], trans[2], rot[0], rot[1], rot[2], rot[3]]
-        print cartesian_error
-        self.reach_goal = self.checkInfitisimalPose(cartesian_error=cartesian_error, max_tolerance=0.01)
+        #print cartesian_error
+        self.reach_goal = self.checkInfitisimalPose(cartesian_error=cartesian_error, max_tolerance=0.05)
+        print "Goal object name: ", self.object_name, " Reach Goal: ", self.reach_goal
 
 #-----------------------------------------------------------------------------------------------------------------------
     def extractDataFromMarkerArray(self, marker_array):
@@ -190,10 +191,11 @@ class moveActionClient:
             # move to pre grasping position and orientation
             self.object_name = "pose_0"
             pre_grasp_success = self.move_to_pregasping_pose(object_list=item_list_obj, object_name="pose_0")
-            
+
             # block untill reach to goal pose
             while pre_grasp_success is False or self.reach_goal is False:
-                print
+                rospy.sleep(1.0)
+                pass
 
             self.object_name = grasp_object
 
@@ -206,8 +208,9 @@ class moveActionClient:
             self.reach_goal = False
 
             # block untill reach to goal pose
-            while pre_grasp_success is False or self.reach_goal is False:
-                print
+            while success is False or self.reach_goal is False:
+                rospy.sleep(1.0)
+                pass
 
             # store trajectory
             self.storeTrajectoryWithPlanSuccess()
@@ -304,10 +307,11 @@ class moveActionClient:
 
     def checkInfitisimalPose(self, cartesian_error, max_tolerance):
 
-        print ('\033[1m' + '\033[92m' + "### " + "checkInfitisimalPose" + "### " + '\033[0m')
+        #print ('\033[1m' + '\033[92m' + "### " + "checkInfitisimalPose" + "### " + '\033[0m')
 
-        for error in cartesian_error:
-            if error > max_tolerance:
+        for error in range(0, 3): #cartesian_error:
+            print "Error: ", abs(cartesian_error[error]), "Max_tol: ", max_tolerance
+            if abs(cartesian_error[error]) > max_tolerance:
                 return False
         return True
 

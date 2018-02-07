@@ -24,11 +24,15 @@ import argparse
 import pandas as pd
 import time
 
+import thread
+import threading
+
 class moveActionClient:
     def __init__(self):
         print ('\033[94m' + " ----- Start extraction and store trajectory script... ----- " + '\033[0m')
         self.traj_data = None
         self.poses_to_export = []
+        self.pose_plus_quat = []
         self.base_frame = ""
         self.end_effector_frame = ""
         self.file_path = ""
@@ -36,6 +40,12 @@ class moveActionClient:
         self.runs = 0
         self.start_random = 0
         self.end_random = 0
+
+        self.getTransformListener()
+
+    def getTransformListener(self):
+        with threading.Lock():
+            self.listener = tf.TransformListener(True, rospy.Duration(40.0))
 
     def argumentParser(self):
         parser = argparse.ArgumentParser()
@@ -81,6 +91,8 @@ class moveActionClient:
         #print ('\033[1m' + '\033[92m' + "######### " + " Got a new STOMP trajectory" + " ########### " + '\033[0m')
         rospy.sleep(0.5)
         self.traj_data = msg
+        self.robotCurrentPose()
+        print self.cartesian_error
 
     def extractDataFromMarker(self, traj_data):
         px = []; py = []; pz = []
@@ -90,6 +102,26 @@ class moveActionClient:
             pz.append(way_point.z)
         return px, py, pz
 
+    def getCurrentPoseOfeefFrame(self, marker_array):
+        #for marker in marker_array.markers:
+            #pose_plus_quat = [marker.pose.position.x, marker.pose.position.y, marker.pose.position.z,
+            #                  marker.pose.orientation.w, marker.pose.orientation.x, marker.pose.orientation.y, marker.pose.orientation.z]
+            #return pose_plus_quat
+        print len(marker_array.markers)
+        print marker_array.markers.size()
+        last_element = len(marker_array.markers)-1
+        self.pose_plus_quat = [marker_array.markers[last_element].pose.position.x, marker_array.markers[last_element].pose.position.y, marker_array.markers[last_element].pose.position.z,
+                               marker_array.markers[last_element].pose.orientation.x, marker_array.markers[last_element].pose.orientation.y, marker_array.markers[last_element].pose.orientation.z,
+                               marker_array.markers[last_element].pose.orientation.w]
+
+    # get the current position of the robot
+    def robotCurrentPose(self):
+        t = rospy.Time(0)
+        self.listener.waitForTransform('/arm_7_target', self.end_effector_frame, t, rospy.Duration(10))
+        (trans, rot) = self.listener.lookupTransform('/arm_7_target', self.end_effector_frame, t)
+        self.cartesian_error = [trans[0], trans[1], trans[2], rot[0], rot[1], rot[2], rot[3]]
+
+#-----------------------------------------------------------------------------------------------------------------------
     def extractDataFromMarkerArray(self, marker_array):
         for marker in marker_array.markers:
             pose = list()
@@ -164,7 +196,12 @@ class moveActionClient:
 
             success = self.move_action_client(object_position=object_position, object_orientation=object_orientation, object_name=grasp_object)
 
-            if success is True:
+            goal_pose = [object_position, object_orientation]
+            #reach = self.checkArmReachToGoalPose(goal_pose=goal_pose, max_tolerance=0.1)
+            reach = True
+
+
+            if success is True and reach is True:
                 self.storeTrajectoryWithPlanSuccess()
 
             rospy.sleep(5)
@@ -215,6 +252,49 @@ class moveActionClient:
         #while state != 3:
         #    print
         #return
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Block call untill reach to goal position
+    def checkArmReachToGoalPose(self, goal_pose, max_tolerance):
+        print ('\033[1m' + '\033[92m' + "######### " + " Checking arm reach to goal position with correct orientation" + " ########### " + '\033[0m')
+
+        print goal_pose
+        current_pose = self.getCurrentPoseOfeefFrame(self.traj_data)
+        print current_pose
+        state = False
+        while (not rospy.is_shutdown() and state is False):
+
+            current_pose = self.getCurrentPoseOfeefFrame(self.traj_data)
+
+            if abs(goal_pose[0] - current_pose[0] > max_tolerance):
+                state = False
+                continue
+            elif abs(goal_pose[1] - current_pose[1] > max_tolerance):
+                state = False
+                continue
+            elif abs(goal_pose[2] - current_pose[2] > max_tolerance):
+                state = False
+                continue
+            elif abs(goal_pose[3] - current_pose[3] > max_tolerance):
+                state = False
+                continue
+            elif abs(goal_pose[4] - current_pose[4] > max_tolerance):
+                state = False
+                continue
+            elif abs(goal_pose[5] - current_pose[5] > max_tolerance):
+                state = False
+                continue
+            elif abs(goal_pose[6] - current_pose[6] > max_tolerance):
+                state = False
+                continue
+            else:
+                state = True
+                continue
+
+        return state
+
+
 
         # -----------------------------------------------------------------------------------------------------------------------
     """

@@ -64,6 +64,7 @@ class VisualizeResults:
 
         for matrix_id in range(0, len(self.mat)):
             plt.figure(matrix_id)
+            figure = plt.figure()
             #plt.rc('axis', axisbelow=True) #draw grid line behind plot
             time_index = self.column_names.index('time')
 
@@ -77,13 +78,14 @@ class VisualizeResults:
             x_min = int(math.ceil(min(time_axis))); x_max = int(math.ceil(max(time_axis)))
             y_min, y_max = self.findRangeOfMatrix(matrix_index=matrix_id)
 
-            for clm_index in range(1, 2):#len(self.column_names)-1):
+            for clm_index in range(1, len(self.column_names)):
                 self.data_to_plot = []
                 self.data_to_plot = self.extractColumData(matrix_id=matrix_id, colum_index=clm_index)
 
                 self.visualize2DPlot(x_axis=time_axis,y_axis=self.data_to_plot, clm_index=clm_index-1,
-                                     x_min_range=x_min, x_max_range=x_max, y_min_range=y_min, y_max_range=y_max)
+                                     x_min_range=x_min, x_max_range=x_max, y_min_range=y_min, y_max_range=y_max,fig=figure)
 
+            plt.show()
 
     def findRangeOfMatrix(self,matrix_index):
 
@@ -137,13 +139,13 @@ class VisualizeResults:
         plt.show()
 
 
-    def visualize2DPlot(self, x_axis, y_axis, clm_index, x_min_range, x_max_range, y_min_range, y_max_range):
+    def visualize2DPlot(self, x_axis, y_axis, clm_index, x_min_range, x_max_range, y_min_range, y_max_range,fig):
 
         alpha_on_noisy_trajectories = 0.1
         print ('\033[1m' + '\033[31m' + "############ " + " Starting export " + "############## " + '\033[0m')
         filenames = []
 
-        fig = plt.figure()
+
         ax = fig.add_subplot(1,1,1)
 
         plt.legend()
@@ -153,10 +155,11 @@ class VisualizeResults:
         plt.yscale('linear')
 
         labels = [clm for clm in self.column_names]  # ['Demonstration', 'Guide trajectory', 'Noisy rollouts', 'GSTOMP output']
-        colors = ['blue', 'green', 'purple', 'red']
+        colors = ['blue', 'green', 'purple', 'cyan', 'orange', 'brown', 'pink', 'red', 'olive', 'gray']
+        markers = ['o', '*', '.', 'x', '+', '.', '^', '_']
 
         plt.xticks(range(x_min_range, x_max_range, 5))
-        #plt.yticks(range(y_min_range, y_max_range, 5))
+        #plt.yticks(range(-5, 5, 1))
 
         # add major grid
         plt.grid(b=True, which='major', color='darkgray', linestyle='-', alpha=0.3)
@@ -165,12 +168,12 @@ class VisualizeResults:
         draw_start_end_markers = [True, True, True, True]
         ax.set_xlabel('Time(sec)')
         ax.set_ylabel('Cartesian error value(cm)')
-        ax.set_xlim(x_min_range-2, x_max_range) # TODO remove hardcoded limits
-        #ax.set_ylim(y_min_range, y_max_range)
+        ax.set_xlim(x_min_range, x_max_range) # TODO remove hardcoded limits
+        #ax.set_ylim(-5, 5)
         # ax.set_zlim(0.9, 1.6)
 
         #ax.plot(x_axis, y_axis, label=labels[clm_index], color=colors[clm_index], marker='o', linewidth=1)
-        ax.plot(x_axis, y_axis, label=labels[clm_index], color=colors[clm_index], linewidth=1)
+        ax.plot(x_axis, y_axis, label=labels[clm_index], color=colors[clm_index],  marker=markers[clm_index], linewidth=1)
 
         """
         for traj, label, color, draw_markers in zip(plot_data, labels, colors, draw_start_end_markers):
@@ -192,14 +195,11 @@ class VisualizeResults:
         ax.legend(loc='upper right')
         # filename = os.getcwd() + "/demo_trajectory_" + str(ii) + '_' + label + ".jpeg"
         # fig.savefig(filename, format='eps', dpi=300)
-        plt.show()
+        #plt.show()
         # print ('\033[94m' + legend[i] + str(ii) + " -----Start_pose (x, y, z) = " + str(self.px[i][0])+str(self.py[i][0])+str(self.pz[i][0]) + '\033[0m')
         # print ('\033[94m' + legend[i] + str(ii) + " -----End_pose (x, y, z) = " + str(self.px[i][len(self.px[i])-1])+str(self.py[i][len(self.py[i])-1])+str(self.pz[i][len(self.pz[i])-1]) + '\033[0m')
         # filenames.append(filename)
 
-        # Make sure we are not reusing old data
-        for traj in plot_data:
-            traj = None
 
         print('\033[1m' + '\033[31m' + "############ " + " Done exporting " + "############## " + '\033[0m')
         print('Exported to files: ' + str(filenames))

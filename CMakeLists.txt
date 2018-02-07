@@ -210,6 +210,6 @@ install(
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
-install(PROGRAMS src/interactive_obstacle_node.py script/test_add_obstacles.py
+install(PROGRAMS src/interactive_obstacle_node.py script/test_add_obstacles.py script/table_generation.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/scripts
 )

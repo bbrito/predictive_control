@@ -87,8 +87,8 @@ class VisualizeResults:
                 self.visualize2DPlot(x_axis=time_axis,y_axis=self.data_to_plot, clm_index=clm_index-1,
                                      x_min_range=x_min, x_max_range=x_max, y_min_range=y_min, y_max_range=y_max,fig=figure)
 
-            filename = os.getcwd() + "/plots/" + "cartesian" + '_' + self.file_names[matrix_id] + '.jpeg'
-            figure.savefig(filename, format='eps', dpi=300)
+            filename = os.getcwd() + "/plots/" + "cartesian" + '_' + self.file_names[matrix_id] + '.png'
+            #figure.savefig(filename, format='png', dpi=300)
 
             #print('\033[1m' + '\033[31m' + "############ " + " Done exporting " + "############## " + '\033[0m')
             print ('\033[1m' + '\033[92m' + "######### " + "Exported to files: " + str(filename)+ " ###########" + '\033[0m')
@@ -179,8 +179,8 @@ class VisualizeResults:
         #ax.set_ylim(-5, 5)
         # ax.set_zlim(0.9, 1.6)
 
-        #ax.plot(x_axis, y_axis, label=labels[clm_index], color=colors[clm_index], marker='o', linewidth=1)
-        ax.plot(x_axis, y_axis, label=labels[clm_index], color=colors[clm_index],  marker=markers[clm_index], linewidth=1)
+        #ax.plot(x_axis, y_axis, label=labels[clm_index], color=colors[clm_index],  marker=markers[clm_index], linewidth=1)
+        ax.plot(x_axis, y_axis, label=labels[clm_index], color=colors[clm_index], linewidth=1)
 
         """
         for traj, label, color, draw_markers in zip(plot_data, labels, colors, draw_start_end_markers):

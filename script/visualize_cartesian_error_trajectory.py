@@ -67,49 +67,42 @@ class VisualizeResults:
 
             print ('\033[1m' + '\033[31m' + "############ " + " Starting export " + "############## " + '\033[0m')
 
+            plt.figure(matrix_id)
+            figure = plt.figure()
+            plt.rc('axes', axisbelow=True) #draw grid line behind plot
+            time_index = self.column_names.index('time')
+
+            # remove entry of blank or zero values
+            self.column_names = filter(lambda a: a != 'Unnamed: 0', self.column_names)
+
+            # extract time data and set that as our x axis
+            time_axis = self.extractColumData(matrix_id=matrix_id, colum_index=time_index)
+
+            # extract range of plots
+            x_min = int(math.ceil(min(time_axis))); x_max = int(math.ceil(max(time_axis)))
+            y_min, y_max = self.findRangeOfMatrix(matrix_index=matrix_id)
+
             # generate plot of position and/or orientation
             # position = 1, orientation = 4, position + orientation = 1
             start_range = [1, 4, 1]
 
             # position = 1, orientation = 4, position + orientation = 1
-            stop_range = [4, 8, len(self.column_names)-1]
+            stop_range = [4, 8, len(self.column_names)]
+            
+            for clm_index in range(1, len(self.column_names)):
+                self.data_to_plot = []
+                self.data_to_plot = self.extractColumData(matrix_id=matrix_id, colum_index=clm_index)
 
-            # interator
-            range_it = range(0, len(start_range),1)
+                self.visualize2DPlot(x_axis=time_axis,y_axis=self.data_to_plot, clm_index=clm_index-1,
+                                     x_min_range=x_min, x_max_range=x_max, y_min_range=y_min, y_max_range=y_max,fig=figure)
 
-            for i,j,it in zip(start_range,stop_range,range_it):
+            filename = os.getcwd() + "/plots/" + "cartesian" + '_' + self.file_names[matrix_id] + '.png'
+            #figure.savefig(filename, format='png', dpi=300)
 
+            #print('\033[1m' + '\033[31m' + "############ " + " Done exporting " + "############## " + '\033[0m')
+            print ('\033[1m' + '\033[92m' + "######### " + "Exported to files: " + str(filename)+ " ###########" + '\033[0m')
 
-                plt.figure(it)
-                figure = plt.figure()
-                plt.rc('axes', axisbelow=True) #draw grid line behind plot
-                time_index = self.column_names.index('time')
-
-                # remove entry of blank or zero values
-                self.column_names = filter(lambda a: a != 'Unnamed: 0', self.column_names)
-
-                # extract time data and set that as our x axis
-                time_axis = self.extractColumData(matrix_id=matrix_id, colum_index=time_index)
-
-                # extract range of plots
-                x_min = int(math.ceil(min(time_axis))); x_max = int(math.ceil(max(time_axis)))
-                y_min, y_max = self.findRangeOfMatrix(matrix_index=matrix_id)
-
-
-                for clm_index in range(i, j):
-                    self.data_to_plot = []
-                    self.data_to_plot = self.extractColumData(matrix_id=matrix_id, colum_index=clm_index)
-
-                    self.visualize2DPlot(x_axis=time_axis,y_axis=self.data_to_plot, clm_index=clm_index-1,
-                                         x_min_range=x_min, x_max_range=x_max, y_min_range=y_min, y_max_range=y_max,fig=figure)
-
-                filename = os.getcwd() + "/plots/" + "cartesian" + '_' + self.file_names[matrix_id] + '.png'
-                #figure.savefig(filename, format='png', dpi=300)
-
-                #print('\033[1m' + '\033[31m' + "############ " + " Done exporting " + "############## " + '\033[0m')
-                print ('\033[1m' + '\033[92m' + "######### " + "Exported to files: " + str(filename)+ " ###########" + '\033[0m')
-
-                plt.show()
+            plt.show()
 
     def findRangeOfMatrix(self,matrix_index):
 

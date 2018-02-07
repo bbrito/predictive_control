@@ -187,11 +187,11 @@ class moveActionClient:
             grasp_object = "pose_" + str(i+1) #str(random.randint(start_random, end_random))
             print "object_name: ", grasp_object
 
+            # move to pre grasping position and orientation
             self.object_name = "pose_0"
-
-            # move to pregraping position
             pre_grasp_success = self.move_to_pregasping_pose(object_list=item_list_obj, object_name="pose_0")
-            #rospy.sleep(5.0)
+            
+            # block untill reach to goal pose
             while pre_grasp_success is False or self.reach_goal is False:
                 print
 
@@ -205,10 +205,12 @@ class moveActionClient:
 
             self.reach_goal = False
 
+            # block untill reach to goal pose
+            while pre_grasp_success is False or self.reach_goal is False:
+                print
 
-            if success is True and self.reach_goal is True:
-                self.storeTrajectoryWithPlanSuccess()
-
+            # store trajectory
+            self.storeTrajectoryWithPlanSuccess()
             self.reach_goal = False
             #rospy.sleep(5)
 

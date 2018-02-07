@@ -37,6 +37,7 @@ class moveActionClient:
         self.end_effector_frame = ""
         self.file_path = ""
         self.object_name = ""
+        self.reach_goal = False
         self.runs = 0
         self.start_random = 0
         self.end_random = 0
@@ -85,14 +86,13 @@ class moveActionClient:
         data_info_obj = ReadDataFromList(item_list=object_list, object_name=object_name)
         [object_position, object_orientation] = data_info_obj.getObjectInfo()
 
-        self.move_action_client(object_position=object_position, object_orientation=object_orientation,object_name=object_name)
+        return self.move_action_client(object_position=object_position, object_orientation=object_orientation,object_name=object_name)
 
     def getTrajectoryCB(self, msg):
         #print ('\033[1m' + '\033[92m' + "######### " + " Got a new STOMP trajectory" + " ########### " + '\033[0m')
         rospy.sleep(0.5)
         self.traj_data = msg
         self.robotCurrentPose()
-        print self.cartesian_error
 
     def extractDataFromMarker(self, traj_data):
         px = []; py = []; pz = []
@@ -119,7 +119,8 @@ class moveActionClient:
         t = rospy.Time(0)
         self.listener.waitForTransform('/arm_7_target', self.end_effector_frame, t, rospy.Duration(10))
         (trans, rot) = self.listener.lookupTransform('/arm_7_target', self.end_effector_frame, t)
-        self.cartesian_error = [trans[0], trans[1], trans[2], rot[0], rot[1], rot[2], rot[3]]
+        cartesian_error = [trans[0], trans[1], trans[2], rot[0], rot[1], rot[2], rot[3]]
+        self.reach_goal = self.checkInfitisimalPose(cartesian_error=cartesian_error, max_tolerance=0.01)
 
 #-----------------------------------------------------------------------------------------------------------------------
     def extractDataFromMarkerArray(self, marker_array):
@@ -187,8 +188,10 @@ class moveActionClient:
             self.object_name = grasp_object
 
             # move to pregraping position
-            self.move_to_pregasping_pose(object_list=item_list_obj, object_name="pose_0")
-            rospy.sleep(5.0)
+            pre_grasp_success = self.move_to_pregasping_pose(object_list=item_list_obj, object_name="pose_0")
+            #rospy.sleep(5.0)
+            if pre_grasp_success is True and self.reach_goal is True:
+                self.storeTrajectoryWithPlanSuccess()
 
             # extract information of object
             data_info_obj = ReadDataFromList(item_list=item_list_obj, object_name=grasp_object)
@@ -196,15 +199,14 @@ class moveActionClient:
 
             success = self.move_action_client(object_position=object_position, object_orientation=object_orientation, object_name=grasp_object)
 
-            goal_pose = [object_position, object_orientation]
-            #reach = self.checkArmReachToGoalPose(goal_pose=goal_pose, max_tolerance=0.1)
-            reach = True
+            self.reach_goal = False
 
 
-            if success is True and reach is True:
+            if success is True and self.reach_goal is True:
                 self.storeTrajectoryWithPlanSuccess()
 
-            rospy.sleep(5)
+            self.reach_goal = False
+            #rospy.sleep(5)
 
             rospy.loginfo("====================================================================")
             rospy.loginfo("One object successfully picked and placed")
@@ -294,9 +296,16 @@ class moveActionClient:
 
         return state
 
+    def checkInfitisimalPose(self, cartesian_error, max_tolerance):
 
+        print ('\033[1m' + '\033[92m' + "### " + "checkInfitisimalPose" + "### " + '\033[0m')
 
-        # -----------------------------------------------------------------------------------------------------------------------
+        for error in cartesian_error:
+            if error > max_tolerance:
+                return False
+        return True
+
+    # -----------------------------------------------------------------------------------------------------------------------
     """
         @description: create static frame of all list of object 
         @param: obj_list: list of object

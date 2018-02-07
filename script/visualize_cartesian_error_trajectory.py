@@ -3,6 +3,7 @@ import matplotlib
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
+
 import os
 import math
 import numpy as np
@@ -43,7 +44,7 @@ class VisualizeResults:
         for i in range(1,len(sys.argv)):
             if sys.argv[i].rfind('.') != -1:    #  If .csv or .txt is not pass than consider as that xlable
                 file_name = re.split('\d+',sys.argv[i])
-                self.file_names.append(file_name[0])
+                self.file_names.append(file_name[0]+str(i))
                 self.readDataFromFile(sys.argv[i])
             else:
                 # array of file name already filled by file_names, if optional argu are there,than replace file_name with optional argu.
@@ -51,21 +52,22 @@ class VisualizeResults:
                 #self.file_names[i-len(self.file_names) - 1] = sys.argv[i]
                 self.file_names.append(sys.argv[i])
 
-        self.planner_names = [file_name.replace("_", "\n") for file_name in self.file_names]
+        self.file_names = [file_name.replace("_", ":") for file_name in self.file_names]
 
 
-
-
-        for planner in self.planner_names:
-            print ('\033[94m' + planner + '\033[0m')
+        #for planner in self.planner_names:
+        #    print ('\033[94m' + planner + '\033[0m')
         #print self.mat[0][2:]
         #self.visulizePlot()
         #self.visualizeTrajectory()
 
         for matrix_id in range(0, len(self.mat)):
+
+            print ('\033[1m' + '\033[31m' + "############ " + " Starting export " + "############## " + '\033[0m')
+
             plt.figure(matrix_id)
             figure = plt.figure()
-            #plt.rc('axis', axisbelow=True) #draw grid line behind plot
+            plt.rc('axes', axisbelow=True) #draw grid line behind plot
             time_index = self.column_names.index('time')
 
             # remove entry of blank or zero values
@@ -84,6 +86,12 @@ class VisualizeResults:
 
                 self.visualize2DPlot(x_axis=time_axis,y_axis=self.data_to_plot, clm_index=clm_index-1,
                                      x_min_range=x_min, x_max_range=x_max, y_min_range=y_min, y_max_range=y_max,fig=figure)
+
+            filename = os.getcwd() + "/plots/" + "cartesian" + '_' + self.file_names[matrix_id] + '.jpeg'
+            figure.savefig(filename, format='eps', dpi=300)
+
+            #print('\033[1m' + '\033[31m' + "############ " + " Done exporting " + "############## " + '\033[0m')
+            print ('\033[1m' + '\033[92m' + "######### " + "Exported to files: " + str(filename)+ " ###########" + '\033[0m')
 
             plt.show()
 
@@ -140,9 +148,6 @@ class VisualizeResults:
 
 
     def visualize2DPlot(self, x_axis, y_axis, clm_index, x_min_range, x_max_range, y_min_range, y_max_range,fig):
-
-        alpha_on_noisy_trajectories = 0.1
-        print ('\033[1m' + '\033[31m' + "############ " + " Starting export " + "############## " + '\033[0m')
         filenames = []
 
 
@@ -154,20 +159,22 @@ class VisualizeResults:
         plt.xscale('linear')
         plt.yscale('linear')
 
-        labels = [clm for clm in self.column_names]  # ['Demonstration', 'Guide trajectory', 'Noisy rollouts', 'GSTOMP output']
-        colors = ['blue', 'green', 'purple', 'cyan', 'orange', 'brown', 'pink', 'red', 'olive', 'gray']
-        markers = ['o', '*', '.', 'x', '+', '.', '^', '_']
-
         plt.xticks(range(x_min_range, x_max_range, 5))
         #plt.yticks(range(-5, 5, 1))
+
+        plt.title("Cartesian error Vs Time",fontsize=14, fontweight='bold')
 
         # add major grid
         plt.grid(b=True, which='major', color='darkgray', linestyle='-', alpha=0.3)
 
+        labels = [clm for clm in self.column_names]  # ['Demonstration', 'Guide trajectory', 'Noisy rollouts', 'GSTOMP output']
+        colors = ['blue', 'green', 'purple', 'cyan', 'orange', 'brown', 'pink', 'red', 'olive', 'gray']
+        markers = ['o', '*', '.', 'x', '+', '.', '^', '_']
+
         # plot_data = [self.extractDataFromMatrix(0), self.extractDataFromMatrix(1)]
         draw_start_end_markers = [True, True, True, True]
-        ax.set_xlabel('Time(sec)')
-        ax.set_ylabel('Cartesian error value(cm)')
+        ax.set_xlabel('Time (sec)')
+        ax.set_ylabel('Cartesian error value (cm) and (rad)')
         ax.set_xlim(x_min_range, x_max_range) # TODO remove hardcoded limits
         #ax.set_ylim(-5, 5)
         # ax.set_zlim(0.9, 1.6)
@@ -193,16 +200,12 @@ class VisualizeResults:
                 print ('\033[94m' + str("Hello1") + '\033[0m')
         """
         ax.legend(loc='upper right')
-        # filename = os.getcwd() + "/demo_trajectory_" + str(ii) + '_' + label + ".jpeg"
-        # fig.savefig(filename, format='eps', dpi=300)
+
         #plt.show()
         # print ('\033[94m' + legend[i] + str(ii) + " -----Start_pose (x, y, z) = " + str(self.px[i][0])+str(self.py[i][0])+str(self.pz[i][0]) + '\033[0m')
         # print ('\033[94m' + legend[i] + str(ii) + " -----End_pose (x, y, z) = " + str(self.px[i][len(self.px[i])-1])+str(self.py[i][len(self.py[i])-1])+str(self.pz[i][len(self.pz[i])-1]) + '\033[0m')
         # filenames.append(filename)
 
-
-        print('\033[1m' + '\033[31m' + "############ " + " Done exporting " + "############## " + '\033[0m')
-        print('Exported to files: ' + str(filenames))
 
     #-----------------------------------------------------------------------------------------------------------------------
     """
@@ -282,4 +285,3 @@ if __name__ == '__main__':
     SCRIPT = VisualizeResults()
     SCRIPT.Run()
     print ("End ploting script...")
-    print ( '\033[1m' +'\033[92m' + "######### "+ "output plots stored path: plots/XYZ.eps" + " ########### " + '\033[0m')

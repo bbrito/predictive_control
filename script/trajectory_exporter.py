@@ -130,21 +130,21 @@ class moveActionClient:
         print "Goal object name: ", self.object_name, " Reach Goal: ", self.reach_goal
 
 #-----------------------------------------------------------------------------------------------------------------------
-    def extractDataFromMarkerArray(self, marker_array):
+    def extractDataFromMarkerArray(self, marker_array, time_to_reach):
         for marker in marker_array.markers:
             pose = list()
             pose_plus_quat = [marker.pose.position.x, marker.pose.position.y, marker.pose.position.z,
-                              marker.pose.orientation.w, marker.pose.orientation.x, marker.pose.orientation.y, marker.pose.orientation.z]
+                              marker.pose.orientation.w, marker.pose.orientation.x, marker.pose.orientation.y, marker.pose.orientation.z, time_to_reach]
             self.poses_to_export.append(pose_plus_quat)
 
-    def storeTrajectoryWithPlanSuccess(self):
+    def storeTrajectoryWithPlanSuccess(self, time_to_reach):
 
-        self.extractDataFromMarkerArray(self.traj_data)
+        self.extractDataFromMarkerArray(self.traj_data, time_to_reach=time_to_reach)
         self.storeToCSV()
 
 # -----------------------------------------------------------------------------------------------------------------------
     def storeToCSV(self):
-        axis_name = ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz']
+        axis_name = ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz', 'time']
         object_name = self.object_name.replace('_','-')
         filename_with_path = self.file_path  + object_name + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + str('.csv')
         # filename_with_path = "/home/bfb-ws/gstomp_ws/src/gstomp/gstomp_experiments/output_data/" + self.file_path + str('.csv')
@@ -245,13 +245,14 @@ class moveActionClient:
                 rospy.sleep(1.0)
                 pass
 
+            now = time.time()
             print('\033[1m' + '\033[31m'+ "Processing Time: " + str(abs(time.time()-self.start_time)) + '\033[0m')
 
             # store cartesian error into file and clear array for reuse of other array
             self.storeCartesianErrorToCSV()
 
             # store trajectory
-            self.storeTrajectoryWithPlanSuccess()
+            self.storeTrajectoryWithPlanSuccess(time_to_reach=abs(now - self.start_time))
             self.reach_goal = False
             rospy.sleep(2.0)
 

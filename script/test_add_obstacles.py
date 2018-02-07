@@ -241,7 +241,7 @@ class StaticObstacles:
         co.primitives.append(primitive)
 
         pose = geometry_msgs.msg.Pose()
-        pose.position.x = 0.45
+        pose.position.x = 0.55
         pose.position.y = -0.30
         pose.position.z = 0.30
         pose.orientation.w = 1.0

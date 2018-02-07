@@ -44,7 +44,9 @@ class VisualizeResults:
         self.column_names = []
         self.data_to_plot = []
 
-        self.cart_length = 0.0
+        self.cart_length = []
+        self.time_to_reach = []
+        self.cart_smoothness = []
 
     # -----------------------------------------------------------------------------------------------------------------------
     # @description: Read data from file and separate into column wise and plot column data
@@ -85,10 +87,13 @@ class VisualizeResults:
             # remove entry of blank or zero values
             self.column_names = filter(lambda a: a != 'Unnamed: 0', self.column_names)
 
+            # --------------------------------- Time to reach goal pose -----------------------------------------------
             # extract time data and set that as our x axis
             time_axis = self.extractColumData(matrix_id=matrix_id, colum_index=time_index)
+            self.time_to_reach.append(time_axis[len(time_axis)-1])
+            #print self.time_to_reach
 
-
+            # ------------------------------- Cartesian length of trajectory ------------------------------------------
             x = []; y = []; z = []; qx = []; qy = []; qz = []; qw = [];
 
             x = self.extractColumData(matrix_id=matrix_id, colum_index=1)  # x = 1
@@ -101,8 +106,78 @@ class VisualizeResults:
             qw = self.extractColumData(matrix_id=matrix_id, colum_index=7)  # qw = 3
 
 
-            self.cart_length = self.computeEcludianDistance(x=x, y=y, z=z)
+            self.cart_length.append(self.computeEcludianDistance(x=x, y=y, z=z))
             #print self.computeRoatationDistance(qx=qx, qy=qy, qz=qz, qw=qw)
+
+
+            # ------------------------------- Sommothness of trajectory ----------------------------------------------
+            self.cart_smoothness.append(self.computeCartesianSommothNessOfTraj(x=x, y=y, z=z))
+
+        table_header = "\multirow{2}{*}{Algorithm} & \multicolumn{3}{c}{Solver iterations}  \Tstrut \\\\"
+        table_header_2 = "& Execution time & Trajectory length (m) & Smoothness \Bstrut \\\\ \hline"
+
+        print (table_header)
+        print (table_header_2)
+
+        for time, length, smoothness in zip(self.time_to_reach, self.cart_length, self.cart_smoothness):
+
+            print ("----------------------------------------------------------------------------------------------------")
+            print "pose:0" + ' & ' + ("%0.3f" % time) + ' & ' + ("%0.3f" % length) + ' & ' + ("%0.3f" % smoothness) + '\\\\'
+            print ("----------------------------------------------------------------------------------------------------")
+
+
+
+    def computeCartesianSommothNessOfTraj(self,x,y,z):
+        cart_smoothness = 0.0
+
+        smooth_x = 0.0; smooth_y = 0.0; smooth_z = 0.0
+
+        for p in range(0, len(x)-2):
+            f_x0 = abs(x[p] - x[0])
+            f_y0 = abs(y[p] - y[0])
+            f_z0 = abs(z[p] - z[0])
+
+            f_x1 = abs(x[p+1] - x[0])
+            f_y1 = abs(y[p+1] - y[0])
+            f_z1 = abs(z[p+1] - z[0])
+
+            f_x2 = abs(x[p+2] - x[0])
+            f_y2 = abs(y[p+2] - y[0])
+            f_z2 = abs(z[p+2] - z[0])
+
+            smooth_x = smooth_x + abs(f_x2 + f_x1 - 2*f_x0)
+            smooth_y = smooth_y + abs(f_y2 + f_y1 - 2*f_y0)
+            smooth_z = smooth_z + abs(f_z2 + f_z1 - 2*f_z0)
+
+        cart_smoothness = smooth_x / len(x) + smooth_y / len(y) + smooth_z / len(z)
+        return cart_smoothness
+
+    def computeRotationSommothNessOfTraj(self,x,y,z):
+        rot_smoothness = 0.0
+
+        smooth_x = 0.0; smooth_y = 0.0; smooth_z = 0.0
+
+        for p in range(0, len(x)-2):
+            f_x0 = abs(x[p] - x[0])
+            f_y0 = abs(y[p] - y[0])
+            f_z0 = abs(z[p] - z[0])
+
+            f_x1 = abs(x[p+1] - x[0])
+            f_y1 = abs(y[p+1] - y[0])
+            f_z1 = abs(z[p+1] - z[0])
+
+            f_x2 = abs(x[p+2] - x[0])
+            f_y2 = abs(y[p+2] - y[0])
+            f_z2 = abs(z[p+2] - z[0])
+
+            smooth_x = smooth_x + abs(f_x2 + f_x1 - 2*f_x0)
+            smooth_y = smooth_y + abs(f_y2 + f_y1 - 2*f_y0)
+            smooth_z = smooth_z + abs(f_z2 + f_z1 - 2*f_z0)
+
+        rot_smoothness = smooth_x / len(x) + smooth_y / len(y) + smooth_z / len(z)
+        return rot_smoothness
+
+
 
     def computeEcludianDistance(self, x, y, z):
 

@@ -36,7 +36,7 @@ class moveActionClient:
         self.base_frame = ""
         self.end_effector_frame = ""
         self.file_path = ""
-        self.object_name = ""
+        self.object_name = "pose_0"
         self.reach_goal = False
         self.runs = 0
         self.start_random = 0
@@ -117,9 +117,11 @@ class moveActionClient:
     # get the current position of the robot
     def robotCurrentPose(self):
         t = rospy.Time(0)
-        self.listener.waitForTransform('/arm_7_target', self.end_effector_frame, t, rospy.Duration(10))
-        (trans, rot) = self.listener.lookupTransform('/arm_7_target', self.end_effector_frame, t)
+        print self.object_name
+        self.listener.waitForTransform(self.object_name, self.end_effector_frame, t, rospy.Duration(10))
+        (trans, rot) = self.listener.lookupTransform(self.object_name, self.end_effector_frame, t)
         cartesian_error = [trans[0], trans[1], trans[2], rot[0], rot[1], rot[2], rot[3]]
+        print cartesian_error
         self.reach_goal = self.checkInfitisimalPose(cartesian_error=cartesian_error, max_tolerance=0.01)
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -185,13 +187,15 @@ class moveActionClient:
             grasp_object = "pose_" + str(i+1) #str(random.randint(start_random, end_random))
             print "object_name: ", grasp_object
 
-            self.object_name = grasp_object
+            self.object_name = "pose_0"
 
             # move to pregraping position
             pre_grasp_success = self.move_to_pregasping_pose(object_list=item_list_obj, object_name="pose_0")
             #rospy.sleep(5.0)
-            if pre_grasp_success is True and self.reach_goal is True:
-                self.storeTrajectoryWithPlanSuccess()
+            while pre_grasp_success is False or self.reach_goal is False:
+                print
+
+            self.object_name = grasp_object
 
             # extract information of object
             data_info_obj = ReadDataFromList(item_list=item_list_obj, object_name=grasp_object)

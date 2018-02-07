@@ -33,6 +33,7 @@ class moveActionClient:
         self.traj_data = None
         self.poses_to_export = []
         self.pose_plus_quat = []
+        self.cartesian_error_data = []
         self.base_frame = ""
         self.end_effector_frame = ""
         self.file_path = ""
@@ -41,6 +42,7 @@ class moveActionClient:
         self.runs = 0
         self.start_random = 0
         self.end_random = 0
+        self.start_time = 0.0
 
         self.getTransformListener()
 
@@ -117,11 +119,13 @@ class moveActionClient:
     # get the current position of the robot
     def robotCurrentPose(self):
         t = rospy.Time(0)
+        now = rospy.Time.now()
         #print self.object_name
         self.listener.waitForTransform(self.object_name, self.end_effector_frame, t, rospy.Duration(10))
         (trans, rot) = self.listener.lookupTransform(self.object_name, self.end_effector_frame, t)
+        processing_time = abs((self.start_time-now).to_sec())
         cartesian_error = [trans[0], trans[1], trans[2], rot[0], rot[1], rot[2], rot[3]]
-        #print cartesian_error
+        self.cartesian_error_data.append(cartesian_error)
         self.reach_goal = self.checkInfitisimalPose(cartesian_error=cartesian_error, max_tolerance=0.05)
         print "Goal object name: ", self.object_name, " Reach Goal: ", self.reach_goal
 
@@ -159,6 +163,26 @@ class moveActionClient:
 
         # print(''.join(axis_name) + ' saved to ' + filename_with_path)
 
+    # -----------------------------------------------------------------------------------------------------------------------
+    def storeCartesianErrorToCSV(self):
+        axis_name = ['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw']
+        object_name = self.object_name.replace('_', '-')
+        filename_with_path = self.file_path + "error-" + self.object_name + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + str('.csv')
+        # filename_with_path = "/home/bfb-ws/gstomp_ws/src/gstomp/gstomp_experiments/output_data/" + self.file_path + str('.csv')
+
+        # print('\033[1m' + '\033[31m' + "############ " + " Exporting File " + "############## " + '\033[0m')
+        print('\033[32m' + 'Exported to files: ' + str(filename_with_path) + '\033[0m')
+
+        reference_frames = pd.DataFrame([[self.base_frame, self.end_effector_frame]],
+                                        columns=['base frame', 'end effector frame'])
+        all_poses = pd.DataFrame(self.cartesian_error_data, columns=axis_name)
+
+        # with open(filename_with_path, 'w') as f_out:
+        f_out = open(filename_with_path, 'w+')
+        reference_frames.to_csv(f_out)
+        all_poses.to_csv(f_out)
+
+        # print(''.join(axis_name) + ' saved to ' + filename_with_path)
 
     def Run(self):
 
@@ -197,6 +221,10 @@ class moveActionClient:
                 rospy.sleep(1.0)
                 pass
 
+            # store cartesian error into file and clear array for reuse of other array
+            self.storeCartesianErrorToCSV()
+            self.cartesian_error_data = []
+
             self.object_name = grasp_object
 
             # extract information of object
@@ -209,13 +237,18 @@ class moveActionClient:
 
             # block untill reach to goal pose
             while success is False or self.reach_goal is False:
+                self.storeCartesianErrorToCSV()
                 rospy.sleep(1.0)
                 pass
+
+            # store cartesian error into file and clear array for reuse of other array
+            self.storeCartesianErrorToCSV()
+            self.cartesian_error_data = []
 
             # store trajectory
             self.storeTrajectoryWithPlanSuccess()
             self.reach_goal = False
-            #rospy.sleep(5)
+            rospy.sleep(2.0)
 
             rospy.loginfo("====================================================================")
             rospy.loginfo("One object successfully picked and placed")

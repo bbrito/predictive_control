@@ -4,6 +4,7 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
 import os
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -72,12 +73,29 @@ class VisualizeResults:
             # extract time data and set that as our x axis
             time_axis = self.extractColumData(matrix_id=matrix_id, colum_index=time_index)
 
+            # extract range of plots
+            x_min = int(math.ceil(min(time_axis))); x_max = int(math.ceil(max(time_axis)))
+            y_min, y_max = self.findRangeOfMatrix(matrix_index=matrix_id)
+
             for clm_index in range(1, 2):#len(self.column_names)-1):
                 self.data_to_plot = []
                 self.data_to_plot = self.extractColumData(matrix_id=matrix_id, colum_index=clm_index)
 
-                self.visualize2DPlot(x_axis=time_axis,y_axis=self.data_to_plot, clm_index=clm_index-1)
+                self.visualize2DPlot(x_axis=time_axis,y_axis=self.data_to_plot, clm_index=clm_index-1,
+                                     x_min_range=x_min, x_max_range=x_max, y_min_range=y_min, y_max_range=y_max)
 
+
+    def findRangeOfMatrix(self,matrix_index):
+
+        y_min = []; y_max = []
+        for clm in range(1, len(self.column_names)-1):
+            clm_data = []
+            for data in self.mat[matrix_index][:,clm]:
+                clm_data.append(data)
+            y_min.append(int(math.ceil(min(clm_data))))
+            y_max.append(int(math.ceil(max(clm_data))))
+
+        return (min(y_min),max(y_max))
 
 
     def extractColumData(self, matrix_id, colum_index):
@@ -119,7 +137,7 @@ class VisualizeResults:
         plt.show()
 
 
-    def visualize2DPlot(self, x_axis, y_axis, clm_index):
+    def visualize2DPlot(self, x_axis, y_axis, clm_index, x_min_range, x_max_range, y_min_range, y_max_range):
 
         alpha_on_noisy_trajectories = 0.1
         print ('\033[1m' + '\033[31m' + "############ " + " Starting export " + "############## " + '\033[0m')
@@ -137,8 +155,8 @@ class VisualizeResults:
         labels = [clm for clm in self.column_names]  # ['Demonstration', 'Guide trajectory', 'Noisy rollouts', 'GSTOMP output']
         colors = ['blue', 'green', 'purple', 'red']
 
-        #plt.xticks(range(min(x_axis), max(x_axis)))
-        #plt.yticks(range(min(y_axis), max(y_axis)))
+        plt.xticks(range(x_min_range, x_max_range, 5))
+        #plt.yticks(range(y_min_range, y_max_range, 5))
 
         # add major grid
         plt.grid(b=True, which='major', color='darkgray', linestyle='-', alpha=0.3)
@@ -147,11 +165,12 @@ class VisualizeResults:
         draw_start_end_markers = [True, True, True, True]
         ax.set_xlabel('Time(sec)')
         ax.set_ylabel('Cartesian error value(cm)')
-        # ax.set_xlim(0.4, 1.2) # TODO remove hardcoded limits
-        # ax.set_ylim(-0.9, -0.1)
+        ax.set_xlim(x_min_range-2, x_max_range) # TODO remove hardcoded limits
+        #ax.set_ylim(y_min_range, y_max_range)
         # ax.set_zlim(0.9, 1.6)
 
-        ax.plot(x_axis, y_axis, label=labels[clm_index], color=colors[clm_index], marker='o', linewidth=1)
+        #ax.plot(x_axis, y_axis, label=labels[clm_index], color=colors[clm_index], marker='o', linewidth=1)
+        ax.plot(x_axis, y_axis, label=labels[clm_index], color=colors[clm_index], linewidth=1)
 
         """
         for traj, label, color, draw_markers in zip(plot_data, labels, colors, draw_start_end_markers):

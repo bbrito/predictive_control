@@ -7,7 +7,7 @@ from geometry_msgs.msg import PoseStamped
 from predictive_control.msg import *
 from predictive_control.srv import *
 
-import sys
+import sys, time
 import tf
 
 #static trans
@@ -119,12 +119,12 @@ class moveActionClient:
     # get the current position of the robot
     def robotCurrentPose(self):
         t = rospy.Time(0)
-        now = rospy.Time.now()
+        now = time.time()
         #print self.object_name
         self.listener.waitForTransform(self.object_name, self.end_effector_frame, t, rospy.Duration(10))
         (trans, rot) = self.listener.lookupTransform(self.object_name, self.end_effector_frame, t)
-        processing_time = abs((self.start_time-now).to_sec())
-        cartesian_error = [trans[0], trans[1], trans[2], rot[0], rot[1], rot[2], rot[3]]
+        processing_time = abs(now-self.start_time)
+        cartesian_error = [trans[0], trans[1], trans[2], rot[0], rot[1], rot[2], rot[3], processing_time]
         self.cartesian_error_data.append(cartesian_error)
         self.reach_goal = self.checkInfitisimalPose(cartesian_error=cartesian_error, max_tolerance=0.05)
         print "Goal object name: ", self.object_name, " Reach Goal: ", self.reach_goal
@@ -165,7 +165,7 @@ class moveActionClient:
 
     # -----------------------------------------------------------------------------------------------------------------------
     def storeCartesianErrorToCSV(self):
-        axis_name = ['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw']
+        axis_name = ['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw', 'time']
         object_name = self.object_name.replace('_', '-')
         filename_with_path = self.file_path + "error-" + self.object_name + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + str('.csv')
         # filename_with_path = "/home/bfb-ws/gstomp_ws/src/gstomp/gstomp_experiments/output_data/" + self.file_path + str('.csv')
@@ -212,6 +212,9 @@ class moveActionClient:
             grasp_object = "pose_" + str(i+1) #str(random.randint(start_random, end_random))
             print "object_name: ", grasp_object
 
+            # clear data of cartesian error
+            self.cartesian_error_data = []
+            self.start_time = time.time()
             # move to pre grasping position and orientation
             self.object_name = "pose_0"
             pre_grasp_success = self.move_to_pregasping_pose(object_list=item_list_obj, object_name="pose_0")
@@ -220,10 +223,9 @@ class moveActionClient:
             while pre_grasp_success is False or self.reach_goal is False:
                 rospy.sleep(1.0)
                 pass
-
+            print('\033[1m' + '\033[31m'+ "Processing Time: " + str(abs(time.time()-self.start_time)) + '\033[0m')
             # store cartesian error into file and clear array for reuse of other array
             self.storeCartesianErrorToCSV()
-            self.cartesian_error_data = []
 
             self.object_name = grasp_object
 
@@ -231,19 +233,22 @@ class moveActionClient:
             data_info_obj = ReadDataFromList(item_list=item_list_obj, object_name=grasp_object)
             [object_position, object_orientation] = data_info_obj.getObjectInfo()
 
-            success = self.move_action_client(object_position=object_position, object_orientation=object_orientation, object_name=grasp_object)
-
+            # clear data of cartesian error
+            self.cartesian_error_data = []
+            self.start_time = time.time()
             self.reach_goal = False
+
+            success = self.move_action_client(object_position=object_position, object_orientation=object_orientation, object_name=grasp_object)
 
             # block untill reach to goal pose
             while success is False or self.reach_goal is False:
-                self.storeCartesianErrorToCSV()
                 rospy.sleep(1.0)
                 pass
 
+            print('\033[1m' + '\033[31m'+ "Processing Time: " + str(abs(time.time()-self.start_time)) + '\033[0m')
+
             # store cartesian error into file and clear array for reuse of other array
             self.storeCartesianErrorToCSV()
-            self.cartesian_error_data = []
 
             # store trajectory
             self.storeTrajectoryWithPlanSuccess()

@@ -12,7 +12,7 @@ import rospy
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import sys
+import sys, time
 import re
 time = 0   # first column in file
 length = 1 # second column in file
@@ -143,9 +143,9 @@ class VisualizeResults:
 
             ax.legend(loc='upper right')
             #print os.getcwd()
-            filename = os.getcwd() + "/plots/" + "pd_trajectory:" + str(ii) + '.png'
+            filename = os.getcwd() + "/plots/" + "pd_trajectory:" + str(ii) + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + '.png'
             filenames = filename
-            #fig.savefig(filename, format='png', dpi=300)
+            fig.savefig(filename, format='png', dpi=300)
             #filename = os.getcwd() + "/demo_trajectory_" + str(ii) + '_' + label + ".jpeg"
             #fig.savefig(filename, format='eps', dpi=300)
             plt.show()

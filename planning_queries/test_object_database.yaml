@@ -35,10 +35,10 @@ queries:
      position: [1.13381, -0.12028, 1.59932]
      orientation: [0.002390, 0.004627, 0.0730, 0.997327]
   
-  # rack_4 - middel
+  # singular position
   pose_8:
-     position: [1.1007, -0.3446, 1.60108]
-     orientation: [0.00253, 0.004615, 0.04520, 0.998945]
+     position: [0.060, -0.802, 0.682] #[-0.099, -0.419, 1.152]
+     orientation: [0.648, 0.000, 0.000, 0.761] #[0.000, 0.000, 0.000, 1.000]
 
   # rack_4 - middel, pre_grasp
   pose_9:

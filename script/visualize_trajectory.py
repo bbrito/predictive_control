@@ -3,6 +3,7 @@ import matplotlib
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
+import math
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -97,14 +98,14 @@ class VisualizeResults:
 
         alpha_on_noisy_trajectories = 0.1
         print ('\033[1m' + '\033[31m' + "############ " + " Starting export " + "############## " + '\033[0m')
-        filenames = []
+        filenames = ""
         for ii in range(0, 81, 10):
 
             fig = plt.figure()
             ax = fig.add_subplot(1, 1, 1, projection='3d')
             ax.view_init(elev=28, azim=ii)
 
-            labels = [planner for planner in self.planner_names] #['Demonstration', 'Guide trajectory', 'Noisy rollouts', 'GSTOMP output']
+            labels = ["pd_trajectory"] #[planner for planner in self.planner_names] #['Demonstration', 'Guide trajectory', 'Noisy rollouts', 'GSTOMP output']
             colors = ['blue', 'green', 'purple', 'red']
 
             plot_data = [self.extractDataFromMatrix(matrix_id=matrix_id) for matrix_id in range(0, len(self.mat))]
@@ -118,6 +119,13 @@ class VisualizeResults:
             # ax.set_zlim(0.9, 1.6)
 
             for traj, label, color, draw_markers in zip(plot_data, labels, colors, draw_start_end_markers):
+
+                #x_min = int(math.ceil(min(traj[0]))); x_max = int(math.ceil(max(traj[0])))
+                #y_min = int(math.ceil(min(traj[1]))); y_max = int(math.ceil(max(traj[1])))
+                #z_min = int(math.ceil(min(traj[2]))); z_max = int(math.ceil(max(traj[2])))
+
+                #plt.xticks(range(x_min, x_max, 8))
+                #plt.yticks(range(y_min, y_max, 8))
 
                 if type(traj[0][0]) is not list:
                     line, = ax.plot(traj[0], traj[1], traj[2], label=label, color=color, marker='o', linewidth=1)
@@ -134,9 +142,13 @@ class VisualizeResults:
                     print ('\033[94m' + str("Hello1") + '\033[0m')
 
             ax.legend(loc='upper right')
+            #print os.getcwd()
+            filename = os.getcwd() + "/plots/" + "pd_trajectory:" + str(ii) + '.png'
+            filenames = filename
+            fig.savefig(filename, format='png', dpi=300)
             #filename = os.getcwd() + "/demo_trajectory_" + str(ii) + '_' + label + ".jpeg"
             #fig.savefig(filename, format='eps', dpi=300)
-            plt.show()
+            #plt.show()
             # print ('\033[94m' + legend[i] + str(ii) + " -----Start_pose (x, y, z) = " + str(self.px[i][0])+str(self.py[i][0])+str(self.pz[i][0]) + '\033[0m')
             # print ('\033[94m' + legend[i] + str(ii) + " -----End_pose (x, y, z) = " + str(self.px[i][len(self.px[i])-1])+str(self.py[i][len(self.py[i])-1])+str(self.pz[i][len(self.pz[i])-1]) + '\033[0m')
             #filenames.append(filename)

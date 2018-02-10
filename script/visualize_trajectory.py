@@ -14,9 +14,11 @@ import numpy as np
 import pandas as pd
 import sys, time
 import re
-time = 0   # first column in file
-length = 1 # second column in file
-smooth = 2 # third column in file
+import time
+
+#time = 0   # first column in file
+#length = 1 # second column in file
+#smooth = 2 # third column in file
 
 def makefilename(name):
   return name.strip().replace(' ','_').replace('(','').replace(')','')

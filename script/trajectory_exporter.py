@@ -144,7 +144,7 @@ class moveActionClient:
 
 # -----------------------------------------------------------------------------------------------------------------------
     def storeToCSV(self):
-        axis_name = ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz', 'time']
+        axis_name = ['px', 'py', 'pz', 'qw', 'qx', 'qy', 'qz', 'time']
         object_name = self.object_name.replace('_','-')
         filename_with_path = self.file_path  + object_name + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + str('.csv')
         # filename_with_path = "/home/bfb-ws/gstomp_ws/src/gstomp/gstomp_experiments/output_data/" + self.file_path + str('.csv')
@@ -165,7 +165,7 @@ class moveActionClient:
 
     # -----------------------------------------------------------------------------------------------------------------------
     def storeCartesianErrorToCSV(self):
-        axis_name = ['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw', 'time']
+        axis_name = ['px', 'py', 'pz', 'qx', 'qy', 'qz', 'qw', 'time']
         object_name = self.object_name.replace('_', '-')
         filename_with_path = self.file_path + "error-" + self.object_name + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + str('.csv')
         # filename_with_path = "/home/bfb-ws/gstomp_ws/src/gstomp/gstomp_experiments/output_data/" + self.file_path + str('.csv')

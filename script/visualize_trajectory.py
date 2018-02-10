@@ -145,10 +145,10 @@ class VisualizeResults:
             #print os.getcwd()
             filename = os.getcwd() + "/plots/" + "pd_trajectory:" + str(ii) + '.png'
             filenames = filename
-            fig.savefig(filename, format='png', dpi=300)
+            #fig.savefig(filename, format='png', dpi=300)
             #filename = os.getcwd() + "/demo_trajectory_" + str(ii) + '_' + label + ".jpeg"
             #fig.savefig(filename, format='eps', dpi=300)
-            #plt.show()
+            plt.show()
             # print ('\033[94m' + legend[i] + str(ii) + " -----Start_pose (x, y, z) = " + str(self.px[i][0])+str(self.py[i][0])+str(self.pz[i][0]) + '\033[0m')
             # print ('\033[94m' + legend[i] + str(ii) + " -----End_pose (x, y, z) = " + str(self.px[i][len(self.px[i])-1])+str(self.py[i][len(self.py[i])-1])+str(self.pz[i][len(self.pz[i])-1]) + '\033[0m')
             #filenames.append(filename)

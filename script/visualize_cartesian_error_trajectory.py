@@ -98,12 +98,12 @@ class VisualizeResults:
                                      x_min_range=x_min, x_max_range=x_max, y_min_range=y_min, y_max_range=y_max,fig=figure)
 
             filename = os.getcwd() + "/plots/" + "cartesian" + '_' + self.file_names[matrix_id] + '_' + str(time.strftime("%d-%m-%Y-%H:%M:%S")) + '.png'
-            figure.savefig(filename, format='png', dpi=300)
+            #figure.savefig(filename, format='png', dpi=300)
 
             #print('\033[1m' + '\033[31m' + "############ " + " Done exporting " + "############## " + '\033[0m')
             print ('\033[1m' + '\033[92m' + "######### " + "Exported to files: " + str(filename)+ " ###########" + '\033[0m')
 
-            #plt.show()
+            plt.show()
 
     def findRangeOfMatrix(self,matrix_index):
 

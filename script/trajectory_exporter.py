@@ -209,7 +209,7 @@ class moveActionClient:
 
         for i in range(0, runs, 1):
             print ('\033[94m' + "Current no. of runs is " + str(i) + '\033[0m')
-            grasp_object = "pose_" + str(i+1) #str(random.randint(start_random, end_random))
+            grasp_object = "pose_" + str(7) #str(random.randint(start_random, end_random))
             print "object_name: ", grasp_object
 
             # clear data of cartesian error
@@ -225,7 +225,7 @@ class moveActionClient:
                 pass
             print('\033[1m' + '\033[31m'+ "Processing Time: " + str(abs(time.time()-self.start_time)) + '\033[0m')
             # store cartesian error into file and clear array for reuse of other array
-            self.storeCartesianErrorToCSV()
+            #self.storeCartesianErrorToCSV()
 
             self.object_name = grasp_object
 
@@ -240,8 +240,11 @@ class moveActionClient:
 
             success = self.move_action_client(object_position=object_position, object_orientation=object_orientation, object_name=grasp_object)
 
+
             # block untill reach to goal pose
-            while success is False or self.reach_goal is False:
+            while success is False or self.reach_goal is False or (abs(time.time() - self.start_time) < 50.0):
+                print abs(time.time() - self.start_time)
+                #self.storeCartesianErrorToCSV()
                 rospy.sleep(1.0)
                 pass
 

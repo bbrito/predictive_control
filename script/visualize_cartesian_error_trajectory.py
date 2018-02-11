@@ -90,7 +90,7 @@ class VisualizeResults:
             # position = 1, orientation = 4, position + orientation = 1
             stop_range = [4, 8, len(self.column_names)]
             
-            for clm_index in range(1, len(self.column_names)): #len(self.column_names)
+            for clm_index in range(1, len(self.column_names)-1): #len(self.column_names)
                 self.data_to_plot = []
                 self.data_to_plot = self.extractColumData(matrix_id=matrix_id, colum_index=clm_index)
 
@@ -103,7 +103,7 @@ class VisualizeResults:
             #print('\033[1m' + '\033[31m' + "############ " + " Done exporting " + "############## " + '\033[0m')
             print ('\033[1m' + '\033[92m' + "######### " + "Exported to files: " + str(filename)+ " ###########" + '\033[0m')
 
-            #plt.show()
+            plt.show()
 
     def findRangeOfMatrix(self,matrix_index):
 
@@ -169,7 +169,7 @@ class VisualizeResults:
         plt.xscale('linear')
         plt.yscale('linear')
 
-        plt.xticks(range(x_min_range, x_max_range, 2))
+        plt.xticks(range(x_min_range, x_max_range, 5))
         #plt.yticks(range(-5, 5, 1))
 
         plt.title("Cartesian error Vs Time",fontsize=14, fontweight='bold')

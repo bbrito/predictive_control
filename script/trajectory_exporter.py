@@ -242,7 +242,7 @@ class moveActionClient:
 
 
             # block untill reach to goal pose
-            while success is False or self.reach_goal is False or (abs(time.time() - self.start_time) < 50.0):
+            while success is False or self.reach_goal is False: #or (abs(time.time() - self.start_time) < 50.0)
                 print abs(time.time() - self.start_time)
                 #self.storeCartesianErrorToCSV()
                 rospy.sleep(1.0)

@@ -30,10 +30,10 @@ queries:
      position: [1.12545, -0.1055, 0.651586]
      orientation: [0.002241, 0.004707, 0.1054, 0.994405]
   
-  # rack_4 - right
+  # self collision avoidance
   pose_7:
-     position: [1.13381, -0.12028, 1.59932]
-     orientation: [0.002390, 0.004627, 0.0730, 0.997327]
+     position: [0.037, -0.103, 0.435] #[1.13381, -0.12028, 1.59932]
+     orientation: [0.124, 0.154, -0.020, 0.980] #[0.002390, 0.004627, 0.0730, 0.997327]
   
   # singular position
   pose_8:

@@ -209,7 +209,7 @@ class moveActionClient:
 
         for i in range(0, runs, 1):
             print ('\033[94m' + "Current no. of runs is " + str(i) + '\033[0m')
-            grasp_object = "pose_" + str(7) #str(random.randint(start_random, end_random))
+            grasp_object = "pose_" + str(i+1) #str(random.randint(start_random, end_random))
             print "object_name: ", grasp_object
 
             # clear data of cartesian error

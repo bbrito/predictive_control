@@ -25,10 +25,10 @@ queries:
      position: [1.09813, -0.4802, 0.690919]
      orientation: [0.001501, 0.005002, -0.0460, 0.998936]
 
-  # rack_2 - left
+  # static collision avoidance
   pose_6:
-     position: [1.12545, -0.1055, 0.651586]
-     orientation: [0.002241, 0.004707, 0.1054, 0.994405]
+     position: [0.199, -0.177, 0.664]
+     orientation: [0.000, 0.000, 0.000, 1.000]
   
   # self collision avoidance
   pose_7:

@@ -15,25 +15,26 @@ queries:
      position: [0.465, 0.090, 0.548] #[-0.298, -0.027, 0.685]
      orientation: [0.977, 0.193, -0.050, 0.071] #[-0.122, -0.621, -0.023, 0.774] #[-0.003, 0.008, 0.003, 1.000]
   
-  # static collision avoidance
-  pose_4:
-     position: [0.199, -0.177, 0.664]
-     orientation: [0.000, 0.000, 0.000, 1.000]
-  
   # self collision avoidance
-  pose_5:
+  pose_4:
      position: [0.037, -0.103, 0.435] #[1.13381, -0.12028, 1.59932]
      orientation: [0.124, 0.154, -0.020, 0.980] #[0.002390, 0.004627, 0.0730, 0.997327]
   
   # singular position
-  pose_6:
+  pose_5:
      position: [0.060, -0.802, 0.682] #[-0.099, -0.419, 1.152]
      orientation: [0.648, 0.000, 0.000, 0.761] #[0.000, 0.000, 0.000, 1.000]
 
   # rack_4 - middel, pre_grasp
-  pose_7:
+  pose_6:
      position: [0.195, -0.147, 0.857]
      orientation: [-0.396, 0.605, 0.506, 0.470]
+
+  # static collision avoidance
+  pose_7:
+     position: [0.199, -0.177, 0.664]
+     orientation: [0.000, 0.000, 0.000, 1.000]
+
 
   # rack_3 - left, pregrasping pose
   pose_0:

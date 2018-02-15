@@ -7,7 +7,7 @@ activate_controller_node_output: false
 plotting_result: true
 
 # Clock frequency //hz
-clock_frequency: 100
+clock_frequency: 50
 
 # Joint_names
 joints_name: [arm_1_joint, arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint]
@@ -33,8 +33,8 @@ constraints:
            min: [-3.14, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14]
            max: [3.14, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
      velocity_constraints:
-           min: [-0.50, -0.20, -0.50, -0.20, -0.50, -0.50, -0.50]
-           max: [0.50, 0.20, 0.50, 0.20, 0.50, 0.50, 0.50]
+           min: [-0.20, -0.20, -0.20, -0.20, -0.20, -0.20, -0.20]
+           max: [0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20]
      effort_constraints:
            min: [-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0]
            max: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

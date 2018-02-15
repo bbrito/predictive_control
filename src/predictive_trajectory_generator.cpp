@@ -230,7 +230,7 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
     //expression = total_distance + v.transpose()*v;
 
      ROS_ERROR("====================================================================");
-     ROS_WARN_STREAM( expression.print(std::cout) );
+     //ROS_WARN_STREAM( expression.print(std::cout) );
      ROS_ERROR("====================================================================");
 
     //Expression expression(1.0);

@@ -7,7 +7,7 @@ activate_controller_node_output: false
 plotting_result: true
 
 # Clock frequency //hz
-clock_frequency: 50
+clock_frequency: 100
 
 # Joint_names
 joints_name: [arm_left_1_joint, arm_left_2_joint, arm_left_3_joint, arm_left_4_joint, arm_left_5_joint, arm_left_6_joint, arm_left_7_joint]
@@ -21,19 +21,19 @@ tracking_frame: arm_left_7_link
 
 # predictive_config: # minimum_collision_distance should not be larger than ball radius
 self_collision:
-     ball_radius: 0.15
-     minimum_collision_distance: 0.08
+     ball_radius: 0.12
+     minimum_collision_distance: 0.15
      collision_weight_factor: 0.01
      # the following links of the chain are considered for collision avoidance
      collision_check_links: [arm_left_3_link, arm_left_4_link, arm_left_5_link, arm_left_6_link, arm_left_7_link]
 
 constraints:
      position_constraints:
-           min: [-1.50, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14]
-           max: [1.50, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
+           min: [-3.14, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14]
+           max: [3.14, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
      velocity_constraints:
-           min: [-0.100, -0.050, -0.100, -0.050, -0.100, -0.100, -0.10]
-           max: [0.100, 0.050, 0.100, 0.050, 0.100, 0.100, 0.100]
+           min: [-0.50, -0.20, -0.50, -0.20, -0.50, -0.50, -0.50]
+           max: [0.50, 0.20, 0.50, 0.20, 0.50, 0.50, 0.50]
      effort_constraints:
            min: [-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0]
            max: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -41,7 +41,7 @@ constraints:
 tolerance:
      goal_tolerance:
            # 3 position and 3 orientation tolerance
-           [0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+           [0.03, 0.01, 0.01, 0.05, 0.05, 0.05]
 acado_config:
      max_num_iteration: 10
      kkt_tolerance: 1e-6
@@ -56,7 +56,7 @@ acado_config:
      weight_factors:
            lsq_state_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [3.0, 3.0, 3.0, 3.0, 3.0, 3.0] #0.01
+                [5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
            lsq_control_weight_factors:
                 # same as degree of freedom
-                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] #0.0001
+                [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 1.0]

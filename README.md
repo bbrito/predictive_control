@@ -28,3 +28,11 @@ Launch:
  roslaunch predictive_control mpc_experiment_cob.launch  
 
 MIN_DISTANCE: for obstracle avoidance is 0.50 define in obstacle_distance_data_types.hpp
+
+# Experiment with Shunk arm
+- Start power on butten with arm connection
+- Connect can device to the computer and type set bund rate 
+- roslauch predictive_control robot_bringup.launch
+- second terminal => rosservice call /arm/driver/init
+                  => try: rosservice call /arm/driver/init .... it gives true
+- roslauch predictive_control cartesian_controller.launch                  

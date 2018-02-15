@@ -360,8 +360,8 @@ if __name__ == '__main__':
     object_id = "box123" #"bookshelves"
     OBJECT = StaticObstacles()
     OBJECT.add_box(arm_name="arm_left")
-    OBJECT.add_small_box(arm_name="arm_left")
-    OBJECT.add_box1(arm_name="arm_left")
+    #OBJECT.add_small_box(arm_name="arm_left")
+    #OBJECT.add_box1(arm_name="arm_left")
     #OBJECT.add_environment_from_file(object_id=object_id)
     #OBJECT.add_static_obstacles(object_id=object_id)
     #rospy.sleep(5.0)

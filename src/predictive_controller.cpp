@@ -421,7 +421,7 @@ void predictive_control_ros::jointStateCallBack(const sensor_msgs::JointState::C
     getTransform(pd_config_->chain_root_link_, target_frame_, goal_gripper_pose_);
 
     // update collision ball according to joint angles
-    //collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
+    collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
 
     // update static collision accroding to robot critical point computed in collisionRobot class
     //static_collision_avoidance_->updateStaticCollisionVolume(collision_detect_->collision_matrix_);

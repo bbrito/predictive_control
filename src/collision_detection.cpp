@@ -136,7 +136,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
         collision_matrix_[key + std::to_string(point)] = stamped;
         point = point + 1;
       }
-/*
+
       // as usally add ball at every joint
       geometry_msgs::PoseStamped stamped;
       KDL::Frame frame;
@@ -157,7 +157,7 @@ void CollisionRobot::generateCollisionVolume(const std::vector<Eigen::MatrixXd> 
                             );
 
       collision_matrix_[key + std::to_string(point)] = stamped;
-      point = point + 1;*/
+      point = point + 1;
     }
     else
     {

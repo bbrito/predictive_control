@@ -123,6 +123,8 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        arm/interactive_box_frame:
+          Value: true
         arm_1_link:
           Value: false
         arm_2_link:
@@ -152,6 +154,8 @@ Visualization Manager:
       Show Names: false
       Tree:
         world:
+          arm/interactive_box_frame:
+            {}
           arm_7_target:
             {}
           arm_podest_link:
@@ -205,7 +209,7 @@ Visualization Manager:
       Marker Topic: /arm/obstacle_distance/marker
       Name: MarkerArray
       Namespaces:
-        {}
+        collision_object: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -213,12 +217,12 @@ Visualization Manager:
       Marker Topic: /arm/pd_trajectory
       Name: MarkerArray
       Namespaces:
-        preview: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
-    Background Color: 255; 255; 255
+    Background Color: 122; 122; 122
     Fixed Frame: world
     Frame Rate: 30
   Name: root
@@ -252,10 +256,10 @@ Visualization Manager:
         Z: 0.583252
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.205397
+      Pitch: 0.415397
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.3467
+      Yaw: 3.6167
     Saved: ~
 Window Geometry:
   Displays:

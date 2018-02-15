@@ -45,6 +45,9 @@
         <node pkg="cob_obstacle_distance" type="cob_obstacle_distance" name="obstacle_distance" cwd="node" respawn="false" output="screen"/>
         <node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/>
 
+		# register external obstacles
+        <node pkg="predictive_control" type="interactive_obstacle_node.py" name="interactive_obstacle_node" cwd="node" respawn="false" output="screen"/>
+
         <!--
         <node pkg="cob_cartesian_controller" type="cartesian_controller_node" name="cartesian_controller"  cwd="node" respawn="false" output="screen">
                 <param name="target_frame" type="str" value="cartesian_target"/>

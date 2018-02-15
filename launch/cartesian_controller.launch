@@ -19,6 +19,9 @@
     <arg name="start_external_sync" default="$(arg use_external_sync)"/>
     <arg name="pkg_hardware_config" default="$(find cob_hardware_config)"/>
 
+	# test queries
+    <rosparam command="load" file="$(find predictive_control)/planning_queries/test_object_database.yaml"/>
+	
     <group ns="$(arg component_name)">
 
         # load Cartesian controller config
@@ -39,14 +42,14 @@
         <node pkg="cob_frame_tracker" type="cob_frame_tracker_node" name="frame_tracker" cwd="node" respawn="false" output="screen"/>
         <node pkg="cob_frame_tracker" type="interactive_frame_target_node" name="interactive_target" cwd="node" respawn="false" output="screen"/>
 
-        <!--node pkg="cob_obstacle_distance" type="cob_obstacle_distance" name="obstacle_distance" cwd="node" respawn="false" output="screen"/-->
+        <node pkg="cob_obstacle_distance" type="cob_obstacle_distance" name="obstacle_distance" cwd="node" respawn="false" output="screen"/>
         <node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/>
 
         <!--
         <node pkg="cob_cartesian_controller" type="cartesian_controller_node" name="cartesian_controller"  cwd="node" respawn="false" output="screen">
                 <param name="target_frame" type="str" value="cartesian_target"/>
         </node>
--->
+		-->
         <group if="$(arg debug)">
                 <node pkg="cob_twist_controller" type="debug_evaluate_jointstates_node" name="debug_evaluate_jointstates_node" cwd="node" respawn="false" output="screen"/>
                 <node pkg="cob_twist_controller" type="debug_trajectory_marker_node" name="debug_trajectory_marker_node" cwd="node" respawn="false" output="screen"/>

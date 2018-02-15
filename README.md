@@ -31,7 +31,7 @@ MIN_DISTANCE: for obstracle avoidance is 0.50 define in obstacle_distance_data_t
 
 # Experiment with Shunk arm
 - Start power on butten with arm connection
-- Connect can device to the computer and type set bund rate 
+- Connect can device to the computer and type set bund rate by using sudo ip link set can0 up type can bitrate 500000
 - roslauch predictive_control robot_bringup.launch
 - second terminal => rosservice call /arm/driver/init
                   => try: rosservice call /arm/driver/init .... it gives true

@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /RobotModel1
+        - /TF1/Frames1
         - /MarkerArray1
         - /MarkerArray2
         - /InteractiveMarkers2
@@ -124,7 +125,7 @@ Visualization Manager:
       Frames:
         All Enabled: false
         arm/interactive_box_frame:
-          Value: true
+          Value: false
         arm_1_link:
           Value: false
         arm_2_link:
@@ -144,6 +145,10 @@ Visualization Manager:
         arm_base_link:
           Value: false
         arm_podest_link:
+          Value: false
+        point_0:
+          Value: false
+        point_2:
           Value: false
         world:
           Value: false
@@ -168,6 +173,10 @@ Visualization Manager:
                         arm_6_link:
                           arm_7_link:
                             {}
+          point_0:
+            {}
+          point_2:
+            {}
       Update Interval: 0
       Value: true
     - Class: rviz/InteractiveMarkers
@@ -184,7 +193,7 @@ Visualization Manager:
       Marker Topic: /arm/predictive_control/collisionRobot/collision_ball
       Name: MarkerArray
       Namespaces:
-        {}
+        preview: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -192,7 +201,8 @@ Visualization Manager:
       Marker Topic: /arm/CollisionAvoidance/obstacle_distance_markers
       Name: MarkerArray
       Namespaces:
-        {}
+        arm_3_link: true
+        arm_4_link: true
       Queue Size: 100
       Value: true
     - Class: rviz/InteractiveMarkers
@@ -217,7 +227,7 @@ Visualization Manager:
       Marker Topic: /arm/pd_trajectory
       Name: MarkerArray
       Namespaces:
-        {}
+        preview: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -256,10 +266,10 @@ Visualization Manager:
         Z: 0.583252
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.415397
+      Pitch: 0.390397
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.6167
+      Yaw: 0.506699
     Saved: ~
 Window Geometry:
   Displays:

@@ -1,0 +1,30 @@
+# static collision object request
+
+# add static object from file 
+string file_name
+
+# the name of the object
+string object_name
+string object_id
+
+# position of object
+geometry_msgs/PoseStamped primitive_pose
+
+# dimension of object
+geometry_msgs/Vector3 dimension
+
+# current position of robot/other object, current poition means it should be center of object
+#geometry_msgs/Point current_position
+
+# threshold value used to be keep distance from robot body/other object 
+#geometry_msgs/Vector3 distance_threshold
+
+# collision cost weighting factor
+#float64 collision_cost_weight_factor
+---
+# Respose of static collision object service
+#float64[] static_collision_cost_vector
+bool success
+string message
+
+

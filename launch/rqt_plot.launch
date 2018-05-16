@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="component_name" default="arm"/>
+  <arg name="joint_velocity" default="false"/>
+  <arg name="cartesian_position_error" default="false"/>
+  <arg name="cartesian_orientation_error" default="false"/>
+  <arg name="cartesian_error" default="false"/>
+
+  <node if="$(arg joint_velocity)" name="pos_vel_plot"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/$(arg component_name)/joint_group_velocity_controller/command/data[0]
+        /$(arg component_name)/joint_group_velocity_controller/command/data[1]
+        /$(arg component_name)/joint_group_velocity_controller/command/data[2]
+        /$(arg component_name)/joint_group_velocity_controller/command/data[3]
+        /$(arg component_name)/joint_group_velocity_controller/command/data[4]
+        /$(arg component_name)/joint_group_velocity_controller/command/data[5]
+        /$(arg component_name)/joint_group_velocity_controller/command/data[6]" />
+
+    <node if="$(arg cartesian_position_error)" name="cartesian_position_error_plot"
+          pkg="rqt_plot"
+          type="rqt_plot"
+          args="/$(arg component_name)/cartesian_error/pose/position/x
+          /$(arg component_name)/cartesian_error/pose/position/y
+          /$(arg component_name)/cartesian_error/pose/position/z" />
+
+    <node if="$(arg cartesian_orientation_error)" name="cartesian_orientation_error_plot"
+          pkg="rqt_plot"
+          type="rqt_plot"
+          args="/$(arg component_name)/cartesian_error/pose/orientation/w
+          /$(arg component_name)/cartesian_error/pose/orientation/x
+          /$(arg component_name)/cartesian_error/pose/orientation/y
+          /$(arg component_name)/cartesian_error/pose/orientation/z" />
+
+    <node if="$(arg cartesian_error)" name="cartesian_error_plot"
+          pkg="rqt_plot"
+          type="rqt_plot"
+          args="/$(arg component_name)/cartesian_error/pose/position/x
+          /$(arg component_name)/cartesian_error/pose/position/y
+          /$(arg component_name)/cartesian_error/pose/position/z
+          /$(arg component_name)/cartesian_error/pose/orientation/w
+          /$(arg component_name)/cartesian_error/pose/orientation/x
+          /$(arg component_name)/cartesian_error/pose/orientation/y
+          /$(arg component_name)/cartesian_error/pose/orientation/z" />
+
+</launch>
+

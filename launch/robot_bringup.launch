@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- Debug Info -->
+    <arg name="debug" default="false" />
+    <arg unless="$(arg debug)" name="launch_prefix" value="" />
+    <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+    <arg name="robot" default="lwa4p_extended"/>
+    <arg name="robot_env" default="empty"/>
+    <arg name="enable_gazebo_gui" default="false"/>
+    <arg name="joint_state_gui" default="true"/>
+    <arg name="component_name" value="arm"/>
+    <arg name="ipa_sim" default="true"/>
+    <arg name="paused" default="false"/>
+    <arg name="sim" default="false"/>
+    <arg name="can_device" default="can0"/>
+    <arg name="interval_ms" default="10"/>
+    <arg name="use_external_sync" default="false"/>
+    <arg name="start_external_sync" default="$(arg use_external_sync)"/>
+    <arg name="pkg_hardware_config" default="$(find cob_hardware_config)"/>
+
+    <!-- send lwa4p_extended urdf to param server -->
+    <!-- Change schunk pkg with hardware config -->
+    <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find schunk_lwa4p_extended)/urdf/robot.urdf.xacro'" />
+
+    <!-- push robot_description to factory and spawn robot in gazebo -->
+    <!--node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model lwa4p_extended -z 0.01 " respawn="false" output="screen" /-->
+
+    <!-- joint state publisher -->
+    <node ns="arm" name="joint_states_relay" pkg="topic_tools" type="relay" args="joint_states /joint_states" cwd="node" respawn="true" output="screen"/>
+
+    <!-- robot state publisher -->
+    <include file="$(find cob_bringup)/tools/robot_state_publisher.launch">
+        <arg name="robot" value="$(arg robot)"/>
+        <!--arg name="joint_state_gui" value="$(arg joint_state_gui)"/-->
+    </include>
+
+    <include unless="$(arg sim)" file="$(find cob_bringup)/drivers/canopen_402.launch">
+        <arg name="robot" value="$(arg robot)"/>
+        <arg name="component_name" value="$(arg component_name)"/>
+        <arg name="can_device" value="$(arg can_device)"/>
+        <arg name="interval_ms" value="$(arg interval_ms)"/>
+        <arg name="use_external_sync" value="$(arg use_external_sync)"/>
+        <arg name="start_external_sync" value="$(arg start_external_sync)"/>
+    </include>
+
+    <!-- fake Calibration and HW-Services -->
+    <node pkg="rostopic" type="rostopic" name="fake_joint_calibration" args="pub /calibrated std_msgs/Bool true" />
+    <node if="$(arg sim)" ns="$(arg component_name)" pkg="cob_helper_tools" type="fake_driver.py" name="fake_driver" cwd="node" respawn="false" output="screen"/>
+
+    <include file="$(find cob_bringup)/controllers/generic_controller.launch">
+        <arg name="robot" value="$(arg robot)"/>
+        <arg name="component_name" value="$(arg component_name)"/>
+    </include>
+
+
+</launch>

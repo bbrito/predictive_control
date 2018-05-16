@@ -1,0 +1,58 @@
+
+### Kinematic configuration parameter
+
+# Debug mode
+activate_output: false
+activate_controller_node_output: false
+
+# Clock frequency //hz
+clock_frequency: 50
+
+# Joint_names
+joints_name: [arm_shoulder_pan_joint, arm_shoulder_lift_joint, arm_elbow_joint, arm_wrist_1_joint, arm_wrist_2_joint, arm_wrist_3_joint]
+
+# Kinematic chain parameter
+#robot_base_link: arm_base_link
+#chain_tip_link: arm_7_link
+chain_root_link: base_link
+target_frame: arm_target
+tracking_frame: gripper
+
+# predictive_config: # minimum_collision_distance should not be larger than ball radius
+self_collision:
+     ball_radius: 0.15
+     minimum_collision_distance: 0.20
+     collision_weight_factor: 0.01
+constraints:
+     position_constraints:
+           min: [-3.14, -3.14, -3.14, -3.14, -3.14, -3.14]
+           max: [3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
+     velocity_constraints:
+           min: [-0.50, -0.20, -0.50, -0.20, -0.50, -0.50]
+           max: [0.50, 0.20, 0.50, 0.20, 0.50, 0.50]
+     effort_constraints:
+           min: [-0.0, -0.0, -0.0, -0.0, -0.0, -0.0]
+           max: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+     #orientation_constraints:
+tolerance:
+     goal_tolerance:
+           # 3 position and 3 orientation tolerance
+           [0.03, 0.01, 0.01, 0.05, 0.05, 0.05]
+acado_config:
+     max_num_iteration: 10
+     kkt_tolerance: 1e-6
+     integrator_tolerance: 1e-8
+     start_time_horizon: 0.0
+     end_time_horizon: 3.0  # control and prediction horizon
+     discretization_intervals: 4
+     sampling_time: 0.025
+     use_lagrange_term: false
+     use_LSQ_term: true
+     use_mayer_term: false
+     weight_factors:
+           lsq_state_weight_factors:
+                #always 6 component 3 linear/position and 3 angular/Euler angle
+                [5.0, 5.0, 5.0, 10.0, 10.0, 10.0]
+           lsq_control_weight_factors:
+                # same as degree of freedom
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]

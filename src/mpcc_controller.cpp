@@ -84,7 +84,7 @@ bool MPCC::initialize()
     clock_frequency_ = controller_config_->clock_frequency_;
 
     //DEBUG
-    activate_debug_output_ = controller_config_->activate_controller_node_output_;
+    activate_debug_output_ = controller_config_->activate_debug_output_;
     tracking_ = true;
     move_action_result_.reach = false;
     plotting_result_ = controller_config_->plotting_result_;
@@ -92,9 +92,6 @@ bool MPCC::initialize()
     /// INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
     min_velocity_limit_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(controller_config_->vel_min_limit_);
     max_velocity_limit_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(controller_config_->vel_max_limit_);
-
-    cartesian_dist_ = double(0.0);
-    rotation_dist_ = double(0.0);
 
     // DEBUG
     if (controller_config_->activate_controller_node_output_)
@@ -106,6 +103,7 @@ bool MPCC::initialize()
     current_state_ = Eigen::VectorXd(controller_config_->state_dim_);
     last_state_ = Eigen::VectorXd(controller_config_->state_dim_);
     goal_pose_ = Eigen::VectorXd(controller_config_->state_dim_);
+    goal_pose_.setZero();
     // initialize KINEMATICS
     // TO BE DONE
 
@@ -158,8 +156,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
     {
       actionSuccess();
     }
-    publishZeroJointVelocity();
-    //traj_pose_array_.poses.clear();
+    //publishZeroJointVelocity();
+    controlled_velocity_pub_.publish(controlled_velocity_);
 
 }
 
@@ -284,8 +282,8 @@ void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
   }
   last_state_ = current_state_;
   current_state_(0) =  msg->position.x;
-  current_state_(0) =  msg->position.y;
-  current_state_(0) =  msg->orientation.z;
+  current_state_(1) =  msg->position.y;
+  current_state_(2) =  msg->orientation.z;
 
 }
 

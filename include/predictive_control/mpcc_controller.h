@@ -146,12 +146,6 @@ private:
   // Clock frequency
   double clock_frequency_;
 
-  // Cartesian distance/error
-  double cartesian_dist_;
-
-  // Rotation distance/error
-  double rotation_dist_;
-
   // Timmer
   ros::Timer timer_;
 

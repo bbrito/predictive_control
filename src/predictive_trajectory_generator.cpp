@@ -314,7 +314,9 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 {
 
   ROS_INFO("pd_frame_tracker::solveOptimalControlProblem");
-
+  ROS_INFO_STREAM("goal_pose: "<< goal_pose);
+  ROS_INFO_STREAM("controlled_velocity "<< controlled_velocity);
+  ROS_INFO_STREAM("last_position "<< last_position);
   //to be removed
   state_initialize_.setAll(1E-5);
   control_initialize_.setAll(1E-5);
@@ -355,7 +357,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
   f << dot(x(0)) == v(0)*cos(x(2));
   f << dot(x(1)) == v(0)*sin(x(2));
   f << dot(x(2)) == v(1);
-
+  ROS_INFO_STREAM("Differential Equation"<< f);
   // Optimal control problem
   if (activate_debug_output_)
   {
@@ -417,9 +419,9 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
     ROS_INFO("CONSTRAINTS");
   }
   OCP_problem.subjectTo(f);
-  OCP_problem.subjectTo(vel_min_limit_ <= v <= vel_max_limit_);
- // OCP_problem.subjectTo(AT_START, v == );
-  OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
+  //OCP_problem.subjectTo(vel_min_limit_ <= v <= vel_max_limit_);
+  // OCP_problem.subjectTo(AT_START, v == );
+  //OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
 
   // Optimal Control Algorithm
   if (activate_debug_output_)

@@ -84,10 +84,10 @@ public:
   bool initialize();
 
   /**
-   * @brief jointStateCallBack: Get current position and velocity at each joint
-   * @param msg: Read data from sensor_msgs::JointState
+   * @brief StateCallBack: Get current state of the robot
+   * @param msg: Read data from mobile_robot_state_publisher_node default type:
    */
-  void jointStateCallBack(const sensor_msgs::JointState::ConstPtr& msg);
+  void StateCallBack(const geometry_msgs::Pose::ConstPtr& msg);
 
   /**
    * @brief controlSquence: Known as main control of all classes
@@ -143,9 +143,6 @@ private:
 
    tf::TransformListener tf_listener_;
 
-   // degree of freedom
-   uint32_t degree_of_freedom_;
-
   // Clock frequency
   double clock_frequency_;
 
@@ -170,7 +167,7 @@ private:
     visualization_msgs::MarkerArray traj_marker_array_;
 
   // Distance between traget frame and tracking frame relative to base link
-  Eigen::VectorXd current_pose_;
+  Eigen::VectorXd current_state_, last_state_;
   Eigen::VectorXd goal_pose_;
   Eigen::VectorXd tf_traget_from_tracking_vector_;
 
@@ -187,7 +184,7 @@ private:
   Eigen::VectorXd last_velocity_;
 
   // Type of variable used to publish joint velocity
-  std_msgs::Float64MultiArray controlled_velocity_;
+  geometry_msgs::Twist controlled_velocity_;
 
   // predictive configuration
   boost::shared_ptr<predictive_configuration> controller_config_;
@@ -197,11 +194,11 @@ private:
   //boost::shared_ptr<Kinematic_calculations> kinematic_solver_;
 
   // self collision detector/avoidance
-  boost::shared_ptr<CollisionRobot> collision_detect_;
-  boost::shared_ptr<CollisionAvoidance> collision_avoidance_;
+  //boost::shared_ptr<CollisionRobot> collision_detect_;
+  //boost::shared_ptr<CollisionAvoidance> collision_avoidance_;
 
   // static collision detector/avoidance
-  boost::shared_ptr<StaticCollision> static_collision_avoidance_;
+  //boost::shared_ptr<StaticCollision> static_collision_avoidance_;
 
   // predictive trajectory generator
   boost::shared_ptr<pd_frame_tracker> pd_trajectory_generator_;

@@ -17,21 +17,18 @@ pd_frame_tracker::~pd_frame_tracker()
 void pd_frame_tracker::clearDataMember()
 {
   // resize matrix and vectors
-  const int jacobian_matrix_rows = 6, jacobian_matrix_columns = predictive_configuration::degree_of_freedom_;
-  Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
-  Jacobian_Matrix_.setAll(0.0);
-  state_initialize_.resize(jacobian_matrix_rows);
+  state_initialize_.resize(state_dim_);
   state_initialize_.setAll(0.0);
-  control_initialize_.resize(jacobian_matrix_columns);
+  control_initialize_.resize(control_dim_);
   control_initialize_.setAll(0.0);
 
-  control_min_constraint_.resize(jacobian_matrix_columns);
+  control_min_constraint_.resize(control_dim_);
   control_min_constraint_.setAll(0.0);
-  control_max_constraint_.resize(jacobian_matrix_columns);
+  control_max_constraint_.resize(control_dim_);
   control_max_constraint_.setAll(0.0);
 
-  lsq_state_weight_factors_.resize(jacobian_matrix_rows);
-  lsq_control_weight_factors_.resize(jacobian_matrix_columns);
+  lsq_state_weight_factors_.resize(state_dim_);
+  lsq_control_weight_factors_.resize(control_dim_);
 }
 
 // initialize data member of pd_frame_tracker class
@@ -49,12 +46,9 @@ bool pd_frame_tracker::initialize()
   }
 
   // intialize data members
-  const int jacobian_matrix_rows = 6, jacobian_matrix_columns = predictive_configuration::degree_of_freedom_;
-  Jacobian_Matrix_.resize(jacobian_matrix_rows, jacobian_matrix_columns);
-  Jacobian_Matrix_.setAll(1E-5);
-  state_initialize_.resize(jacobian_matrix_rows);
+  state_initialize_.resize(state_dim_);
   state_initialize_.setAll(1E-5);
-  control_initialize_.resize(jacobian_matrix_columns);
+  control_initialize_.resize(control_dim_);
   control_initialize_.setAll(1E-5);
 
   // initialize acado configuration parameters
@@ -189,83 +183,8 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
                                                      const Eigen::MatrixXd& Jacobian_Matrix,
                                                      const double& total_distance,
                                                      const double& delta_t)
-{/*
-  if (use_mayer_term_)
-  {
-    ;
-  }
-
-  if (use_lagrange_term_)
-  {
-
-    DVector normal_vector(Jacobian_Matrix.rows());
-    normal_vector.setAll(1.0);
-
-    DVector create_expression_vec = -(normal_vector.transpose() * Jacobian_Matrix_);
-
-    Expression expression(create_expression_vec);
-    // http://doc.aldebaran.com/2-1/naoqi/motion/reflexes-collision-avoidance.html
-    expression = expression.transpose() * v + total_distance * (self_collision_cost_constant_term_);
-    //  d / t , t = 1.0 / (L/n)
-
-    OCP_problem.minimizeLagrangeTerm(expression);
-
-  }
-
-  if (use_LSQ_term_)
-  {
-    ROS_ERROR_STREAM("************ CALLING COLLISION COST FUNCTION *****************");
-
-    DVector normal_vector(Jacobian_Matrix.rows());
-    normal_vector.setAll(1.0);
-
-    DVector create_expression_vec = -(normal_vector.transpose() * Jacobian_Matrix_);
-
-     Expression expression(create_expression_vec);
-     // http://doc.aldebaran.com/2-1/naoqi/motion/reflexes-collision-avoidance.html
-     expression = expression.transpose() * v + total_distance * (self_collision_cost_constant_term_);
-     //  d / t , t = 1.0 / (L/n)
-
-    //Expression expression(1);
-    //expression = total_distance + v.transpose()*v;
-
-     ROS_ERROR("====================================================================");
-     ROS_WARN_STREAM( expression.print(std::cout) );
-     ROS_ERROR("====================================================================");
-
-    //Expression expression(1.0);
-    //expression = total_distance + 0.5*(v.transpose()*v);
-
-
-    Function h;
-    h << expression;
-
-    // initialize function with controls
-    for (int i = 0u; i < control_vector_size_; ++i)
-    {
-      h << v(i);
-    }
-
-    DMatrix Q(h.getDim(), h.getDim());
-    Q(0,0) = 0.5;
-
-    // weighting of control weight, should filled after state wieghting factor
-    for (int i = 0u, j = 1; i < (control_vector_size_); ++i, ++j) // && lsq_control_vector_size
-    {
-      Q(j,j) = lsq_control_weight_factors_(i);
-    }
-
-    DVector ref(h.getDim());
-    ref.setAll(0.0);
-
-    // create objective function
-    OCP_problem.minimizeLSQ(Q, h, ref);
-
-    // set constraints related to collision cost
-    //OCP_problem.subjectTo(0.0 <= expression <= 5.0);
-    //OCP_problem.subjectTo(expression <= 5.0);
-  }
-*/
+{
+  //TO BE IMPLEMENTED
 }
 
 // Generate cost function of optimal control problem
@@ -276,12 +195,13 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 {
   if (use_mayer_term_)
   {
+    if (activate_debug_output_)
+    {
+      ROS_INFO("pd_frame_tracker::generateCostFunction: use_mayer_term_");
+    }
     OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
                                              +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
                                              +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
-                                     + 1.0 *( (x(3) - goal_pose(3)) * (x(3) - goal_pose(3))
-                                             +(x(4) - goal_pose(4)) * (x(4) - goal_pose(4))
-                                             +(x(5) - goal_pose(5)) * (x(5) - goal_pose(5)) )
                                      + 10.0 * (v.transpose() * v)
                                   );
 
@@ -390,86 +310,74 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
 
 void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
                                                   const Eigen::VectorXd &goal_pose,
-                                                  const double &self_collision_vector,
-                                                  const Eigen::VectorXd& static_collision_vector,
-                                                  std_msgs::Float64MultiArray& controlled_velocity)
+                                                  geometry_msgs::Twist& controlled_velocity)
 {
 
+  ROS_INFO("pd_frame_tracker::solveOptimalControlProblem");
+
+  //to be removed
   state_initialize_.setAll(1E-5);
   control_initialize_.setAll(1E-5);
 
-  // control initialize
-  control_initialize_(0) = controlled_velocity.data[0];
-  control_initialize_(1) = controlled_velocity.data[1];
-  control_initialize_(2) = controlled_velocity.data[2];
-  control_initialize_(3) = controlled_velocity.data[3];
-  control_initialize_(4) = controlled_velocity.data[4];
-  control_initialize_(5) = controlled_velocity.data[5];
-  control_initialize_(6) = controlled_velocity.data[6];
+  // control initialize with previous command
+  control_initialize_(0) = controlled_velocity.linear.x;
+  control_initialize_(1) = controlled_velocity.angular.z;
 
   // state initialize
+  if (activate_debug_output_)
+  {
+    ROS_INFO("state initialize");
+  }
   state_initialize_(0) = last_position(0);
   state_initialize_(1) = last_position(1);
   state_initialize_(2) = last_position(2);
-  state_initialize_(3) = last_position(3);
-  state_initialize_(4) = last_position(4);
-  state_initialize_(5) = last_position(5);
-
-  //std::cout<<"\033[32m"<<"____OLD GOAL POSE _______"<<goal_pose.transpose()<<"______"<<"\033[36;0m"<<std::endl;
-
-  //calculate quaternion error
-  Eigen::VectorXd pose = goal_pose;
-  Eigen::VectorXd temp = last_position;
-  geometry_msgs::Quaternion quat_tracking, quat_target, quat_inv, quat_error;
-
-  //REPLACE FOR THE CAR PARAMETERS
-  // current gripper pose
-  getTransform("chain_root_link_", "tracking_frame_", temp, quat_tracking);
-  // current frame tracker pose
-  getTransform("chain_root_link_", "target_frame_", temp, quat_target);
-
-  calculateQuaternionInverse(quat_tracking, quat_inv);
-  calculateQuaternionProduct(quat_inv, quat_target, quat_error);
-
-  tf::Quaternion quat(quat_error.x, quat_error.y, quat_error.z, quat_error.w);
-  tf::Matrix3x3 matrix(quat);
-
-  double r, p, y;
-  matrix.getRPY(r, p, y);
-  pose(3) = r;
-  pose(4) = p;
-  pose(5) = y;
-  //std::cout<<"\033[32m"<<"____NEW GOAL POSE _______"<<pose.transpose()<<"______"<<"\033[36;0m"<<std::endl;
-
-  //std::cout<<"\033[95m"<<"________________________"<<self_collision_vector<<"___________________"<<"\033[36;0m"<<std::endl;
-
 
   // OCP variables
-  DifferentialState x("", 3, 1);       // position
-  Control v("", 2, 1);            // velocity
+  if (activate_debug_output_)
+  {
+    ROS_INFO("OCP variables");
+  }
+  DifferentialState x("", state_dim_, 1);       // position
+  Control v("", control_dim_, 1);            // velocity
 
   // Clear state, control variable
   x.clearStaticCounters();
   v.clearStaticCounters();
 
   // Differential Equation
+  if (activate_debug_output_)
+  {
+    ROS_INFO("Differential Equation");
+  }
   DifferentialEquation f;
 
   // Differential Kinematic
-  f << dot(x) == (Jacobian_Matrix_ * v);
+  f << dot(x(0)) == v(0)*cos(x(2));
+  f << dot(x(1)) == v(0)*sin(x(2));
+  f << dot(x(2)) == v(1);
 
   // Optimal control problem
+  if (activate_debug_output_)
+  {
+    ROS_INFO("Optimal control problem");
+  }
   // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
   OCP OCP_problem( start_time_, end_time_, discretization_intervals_);
 
   // generate cost function
+  if (activate_debug_output_)
+  {
+    ROS_INFO("generate cost function");
+  }
   generateCostFunction(OCP_problem, x, v, goal_pose);
 
   // generate collision cost function
-  if (self_collision_vector > (0.15 + 0.10))
+  //TO BE IMPLEMENTED
+  /* if (self_collision_vector > (0.15 + 0.10))
   {
     generateCollisionCostFunction(OCP_problem, v, Jacobian_Matrix_, self_collision_vector, 0.0);
   }
+
   //--------------------------------------------------- static collision cost ------------------
   DVector normal_vector(3);
   normal_vector.setAll(1.0);
@@ -489,7 +397,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 
   DVector ref(1);
   ref.setAll(0.0);
-
+*/
   /*if (self_collision_vector.sum() >= 1000)
   {
     Q(0,0) = 0.001;
@@ -504,12 +412,20 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 
 
   //-----------------------------------------------------------------------------------------------------
+  if (activate_debug_output_)
+  {
+    ROS_INFO("CONSTRAINTS");
+  }
   OCP_problem.subjectTo(f);
-  OCP_problem.subjectTo(-1.00 <= v <= 1.00);
+  OCP_problem.subjectTo(vel_min_limit_ <= v <= vel_max_limit_);
  // OCP_problem.subjectTo(AT_START, v == );
   OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
 
   // Optimal Control Algorithm
+  if (activate_debug_output_)
+  {
+    ROS_INFO("Optimal Control Algorithm");
+  }
   RealTimeAlgorithm OCP_solver(OCP_problem, 0.025); // 0.025 sampling time
 
   OCP_solver.initializeControls(control_initialize_);
@@ -518,6 +434,10 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
   setAlgorithmOptions(OCP_solver);
 
   // setup controller
+  if (activate_debug_output_)
+  {
+    ROS_INFO("setup controller");
+  }
   Controller controller(OCP_solver);
   controller.init(0.0, state_initialize_);
   controller.step(0.0, state_initialize_);
@@ -528,33 +448,9 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
   ROS_WARN("================");
   u.print();
   ROS_WARN("================");
-  controlled_velocity.data.resize(3, 0.0);
+  controlled_velocity.linear.x = u(0);
+  controlled_velocity.angular.z = u(1);
 
-  for (int i=0u; i < 3; ++i)
-  {
-    controlled_velocity.data[i] = u(i);
-  }
-  /*if (static_collision_vector.sum() >= 0.15)
-  {
-    for (int i=0u; i < jacobian_matrix_columns; ++i)
-    {
-      controlled_velocity.data[i] = u(i)*0.01;
-    }
-  }
-  else
-  {
-    for (int i=0u; i < jacobian_matrix_columns; ++i)
-    {
-      controlled_velocity.data[i] = u(i);
-    }
-  }*/
- /* controlled_velocity.data[0] = u(0);
-  controlled_velocity.data[1] = u(1);
-  controlled_velocity.data[2] = u(2);
-  controlled_velocity.data[3] = u(3);
-  controlled_velocity.data[4] = u(4);
-  controlled_velocity.data[5] = u(5);
-  controlled_velocity.data[6] = u(6);*/
 }
 
 // setup acado algorithm options, need to set solver when calling this function

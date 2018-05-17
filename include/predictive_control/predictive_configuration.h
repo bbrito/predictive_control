@@ -59,6 +59,10 @@ public:
   bool initialize_success_;
   bool set_velocity_constraints_;
 
+	/** inputs and output topic definition **/
+  std::string output_cmd;
+	std::string robot_state_topic_;
+
   // kinematic of robotics manipulator
   unsigned int degree_of_freedom_;
 
@@ -77,6 +81,8 @@ public:
   // predictive control
   double clock_frequency_;  //hz clock Frequency
   double sampling_time_;
+  int state_dim_;
+  int control_dim_;
 
   // self collision distance
   double ball_radius_;

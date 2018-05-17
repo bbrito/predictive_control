@@ -78,9 +78,7 @@ public:
     */
    void solveOptimalControlProblem(const Eigen::VectorXd& last_position,
                                   const Eigen::VectorXd& goal_pose,
-                                  const double& self_collision_vector,
-                                  const Eigen::VectorXd& static_collision_vector,
-                                  std_msgs::Float64MultiArray& controlled_velocity
+                                   geometry_msgs::Twist& controlled_velocity
                                   );
 
    /**
@@ -114,9 +112,6 @@ private:
 
    // tf listerner
    tf::TransformListener tf_listener_;
-
-   // Jacobian matrix
-   DMatrix Jacobian_Matrix_;
 
    // state initialization
    DVector state_initialize_;

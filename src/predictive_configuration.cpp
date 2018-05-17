@@ -96,6 +96,31 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     }
   }
 
+  // Set optimal control problem dimensions
+  if (!nh.getParam("state_dim", state_dim_) )
+  {
+    ROS_WARN(" Parameter 'state_dim' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
+  if (!nh.getParam ("control_dim", control_dim_) )
+  {
+    ROS_WARN(" Parameter 'control_dim' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
+  if (!nh.getParam ("output_cmd", output_cmd) )
+  {
+    ROS_WARN(" Parameter 'output_cmd' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
+  if (!nh.getParam ("robot_state_topic", robot_state_topic_) )
+  {
+    ROS_WARN(" Parameter 'robot_state_topic' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
   // check requested parameter availble on parameter server if not than set default value
   nh.param("clock_frequency", clock_frequency_, double(50.0)); // 50 hz
   nh.param("sampling_time", sampling_time_, double(0.025)); // 0.025 second

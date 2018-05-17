@@ -47,7 +47,8 @@ bool MPCC::initialize()
     //bool kinematic_success = kinematic_solver_->initialize();
     bool kinematic_success = true;
 
-    collision_detect_.reset(new CollisionRobot());
+    // COMMENTED OUT FOR NOW
+    /*collision_detect_.reset(new CollisionRobot());
     bool collision_success = collision_detect_->initializeCollisionRobot();
 
     collision_avoidance_.reset(new CollisionAvoidance());
@@ -55,21 +56,24 @@ bool MPCC::initialize()
 
     static_collision_avoidance_.reset(new StaticCollision());
     bool static_collision_success = static_collision_avoidance_->initializeStaticCollisionObject();
+    */
 
     pd_trajectory_generator_.reset(new pd_frame_tracker());
     bool pd_traj_success = pd_trajectory_generator_->initialize();
 
-    // check successfully initialization of all classes
+    /* check successfully initialization of all classes
     if (controller_config_success == false || kinematic_success == false || collision_avoidance_success == false
         || collision_success == false || static_collision_success == false || pd_traj_success == false || controller_config_->initialize_success_ == false)
-    {
+    */
+    if (pd_traj_success == false || controller_config_success == false)
+     {
       ROS_ERROR("MPCC: FAILED TO INITILIZED!!");
       std::cout << "States: \n"
                 << " pd_config: " << std::boolalpha << controller_config_success << "\n"
                 //<< " kinematic solver: " << std::boolalpha << kinematic_success << "\n"
-                << " collision avoidance: " << std::boolalpha << collision_avoidance_success << "\n"
-                << " collision detect: " << std::boolalpha << collision_success << "\n"
-                << " static collision avoidance: " << std::boolalpha << static_collision_success << "\n"
+                //<< " collision avoidance: " << std::boolalpha << collision_avoidance_success << "\n"
+                //<< " collision detect: " << std::boolalpha << collision_success << "\n"
+                //<< " static collision avoidance: " << std::boolalpha << static_collision_success << "\n"
                 << " pd traj generator: " << std::boolalpha << pd_traj_success << "\n"
                 << " pd config init success: " << std::boolalpha << controller_config_->initialize_success_
                 << std::endl;
@@ -99,18 +103,11 @@ bool MPCC::initialize()
     }
 
     // resize position and velocity velocity vectors
-    //current_position_ = Eigen::VectorXd(degree_of_freedom_);
-    last_position_ = Eigen::VectorXd(degree_of_freedom_);
-    //current_velocity_ = Eigen::VectorXd(degree_of_freedom_);
-    last_velocity_ = Eigen::VectorXd(degree_of_freedom_);
-
+    current_state_ = Eigen::VectorXd(controller_config_->state_dim_);
+    last_state_ = Eigen::VectorXd(controller_config_->state_dim_);
+    goal_pose_ = Eigen::VectorXd(controller_config_->state_dim_);
     // initialize KINEMATICS
     // TO BE DONE
-
-    // resize controlled velocity variable, that publishing
-    controlled_velocity_.data.resize(degree_of_freedom_, 0.0);
-    for (int i=0u; i < degree_of_freedom_; ++i)
-      controlled_velocity_.data[i] = last_velocity_(i);
 
     // ros interfaces
     static const std::string MOVE_ACTION_NAME = "move_action";
@@ -119,13 +116,11 @@ bool MPCC::initialize()
     move_action_server_->registerPreemptCallback(boost::bind(&MPCC::movePreemptCB, this));
     move_action_server_->start();
 
-    robot_state_sub_ = nh.subscribe("joint_states", 1, &MPCC::jointStateCallBack, this);
-    //REPLACE BY JACKAL INTERFACE OR WE NEED TO DEFINE ONE
-    //controlled_velocity_pub_ = nh.advertise<std_msgs::Float64MultiArray>("joint_group_velocity_controller/command", 1);
-    cartesian_error_pub_ = nh.advertise<geometry_msgs::PoseStamped>("cartesian_error",1);
-    //traj_pub_ = nh.advertise<geometry_msgs::PoseArray>("trajectory",1);
-    //SHOULD WE USE OTHER TYPE FOR THE CAR?
+    robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
+
+    //To be implemented
     traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
+    controlled_velocity_pub_ = nh.advertise<geometry_msgs::Twist>(controller_config_->output_cmd,1);
 
     ros::Duration(1).sleep();
 
@@ -145,51 +140,18 @@ bool MPCC::initialize()
 // update this function 1/colck_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
-  std::cout.precision(20);
-
-  ROS_WARN_STREAM(goal_pose_.transpose());
-
-  //std_msgs::Float64MultiArray enforced_velocity_vector;
-  //enforceVelocityInLimits(controlled_velocity_, enforced_velocity_vector);
-
+  if (activate_debug_output_)
+  {
+    ROS_INFO("MPCC::runNode");
+  }
   // solver optimal control problem
-  pd_trajectory_generator_->solveOptimalControlProblem(current_pose_,
+  pd_trajectory_generator_->solveOptimalControlProblem(current_state_,
                                                        goal_pose_,
-                                                       collision_avoidance_->getDistanceCostFunction(),
-                                                       static_collision_avoidance_->collision_cost_vector_,
                                                        controlled_velocity_);
 
-  //controlled_velocity_ = enforced_velocity_vector;
-
-  bool velocity_violation = checkVelocityLimitViolation(controlled_velocity_);
-
-  // velocity violate but position still within range, enfoce joint velocity
-  if( velocity_violation == true)
-  {
-    ROS_ERROR("Position is still in range, Volocity violate!!");
-    std_msgs::Float64MultiArray enforced_velocity_vector = controlled_velocity_;
-    //enforceVelocityInLimits(enforced_velocity_vector, controlled_velocity_); TO BE IMPLEMENTED
-  }
-/*
-  // position violate but velocity still within range
-  if( checkPositionLimitViolation(last_position_) && !checkVelocityLimitViolation(controlled_velocity_))
-  {
-    // stop once and than continue execution
-  }
-
-  // position and velocity are not violate, continue execution
-  if( !checkPositionLimitViolation(last_position_) && !checkVelocityLimitViolation(controlled_velocity_))
-  {
-    // continue execution
-  }*/
-
-  // check infinitesimal distance
-  //Eigen::VectorXd distance_vector;
-  //getTransform(controller_config_->tracking_frame_, target_frame_, tf_traget_from_tracking_vector_);
-
   // publishes error stamped for plot, trajectory
-  this->publishErrorPose(tf_traget_from_tracking_vector_);
-  this->publishTrajectory();
+  //this->publishErrorPose(tf_traget_from_tracking_vector_);
+  //this->publishTrajectory();
 
     // publish zero controlled velocity
     if (!tracking_)
@@ -314,66 +276,17 @@ int MPCC::moveCallBack(const predictive_control::moveGoalConstPtr& move_action_g
 }
 */
 // read current position and velocity of robot joints
-void MPCC::jointStateCallBack(const sensor_msgs::JointState::ConstPtr& msg)
+void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {
-  Eigen::VectorXd current_position = Eigen::VectorXd(degree_of_freedom_);
-  Eigen::VectorXd current_velocity = Eigen::VectorXd(degree_of_freedom_);
-  int count = 0;
-
-  for (unsigned int i = 0; i < degree_of_freedom_; ++i)
+  if (activate_debug_output_)
   {
-    for (unsigned int j = 0; j < msg->name.size(); ++j)
-    {
-        current_position(i) =  msg->position[j] ;
-        current_velocity(i) =  msg->velocity[j] ;
-        count++;
-    }
+    ROS_INFO("MPCC::StateCallBack");
   }
+  last_state_ = current_state_;
+  current_state_(0) =  msg->position.x;
+  current_state_(0) =  msg->position.y;
+  current_state_(0) =  msg->orientation.z;
 
-  if (count != degree_of_freedom_)
-  {
-    ROS_WARN(" Joint names are mismatched, need to check yaml file or code ... joint_state_callBack ");
-  }
-
-  else
-  {
-    last_position_ = current_position;
-    last_velocity_ = current_velocity;
-
-    // check position violation criteria, enforcing to be in limit
-    //enforcePositionInLimits(current_position, last_position_);
-
-    // calculate forward kinematic
-    // get current and goal pose  w.r.t root link
-    //kinematic_solver_->getGripperPoseVectorFromFK(FK_Matrix_, current_pose_);
-
-
-    // update collision according to positions
-    //collision_detect_->updateCollisionVolume(kinematic_solver_->FK_Homogenous_Matrix_, kinematic_solver_->Transformation_Matrix_);
-
-    // update static collision accroding to robot critical point computed in collisionRobot class
-    //static_collision_avoidance_->updateStaticCollisionVolume(collision_detect_->collision_matrix_);
-
-    // Output is active, than only print joint state values
-    if (controller_config_->activate_controller_node_output_)
-    {
-      std::cout<< "\n --------------------------------------------- \n";
-      std::cout << "Current joint position: [ " << current_position.transpose() << " ]" << std::endl;
-      std::cout << "Current joint velocity: [ " << current_velocity.transpose() << " ]" << std::endl;
-      /*std::cout << "Current joint position: [";
-      for_each(current_position.begin(), current_position.end(), [](double& p)
-                            { std::cout<< std::setprecision(5) << p << ", " ; }
-      );
-      std::cout<<"]"<<std::endl;
-
-      std::cout << "Current joint velocity: [";
-      for_each(current_velocity.begin(), current_velocity.end(), [](double& v)
-                            { std::cout<< std::setprecision(5) << v << ", " ; }
-      );
-      std::cout<<"]"<<std::endl;*/
-      std::cout<< "\n --------------------------------------------- \n";
-    }
-  }
 }
 
 /*
@@ -446,15 +359,10 @@ void MPCC::publishZeroJointVelocity()
   {
     ROS_INFO("Publishing ZERO joint velocity!!");
   }
+  geometry_msgs::Twist pub_msg;
 
-  controlled_velocity_.data.resize(degree_of_freedom_, 0.0);
-  controlled_velocity_.data[0] = 0.0;
-  controlled_velocity_.data[1] = 0.0;
-  controlled_velocity_.data[2] = 0.0;
-  controlled_velocity_.data[3] = 0.0;
-  controlled_velocity_.data[4] = 0.0;
-  controlled_velocity_.data[5] = 0.0;
-  controlled_velocity_.data[6] = 0.0;
+  controlled_velocity_ = pub_msg;
+
   controlled_velocity_pub_.publish(controlled_velocity_);
 }
 
@@ -511,7 +419,7 @@ void MPCC::publishTrajectory()
   //marker.header.stamp = ros::Time(0).now();
 
   // convert pose from eigen vector
-  this->transformEigenToGeometryPose(current_pose_, pose);
+  this->transformEigenToGeometryPose(current_state_, pose);
 
   // pose array
   marker.pose = pose;
@@ -528,16 +436,15 @@ bool MPCC::transformEigenToGeometryPose(const Eigen::VectorXd &eigen_vector, geo
   // traslation
   pose.position.x = eigen_vector(0);
   pose.position.y = eigen_vector(1);
-  pose.position.z = eigen_vector(2);
 
   tf::Matrix3x3 quat_matrix;
-  quat_matrix.setRPY(eigen_vector(3), eigen_vector(4), eigen_vector(5));
+  quat_matrix.setRPY(0, 0, eigen_vector(2));
 
   if (activate_debug_output_)
   {
-    std::cout << "\033[32m" << "publishErrorPose:" << " roll:" << eigen_vector(3)
-              << " pitch:" << eigen_vector(4)
-              << " yaw:" << eigen_vector(5)<< "\033[0m" <<std::endl;
+    std::cout << "\033[32m" << "publishErrorPose:" << " x:" << eigen_vector(0)
+              << " y:" << eigen_vector(1)
+              << " yaw:" << eigen_vector(2)<< "\033[0m" <<std::endl;
   }
 
   tf::Quaternion quat_tf;

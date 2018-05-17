@@ -11,10 +11,11 @@ robot_base_link:
 
 tracking_frame:
 
+#Inputs and output topics topic
+output_cmd: '/jackal_velocity_controller/cmd_vel'
+robot_state_topic: '/robot_state'
 
 # limit parameter
-min_position_limit: -3.14
-max_position_limit:  3.14
 min_velocity_limit:  0.0
 max_velocity_limit:  2.0
 desired_velocity: 1.5

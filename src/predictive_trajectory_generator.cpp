@@ -313,10 +313,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
                                                   geometry_msgs::Twist& controlled_velocity)
 {
 
-  ROS_INFO("pd_frame_tracker::solveOptimalControlProblem");
-  ROS_INFO_STREAM("goal_pose: "<< goal_pose);
-  ROS_INFO_STREAM("controlled_velocity "<< controlled_velocity);
-  ROS_INFO_STREAM("last_position "<< last_position);
+
   //to be removed
   state_initialize_.setAll(1E-5);
   control_initialize_.setAll(1E-5);
@@ -328,6 +325,10 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
   // state initialize
   if (activate_debug_output_)
   {
+    ROS_INFO("pd_frame_tracker::solveOptimalControlProblem");
+    ROS_INFO_STREAM("goal_pose: "<< goal_pose);
+    ROS_INFO_STREAM("controlled_velocity "<< controlled_velocity);
+    ROS_INFO_STREAM("last_position "<< last_position);
     ROS_INFO("state initialize");
   }
   state_initialize_(0) = last_position(0);
@@ -357,10 +358,11 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
   f << dot(x(0)) == v(0)*cos(x(2));
   f << dot(x(1)) == v(0)*sin(x(2));
   f << dot(x(2)) == v(1);
-  ROS_INFO_STREAM("Differential Equation"<< f);
+
   // Optimal control problem
   if (activate_debug_output_)
   {
+    ROS_INFO_STREAM("Differential Equation"<< f);
     ROS_INFO("Optimal control problem");
   }
   // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
@@ -447,9 +449,11 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
   // get control at first step and update controlled velocity vector
   DVector u;
   controller.getU(u);
-  ROS_WARN("================");
-  u.print();
-  ROS_WARN("================");
+  if (activate_debug_output_) {
+    ROS_WARN("================");
+    u.print();
+    ROS_WARN("================");
+  }
   controlled_velocity.linear.x = u(0);
   controlled_velocity.angular.z = u(1);
 

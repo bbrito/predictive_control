@@ -8,7 +8,7 @@ activate_controller_node_output: true
 plotting_result: true
 
 # Clock frequency //hz
-clock_frequency: 100
+clock_frequency: 50
 
 #Optimal control problem dimensions
 state_dim: 3

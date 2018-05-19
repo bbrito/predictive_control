@@ -49,226 +49,237 @@
 #include <predictive_control/moveActionGoal.h>
 #include <predictive_control/collision_avoidance.h>
 
+// joint trajectory interface
+#include <control_msgs/FollowJointTrajectoryAction.h>
+#include <predictive_control/trajAction.h>
+#include <predictive_control/trajActionGoal.h>
+
+
 /*
 struct hold_pose
 {
-  bool hold_success_;
-  Eigen::VectorXd pose_hold_vector_;
+    bool hold_success_;
+    Eigen::VectorXd pose_hold_vector_;
 };*/
 
 class MPCC
 {
-  /** Managing execution of all classes of predictive control
-   * - Handle self collsion avoidance
-   * - Extract current position and velocity of manipulator joints
-   * - Publish controlled joint velocity
-   */
-    //Info: static member for transform std::vector to Eigen::vector
+    /** Managing execution of all classes of predictive control
+     * - Handle self collsion avoidance
+     * - Extract current position and velocity of manipulator joints
+     * - Publish controlled joint velocity
+     */
+        //Info: static member for transform std::vector to Eigen::vector
 
 public:
 
-  /**
-   * @brief MPCC: Default constructor, allocate memory
-   */
-  MPCC();
+    /**
+     * @brief MPCC: Default constructor, allocate memory
+     */
+    MPCC();
 
-  /**
-   * @brief ~MPCC: Default distructor, free memory
-   */
-  ~MPCC();
+    /**
+     * @brief ~MPCC: Default distructor, free memory
+     */
+    ~MPCC();
 
-  /**
-   * @brief initialize: Initialize all helper class of predictive control and subscibe joint state and publish controlled joint velocity
-   * @return: True with successuflly initialize all classes else false
-   */
-  bool initialize();
+    /**
+     * @brief initialize: Initialize all helper class of predictive control and subscibe joint state and publish controlled joint velocity
+     * @return: True with successuflly initialize all classes else false
+     */
+    bool initialize();
 
-  /**
-   * @brief StateCallBack: Get current state of the robot
-   * @param msg: Read data from mobile_robot_state_publisher_node default type:
-   */
-  void StateCallBack(const geometry_msgs::Pose::ConstPtr& msg);
+    /**
+     * @brief StateCallBack: Get current state of the robot
+     * @param msg: Read data from mobile_robot_state_publisher_node default type:
+     */
+    void StateCallBack(const geometry_msgs::Pose::ConstPtr& msg);
 
-  /**
-   * @brief controlSquence: Known as main control of all classes
-   */
-  void controlSquence(void);
+    /**
+     * @brief controlSquence: Known as main control of all classes
+     */
+    void controlSquence(void);
 
-  /**
-   * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
-   * @param from: source frame from find transformation
-   * @param to: target frame till find transformation
-   * @param stamped_pose: Resultant poseStamed between source and target frame
-   * @return: true if transform else false
-   */
-  /*bool getTransform(const std::string& from,
-                    const std::string& to,
-                    geometry_msgs::PoseStamped& stamped_pose
-                    );*/
+    /**
+     * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
+     * @param from: source frame from find transformation
+     * @param to: target frame till find transformation
+     * @param stamped_pose: Resultant poseStamed between source and target frame
+     * @return: true if transform else false
+     */
+    /*bool getTransform(const std::string& from,
+                                        const std::string& to,
+                                        geometry_msgs::PoseStamped& stamped_pose
+                                        );*/
 
-  /**
-   * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
-   * @param from: source frame from find transformation
-   * @param to: target frame till find transformation
-   * @param stamped_pose: Resultant poseStamed between source and target frame
-   * @return: true if transform else false
-   */
-  bool getTransform(const std::string& from,
-                    const std::string& to,
-                    Eigen::VectorXd& stamped_pose
-                    );
+    /**
+     * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
+     * @param from: source frame from find transformation
+     * @param to: target frame till find transformation
+     * @param stamped_pose: Resultant poseStamed between source and target frame
+     * @return: true if transform else false
+     */
+    bool getTransform(const std::string& from,
+                                        const std::string& to,
+                                        Eigen::VectorXd& stamped_pose
+                                        );
 
 
-  bool transformEigenToGeometryPose(const Eigen::VectorXd& eigen_vector, geometry_msgs::Pose& pose);
+    bool transformEigenToGeometryPose(const Eigen::VectorXd& eigen_vector, geometry_msgs::Pose& pose);
 
-  /** public data member */
-  // joint state subsciber to get current joint value
-  ros::Subscriber robot_state_sub_;
+    /** public data member */
+    // joint state subsciber to get current joint value
+    ros::Subscriber robot_state_sub_;
 
-  // controlled joint velocity, should be control velocity of controller
-  ros::Publisher controlled_velocity_pub_;
+    // controlled joint velocity, should be control velocity of controller
+    ros::Publisher controlled_velocity_pub_;
 
-  // publishes error vector between tracking and target frame
-  ros::Publisher cartesian_error_pub_;
+    // publishes error vector between tracking and target frame
+    ros::Publisher cartesian_error_pub_;
 
-  // publish trajectory
-  ros::Publisher traj_pub_;
+    // publish trajectory
+    ros::Publisher traj_pub_;
 
 private:
 
-  ros::NodeHandle nh;
+    ros::NodeHandle nh;
 
-  // DEBUG
-  bool plotting_result_;
+    // DEBUG
+    bool plotting_result_;
 
-   tf::TransformListener tf_listener_;
+     tf::TransformListener tf_listener_;
 
-  // Clock frequency
-  double clock_frequency_;
+    // Clock frequency
+    double clock_frequency_;
 
-  // Timmer
-  ros::Timer timer_;
+    // Timmer
+    ros::Timer timer_;
 
-  // activate output of this node
-  bool activate_debug_output_;
-  // used to set desired position by mannually or using interactive marker node
-  bool tracking_;
-  std::string target_frame_;
+    // activate output of this node
+    bool activate_debug_output_;
+    // used to set desired position by mannually or using interactive marker node
+    bool tracking_;
+    std::string target_frame_;
 
 
-  // store pose value for visualize trajectory
-  //geometry_msgs::PoseArray traj_pose_array_;
-    visualization_msgs::MarkerArray traj_marker_array_;
+    // store pose value for visualize trajectory
+    //geometry_msgs::PoseArray traj_pose_array_;
+        visualization_msgs::MarkerArray traj_marker_array_;
 
-  // Distance between traget frame and tracking frame relative to base link
-  Eigen::VectorXd current_state_, last_state_;
-  Eigen::VectorXd goal_pose_;
-  Eigen::VectorXd tf_traget_from_tracking_vector_;
+    // Distance between traget frame and tracking frame relative to base link
+    Eigen::VectorXd current_state_, last_state_;
+    Eigen::VectorXd goal_pose_;
+    Eigen::VectorXd tf_traget_from_tracking_vector_;
 
-  Eigen::VectorXd min_velocity_limit_;
-  Eigen::VectorXd max_velocity_limit_;
+    Eigen::VectorXd min_velocity_limit_;
+    Eigen::VectorXd max_velocity_limit_;
 
-  // Kinematic variables
+    // Kinematic variables
 	//To be done kinematic model car
 
-  // Current and last position and velocity from joint state callback
-  //Eigen::VectorXd current_position_;
-  Eigen::VectorXd last_position_;
-  //Eigen::VectorXd current_velocity_;
-  Eigen::VectorXd last_velocity_;
+    // Current and last position and velocity from joint state callback
+    //Eigen::VectorXd current_position_;
+    Eigen::VectorXd last_position_;
+    //Eigen::VectorXd current_velocity_;
+    Eigen::VectorXd last_velocity_;
 
-  // Type of variable used to publish joint velocity
-  geometry_msgs::Twist controlled_velocity_;
+    // Type of variable used to publish joint velocity
+    geometry_msgs::Twist controlled_velocity_;
 
-  // predictive configuration
-  boost::shared_ptr<predictive_configuration> controller_config_;
+    // predictive configuration
+    boost::shared_ptr<predictive_configuration> controller_config_;
 
-  // kinematic calculation
-  //TO BE REPLACED BY CAR CLASS CALCULATION
-  //boost::shared_ptr<Kinematic_calculations> kinematic_solver_;
+    // kinematic calculation
+    //TO BE REPLACED BY CAR CLASS CALCULATION
+    //boost::shared_ptr<Kinematic_calculations> kinematic_solver_;
 
-  // self collision detector/avoidance
-  //boost::shared_ptr<CollisionRobot> collision_detect_;
-  //boost::shared_ptr<CollisionAvoidance> collision_avoidance_;
+    // self collision detector/avoidance
+    //boost::shared_ptr<CollisionRobot> collision_detect_;
+    //boost::shared_ptr<CollisionAvoidance> collision_avoidance_;
 
-  // static collision detector/avoidance
-  //boost::shared_ptr<StaticCollision> static_collision_avoidance_;
+    // static collision detector/avoidance
+    //boost::shared_ptr<StaticCollision> static_collision_avoidance_;
 
-  // predictive trajectory generator
-  boost::shared_ptr<pd_frame_tracker> pd_trajectory_generator_;
+    // predictive trajectory generator
+    boost::shared_ptr<pd_frame_tracker> pd_trajectory_generator_;
 
-  // move to goal position action
-  boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::moveAction> > move_action_server_;
+    // move to goal position action
+    boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::moveAction> > move_action_server_;
 
-  /// Action interface
-  predictive_control::moveResult move_action_result_;
-  predictive_control::moveFeedback move_action_feedback_;
-  void moveGoalCB();
-  void movePreemptCB();
-  void actionSuccess();
-  void actionAbort();
+	boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::trajAction> > moveit_action_server_;
 
-  /**
-   * @brief spinNode: spin node means ROS is still running
-   */
-  void spinNode();
+    /// Action interface
+    predictive_control::moveResult move_action_result_;
+    predictive_control::moveFeedback move_action_feedback_;
+	predictive_control::trajActionFeedback moveit_action_feedback_;
+	predictive_control::trajActionResult moveit_action_result_;
+    void moveGoalCB();
+    void movePreemptCB();
+	void moveitGoalCB();
+    void actionSuccess();
+    void actionAbort();
 
-  /**
-   * @brief runNode: Continue updating this function depend on clock frequency
-   * @param event: Used for computation of duration of first and last event
-   */
-  void runNode(const ros::TimerEvent& event);
+    /**
+     * @brief spinNode: spin node means ROS is still running
+     */
+    void spinNode();
 
-  /**
-   * @brief publishZeroJointVelocity: published zero joint velocity is statisfied cartesian distance
-   */
-  void publishZeroJointVelocity();
+    /**
+     * @brief runNode: Continue updating this function depend on clock frequency
+     * @param event: Used for computation of duration of first and last event
+     */
+    void runNode(const ros::TimerEvent& event);
 
-  /**
-   * @brief publishErrorPose: published error pose between traget pose and tracking frame, it should approach to zero
-   */
-  void publishErrorPose(const Eigen::VectorXd& error);
+    /**
+     * @brief publishZeroJointVelocity: published zero joint velocity is statisfied cartesian distance
+     */
+    void publishZeroJointVelocity();
+
+    /**
+     * @brief publishErrorPose: published error pose between traget pose and tracking frame, it should approach to zero
+     */
+    void publishErrorPose(const Eigen::VectorXd& error);
 
 
-  void publishTrajectory(void);
+    void publishTrajectory(void);
 
-  /**
-   * @brief checkVelocityLimitViolation: check velocity limit violate, limit containts lower and upper limit
-   * @param joint_velocity: current velocity joint values
-   * @param velocity_tolerance: tolerance in joint values after reaching minimum and maximum values
-   * @return true with velocity limit violation else false
-   */
-  bool checkVelocityLimitViolation(const std_msgs::Float64MultiArray& joint_velocity,
-                                   const double& velocity_tolerance = 0.0
-                                  );
-  void enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
-									   std_msgs::Float64MultiArray& enforced_joint_velocity);
+    /**
+     * @brief checkVelocityLimitViolation: check velocity limit violate, limit containts lower and upper limit
+     * @param joint_velocity: current velocity joint values
+     * @param velocity_tolerance: tolerance in joint values after reaching minimum and maximum values
+     * @return true with velocity limit violation else false
+     */
+    bool checkVelocityLimitViolation(const std_msgs::Float64MultiArray& joint_velocity,
+                                                                     const double& velocity_tolerance = 0.0
+                                                                    );
+    void enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
+									     std_msgs::Float64MultiArray& enforced_joint_velocity);
 
-  /**
-   * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
-   * @param vector: std vectors want to tranfrom
-   * @return Eigen vectors transform from std vectos
-   */
-  /*template<typename T>
-  static inline Eigen::VectorXd transformStdVectorToEigenVector(const std::vector<T>& vector)
-  {
-    // resize eigen vector
-    Eigen::VectorXd eigen_vector = Eigen::VectorXd(vector.size());
-
-    // convert std to eigen vector
-    for (uint32_t i = 0; i < vector.size(); ++i)
+    /**
+     * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
+     * @param vector: std vectors want to tranfrom
+     * @return Eigen vectors transform from std vectos
+     */
+    /*template<typename T>
+    static inline Eigen::VectorXd transformStdVectorToEigenVector(const std::vector<T>& vector)
     {
-      std::cout << vector.at(i) << std::endl;
-      eigen_vector(i) = vector.at(i);
-   }
+        // resize eigen vector
+        Eigen::VectorXd eigen_vector = Eigen::VectorXd(vector.size());
 
-    return eigen_vector;
-  }*/
+        // convert std to eigen vector
+        for (uint32_t i = 0; i < vector.size(); ++i)
+        {
+            std::cout << vector.at(i) << std::endl;
+            eigen_vector(i) = vector.at(i);
+     }
 
-  /**
-   * @brief clearDataMember: clear vectors means free allocated memory
-   */
-  void clearDataMember();
+        return eigen_vector;
+    }*/
+
+    /**
+     * @brief clearDataMember: clear vectors means free allocated memory
+     */
+    void clearDataMember();
 };
 
 #endif

@@ -14,7 +14,7 @@
   <depend>actionlib_msgs</depend>
   <depend>boost</depend>
   <depend>cmake_modules</depend>
-  <depend>cob_control_msgs</depend>
+  <depend>control_msgs</depend>
   <depend>cob_srvs</depend>
   <depend>dynamic_reconfigure</depend>
   <depend>eigen_conversions</depend>
@@ -22,6 +22,7 @@
   <depend>geometry_msgs</depend>
   <depend>kdl_conversions</depend>
   <depend>kdl_parser</depend>
+  <depend>moveit_core</depend>
   <depend>nav_msgs</depend>
   <depend>orocos_kdl</depend>
   <depend>pluginlib</depend>
@@ -35,8 +36,7 @@
   <depend>visualization_msgs</depend>
   <depend>shape_msgs</depend>	
   <depend>moveit_msgs</depend>		
-	
-  <exec_depend>cob_frame_tracker</exec_depend>
+
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>rviz</exec_depend>

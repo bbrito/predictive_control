@@ -217,6 +217,8 @@ private:
   // move to goal position action
   boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::moveAction> > move_action_server_;
 
+  boost::scoped_ptr<actionlib::SimpleActionServer<FollowJointTrajectoryAction::moveAction> > moveit_action_server_;
+
   //actionlib::SimpleActionServer<predictive_control::moveAction> move_action_server_;
   //int moveGoalCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr);
 

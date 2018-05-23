@@ -131,6 +131,14 @@ bool MPCC::initialize()
         timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
         timer_.start();
 
+		//Initialize trajectory variables
+		next_point_dist = 0;
+		goal_dist = 0;
+		prev_point_dist = 0;
+		i=1;
+		moveit_msgs::RobotTrajectory j;
+		traj = j;
+
         ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
         return true;
     }
@@ -148,6 +156,35 @@ void MPCC::runNode(const ros::TimerEvent &event)
     {
         ROS_INFO("MPCC::runNode");
     }
+
+	if (activate_debug_output_) {
+		ROS_INFO_STREAM("Executing MoveIt trajectory!!!");
+		ROS_INFO_STREAM("New trajectory: " << traj.multi_dof_joint_trajectory);
+	}
+
+
+	if(i< ((int)traj.multi_dof_joint_trajectory.points.size()-1)){
+
+		//assigning next point as goal pose since initial point of trajectory is actual pose
+		goal_pose_(0) = traj.multi_dof_joint_trajectory.points[i].transforms[0].translation.x;
+		goal_pose_(1) = traj.multi_dof_joint_trajectory.points[i].transforms[0].translation.y;
+		goal_pose_(2) = traj.multi_dof_joint_trajectory.points[i].transforms[0].rotation.z;
+
+		prev_point_dist = sqrt(pow(traj.multi_dof_joint_trajectory.points[i-1].transforms[0].translation.x - current_state_(0),2)
+							   + pow(traj.multi_dof_joint_trajectory.points[i-1].transforms[0].translation.y - current_state_(1),2)
+							   + pow(traj.multi_dof_joint_trajectory.points[i-1].transforms[0].rotation.z - current_state_(2),2));
+
+		next_point_dist = sqrt(pow(traj.multi_dof_joint_trajectory.points[i].transforms[0].translation.x - current_state_(0),2)
+							   + pow(traj.multi_dof_joint_trajectory.points[i].transforms[0].translation.y - current_state_(1),2)
+							   + pow(traj.multi_dof_joint_trajectory.points[i].transforms[0].rotation.z - current_state_(2),2));
+
+		if(prev_point_dist > next_point_dist) {
+			i++;
+			goal_pose_(0) = traj.multi_dof_joint_trajectory.points[i].transforms[0].translation.x;
+			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[1].transforms[0].translation.y;
+			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[1].transforms[0].rotation.z;
+		}
+	}
     // solver optimal control problem
     pd_trajectory_generator_->solveOptimalControlProblem(current_state_,
                                                                                                              goal_pose_,
@@ -191,14 +228,21 @@ void MPCC::moveGoalCB()
 void MPCC::moveitGoalCB()
 {
 	ROS_INFO_STREAM("Got new MoveIt goal!!!");
-
     if(moveit_action_server_->isNewGoalAvailable())
     {
         boost::shared_ptr<const predictive_control::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
+		if (activate_debug_output_) {
+			ROS_INFO_STREAM("New trajectory: " << moveit_action_goal_ptr->trajectory);
+		}
+		traj = moveit_action_goal_ptr->trajectory;
         tracking_ = false;
-
-		ROS_INFO_STREAM("New trajectory: " << moveit_action_goal_ptr->trajectory);
+		i=1;
+		//start trajectory execution
     }
+}
+
+void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){
+
 }
 
 void MPCC::movePreemptCB()
@@ -297,7 +341,7 @@ void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {
     if (activate_debug_output_)
     {
-        ROS_INFO("MPCC::StateCallBack");
+        //ROS_INFO("MPCC::StateCallBack");
     }
     last_state_ = current_state_;
     current_state_(0) =    msg->position.x;

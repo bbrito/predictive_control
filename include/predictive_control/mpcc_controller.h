@@ -174,6 +174,13 @@ private:
     Eigen::VectorXd min_velocity_limit_;
     Eigen::VectorXd max_velocity_limit_;
 
+	//MoveIt TRAJECTORY VARIABLE
+	moveit_msgs::RobotTrajectory traj;
+
+	//TRajectory execution variables
+	double next_point_dist, goal_dist, prev_point_dist;
+	int i;
+
     // Kinematic variables
 	//To be done kinematic model car
 
@@ -280,6 +287,11 @@ private:
      * @brief clearDataMember: clear vectors means free allocated memory
      */
     void clearDataMember();
+
+	/**
+     * @brief executeTrajectory: changes the goal state of the mpcc to each point of trajectory
+     */
+	void executeTrajectory(const moveit_msgs::RobotTrajectory & traj);
 };
 
 #endif

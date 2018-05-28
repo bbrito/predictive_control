@@ -78,8 +78,10 @@ bool pd_frame_tracker::initialize()
   //control_vector_size_ = predictive_configuration::lsq_control_weight_factors_.size();
   state_vector_size_ = lsq_state_weight_factors_.rows()* lsq_state_weight_factors_.cols();
   control_vector_size_ = lsq_control_weight_factors_.rows()*lsq_control_weight_factors_.cols();
-
-  // initialize hard constraints vector
+  horizon_steps_ = (int)(end_time_/sampling_time_);
+  // intialize parameters
+  param_.reset(new VariablesGrid(state_dim_,horizon_steps_));
+  param_->setAll(0.0);
   control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_min_limit_);
   control_max_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_max_limit_);
 

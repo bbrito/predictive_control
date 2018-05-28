@@ -128,11 +128,12 @@ private:
    double kkt_tolerance_;
    double integrator_tolerance_;
 
-   // control and/or prediction horizon parameter
-   double start_time_;
-   double end_time_;
-   int discretization_intervals_;
-   double sampling_time_;
+    // control and/or prediction horizon parameter
+    double start_time_;
+    double end_time_;
+    int discretization_intervals_;
+    double sampling_time_;
+	int horizon_steps_;
 
    // objective function minimization type
    bool use_lagrange_term_;
@@ -148,6 +149,12 @@ private:
    Eigen::VectorXd lsq_control_weight_factors_;
    uint32_t control_vector_size_;
 
+    //OCP Parameters
+    boost::shared_ptr<VariablesGrid> param_;
+
+    //spline and other parameters
+    double* p;
+
    /**
     * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector
     *                               Langrange
@@ -161,6 +168,8 @@ private:
                              const Control& v,
                              const Eigen::VectorXd& goal_pose
                              );
+
+	void path_function_spline_direct(DifferentialState& s);
 
    /**
     * @brief generateCostFunction: generate collision cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector

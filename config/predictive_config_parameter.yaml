@@ -3,7 +3,7 @@
 
 # Debug mode
 activate_output: true
-activate_debug_output: false
+activate_debug_output: true
 activate_controller_node_output: true
 plotting_result: true
 

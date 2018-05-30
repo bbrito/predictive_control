@@ -11,7 +11,7 @@ plotting_result: true
 clock_frequency: 50
 
 #Optimal control problem dimensions
-state_dim: 3
+state_dim: 4
 control_dim: 2
 
 #Inputs and output topics topic
@@ -45,14 +45,14 @@ acado_config:
      start_time_horizon: 0.0
      end_time_horizon: 3.0  # control and prediction horizon
      discretization_intervals: 4
-     sampling_time: 0.025
+     sampling_time: 0.02
      use_lagrange_term: false
      use_LSQ_term: false
      use_mayer_term: true
      weight_factors:
            lsq_state_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [5.0, 5.0, 5.0]
+                [5.0, 5.0, 5.0, 5.0]
            lsq_control_weight_factors:
                 # same as degree of freedom
                 [5.0, 5.0]

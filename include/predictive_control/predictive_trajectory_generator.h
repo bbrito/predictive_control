@@ -56,7 +56,8 @@ public:
   /**
    * @brief pd_frame_tracker: Default constructor, allocate memory
    */
-   pd_frame_tracker();
+   pd_frame_tracker(): x_("", 4, 1),
+	v_("",2,1){};
 
    /**
     *@brief ~pd_frame_tracker: Default distructor, free memory
@@ -69,7 +70,14 @@ public:
     */
    bool initialize(); //virtual
 
-   /**
+	/**
+ * @brief initializeOptimalControlProblem: initialize the parameter grid of optimal control problem using ACADO Toolkit
+ * @param parameters: parameter vector as used in matlab MPCC
+ */
+	void initializeOptimalControlProblem(std::vector<double> parameters);
+
+
+	/**
     * @brief solveOptimalControlProblem: Handle execution of whole class, solve optimal control problem using ACADO Toolkit
     * @param Jacobian_Matrix: Jacobian Matrix use to generate dynamic system of equation
     * @param last_position: current/last joint values used to initialize states
@@ -155,6 +163,11 @@ private:
     //spline and other parameters
     double* p;
 
+    //ACADO variables
+    DifferentialEquation f;
+	DifferentialState x_;       // position
+	Control v_;            // velocity
+
    /**
     * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector
     *                               Langrange
@@ -163,11 +176,24 @@ private:
     * @param v: Control state use to control manipulator, in our case joint velocity
     * @param goal_pose: Target pose where want to move
     */
+
    void generateCostFunction(OCP& OCP_problem,
-                             const DifferentialState& x,
-                             const Control& v,
-                             const Eigen::VectorXd& goal_pose
-                             );
+							 const DifferentialState& x,
+							 const Control& v,
+							 const Eigen::VectorXd& goal_pose
+   );
+
+		/**
+		* @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector
+		*                               Langrange
+		* @param OCP_problem: Current optimal control problem
+		* @param x: Differential state represent dynamic system of equations
+		* @param v: Control state use to control manipulator, in our case joint velocity
+		* @param goal_pose: Target pose where want to move
+		*/
+	void iniKinematics(const DifferentialState& x,
+							   const Control& v
+	);
 
 	void path_function_spline_direct(DifferentialState& s);
 

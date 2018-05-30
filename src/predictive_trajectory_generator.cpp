@@ -3,11 +3,6 @@
 
 #include <predictive_control/predictive_trajectory_generator.h>
 
-pd_frame_tracker::pd_frame_tracker()
-{
-  //clearDataMember();
-}
-
 pd_frame_tracker::~pd_frame_tracker()
 {
   clearDataMember();
@@ -62,34 +57,48 @@ bool pd_frame_tracker::initialize()
   discretization_intervals_ = predictive_configuration::discretization_intervals_;
   sampling_time_ = predictive_configuration::sampling_time_;
 
-  // optimaization type
-  use_lagrange_term_ = predictive_configuration::use_lagrange_term_;
-  use_LSQ_term_ = predictive_configuration::use_LSQ_term_;
-  use_mayer_term_ = predictive_configuration::use_mayer_term_;
+	// optimaization type
+	// use_lagrange_term_ = predictive_configuration::use_lagrange_term_;
+	use_LSQ_term_ = predictive_configuration::use_LSQ_term_;
+	use_mayer_term_ = predictive_configuration::use_mayer_term_;
 
-  // initialize state and control weight factors
-  if (use_LSQ_term_)
-  {
+	// initialize state and control weight factors
     lsq_state_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_state_weight_factors_);
     lsq_control_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_control_weight_factors_);
-  }
 
   //state_vector_size_ = predictive_configuration::lsq_state_weight_factors_.size();
   //control_vector_size_ = predictive_configuration::lsq_control_weight_factors_.size();
   state_vector_size_ = lsq_state_weight_factors_.rows()* lsq_state_weight_factors_.cols();
   control_vector_size_ = lsq_control_weight_factors_.rows()*lsq_control_weight_factors_.cols();
   horizon_steps_ = (int)(end_time_/sampling_time_);
-  // intialize parameters
-  param_.reset(new VariablesGrid(state_dim_,horizon_steps_));
-  param_->setAll(0.0);
-  control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_min_limit_);
-  control_max_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_max_limit_);
+
+	// intialize parameters
+	param_.reset(new VariablesGrid(state_dim_,horizon_steps_));
+	param_->setAll(0.0);
+
+	control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_min_limit_);
+	control_max_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_max_limit_);
 
   // slef collision cost constant term
   self_collision_cost_constant_term_ = discretization_intervals_/ (end_time_-start_time_);
 
+	//move to a kinematic function
+	// Differential Kinematic
+	iniKinematics(x_,v_);
+
   ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
+}
+
+void pd_frame_tracker::iniKinematics(const DifferentialState& x, const Control& v){
+
+	ROS_WARN("pd_frame_tracker::iniKinematics");
+
+	f.reset();
+	f << dot(x(0)) == v(0)*cos(x(2));
+	f << dot(x(1)) == v(0)*sin(x(2));
+	f << dot(x(2)) == v(1);
+	f << dot(x(3)) == v(0);
 }
 
 // calculate quternion product
@@ -189,9 +198,83 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
   //TO BE IMPLEMENTED
 }
 
+void pd_frame_tracker::path_function_spline_direct(DifferentialState& s){
+
+	if (activate_debug_output_) {
+		ROS_WARN("pd_frame_tracker::path_function_spline_direct");
+		for(int i=0;i<10;i++)
+			ROS_INFO_STREAM("p(" << i << "): " << *(p+i));
+	}
+
+	int i = 1;
+	int z = 500;
+	int N_SPLINE_POINTS = 30;
+	auto t = s(3) - (*(p+3))*(i -1 + (*(p+4)));
+	ROS_INFO_STREAM("t: " << t);
+	auto fac = 1/exp(500*(t - *(p+3))); // implements the if_else condition in a continous way
+
+	double dist_spline_pts = *(p+3);
+	double break_index = *(p+4);
+
+	volatile auto a_x_3 = *(p+z + (i-1)*8 + 1);
+	volatile auto a_x_2 = *(p+z  + (i-1)*8 + 2);
+	volatile auto a_x_1 = *(p+z  + (i-1)*8 + 3);
+	volatile auto a_x_0 = *(p+z  + (i-1)*8 + 4);
+	volatile auto a_y_3 = *(p+z  + (i-1)*8 + 5);
+	volatile auto a_y_2 = *(p+z  + (i-1)*8 + 6);
+	volatile auto a_y_1 = *(p+z  + (i-1)*8 + 7);
+	volatile auto a_y_0 = *(p+z  + (i-1)*8 + 8);
+
+	//param_->setAll(*(p+3));
+
+	/*auto x_path = x_path + (a_x_3*t^3 + a_x_2*t^2 + a_x_1*t + a_x_0) * fac;
+	auto y_path = y_path + (a_y_3*t^3 + a_y_2*t^2 + a_y_1*t + a_y_0) * fac;
+	auto dx_path = dx_path + (3*a_x_3*t^2 + 2*a_x_2*t + a_x_1) * fac;
+	auto dy_path = dy_path + (3*a_y_3*t^2 + 2*a_y_2*t + a_y_1) * fac;
+
+	for(i = 2;N_SPLINE_POINTS-2;i++) {
+		t = s - dist_spline_pts * (i - 1 + break_index);
+		//fac = if_else(0 <= t, 1, 0);
+		//fac = if_else(t < dist_spline_pts, fac, 0);
+
+		a_x_3 = *(p+z+ (i - 1) * 8 + 1);
+		a_x_2 = *(p+z+ (i - 1) * 8 + 2);
+		a_x_1 = *(p+z+ (i - 1) * 8 + 3);
+		a_x_0 = *(p+z+ (i - 1) * 8 + 4);
+		a_y_3 = *(p+z+ (i - 1) * 8 + 5);
+		a_y_2 = *(p+z+ (i - 1) * 8 + 6);
+		a_y_1 = *(p+z+ (i - 1) * 8 + 7);
+		a_y_0 = *(p+z+ (i - 1) * 8 + 8);
+
+		x_path = x_path + (a_x_3 * t ^ 3 + a_x_2 * t ^ 2 + a_x_1 * t + a_x_0) * fac;
+		y_path = y_path + (a_y_3 * t ^ 3 + a_y_2 * t ^ 2 + a_y_1 * t + a_y_0) * fac;
+		dx_path = dx_path + (3 * a_x_3 * t ^ 2 + 2 * a_x_2 * t + a_x_1) * fac;
+		dy_path = dy_path + (3 * a_y_3 * t ^ 2 + 2 * a_y_2 * t + a_y_1) * fac;
+	}
+
+	i = N_SPLINE_POINTS-1;
+	t = s - dist_spline_pts*(i-1 + break_index);
+	fac = if_else( 0 <= t, 1, 0);
+
+	a_x_3 = *(p+z+ (i-1)*8 + 1);
+	a_x_2 = *(p+z+ (i-1)*8 + 2);
+	a_x_1 = *(p+z+ (i-1)*8 + 3);
+	a_x_0 = *(p+z+ (i-1)*8 + 4);
+	a_y_3 = *(p+z+ (i-1)*8 + 5);
+	a_y_2 = *(p+z+ (i-1)*8 + 6);
+	a_y_1 = *(p+z+ (i-1)*8 + 7);
+	a_y_0 = *(p+z+ (i-1)*8 + 8);
+
+	x_path = x_path + (a_x_3*t^3 + a_x_2*t^2 + a_x_1*t + a_x_0) * fac;
+	y_path = y_path + (a_y_3*t^3 + a_y_2*t^2 + a_y_1*t + a_y_0) * fac;
+	dx_path = dx_path + (3*a_x_3*t^2 + 2*a_x_2*t + a_x_1) * fac;
+	dy_path = dy_path + (3*a_y_3*t^2 + 2*a_y_2*t + a_y_1) * fac;
+	 */
+}
+
 // Generate cost function of optimal control problem
-void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
-                                            const DifferentialState &x,
+void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
+											const DifferentialState &x,
                                             const Control &v,
                                             const Eigen::VectorXd& goal_pose)
 {
@@ -201,181 +284,63 @@ void pd_frame_tracker::generateCostFunction(OCP &OCP_problem,
     {
       ROS_INFO("pd_frame_tracker::generateCostFunction: use_mayer_term_");
     }
-    OCP_problem.minimizeMayerTerm( 10.0 * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
-                                             +(x(1) - goal_pose(1)) * (x(1) - goal_pose(1))
-                                             +(x(2) - goal_pose(2)) * (x(2) - goal_pose(2)) )
-                                     + 10.0 * (v.transpose() * v)
+
+	  OCP_problem.minimizeMayerTerm( lsq_state_weight_factors_(0) * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0)) )
+                                             +lsq_state_weight_factors_(1) * ( (x(1) - goal_pose(1)) * (x(1) - goal_pose(1)))
+                                             +lsq_state_weight_factors_(2) * ( (x(2) - goal_pose(2)) * (x(2) - goal_pose(2)))
+                                     + lsq_control_weight_factors_(0) * (v.transpose() * v)
                                   );
 
     //OCP_problem.minimizeMayerTerm( 10.0* ( (x-goal_pose) * (x-goal_pose) ) + 1.00* (v.transpose() * v) );
 
   }
 
-  if (use_lagrange_term_)
-  {
-    ;
-  }
+}
 
-  if (use_LSQ_term_)
-  {
-   /*
-    // Solve Ax = b using LSQ method where A is weight matrix, x is function to be compute, b reference vector is zero
+void pd_frame_tracker::initializeOptimalControlProblem(std::vector<double> parameters){
 
-    Function h, t;
-
-    // initialize function with states
-    uint32_t state_vector_size = x.getNumRows()*x.getNumCols();
-    uint32_t goal_vector_size = goal_pose.rows() * goal_pose.cols();
-    for (int i = 0u; i < (state_vector_size && goal_vector_size); ++i)
-    {
-      h << ( x(i) - goal_pose(i) );
-    }
-
-    // initialize function with controls
-    uint32_t control_vector_size = v.getNumRows()*v.getNumCols();
-    for (int i = 0u; i < state_vector_size; ++i)
-    {
-      h << v(i);
-    }
-
-    // weighting matrix
-    DMatrix Q(h.getDim(), h.getDim());
-    // weighting of state weight
-    uint32_t lsq_state_vector_size = lsq_state_weight_factors_.rows() * lsq_state_weight_factors_.cols();
-    for (int i = 0u; i < (state_vector_size && lsq_state_vector_size); ++i)
-    {
-      Q(i,i) = lsq_state_weight_factors_(i);
-    }
-
-    // weighting of control weight, should filled after state wieghting factor
-    uint32_t lsq_control_vector_size = lsq_control_weight_factors_.rows() * lsq_control_weight_factors_.cols();
-    for (int i = (state_vector_size); i < (state_vector_size && lsq_control_vector_size); ++i)
-    {
-      Q(i,i) = lsq_control_weight_factors_(i);
-    }
-
-    // reference vectors
-    DVector r(h.getDim());
-    r.setAll(0.0);
-
-    OCP_problem.minimizeLSQ(Q, h, r);*/
-    // Solve Ax = b using LSQ method where A is weight matrix, x is function to be compute, b reference vector is zero
-
-    Function h;
-
-    //uint32_t state_vector_size = lsq_state_weight_factors_.rows()* lsq_state_weight_factors_.cols();
-    //uint32_t control_vector_size = lsq_control_weight_factors_.rows()*lsq_control_weight_factors_.cols();
-
-    // initialize function with states
-    for (int i = 0u; i < (state_vector_size_ ); ++i) //&& goal_vector_size
-    {
-      h << ( x(i) - goal_pose(i) );
-    }
-
-    // initialize function with controls
-    for (int i = 0u; i < control_vector_size_; ++i)
-    {
-      h << v(i);
-    }
-
-    // initialization of weighting matrix
-    DMatrix Q(h.getDim(), h.getDim());
-
-    // weighting of state weight
-    for (int i = 0u; i < (state_vector_size_); ++i) //&& lsq_state_vector_size
-    {
-      Q(i,i) = lsq_state_weight_factors_(i);
-    }
-
-    // weighting of control weight, should filled after state wieghting factor
-    for (int i = 0u, j = (state_vector_size_); i < (control_vector_size_); ++i, ++j) // && lsq_control_vector_size
-    {
-      Q(j,j) = lsq_control_weight_factors_(i);
-    }
-
-    // reference vectors
-    DVector r(h.getDim());
-    r.setAll(0.0);
-
-    OCP_problem.minimizeLSQ(Q, h, r);
-    //OCP_problem.minimizeLSQ(Q, h, r);
-    //OCP_problem.minimizeLSQEndTerm(Q, t, r);
-    //OCP_problem.minimizeLSQEndTerm(Q_t, t, r_t);
-    //OCP_problem.minimizeLSQEndTerm(Q_v, t_v, r_v);
-
-  }
-
+	ROS_INFO("pd_frame_tracker::initializeOptimalControlProblem");
+	int z = 500; //just because it is used in matlab like this... it should be changed
+	for(int i = 0; i < parameters.size();i++){
+		/*
+		param_->operator() (i,0) = parameters[i]; //a_x_3
+		param_->operator() (i,1) = parameters[i]; //a_x_2
+		param_->operator() (i,2) = parameters[i]; //a_x_1
+		param_->operator() (i,3) = parameters[i]; //a_x_0
+		param_->operator() (i,4) = parameters[i]; //a_y_3
+		param_->operator() (i,5) = parameters[i]; //a_y_2
+		param_->operator() (i,6) = parameters[i]; //a_y_1
+		param_->operator() (i,7) = parameters[i]; //a_y_0
+		 */
+	}
 }
 
 
-
-
 void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
-                                                  const Eigen::VectorXd &goal_pose,
-                                                  geometry_msgs::Twist& controlled_velocity)
+												  const Eigen::VectorXd &goal_pose,
+												  geometry_msgs::Twist& controlled_velocity)
 {
 
+	// control initialize with previous command
+	control_initialize_(0) = controlled_velocity.linear.x;
+	control_initialize_(1) = controlled_velocity.angular.z;
 
-  //to be removed
-  state_initialize_.setAll(1E-5);
-  control_initialize_.setAll(1E-5);
+	// state initialize
+	state_initialize_(0) = last_position(0);
+	state_initialize_(1) = last_position(1);
+	state_initialize_(2) = last_position(2);
 
-  // control initialize with previous command
-  control_initialize_(0) = controlled_velocity.linear.x;
-  control_initialize_(1) = controlled_velocity.angular.z;
+	// OCP variables
 
-  // state initialize
-  if (activate_debug_output_)
-  {
-    ROS_INFO("pd_frame_tracker::solveOptimalControlProblem");
-    ROS_INFO_STREAM("goal_pose: "<< goal_pose);
-    ROS_INFO_STREAM("controlled_velocity "<< controlled_velocity);
-    ROS_INFO_STREAM("last_position "<< last_position);
-    ROS_INFO("state initialize");
-  }
-  state_initialize_(0) = last_position(0);
-  state_initialize_(1) = last_position(1);
-  state_initialize_(2) = last_position(2);
+	//pd_frame_tracker::path_function_spline_direct(x);
+	// Optimal control problem
+	OCP OCP_problem_(start_time_, end_time_, discretization_intervals_);
 
-  // OCP variables
-  if (activate_debug_output_)
-  {
-    ROS_INFO("OCP variables");
-  }
-  DifferentialState x("", state_dim_, 1);       // position
-  Control v("", control_dim_, 1);            // velocity
-
-  // Clear state, control variable
-  x.clearStaticCounters();
-  v.clearStaticCounters();
-
-  // Differential Equation
-  if (activate_debug_output_)
-  {
-    ROS_INFO("Differential Equation");
-  }
-  DifferentialEquation f;
-
-  // Differential Kinematic
-  f << dot(x(0)) == v(0)*cos(x(2));
-  f << dot(x(1)) == v(0)*sin(x(2));
-  f << dot(x(2)) == v(1);
-
-  // Optimal control problem
-  if (activate_debug_output_)
-  {
-    ROS_INFO_STREAM("Differential Equation"<< f);
-    ROS_INFO("Optimal control problem");
-  }
-  // here end time interpriate as control and/or prdiction horizon, choose maximum 4.0 till that gives better results
-  OCP OCP_problem( start_time_, end_time_, discretization_intervals_);
+	//Equal consttraints
+	OCP_problem_.subjectTo(f);
 
   // generate cost function
-  if (activate_debug_output_)
-  {
-    ROS_INFO("generate cost function");
-  }
-  generateCostFunction(OCP_problem, x, v, goal_pose);
+  generateCostFunction(OCP_problem_, x_, v_, goal_pose);
 
   // generate collision cost function
   //TO BE IMPLEMENTED
@@ -418,21 +383,13 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 
 
   //-----------------------------------------------------------------------------------------------------
-  if (activate_debug_output_)
-  {
-    ROS_INFO("CONSTRAINTS");
-  }
-  OCP_problem.subjectTo(f);
+
   //OCP_problem.subjectTo(vel_min_limit_ <= v <= vel_max_limit_);
   // OCP_problem.subjectTo(AT_START, v == );
   //OCP_problem.subjectTo(AT_END, v == control_initialize_); //0.0
 
   // Optimal Control Algorithm
-  if (activate_debug_output_)
-  {
-    ROS_INFO("Optimal Control Algorithm");
-  }
-  RealTimeAlgorithm OCP_solver(OCP_problem, 0.025); // 0.025 sampling time
+  RealTimeAlgorithm OCP_solver(OCP_problem_, 0.025); // 0.025 sampling time
 
   OCP_solver.initializeControls(control_initialize_);
   OCP_solver.initializeDifferentialStates(state_initialize_);
@@ -440,10 +397,6 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
   setAlgorithmOptions(OCP_solver);
 
   // setup controller
-  if (activate_debug_output_)
-  {
-    ROS_INFO("setup controller");
-  }
   Controller controller(OCP_solver);
   controller.init(0.0, state_initialize_);
   controller.step(0.0, state_initialize_);
@@ -458,6 +411,9 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
   }
   controlled_velocity.linear.x = u(0);
   controlled_velocity.angular.z = u(1);
+
+	// Clear state, control variable
+	clearAllStaticCounters();
 
 }
 

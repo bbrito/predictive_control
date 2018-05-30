@@ -163,27 +163,14 @@ void MPCC::runNode(const ros::TimerEvent &event)
 	}
 
 
-	if(i< ((int)traj.multi_dof_joint_trajectory.points.size()-1)){
+	if(((int)traj.multi_dof_joint_trajectory.points.size()) > 1){
 
 		//assigning next point as goal pose since initial point of trajectory is actual pose
-		goal_pose_(0) = traj.multi_dof_joint_trajectory.points[i].transforms[0].translation.x;
-		goal_pose_(1) = traj.multi_dof_joint_trajectory.points[i].transforms[0].translation.y;
-		goal_pose_(2) = traj.multi_dof_joint_trajectory.points[i].transforms[0].rotation.z;
+		goal_pose_(0) = traj.multi_dof_joint_trajectory.points[(((int)traj.multi_dof_joint_trajectory.points.size() - 1))].transforms[0].translation.x;
+		goal_pose_(1) = traj.multi_dof_joint_trajectory.points[(((int)traj.multi_dof_joint_trajectory.points.size() - 1))].transforms[0].translation.y;
+		goal_pose_(2) = traj.multi_dof_joint_trajectory.points[(((int)traj.multi_dof_joint_trajectory.points.size() - 1))].transforms[0].rotation.z;
 
-		prev_point_dist = sqrt(pow(traj.multi_dof_joint_trajectory.points[i-1].transforms[0].translation.x - current_state_(0),2)
-							   + pow(traj.multi_dof_joint_trajectory.points[i-1].transforms[0].translation.y - current_state_(1),2)
-							   + pow(traj.multi_dof_joint_trajectory.points[i-1].transforms[0].rotation.z - current_state_(2),2));
-
-		next_point_dist = sqrt(pow(traj.multi_dof_joint_trajectory.points[i].transforms[0].translation.x - current_state_(0),2)
-							   + pow(traj.multi_dof_joint_trajectory.points[i].transforms[0].translation.y - current_state_(1),2)
-							   + pow(traj.multi_dof_joint_trajectory.points[i].transforms[0].rotation.z - current_state_(2),2));
-
-		if(prev_point_dist > next_point_dist) {
-			i++;
-			goal_pose_(0) = traj.multi_dof_joint_trajectory.points[i].transforms[0].translation.x;
-			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[1].transforms[0].translation.y;
-			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[1].transforms[0].rotation.z;
-		}
+		pd_trajectory_generator_->initializeOptimalControlProblem(traj.joint_trajectory.points[0].positions);
 	}
     // solver optimal control problem
     pd_trajectory_generator_->solveOptimalControlProblem(current_state_,

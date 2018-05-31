@@ -158,7 +158,7 @@ private:
    uint32_t control_vector_size_;
 
     //OCP Parameters
-    boost::shared_ptr<VariablesGrid> param_;
+    //boost::shared_ptr<VariablesGrid> param_;
 
     //spline and other parameters
     double* p;
@@ -167,6 +167,8 @@ private:
     DifferentialEquation f;
 	DifferentialState x_;       // position
 	Control v_;            // velocity
+	double s_; // this variable is going to be later replaced by a ACADO Process to simulate
+
 
    /**
     * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector

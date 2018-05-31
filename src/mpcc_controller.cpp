@@ -157,12 +157,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
         ROS_INFO("MPCC::runNode");
     }
 
-	if (activate_debug_output_) {
-		ROS_INFO_STREAM("Executing MoveIt trajectory!!!");
-		ROS_INFO_STREAM("New trajectory: " << traj.multi_dof_joint_trajectory);
-	}
-
-
 	if(((int)traj.multi_dof_joint_trajectory.points.size()) > 1){
 
 		//assigning next point as goal pose since initial point of trajectory is actual pose

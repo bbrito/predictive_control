@@ -199,85 +199,100 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
   //TO BE IMPLEMENTED
 }
 
-void pd_frame_tracker::path_function_spline_direct(DifferentialState& s){
+void pd_frame_tracker::path_function_spline_direct(const DifferentialState& s){
 
-	if (activate_debug_output_) {
-		ROS_WARN("pd_frame_tracker::path_function_spline_direct");
-		for(int i=0;i<10;i++)
-			ROS_INFO_STREAM("p(" << i << "): " << *(p+i));
+	if(p != NULL)
+	{
+
+		if (activate_debug_output_) {
+			ROS_WARN("pd_frame_tracker::path_function_spline_direct");
+		}
+
+		int i = 1;
+		int z = 500;
+		int N_SPLINE_POINTS = 30;
+		double dist_spline_pts = param_(3);
+		double break_index = param_(4);
+		IntermediateState t = s(3) - (param_(3))*(i -1 + (param_(4)));
+		t.print(std::cout);
+		IntermediateState fac = t - param_(3); // implements the if_else condition in a continous way
+		fac.print(std::cout);
+		fac = 1/fac.getExp();
+		fac.print(std::cout);
+
+
+		DVector a_x(4),a_y(4);
+		a_x(3) = *(p+z + (i-1)*8 + 1);
+		a_x(2) = *(p+z + (i-1)*8 + 2);
+		a_x(1) = *(p+z + (i-1)*8 + 3);
+		a_x(0) = *(p+z + (i-1)*8 + 4);
+		a_y(3) = *(p+z + (i-1)*8 + 5);
+		a_y(2) = *(p+z + (i-1)*8 + 6);
+		a_y(1) = *(p+z + (i-1)*8 + 7);
+
+		IntermediateState x_path = x_path + (a_x(3)*t.getPowInt(3) + a_x(2)*t.getPowInt(2) + a_x(1)*t + a_x(0)) * fac;
+		IntermediateState y_path = y_path + (a_y(3)*t.getPowInt(3) + a_y(2)*t.getPowInt(2) + a_y(1)*t + a_y(0)) * fac;
+		IntermediateState dx_path = dx_path + (3*a_x(3)*t.getPowInt(2) + 2*a_x(2)*t + a_x(1)) * fac;
+		IntermediateState dy_path = dy_path + (3*a_y(3)*t.getPowInt(2) + 2*a_y(2)*t + a_y(1)) * fac;
+
+		for(i = 2;i<N_SPLINE_POINTS-2;i++) {
+			t = s(3) - dist_spline_pts * (i - 1 + break_index);
+			//fac = if_else(0 <= t, 1, 0);
+			fac = 1/exp(500*(t));
+			//fac = if_else(t < dist_spline_pts, fac, 0);
+			fac = fac/exp(500*(t - *(p+2)));
+
+			a_x(3) = *(p+z+ (i - 1) * 8 + 1);
+			a_x(2) = *(p+z+ (i - 1) * 8 + 2);
+			a_x(1) = *(p+z+ (i - 1) * 8 + 3);
+			a_x(0) = *(p+z+ (i - 1) * 8 + 4);
+			a_y(3) = *(p+z+ (i - 1) * 8 + 5);
+			a_y(2) = *(p+z+ (i - 1) * 8 + 6);
+			a_y(1) = *(p+z+ (i - 1) * 8 + 7);
+			a_y(0) = *(p+z+ (i - 1) * 8 + 8);
+			x_path = x_path + (a_x(3) * t.getPowInt(3) + a_x(2) * t.getPowInt(2) + a_x(1) * t + a_x(0)) * fac;
+			y_path = y_path + (a_y(3) * t.getPowInt(3) + a_y(2) * t.getPowInt(2) + a_y(1) * t + a_y(0)) * fac;
+			dx_path = dx_path + (3 * a_x(3) * t.getPowInt(2) + 2 * a_x(2) * t + a_x(1)) * fac;
+			dy_path = dy_path + (3 * a_y(3) * t.getPowInt(2) + 2 * a_y(2) * t + a_y(1)) * fac;
+
+		}
+
+		i = N_SPLINE_POINTS-1;
+		t = s(3) - dist_spline_pts*(i-1 + break_index);
+		fac = 1/exp(500*(t - param_(3))); // implements the if_else condition in a continous way
+
+		a_x(3) = *(p+z+ (i-1)*8 + 1);
+		a_x(2) = *(p+z+ (i-1)*8 + 2);
+		a_x(1) = *(p+z+ (i-1)*8 + 3);
+		a_x(0) = *(p+z+ (i-1)*8 + 4);
+		a_y(3) = *(p+z+ (i-1)*8 + 5);
+		a_y(2) = *(p+z+ (i-1)*8 + 6);
+		a_y(1) = *(p+z+ (i-1)*8 + 7);
+		a_y(0) = *(p+z+ (i-1)*8 + 8);
+
+		x_path = x_path + (a_x(3)*t.getPowInt(3) + a_x(2)*t.getPowInt(2) + a_x(1)*t + a_x(0)) * fac;
+		y_path = y_path + (a_y(3)*t.getPowInt(3) + a_y(2)*t.getPowInt(2) + a_y(1)*t + a_y(0)) * fac;
+		dx_path = dx_path + (3*a_x(3)*t.getPowInt(2) + 2*a_x(2)*t + a_x(1)) * fac;
+		dy_path = dy_path + (3*a_y(3)*t.getPowInt(2) + 2*a_y(2)*t + a_y(1)) * fac;
+
+		ROS_INFO_STREAM("x_path: " << x_path);
+
+		IntermediateState abs_grad = dx_path.getPowInt(2) + dy_path.getPowInt(2);
+		IntermediateState dx_path_norm = dx_path/abs_grad;
+		IntermediateState dy_path_norm =  dy_path/abs_grad;
+
+		IntermediateState error_contour   = dy_path_norm * (s(0) - x_path) - dx_path_norm * (s(0) - y_path);
+
+		IntermediateState error_lag       = dx_path_norm * (s(1) - x_path) + dy_path_norm * (s(1) - y_path);
 	}
-	
-	int i = 1;
-	int z = 500;
-	int N_SPLINE_POINTS = 30;
-	auto t = s(3) - (*(p+3))*(i -1 + (*(p+4)));
-	ROS_INFO_STREAM("t: " << t);
-	auto fac = 1/exp(500*(t - *(p+3))); // implements the if_else condition in a continous way
-
-	double dist_spline_pts = *(p+3);
-	double break_index = *(p+4);
-
-	volatile auto a_x_3 = *(p+z + (i-1)*8 + 1);
-	volatile auto a_x_2 = *(p+z  + (i-1)*8 + 2);
-	volatile auto a_x_1 = *(p+z  + (i-1)*8 + 3);
-	volatile auto a_x_0 = *(p+z  + (i-1)*8 + 4);
-	volatile auto a_y_3 = *(p+z  + (i-1)*8 + 5);
-	volatile auto a_y_2 = *(p+z  + (i-1)*8 + 6);
-	volatile auto a_y_1 = *(p+z  + (i-1)*8 + 7);
-	volatile auto a_y_0 = *(p+z  + (i-1)*8 + 8);
-
-	//param_->setAll(*(p+3));
-
-	/*auto x_path = x_path + (a_x_3*t^3 + a_x_2*t^2 + a_x_1*t + a_x_0) * fac;
-	auto y_path = y_path + (a_y_3*t^3 + a_y_2*t^2 + a_y_1*t + a_y_0) * fac;
-	auto dx_path = dx_path + (3*a_x_3*t^2 + 2*a_x_2*t + a_x_1) * fac;
-	auto dy_path = dy_path + (3*a_y_3*t^2 + 2*a_y_2*t + a_y_1) * fac;
-
-	for(i = 2;N_SPLINE_POINTS-2;i++) {
-		t = s - dist_spline_pts * (i - 1 + break_index);
-		//fac = if_else(0 <= t, 1, 0);
-		//fac = if_else(t < dist_spline_pts, fac, 0);
-
-		a_x_3 = *(p+z+ (i - 1) * 8 + 1);
-		a_x_2 = *(p+z+ (i - 1) * 8 + 2);
-		a_x_1 = *(p+z+ (i - 1) * 8 + 3);
-		a_x_0 = *(p+z+ (i - 1) * 8 + 4);
-		a_y_3 = *(p+z+ (i - 1) * 8 + 5);
-		a_y_2 = *(p+z+ (i - 1) * 8 + 6);
-		a_y_1 = *(p+z+ (i - 1) * 8 + 7);
-		a_y_0 = *(p+z+ (i - 1) * 8 + 8);
-
-		x_path = x_path + (a_x_3 * t ^ 3 + a_x_2 * t ^ 2 + a_x_1 * t + a_x_0) * fac;
-		y_path = y_path + (a_y_3 * t ^ 3 + a_y_2 * t ^ 2 + a_y_1 * t + a_y_0) * fac;
-		dx_path = dx_path + (3 * a_x_3 * t ^ 2 + 2 * a_x_2 * t + a_x_1) * fac;
-		dy_path = dy_path + (3 * a_y_3 * t ^ 2 + 2 * a_y_2 * t + a_y_1) * fac;
-	}
-
-	i = N_SPLINE_POINTS-1;
-	t = s - dist_spline_pts*(i-1 + break_index);
-	fac = if_else( 0 <= t, 1, 0);
-
-	a_x_3 = *(p+z+ (i-1)*8 + 1);
-	a_x_2 = *(p+z+ (i-1)*8 + 2);
-	a_x_1 = *(p+z+ (i-1)*8 + 3);
-	a_x_0 = *(p+z+ (i-1)*8 + 4);
-	a_y_3 = *(p+z+ (i-1)*8 + 5);
-	a_y_2 = *(p+z+ (i-1)*8 + 6);
-	a_y_1 = *(p+z+ (i-1)*8 + 7);
-	a_y_0 = *(p+z+ (i-1)*8 + 8);
-
-	x_path = x_path + (a_x_3*t^3 + a_x_2*t^2 + a_x_1*t + a_x_0) * fac;
-	y_path = y_path + (a_y_3*t^3 + a_y_2*t^2 + a_y_1*t + a_y_0) * fac;
-	dx_path = dx_path + (3*a_x_3*t^2 + 2*a_x_2*t + a_x_1) * fac;
-	dy_path = dy_path + (3*a_y_3*t^2 + 2*a_y_2*t + a_y_1) * fac;
-	 */
 }
 
 // Generate cost function of optimal control problem
 void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
 											const DifferentialState &x,
                                             const Control &v,
-                                            const Eigen::VectorXd& goal_pose)
+                                            const Eigen::VectorXd& goal_pose,
+											const Parameter& p)
 {
   if (use_mayer_term_)
   {
@@ -286,9 +301,9 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
       ROS_INFO("pd_frame_tracker::generateCostFunction: use_mayer_term_");
     }
 
-	  OCP_problem.minimizeMayerTerm( lsq_state_weight_factors_(0) * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0)) )
-                                             +lsq_state_weight_factors_(1) * ( (x(1) - goal_pose(1)) * (x(1) - goal_pose(1)))
-                                             +lsq_state_weight_factors_(2) * ( (x(2) - goal_pose(2)) * (x(2) - goal_pose(2)))
+	  OCP_problem.minimizeMayerTerm( (lsq_state_weight_factors_(0) * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0)) )
+                                             +(lsq_state_weight_factors_(1) * ( (x(1) - goal_pose(1)) * (x(1) - goal_pose(1))))
+                                             +lsq_state_weight_factors_(2) * ( (x(2) - goal_pose(2)) * (x(2) - goal_pose(2))))
                                      + lsq_control_weight_factors_(0) * (v.transpose() * v)
                                   );
 
@@ -301,19 +316,15 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
 void pd_frame_tracker::initializeOptimalControlProblem(std::vector<double> parameters){
 
 	ROS_INFO("pd_frame_tracker::initializeOptimalControlProblem");
-	int z = 500; //just because it is used in matlab like this... it should be changed
-	for(int i = 0; i < parameters.size();i++){
-	/*
-		param_->operator() (i,0) = parameters[i]; //a_x_3
-		param_->operator() (i,1) = parameters[i]; //a_x_2
-		param_->operator() (i,2) = parameters[i]; //a_x_1
-		param_->operator() (i,3) = parameters[i]; //a_x_0
-		param_->operator() (i,4) = parameters[i]; //a_y_3
-		param_->operator() (i,5) = parameters[i]; //a_y_2
-		param_->operator() (i,6) = parameters[i]; //a_y_1
-		param_->operator() (i,7) = parameters[i]; //a_y_0
-	*/
+
+	p = &parameters[0];
+	param_.resize(parameters.size());
+
+	for(int i=0;i<parameters.size();i++){
+		param_(i) = parameters[i];
 	}
+	path_function_spline_direct(x_);
+
 }
 
 
@@ -330,19 +341,33 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 	state_initialize_(0) = last_position(0);
 	state_initialize_(1) = last_position(1);
 	state_initialize_(2) = last_position(2);
-	/*
+
 	Grid timeGrid( start_time_, end_time_, discretization_intervals_ );
 
 	VariablesGrid   x_init( state_dim_, timeGrid );
 	VariablesGrid   u_init( control_dim_, timeGrid );
-	VariablesGrid   p_init( 10, timeGrid );
+	Parameter param_;
+	VariablesGrid   p_init( 2, timeGrid );
+	p_init(0,0)=1;
+	p_init(0,1)=2;
+	p_init(0,2)=3;
+	p_init(1,0)=1;
+	p_init(1,1)=2;
+	p_init(1,2)=3;
 	x_init(0,0) = state_initialize_(0);
 	x_init(1,0) = state_initialize_(1);
 	x_init(2,0) = state_initialize_(2);
 
+	/*
+	p_init (0,0)=1;
+	p_init (0,1)=2;
+	p_init (0,2)=3;
+	p_init (0,3)=4;
+
 	u_init(0,0) = control_initialize_(0);
 	u_init(1,0) = control_initialize_(1);
-*/
+	 */
+
 	// OCP variables
 
 	//pd_frame_tracker::path_function_spline_direct(x);
@@ -353,20 +378,20 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 	OCP_problem_.subjectTo(f);
 
   // generate cost function
-  generateCostFunction(OCP_problem_, x_, v_, goal_pose);
+  generateCostFunction(OCP_problem_, x_, v_, goal_pose,param_);
 
   // Optimal Control Algorithm
   RealTimeAlgorithm OCP_solver(OCP_problem_, 0.025); // 0.025 sampling time
 
-  OCP_solver.initializeControls(control_initialize_);
-  OCP_solver.initializeDifferentialStates(state_initialize_);
-	//OCP_solver.initializeParameters(p_init);
-  setAlgorithmOptions(OCP_solver);
+  OCP_solver.initializeControls(u_init);
+  OCP_solver.initializeDifferentialStates(x_init);
 
+  setAlgorithmOptions(OCP_solver);
+	OCP_solver.initializeParameters(p_init);
   // setup controller
   Controller controller(OCP_solver);
   controller.init(0.0, state_initialize_);
-  controller.step(0.0, control_initialize_);
+  controller.step(0.0, state_initialize_);
 
   // get control at first step and update controlled velocity vector
   DVector u;
@@ -386,6 +411,10 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 		s_ += u(0) * sampling_time_;
 	}
 
+	// does not work with mpc
+	DVector p;
+	OCP_solver.getParameters(p);
+	ROS_INFO_STREAM("pd_frame_tracker::solveOptimalControlProblem: " << p.print());
 	// Clear state, control variable
 	clearAllStaticCounters();
 

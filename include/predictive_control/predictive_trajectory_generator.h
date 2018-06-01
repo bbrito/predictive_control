@@ -158,7 +158,7 @@ private:
    uint32_t control_vector_size_;
 
     //OCP Parameters
-    //boost::shared_ptr<VariablesGrid> param_;
+    DVector param_;
 
     //spline and other parameters
     double* p;
@@ -166,7 +166,7 @@ private:
     //ACADO variables
     DifferentialEquation f;
 	DifferentialState x_;       // position
-	Control v_;            // velocity
+	Control v_;            // velocities
 	double s_; // this variable is going to be later replaced by a ACADO Process to simulate
 
 
@@ -182,7 +182,8 @@ private:
    void generateCostFunction(OCP& OCP_problem,
 							 const DifferentialState& x,
 							 const Control& v,
-							 const Eigen::VectorXd& goal_pose
+							 const Eigen::VectorXd& goal_pose,
+							 const Parameter& p
    );
 
 		/**
@@ -197,7 +198,7 @@ private:
 							   const Control& v
 	);
 
-	void path_function_spline_direct(DifferentialState& s);
+	void path_function_spline_direct(const DifferentialState& s);
 
    /**
     * @brief generateCostFunction: generate collision cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector

@@ -57,6 +57,10 @@ class pd_frame_tracker: public predictive_configuration
 public:
 
 	double s_; // this variable is going to be later replaced by a ACADO Process to simulate
+	//spline and other parameters
+	double* p;
+	tk::spline ref_path_x, ref_path_y;
+
 
   /**
    * @brief pd_frame_tracker: Default constructor, allocate memory
@@ -166,10 +170,6 @@ private:
 
     //OCP Parameters
     DVector param_;
-
-    //spline and other parameters
-    double* p;
-	tk::spline ref_path_x, ref_path_y;
 
     //ACADO variables
     DifferentialEquation f;

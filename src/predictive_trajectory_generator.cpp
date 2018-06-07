@@ -295,26 +295,6 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 	state_initialize_(2) = last_position(2);
 	state_initialize_(3) = s_;
 
-	//Initialize and build splines for x and y
-	std::vector<double> X, Y, S;
-	ROS_INFO_STREAM("goal_pose " << goal_pose);
-	ROS_INFO_STREAM("goal_pose " << prev_pose);
-	Eigen::Vector3d dist = goal_pose-prev_pose;
-	X.push_back(prev_pose[0]);
-	X.push_back(next_pose[0]);
-	X.push_back(goal_pose[0]);
-	Y.push_back(prev_pose[1]);
-	Y.push_back(next_pose[0]);
-	Y.push_back(goal_pose[1]);
-	S.push_back(0);
-	S.push_back(dist.norm());
-	ROS_INFO_STREAM("Distance " << dist.norm());
-	ref_path_x.set_points(S, X);
-	ref_path_y.set_points(S, Y);
-	ROS_INFO_STREAM("ref_path_x.m_a " << ref_path_x.m_a);
-	ROS_INFO_STREAM("ref_path_x.m_b " << ref_path_x.m_b);
-	ROS_INFO_STREAM("ref_path_x.m_c " << ref_path_x.m_c);
-	ROS_INFO_STREAM("ref_path_x.m_d " << ref_path_x.m_d);
 	// OCP variables
 	// Optimal control problem
 	OCP OCP_problem_(start_time_, end_time_, discretization_intervals_);
@@ -358,7 +338,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 	}
 
 	// Clear state, control variable
-	clearAllStaticCounters();
+	//clearAllStaticCounters();
 
 }
 

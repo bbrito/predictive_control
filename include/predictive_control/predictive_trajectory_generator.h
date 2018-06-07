@@ -41,6 +41,9 @@
 // predictive includes
 #include <predictive_control/predictive_configuration.h>
 
+//splines
+#include <tkspline/spline.h>
+
 using namespace ACADO;
 
 class pd_frame_tracker: public predictive_configuration
@@ -52,6 +55,8 @@ class pd_frame_tracker: public predictive_configuration
    */
 
 public:
+
+	double s_; // this variable is going to be later replaced by a ACADO Process to simulate
 
   /**
    * @brief pd_frame_tracker: Default constructor, allocate memory
@@ -85,7 +90,9 @@ public:
     * @param controlled_velocity: controlled velocity use to publish
     */
    void solveOptimalControlProblem(const Eigen::VectorXd& last_position,
-                                  const Eigen::VectorXd& goal_pose,
+								   const Eigen::Vector3d& prev_pose,
+								   const Eigen::Vector3d& next_pose,
+                                   const Eigen::Vector3d& goal_pose,
                                    geometry_msgs::Twist& controlled_velocity
                                   );
 
@@ -162,12 +169,12 @@ private:
 
     //spline and other parameters
     double* p;
+	tk::spline ref_path_x, ref_path_y;
 
     //ACADO variables
     DifferentialEquation f;
 	DifferentialState x_;       // position
 	Control v_;            // velocities
-	double s_; // this variable is going to be later replaced by a ACADO Process to simulate
 
 
    /**
@@ -182,23 +189,17 @@ private:
    void generateCostFunction(OCP& OCP_problem,
 							 const DifferentialState& x,
 							 const Control& v,
-							 const Eigen::VectorXd& goal_pose,
-							 const Parameter& p
+							 const Eigen::Vector3d& goal_pose
    );
 
-		/**
-		* @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector
-		*                               Langrange
-		* @param OCP_problem: Current optimal control problem
-		* @param x: Differential state represent dynamic system of equations
-		* @param v: Control state use to control manipulator, in our case joint velocity
-		* @param goal_pose: Target pose where want to move
-		*/
 	void iniKinematics(const DifferentialState& x,
 							   const Control& v
 	);
 
-	void path_function_spline_direct(const DifferentialState& s);
+	void path_function_spline_direct(OCP& OCP_problem,
+									 const DifferentialState &s,
+									 const Control &v,
+									 const Eigen::Vector3d& goal_pose);
 
    /**
     * @brief generateCostFunction: generate collision cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector

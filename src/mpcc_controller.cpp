@@ -100,9 +100,12 @@ bool MPCC::initialize()
         }
 
         // resize position and velocity velocity vectors
-        current_state_ = Eigen::VectorXd(controller_config_->state_dim_);
-        last_state_ = Eigen::VectorXd(controller_config_->state_dim_);
-        goal_pose_ = Eigen::VectorXd(controller_config_->state_dim_);
+        current_state_ = Eigen::Vector3d(0,0,0);
+        last_state_ = Eigen::Vector3d(0,0,0);
+		prev_pose_ = Eigen::Vector3d(0,0,0);
+		goal_pose_ = Eigen::Vector3d(0,0,0);
+		next_pose_= Eigen::Vector3d(0,0,0);
+		prev_pose_.setZero();
         goal_pose_.setZero();
         // initialize KINEMATICS
         // TO BE DONE
@@ -135,7 +138,10 @@ bool MPCC::initialize()
 		next_point_dist = 0;
 		goal_dist = 0;
 		prev_point_dist = 0;
-		i=1;
+		idx = 1;
+		idy = 1;
+		epsilon_ = 0.01;
+
 		moveit_msgs::RobotTrajectory j;
 		traj = j;
 
@@ -159,164 +165,183 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
 	if(((int)traj.multi_dof_joint_trajectory.points.size()) > 1){
 
+		Eigen::Vector3d dist = current_state_-goal_pose_;
+		if(dist.norm() < epsilon_){
+			idx++;
+			pd_trajectory_generator_->s_=0;
+			ROS_INFO_STREAM("TRajectory point " << idx);
+		}
+
 		//assigning next point as goal pose since initial point of trajectory is actual pose
-		goal_pose_(0) = traj.multi_dof_joint_trajectory.points[(((int)traj.multi_dof_joint_trajectory.points.size() - 1))].transforms[0].translation.x;
-		goal_pose_(1) = traj.multi_dof_joint_trajectory.points[(((int)traj.multi_dof_joint_trajectory.points.size() - 1))].transforms[0].translation.y;
-		goal_pose_(2) = traj.multi_dof_joint_trajectory.points[(((int)traj.multi_dof_joint_trajectory.points.size() - 1))].transforms[0].rotation.z;
+		prev_pose_(0) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.x;
+		prev_pose_(1) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.y;
+		prev_pose_(2) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.z;
+		next_pose_(0) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].translation.x;
+		next_pose_(1) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].translation.y;
+		next_pose_(2) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].rotation.z;
+		//assigning next point as goal pose since initial point of trajectory is actual pose
+		goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.x;
+		goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.y;
+		goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].rotation.z;
+			/*prev_pose_(0) = 0;
+			prev_pose_(1) = 0;
+			prev_pose_(2) = 0;
+			goal_pose_(0) = 1;
+			goal_pose_(1) = 0;
+			goal_pose_(2) = 0;
+	*/
+			//pd_trajectory_generator_->initializeOptimalControlProblem(traj.joint_trajectory.points[0].positions);
 
-		pd_trajectory_generator_->initializeOptimalControlProblem(traj.joint_trajectory.points[0].positions);
+			pd_trajectory_generator_->solveOptimalControlProblem(current_state_,prev_pose_,next_pose_, goal_pose_, controlled_velocity_);
+		}
+		// solver optimal control problem
+
+
+		// publishes error stamped for plot, trajectory
+		//this->publishErrorPose(tf_traget_from_tracking_vector_);
+		//this->publishTrajectory();
+
+			// publish zero controlled velocity
+			if (!tracking_)
+			{
+				actionSuccess();
+			}
+			//publishZeroJointVelocity();
+			controlled_velocity_pub_.publish(controlled_velocity_);
+
 	}
-    // solver optimal control problem
-    pd_trajectory_generator_->solveOptimalControlProblem(current_state_,
-                                                                                                             goal_pose_,
-                                                                                                             controlled_velocity_);
 
-    // publishes error stamped for plot, trajectory
-    //this->publishErrorPose(tf_traget_from_tracking_vector_);
-    //this->publishTrajectory();
-
-        // publish zero controlled velocity
-        if (!tracking_)
-        {
-            actionSuccess();
-        }
-        //publishZeroJointVelocity();
-        controlled_velocity_pub_.publish(controlled_velocity_);
-
-}
-
-void MPCC::moveGoalCB()
-{
-	if(move_action_server_->isNewGoalAvailable())
+	void MPCC::moveGoalCB()
 	{
-		boost::shared_ptr<const predictive_control::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
-		tracking_ = false;
-		//collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
-		//target_frame_ = move_action_goal_ptr->target_frame_id;
-
-		//erase previous trajectory
-		for (auto it = traj_marker_array_.markers.begin(); it != traj_marker_array_.markers.end(); ++it)
+		if(move_action_server_->isNewGoalAvailable())
 		{
-			it->action = visualization_msgs::Marker::DELETE;
-			traj_pub_.publish(traj_marker_array_);
-			//traj_marker_array_.markers.erase(it);
-		}
+			boost::shared_ptr<const predictive_control::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
+			tracking_ = false;
+			//collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
+			//target_frame_ = move_action_goal_ptr->target_frame_id;
 
-		traj_marker_array_.markers.clear();
+			//erase previous trajectory
+			for (auto it = traj_marker_array_.markers.begin(); it != traj_marker_array_.markers.end(); ++it)
+			{
+				it->action = visualization_msgs::Marker::DELETE;
+				traj_pub_.publish(traj_marker_array_);
+				//traj_marker_array_.markers.erase(it);
+			}
+
+			traj_marker_array_.markers.clear();
+		}
 	}
-}
 
-void MPCC::moveitGoalCB()
-{
-	ROS_INFO_STREAM("Got new MoveIt goal!!!");
-    if(moveit_action_server_->isNewGoalAvailable())
-    {
-        boost::shared_ptr<const predictive_control::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
-		if (activate_debug_output_) {
-			ROS_INFO_STREAM("New trajectory: " << moveit_action_goal_ptr->trajectory);
+	void MPCC::moveitGoalCB()
+	{
+		ROS_INFO_STREAM("Got new MoveIt goal!!!");
+		//Reset trajectory index
+		idx = 1;
+		pd_trajectory_generator_->s_=0;
+		if(moveit_action_server_->isNewGoalAvailable())
+		{
+			boost::shared_ptr<const predictive_control::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
+			traj = moveit_action_goal_ptr->trajectory;
+			tracking_ = false;
+			//start trajectory execution
 		}
-		traj = moveit_action_goal_ptr->trajectory;
-        tracking_ = false;
-		i=1;
-		//start trajectory execution
-    }
-}
+	}
 
-void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){
+	void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){
 
-}
+	}
 
-void MPCC::movePreemptCB()
-{
-    move_action_result_.reach = true;
-    move_action_server_->setPreempted(move_action_result_, "Action has been preempted");
-    tracking_ = true;
-}
+	void MPCC::movePreemptCB()
+	{
+		move_action_result_.reach = true;
+		move_action_server_->setPreempted(move_action_result_, "Action has been preempted");
+		tracking_ = true;
+	}
 
-void MPCC::actionSuccess()
-{
-    move_action_server_->setSucceeded(move_action_result_, "Goal succeeded!");
-    tracking_ = true;
-}
+	void MPCC::actionSuccess()
+	{
+		move_action_server_->setSucceeded(move_action_result_, "Goal succeeded!");
+		tracking_ = true;
+	}
 
-void MPCC::actionAbort()
-{
-    move_action_server_->setAborted(move_action_result_, "Action has been aborted");
-    tracking_ = true;
-}
+	void MPCC::actionAbort()
+	{
+		move_action_server_->setAborted(move_action_result_, "Action has been aborted");
+		tracking_ = true;
+	}
 
-/*
-int MPCC::moveCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr)
-{
+	/*
+	int MPCC::moveCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr)
+	{
 
-    predictive_control::moveResult result;
-    predictive_control::moveFeedback feedback;
-    goal_pose_.resize(6);
+		predictive_control::moveResult result;
+		predictive_control::moveFeedback feedback;
+		goal_pose_.resize(6);
 
-    // asume that not any target frame id set than it should use interative marker node
-    if (move_action_goal_ptr->target_frame_id.empty() || move_action_goal_ptr->target_endeffector_pose.header.frame_id.empty())
-    {
-        tracking_ = true;
-        result.reach = false;
-        move_action_server_->setAborted(result, " Not set desired goal and frame id, Now use to intractive marker to set desired goal");
-        //target_frame_ = controller_config_->target_frame_;
-    }
+		// asume that not any target frame id set than it should use interative marker node
+		if (move_action_goal_ptr->target_frame_id.empty() || move_action_goal_ptr->target_endeffector_pose.header.frame_id.empty())
+		{
+			tracking_ = true;
+			result.reach = false;
+			move_action_server_->setAborted(result, " Not set desired goal and frame id, Now use to intractive marker to set desired goal");
+			//target_frame_ = controller_config_->target_frame_;
+		}
 
-    else
-    {
-        ROS_WARN("==========***********============ MPCC::moveCallBack: recieving new goal request ==========***********============");
-        tracking_ = false;
+		else
+		{
+			ROS_WARN("==========***********============ MPCC::moveCallBack: recieving new goal request ==========***********============");
+			tracking_ = false;
 
-        collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
+			collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
 
-        target_frame_ = move_action_goal_ptr->target_frame_id;
+			target_frame_ = move_action_goal_ptr->target_frame_id;
 
-        ////
-        // extract goal gripper position and orientation
-        goal_pose_(0) = move_action_goal_ptr->target_endeffector_pose.pose.position.x;
-        goal_pose_(1) = move_action_goal_ptr->target_endeffector_pose.pose.position.y;
-        goal_pose_(2) = move_action_goal_ptr->target_endeffector_pose.pose.position.z;
+			////
+			// extract goal gripper position and orientation
+			goal_pose_(0) = move_action_goal_ptr->target_endeffector_pose.pose.position.x;
+			goal_pose_(1) = move_action_goal_ptr->target_endeffector_pose.pose.position.y;
+			goal_pose_(2) = move_action_goal_ptr->target_endeffector_pose.pose.position.z;
 
-        tf::Quaternion quat(move_action_goal_ptr->target_endeffector_pose.pose.orientation.x,
-                                                move_action_goal_ptr->target_endeffector_pose.pose.orientation.y,
-                                                move_action_goal_ptr->target_endeffector_pose.pose.orientation.z,
-                                                move_action_goal_ptr->target_endeffector_pose.pose.orientation.w);
+			tf::Quaternion quat(move_action_goal_ptr->target_endeffector_pose.pose.orientation.x,
+													move_action_goal_ptr->target_endeffector_pose.pose.orientation.y,
+													move_action_goal_ptr->target_endeffector_pose.pose.orientation.z,
+													move_action_goal_ptr->target_endeffector_pose.pose.orientation.w);
 
-        tf::Matrix3x3 matrix(quat);
-        double r(0.0), p(0.0), y(0.0);
-        matrix.getRPY(r, p, y);
+			tf::Matrix3x3 matrix(quat);
+			double r(0.0), p(0.0), y(0.0);
+			matrix.getRPY(r, p, y);
 
-        goal_pose_(3) = r;
-        goal_pose_(4) = p;
-        goal_pose_(5) = y;
-////
-        // set result for validation
-        move_action_server_->setSucceeded(result, "successfully reach to desired pose");
+			goal_pose_(3) = r;
+			goal_pose_(4) = p;
+			goal_pose_(5) = y;
+	////
+			// set result for validation
+			move_action_server_->setSucceeded(result, "successfully reach to desired pose");
 
-        // publish feed to tracking information
-        tf::Matrix3x3 return_matrix;
-        tf::Quaternion current_quat;
-        return_matrix.setRPY(current_pose_(3), current_pose_(4), current_pose_(5));
-        return_matrix.getRotation(current_quat);
+			// publish feed to tracking information
+			tf::Matrix3x3 return_matrix;
+			tf::Quaternion current_quat;
+			return_matrix.setRPY(current_pose_(3), current_pose_(4), current_pose_(5));
+			return_matrix.getRotation(current_quat);
 
-        feedback.current_endeffector_pose.position.x = current_pose_(0);
-        feedback.current_endeffector_pose.position.y = current_pose_(1);
-        feedback.current_endeffector_pose.position.z = current_pose_(2);
-        feedback.current_endeffector_pose.orientation.w = current_quat.w();
-        feedback.current_endeffector_pose.orientation.x = current_quat.x();
-        feedback.current_endeffector_pose.orientation.y = current_quat.y();
-        feedback.current_endeffector_pose.orientation.z = current_quat.z();
-        move_action_server_->publishFeedback(feedback);
+			feedback.current_endeffector_pose.position.x = current_pose_(0);
+			feedback.current_endeffector_pose.position.y = current_pose_(1);
+			feedback.current_endeffector_pose.position.z = current_pose_(2);
+			feedback.current_endeffector_pose.orientation.w = current_quat.w();
+			feedback.current_endeffector_pose.orientation.x = current_quat.x();
+			feedback.current_endeffector_pose.orientation.y = current_quat.y();
+			feedback.current_endeffector_pose.orientation.z = current_quat.z();
+			move_action_server_->publishFeedback(feedback);
 
-    }
-        return 0;
-    /////
-    predictive_control::moveResult result;
-    result.reach = true;
-    move_action_server_.setSucceeded(result, "move to target pose successful ");
-    return 0;////
-}
-*/
+		}
+			return 0;
+		/////
+		predictive_control::moveResult result;
+		result.reach = true;
+		move_action_server_.setSucceeded(result, "move to target pose successful ");
+		return 0;////
+	}
+	*/
 // read current position and velocity of robot joints
 void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {

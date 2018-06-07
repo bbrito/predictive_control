@@ -31,6 +31,7 @@ find_package(Boost REQUIRED COMPONENTS thread)
 find_package(Eigen REQUIRED)
 
 find_package(ACADO REQUIRED)
+find_package(CASADI REQUIRED)
 
 add_definitions(${EIGEN_DEFINITIONS})
 
@@ -80,7 +81,7 @@ generate_messages(
 catkin_package(
   CATKIN_DEPENDS actionlib_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core
   DEPENDS Boost ACADO
-  INCLUDE_DIRS include ${ACADO_INCLUDE_DIRS} #${ACADO_INCLUDE_PACKAGES}
+  INCLUDE_DIRS include ${ACADO_INCLUDE_DIRS} include/${PROJECT_NAME}
   LIBRARIES  predictive_configuration kinematic_calculations self_collision_detection collision_avoidance predictive_trajectory_generator predictive_controller
 )
 
@@ -90,6 +91,7 @@ include_directories(include
     ${EIGEN_INCLUDE_DIRS}
     ${orocos_kdl_INCLUDE_DIRS}
     ${ACADO_INCLUDE_DIRS}
+    include/${PROJECT_NAME}
     #${ACADO_INCLUDE_PACKAGES}
     )
 
@@ -101,6 +103,7 @@ target_link_libraries(predictive_configuration
     ${catkin_LIBRARIES}
     ${orocos_kdl_LIBRARIES}
     ${libacado}
+    ${CASADI_LIBRARIES}
     )
 
 add_library(kinematic_calculations src/kinematic_calculations.cpp)
@@ -134,6 +137,7 @@ target_link_libraries(predictive_trajectory_generator
     ${catkin_LIBRARIES}
     ${orocos_kdl_LIBRARIES}
     ${libacado}
+    tkspline_lib
     )
 
 add_library(predictive_controller src/mpcc_controller.cpp)

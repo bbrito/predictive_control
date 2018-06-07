@@ -167,8 +167,8 @@ private:
         visualization_msgs::MarkerArray traj_marker_array_;
 
     // Distance between traget frame and tracking frame relative to base link
-    Eigen::VectorXd current_state_, last_state_;
-    Eigen::VectorXd goal_pose_;
+    Eigen::Vector3d current_state_, last_state_;
+    Eigen::Vector3d goal_pose_, prev_pose_,next_pose_;
     Eigen::VectorXd tf_traget_from_tracking_vector_;
 
     Eigen::VectorXd min_velocity_limit_;
@@ -179,7 +179,8 @@ private:
 
 	//TRajectory execution variables
 	double next_point_dist, goal_dist, prev_point_dist;
-	int i;
+	int idx, idy;
+	double epsilon_;
 
     // Kinematic variables
 	//To be done kinematic model car

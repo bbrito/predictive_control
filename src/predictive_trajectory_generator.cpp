@@ -2,7 +2,6 @@
 //This file containts cost function intsert in to generated trajectory.
 
 #include <predictive_control/predictive_trajectory_generator.h>
-#include "../../../../code/ProbabilisticMotionPlanning-MasterThesis/POMDP/POMDP/src/spline.h"
 
 pd_frame_tracker::~pd_frame_tracker()
 {

@@ -302,8 +302,8 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 	OCP_problem_.subjectTo(f);
 
   // generate cost function
-  //generateCostFunction(OCP_problem_, x_, v_, goal_pose,param_);
-	path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
+  generateCostFunction(OCP_problem_, x_, v_, goal_pose);
+  //path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
 
   // Optimal Control Algorithm
   RealTimeAlgorithm OCP_solver(OCP_problem_, 0.025); // 0.025 sampling time

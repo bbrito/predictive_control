@@ -165,25 +165,26 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
 	if(((int)traj.multi_dof_joint_trajectory.points.size()) > 1){
 
-		Eigen::Vector3d dist = current_state_-goal_pose_;
-		if(dist.norm() < epsilon_ || idx==1){
-			idx++;
-			pd_trajectory_generator_->s_=0;
-			ROS_INFO_STREAM("TRajectory point " << idx);
+		//Eigen::Vector3d dist = current_state_-goal_pose_;
+		idx = (int)traj.multi_dof_joint_trajectory.points.size() -2;
+		//if(dist.norm() < epsilon_ || idx==1){
+			//idx++;
+		//	pd_trajectory_generator_->s_=0;
+		//	ROS_INFO_STREAM("TRajectory point " << idx);
 
 			//assigning next point as goal pose since initial point of trajectory is actual pose
-			prev_pose_(0) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.x;
+			/*prev_pose_(0) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.x;
 			prev_pose_(1) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.y;
 			prev_pose_(2) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.z;
 			next_pose_(0) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].translation.x;
 			next_pose_(1) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].translation.y;
-			next_pose_(2) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].rotation.z;
+			next_pose_(2) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].rotation.z;*/
 			//assigning next point as goal pose since initial point of trajectory is actual pose
 			goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.x;
 			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.y;
 			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].rotation.z;
 			//Initialize and build splines for x and y
-			std::vector<double> X, Y, S;
+			/*std::vector<double> X, Y, S;
 			ROS_INFO_STREAM("goal_pose " << goal_pose_);
 			ROS_INFO_STREAM("goal_pose " << prev_pose_);
 			Eigen::Vector3d dist = goal_pose_-prev_pose_;
@@ -202,8 +203,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
 			ROS_INFO_STREAM("ref_path_x.m_b " << pd_trajectory_generator_->ref_path_x.m_b);
 			ROS_INFO_STREAM("ref_path_x.m_c " << pd_trajectory_generator_->ref_path_x.m_c);
 			ROS_INFO_STREAM("ref_path_x.m_d " << pd_trajectory_generator_->ref_path_x.m_d);
-				//pd_trajectory_generator_->initializeOptimalControlProblem(traj.joint_trajectory.points[0].positions);
-		}
+			*/
+		//}
 			pd_trajectory_generator_->solveOptimalControlProblem(current_state_,prev_pose_,next_pose_, goal_pose_, controlled_velocity_);
 		}
 		// solver optimal control problem

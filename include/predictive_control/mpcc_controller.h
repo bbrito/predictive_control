@@ -54,6 +54,8 @@
 #include <predictive_control/trajAction.h>
 #include <predictive_control/trajActionGoal.h>
 
+#include <nav_msgs/Path.h>
+
 
 /*
 struct hold_pose
@@ -138,7 +140,7 @@ public:
     ros::Publisher cartesian_error_pub_;
 
     // publish trajectory
-    ros::Publisher traj_pub_;
+    ros::Publisher traj_pub_, tr_path_pub_;
 
 private:
 
@@ -250,7 +252,7 @@ private:
 
 
     void publishTrajectory(void);
-
+    void publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj);
     /**
      * @brief checkVelocityLimitViolation: check velocity limit violate, limit containts lower and upper limit
      * @param joint_velocity: current velocity joint values

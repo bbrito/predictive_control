@@ -31,7 +31,7 @@ find_package(Boost REQUIRED COMPONENTS thread)
 find_package(Eigen REQUIRED)
 
 find_package(ACADO REQUIRED)
-find_package(CASADI REQUIRED)
+#find_package(CASADI REQUIRED)
 
 add_definitions(${EIGEN_DEFINITIONS})
 

@@ -127,6 +127,7 @@ bool MPCC::initialize()
 
         //To be implemented
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
+        tr_path_pub_ = nh.advertise<nav_msgs::Path>("horizon",1);
         controlled_velocity_pub_ = nh.advertise<geometry_msgs::Twist>(controller_config_->output_cmd,1);
 
         ros::Duration(1).sleep();
@@ -212,7 +213,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
 		// publishes error stamped for plot, trajectory
 		//this->publishErrorPose(tf_traget_from_tracking_vector_);
-		//this->publishTrajectory();
+	//	this->publishTrajectory();
+            publishPathFromTrajectory(traj);
 
 			// publish zero controlled velocity
 			if (!tracking_)
@@ -509,6 +511,28 @@ void MPCC::publishTrajectory()
     //publishes
     traj_pub_.publish(traj_marker_array_);
 }
+
+void MPCC::publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj)
+{
+
+    nav_msgs::Path path;
+    geometry_msgs::PoseStamped pose;
+
+    pose.header.frame_id = "odom";
+    pose.header.stamp = ros::Time::now();
+
+    for (int sample_it = 0 ; sample_it < traj.multi_dof_joint_trajectory.points.size() ; sample_it++){
+        pose.pose.position.x = traj.multi_dof_joint_trajectory.points[sample_it].transforms[0].translation.x;
+        pose.pose.position.y = traj.multi_dof_joint_trajectory.points[sample_it].transforms[0].translation.y;
+        path.poses.push_back(pose);
+    }
+
+    path.header.frame_id = "odom";
+    path.header.stamp = ros::Time::now();
+
+    tr_path_pub_.publish(path);
+}
+
 
 // convert Eigen Vector to geomentry Pose
 bool MPCC::transformEigenToGeometryPose(const Eigen::VectorXd &eigen_vector, geometry_msgs::Pose &pose)

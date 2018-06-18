@@ -17,7 +17,7 @@ robot_state_topic: '/robot_state'
 
 # limit parameter
 min_velocity_limit:  0.0
-max_velocity_limit:  2.0
+max_velocity_limit: 0.5 
 desired_velocity: 1.5
 
 position_tolerance: 0.05

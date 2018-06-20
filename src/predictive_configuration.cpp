@@ -121,6 +121,17 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     return false;
   }
 
+  if (!nh.getParam ("obstacles/n_obstacles", n_obstacles_) )
+  {
+    ROS_WARN(" Parameter 'n_obstacles' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
+  if (!nh.getParam ("obstacles/sub_ellipse_topic", sub_ellipse_topic_) )
+  {
+    ROS_WARN(" Parameter 'robot_state_topic' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
   // check requested parameter availble on parameter server if not than set default value
   nh.param("clock_frequency", clock_frequency_, double(50.0)); // 50 hz
   nh.param("sampling_time", sampling_time_, double(0.025)); // 0.025 second

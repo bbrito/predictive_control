@@ -125,6 +125,8 @@ bool MPCC::initialize()
 
         robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
 
+        obstacle_feed_sub_ = nh.subscribe(controller_config_->sub_ellipse_topic_, 1, &MPCC::ObstacleCallBack, this);
+
         //To be implemented
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
         tr_path_pub_ = nh.advertise<nav_msgs::Path>("horizon",1);
@@ -142,6 +144,31 @@ bool MPCC::initialize()
 		idx = 1;
 		idy = 1;
 		epsilon_ = 0.01;
+
+		//Initialize obstacles
+		obstacle_feed::Obstacle obstacle_init;
+		obstacle_feed::Obstacles obstacles_init;
+
+        std_msgs::Header obst_header_init;
+
+        obst_header_init.stamp = ros::Time::now();
+        obst_header_init.frame_id = controller_config_->robot_base_link_;
+
+        for (int it_obst; it_obst < controller_config_->n_obstacles_; it_obst++)
+        {
+            obstacle_init.pose.orientation.z = 0;
+            obstacle_init.pose.position.x = 1000;
+            obstacle_init.pose.position.y = 1000;
+            obstacle_init.minor_semiaxis = 0.01;
+            obstacle_init.major_semiaxis = 0.01;
+
+            obstacles_init.header = obst_header_init;
+            obstacles_init.Obstacles.push_back(obstacle_init);
+        }
+
+        obstacles_ = obstacles_init;
+
+        std::cout << "initialized " << obstacles_.Obstacles.size() << " obstacles" << std::endl;
 
 		moveit_msgs::RobotTrajectory j;
 		traj = j;
@@ -168,52 +195,17 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
 		//Eigen::Vector3d dist = current_state_-goal_pose_;
 		idx = (int)traj.multi_dof_joint_trajectory.points.size() -2;
-		//if(dist.norm() < epsilon_ || idx==1){
-			//idx++;
-		//	pd_trajectory_generator_->s_=0;
-		//	ROS_INFO_STREAM("TRajectory point " << idx);
-
-			//assigning next point as goal pose since initial point of trajectory is actual pose
-			/*prev_pose_(0) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.x;
-			prev_pose_(1) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.y;
-			prev_pose_(2) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.z;
-			next_pose_(0) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].translation.x;
-			next_pose_(1) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].translation.y;
-			next_pose_(2) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].rotation.z;*/
-			//assigning next point as goal pose since initial point of trajectory is actual pose
 			goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.x;
 			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.y;
 			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].rotation.z;
-			//Initialize and build splines for x and y
-			/*std::vector<double> X, Y, S;
-			ROS_INFO_STREAM("goal_pose " << goal_pose_);
-			ROS_INFO_STREAM("goal_pose " << prev_pose_);
-			Eigen::Vector3d dist = goal_pose_-prev_pose_;
-			X.push_back(prev_pose_[0]);
-			X.push_back(next_pose_[0]);
-			X.push_back(goal_pose_[0]);
-			Y.push_back(prev_pose_[1]);
-			Y.push_back(next_pose_[0]);
-			Y.push_back(goal_pose_[1]);
-			S.push_back(0);
-			S.push_back(dist.norm());
-			ROS_INFO_STREAM("Distance " << dist.norm());
-			pd_trajectory_generator_->ref_path_x.set_points(S, X);
-			pd_trajectory_generator_->ref_path_y.set_points(S, Y);
-			ROS_INFO_STREAM("ref_path_x.m_a " << pd_trajectory_generator_->ref_path_x.m_a);
-			ROS_INFO_STREAM("ref_path_x.m_b " << pd_trajectory_generator_->ref_path_x.m_b);
-			ROS_INFO_STREAM("ref_path_x.m_c " << pd_trajectory_generator_->ref_path_x.m_c);
-			ROS_INFO_STREAM("ref_path_x.m_d " << pd_trajectory_generator_->ref_path_x.m_d);
-			*/
-		//}
-			pd_trajectory_generator_->solveOptimalControlProblem(current_state_,prev_pose_,next_pose_, goal_pose_, controlled_velocity_);
+
+			pd_trajectory_generator_->solveOptimalControlProblem(current_state_,prev_pose_,next_pose_, goal_pose_, obstacles_, controlled_velocity_);
 		}
 		// solver optimal control problem
 
 
-		// publishes error stamped for plot, trajectory
-		//this->publishErrorPose(tf_traget_from_tracking_vector_);
-	//	this->publishTrajectory();
+//		    this->publishTrajectory();
+
             publishPathFromTrajectory(traj);
 
 			// publish zero controlled velocity
@@ -368,6 +360,32 @@ void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
     current_state_(0) =    msg->position.x;
     current_state_(1) =    msg->position.y;
     current_state_(2) =    msg->orientation.z;
+}
+
+void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
+{
+    geometry_msgs::PoseStamped stampedpose;
+    stampedpose.header.frame_id = obstacles.header.frame_id;
+    stampedpose.header.stamp = ros::Time::now();
+
+//    bool frame_same = obstacles.header.frame_id == controller_config_->robot_base_link_;
+//    std::cout << "same frame = " << frame_same << std::endl;
+
+    // Transform obstacles to robot frame if they are represented in another frame
+    if (!(obstacles.header.frame_id == controller_config_->robot_base_link_)){
+        getTransform("base_link", obstacles.header.frame_id, stampedpose);
+    }
+
+    obstacle_feed::Obstacles obstacles_temp;
+    obstacles_temp = obstacles;
+    obstacles_temp.Obstacles[0].pose.position.x += stampedpose.pose.position.x;
+    obstacles_temp.Obstacles[0].pose.position.y += stampedpose.pose.position.y;
+
+    obstacles_ = obstacles_temp;
+
+//    std::cout << "Before transform: x = " << obstacles.Obstacles[0].pose.position.x << ", y = " << obstacles.Obstacles[0].pose.position.y << std::endl;
+//
+//    std::cout << "Before transform: x = " << obstacles_temp.Obstacles[0].pose.position.x << ", y = " << obstacles_temp.Obstacles[0].pose.position.y << std::endl;
 
 }
 
@@ -564,70 +582,70 @@ bool MPCC::transformEigenToGeometryPose(const Eigen::VectorXd &eigen_vector, geo
 }
 
 
-bool MPCC::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
-{
-    bool transform = false;
-    stamped_pose = Eigen::VectorXd(6);
-    tf::StampedTransform stamped_tf;
+//bool MPCC::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
+//{
+//    bool transform = false;
+//    stamped_pose = Eigen::VectorXd(6);
+//    tf::StampedTransform stamped_tf;
+//
+//    // make sure source and target frame exist
+//    if (tf_listener_.frameExists(to) && tf_listener_.frameExists(from))
+//    {
+//        try
+//        {
+//            // find transforamtion between souce and target frame
+//            tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.02));
+//            tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
+//
+//            // translation
+//            stamped_pose(0) = stamped_tf.getOrigin().x();
+//            stamped_pose(1) = stamped_tf.getOrigin().y();
+//            stamped_pose(2) = stamped_tf.getOrigin().z();
+//
+//            // convert quternion to rpy
+//            tf::Quaternion quat(stamped_tf.getRotation().getX(),
+//                                                    stamped_tf.getRotation().getY(),
+//                                                    stamped_tf.getRotation().getZ(),
+//                                                    stamped_tf.getRotation().getW()
+//            );
+//
+//            if (activate_debug_output_)
+//            {
+//                std::cout << "\033[94m" << "getTransform:" << " qx:" << stamped_tf.getRotation().getX()
+//                                    << "qy:" << stamped_tf.getRotation().getY()
+//                                    << "qz:" << stamped_tf.getRotation().getZ()
+//                                    << "qw:" << stamped_tf.getRotation().getW() << "\033[0m" <<std::endl;
+//            }
+//
+//            tf::Matrix3x3 quat_matrix(quat);
+//            quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
+//
+//            if (activate_debug_output_)
+//            {
+//                std::cout << "\033[32m" << "getTransform:" << " roll:" << stamped_pose(3)
+//                                    << " pitch:" << stamped_pose(4)
+//                                    << " yaw:" << stamped_pose(5)
+//                                    << "\033[0m" <<std::endl;
+//            }
+//
+//            transform = true;
+//        }
+//        catch (tf::TransformException& ex)
+//        {
+//            ROS_ERROR("MPCC::getTransform: %s", ex.what());
+//        }
+//    }
+//
+//    else
+//    {
+//        ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
+//                         from.c_str(), to.c_str());
+//    }
+//
+//    return transform;
+//}
 
-    // make sure source and target frame exist
-    if (tf_listener_.frameExists(to) && tf_listener_.frameExists(from))
-    {
-        try
-        {
-            // find transforamtion between souce and target frame
-            tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.02));
-            tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
 
-            // translation
-            stamped_pose(0) = stamped_tf.getOrigin().x();
-            stamped_pose(1) = stamped_tf.getOrigin().y();
-            stamped_pose(2) = stamped_tf.getOrigin().z();
-
-            // convert quternion to rpy
-            tf::Quaternion quat(stamped_tf.getRotation().getX(),
-                                                    stamped_tf.getRotation().getY(),
-                                                    stamped_tf.getRotation().getZ(),
-                                                    stamped_tf.getRotation().getW()
-            );
-
-            if (activate_debug_output_)
-            {
-                std::cout << "\033[94m" << "getTransform:" << " qx:" << stamped_tf.getRotation().getX()
-                                    << "qy:" << stamped_tf.getRotation().getY()
-                                    << "qz:" << stamped_tf.getRotation().getZ()
-                                    << "qw:" << stamped_tf.getRotation().getW() << "\033[0m" <<std::endl;
-            }
-
-            tf::Matrix3x3 quat_matrix(quat);
-            quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
-
-            if (activate_debug_output_)
-            {
-                std::cout << "\033[32m" << "getTransform:" << " roll:" << stamped_pose(3)
-                                    << " pitch:" << stamped_pose(4)
-                                    << " yaw:" << stamped_pose(5)
-                                    << "\033[0m" <<std::endl;
-            }
-
-            transform = true;
-        }
-        catch (tf::TransformException& ex)
-        {
-            ROS_ERROR("MPCC::getTransform: %s", ex.what());
-        }
-    }
-
-    else
-    {
-        ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
-                         from.c_str(), to.c_str());
-    }
-
-    return transform;
-}
-
-/*
 bool MPCC::getTransform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
 {
     bool transform = false;
@@ -643,10 +661,10 @@ bool MPCC::getTransform(const std::string& from, const std::string& to, geometry
             tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
 
             // rotation
-            stamped_pose.pose.orientation.w =    stamped_tf.getRotation().getW();
-            stamped_pose.pose.orientation.x =    stamped_tf.getRotation().getX();
-            stamped_pose.pose.orientation.y =    stamped_tf.getRotation().getY();
-            stamped_pose.pose.orientation.z =    stamped_tf.getRotation().getZ();
+            stamped_pose.pose.orientation.w = stamped_tf.getRotation().getW();
+            stamped_pose.pose.orientation.x = stamped_tf.getRotation().getX();
+            stamped_pose.pose.orientation.y = stamped_tf.getRotation().getY();
+            stamped_pose.pose.orientation.z = stamped_tf.getRotation().getZ();
 
             // translation
             stamped_pose.pose.position.x = stamped_tf.getOrigin().x();
@@ -672,7 +690,7 @@ bool MPCC::getTransform(const std::string& from, const std::string& to, geometry
 
     return transform;
 }
-*/
+
 
 // check position lower and upper limit violation
 bool MPCC::checkVelocityLimitViolation(const std_msgs::Float64MultiArray &joint_velocity, const double &velocity_tolerance)

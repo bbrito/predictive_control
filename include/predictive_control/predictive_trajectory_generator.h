@@ -33,7 +33,7 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-//adado includes
+//acado includes
 #include <acado/acado_toolkit.hpp>
 #include <acado/acado_optimal_control.hpp>
 #include <acado/bindings/acado_gnuplot/gnuplot_window.hpp>
@@ -43,6 +43,10 @@
 
 //splines
 #include <tkspline/spline.h>
+
+// Add obstacle messages
+#include <obstacle_feed/Obstacle.h>
+#include <obstacle_feed/Obstacles.h>
 
 using namespace ACADO;
 
@@ -97,6 +101,7 @@ public:
 								   const Eigen::Vector3d& prev_pose,
 								   const Eigen::Vector3d& next_pose,
                                    const Eigen::Vector3d& goal_pose,
+                                   const obstacle_feed::Obstacles& obstacles,
                                    geometry_msgs::Twist& controlled_velocity
                                   );
 
@@ -141,6 +146,10 @@ private:
    // constraints
    DVector control_min_constraint_;
    DVector control_max_constraint_;
+
+   // Obstacles
+   obstacle_feed::Obstacles obstacles_;
+   int n_obstacles_;
 
    //acado configuration paramter,
    int max_num_iteration_;
@@ -211,12 +220,18 @@ private:
     * @param delta_t: time discretization (end_time - start_time / number of interval)
     */
    void generateCollisionCostFunction(OCP& OCP_problem,
+                             const DifferentialState& x,
                              const Control& v,
                              const Eigen::MatrixXd& Jacobian_Matrix,
                              const double& total_distance,
                              const double& delta_t
                              );
 
+   void setCollisionConstraints(OCP& OCP_problem,
+                                const DifferentialState& x,
+                                const obstacle_feed::Obstacles& obstacles,
+                                const double& delta_t
+                                );
 
    /**
     * @brief setAlgorithmOptions: setup solver options, Optimal control solver or RealTimeSolver(MPC)

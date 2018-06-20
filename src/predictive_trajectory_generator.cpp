@@ -87,6 +87,9 @@ bool pd_frame_tracker::initialize()
 	iniKinematics(x_,v_);
 	s_ = 0;
 
+  // Initialize parameters concerning obstacles
+  n_obstacles_ = predictive_configuration::n_obstacles_;
+
   ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
 }
@@ -191,12 +194,47 @@ bool pd_frame_tracker::getTransform(const std::string& from, const std::string& 
 
 // Generate collision cost used to avoid self collision
 void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
+                                                     const DifferentialState& x,
                                                      const Control& v,
                                                      const Eigen::MatrixXd& Jacobian_Matrix,
                                                      const double& total_distance,
-                                                     const double& delta_t)
+                                                     const double& delta_t
+                                                    )
 {
-  //TO BE IMPLEMENTED
+
+}
+
+void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const DifferentialState& x, const obstacle_feed::Obstacles& obstacles, const double& delta_t){
+
+    for (int obst_it = 0; obst_it < n_obstacles_; obst_it++) {
+        Expression x_obst = obstacles.Obstacles[obst_it].pose.position.x;
+        Expression y_obst = obstacles.Obstacles[obst_it].pose.position.y;
+
+        Expression a = obstacles.Obstacles[obst_it].major_semiaxis;
+        Expression b = obstacles.Obstacles[obst_it].minor_semiaxis;
+        Expression phi = obstacles.Obstacles[obst_it].pose.orientation.z;
+
+        Expression deltaPos(2, 1);
+        deltaPos(0) = x(0) - x_obst;
+        deltaPos(1) = x(1) - y_obst;
+
+        Expression R_obst(2, 2);
+        R_obst(0, 0) = cos(phi);
+        R_obst(0, 1) = -sin(phi);
+        R_obst(1, 0) = sin(phi);
+        R_obst(1, 1) = cos(phi);
+
+        Expression ab_mat(2, 2);
+        ab_mat(0, 0) = 1 / (a * a);
+        ab_mat(1, 1) = 1 / (b * b);
+        ab_mat(0, 1) = 0;
+        ab_mat(1, 0) = 0;
+
+        Expression c_k;
+        c_k = deltaPos.transpose() * R_obst.transpose() * ab_mat * R_obst * deltaPos;
+
+        OCP_problem.subjectTo(c_k >= 1);
+    }
 }
 
 void pd_frame_tracker::path_function_spline_direct(OCP& OCP_problem,
@@ -281,6 +319,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 												  const Eigen::Vector3d &prev_pose,
 												  const Eigen::Vector3d &next_pose,
 												  const Eigen::Vector3d &goal_pose,
+												  const obstacle_feed::Obstacles &obstacles,
 												  geometry_msgs::Twist& controlled_velocity)
 {
 
@@ -294,16 +333,20 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 	state_initialize_(2) = last_position(2);
 	state_initialize_(3) = s_;
 
+	obstacles_ = obstacles;
+
 	// OCP variables
 	// Optimal control problem
 	OCP OCP_problem_(start_time_, end_time_, discretization_intervals_);
 
-	//Equal consttraints
+	//Equal constraints
 	OCP_problem_.subjectTo(f);
 
   // generate cost function
   generateCostFunction(OCP_problem_, x_, v_, goal_pose);
   //path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
+
+  setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
 
   // Optimal Control Algorithm
   RealTimeAlgorithm OCP_solver(OCP_problem_, 0.025); // 0.025 sampling time

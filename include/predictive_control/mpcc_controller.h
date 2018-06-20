@@ -56,6 +56,9 @@
 
 #include <nav_msgs/Path.h>
 
+// Add obstacle messages
+#include <obstacle_feed/Obstacle.h>
+#include <obstacle_feed/Obstacles.h>
 
 /*
 struct hold_pose
@@ -97,6 +100,8 @@ public:
      */
     void StateCallBack(const geometry_msgs::Pose::ConstPtr& msg);
 
+    void ObstacleCallBack(const obstacle_feed::Obstacles& obstacles);
+
     /**
      * @brief controlSquence: Known as main control of all classes
      */
@@ -109,10 +114,10 @@ public:
      * @param stamped_pose: Resultant poseStamed between source and target frame
      * @return: true if transform else false
      */
-    /*bool getTransform(const std::string& from,
+    bool getTransform(const std::string& from,
                                         const std::string& to,
                                         geometry_msgs::PoseStamped& stamped_pose
-                                        );*/
+                                        );
 
     /**
      * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
@@ -121,10 +126,10 @@ public:
      * @param stamped_pose: Resultant poseStamed between source and target frame
      * @return: true if transform else false
      */
-    bool getTransform(const std::string& from,
-                                        const std::string& to,
-                                        Eigen::VectorXd& stamped_pose
-                                        );
+//    bool getTransform(const std::string& from,
+//                                        const std::string& to,
+//                                        Eigen::VectorXd& stamped_pose
+//                                        );
 
 
     bool transformEigenToGeometryPose(const Eigen::VectorXd& eigen_vector, geometry_msgs::Pose& pose);
@@ -132,6 +137,9 @@ public:
     /** public data member */
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
+
+    // subscriber for obstacle feed
+    ros::Subscriber obstacle_feed_sub_;
 
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
@@ -186,6 +194,9 @@ private:
 
     // Kinematic variables
 	//To be done kinematic model car
+
+    // Obstacles
+    obstacle_feed::Obstacles obstacles_;
 
     // Current and last position and velocity from joint state callback
     //Eigen::VectorXd current_position_;

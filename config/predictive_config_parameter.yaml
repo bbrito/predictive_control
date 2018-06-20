@@ -3,7 +3,7 @@
 
 # Debug mode
 activate_output: true
-activate_debug_output: true
+activate_debug_output: false
 activate_controller_node_output: true
 plotting_result: true
 
@@ -22,6 +22,11 @@ robot_state_topic: '/robot_state'
 robot_base_link: base_link
 target_frame: odom
 tracking_frame: odom
+
+# Parameters for collision constraints
+obstacles:
+      n_obstacles: 2
+      sub_ellipse_topic: ellipse_objects_feed
 
 # predictive_config: # minimum_collision_distance should not be larger than ball radius
 self_collision:

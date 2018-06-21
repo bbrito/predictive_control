@@ -27,6 +27,9 @@ tracking_frame: odom
 obstacles:
       n_obstacles: 2
       sub_ellipse_topic: ellipse_objects_feed
+      n_discs: 3
+      ego_l: 0.5
+      ego_w: 0.4
 
 # predictive_config: # minimum_collision_distance should not be larger than ball radius
 self_collision:

@@ -150,6 +150,9 @@ private:
    // Obstacles
    obstacle_feed::Obstacles obstacles_;
    int n_obstacles_;
+   double r_discs_;
+   Eigen::VectorXd x_discs_;
+
 
    //acado configuration paramter,
    int max_num_iteration_;
@@ -287,6 +290,8 @@ private:
    * @brief clearDataMember: clear vectors means free allocated memory
    */
   void clearDataMember();
+
+  void computeEgoDiscs();
 
 };
 

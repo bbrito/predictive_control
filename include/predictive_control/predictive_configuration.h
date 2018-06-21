@@ -102,6 +102,9 @@ public:
   double end_time_horizon_;
 
   int n_obstacles_;
+  int n_discs_;
+  double ego_l_;
+  double ego_w_;
 
 
 private:

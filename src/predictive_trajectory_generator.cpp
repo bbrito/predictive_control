@@ -90,6 +90,8 @@ bool pd_frame_tracker::initialize()
   // Initialize parameters concerning obstacles
   n_obstacles_ = predictive_configuration::n_obstacles_;
 
+  computeEgoDiscs();
+
   ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
 }
@@ -103,6 +105,25 @@ void pd_frame_tracker::iniKinematics(const DifferentialState& x, const Control& 
 	f << dot(x(1)) == v(0)*sin(x(2));
 	f << dot(x(2)) == v(1);
 	f << dot(x(3)) == v(0);
+}
+
+void pd_frame_tracker::computeEgoDiscs()
+{
+    // Collect parameters for disc representation
+    int n_discs = predictive_configuration::n_discs_;
+    double length = predictive_configuration::ego_l_;
+    double width = predictive_configuration::ego_w_;
+
+    // Initialize positions of discs
+    x_discs_.resize(n_discs);
+
+    // Loop over discs and assign positions
+    for ( int discs_it = 0; discs_it < n_discs; discs_it++){
+        x_discs_[discs_it] = -length/2 + (discs_it + 1)*(length/(n_discs + 1));
+    }
+
+    // Compute radius of the discs
+    r_discs_ = sqrt(pow(x_discs_[n_discs - 1] - length/2,2) + pow(width/2,2));
 }
 
 // calculate quternion product
@@ -206,34 +227,46 @@ void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
 
 void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const DifferentialState& x, const obstacle_feed::Obstacles& obstacles, const double& delta_t){
 
+    // Iterate over all obstacles
     for (int obst_it = 0; obst_it < n_obstacles_; obst_it++) {
-        Expression x_obst = obstacles.Obstacles[obst_it].pose.position.x;
-        Expression y_obst = obstacles.Obstacles[obst_it].pose.position.y;
+        // Iterate over all ego-vehicle discs
+        for (int discs_it = 0; discs_it < predictive_configuration::n_discs_; discs_it++) {
 
-        Expression a = obstacles.Obstacles[obst_it].major_semiaxis;
-        Expression b = obstacles.Obstacles[obst_it].minor_semiaxis;
-        Expression phi = obstacles.Obstacles[obst_it].pose.orientation.z;
+            // Expression for position of obstacle
+            Expression x_obst = obstacles.Obstacles[obst_it].pose.position.x;
+            Expression y_obst = obstacles.Obstacles[obst_it].pose.position.y;
 
-        Expression deltaPos(2, 1);
-        deltaPos(0) = x(0) - x_obst;
-        deltaPos(1) = x(1) - y_obst;
+            // Size and heading of allipse
+            Expression a = obstacles.Obstacles[obst_it].major_semiaxis + r_discs_;
+            Expression b = obstacles.Obstacles[obst_it].minor_semiaxis + r_discs_;
+            Expression phi = obstacles.Obstacles[obst_it].pose.orientation.z;       // Orientation is an Euler angle
 
-        Expression R_obst(2, 2);
-        R_obst(0, 0) = cos(phi);
-        R_obst(0, 1) = -sin(phi);
-        R_obst(1, 0) = sin(phi);
-        R_obst(1, 1) = cos(phi);
+            // Distance from individual ego-vehicle discs to obstacle
+            Expression deltaPos(2, 1);
+            deltaPos(0) = x(0) - cos(x(2))*x_discs_[discs_it] - x_obst;
+            deltaPos(1) = x(1) - sin(x(2))*x_discs_[discs_it] - y_obst;
 
-        Expression ab_mat(2, 2);
-        ab_mat(0, 0) = 1 / (a * a);
-        ab_mat(1, 1) = 1 / (b * b);
-        ab_mat(0, 1) = 0;
-        ab_mat(1, 0) = 0;
+            // Rotation matrix corresponding to the obstacle heading
+            Expression R_obst(2, 2);
+            R_obst(0, 0) = cos(phi);
+            R_obst(0, 1) = -sin(phi);
+            R_obst(1, 0) = sin(phi);
+            R_obst(1, 1) = cos(phi);
 
-        Expression c_k;
-        c_k = deltaPos.transpose() * R_obst.transpose() * ab_mat * R_obst * deltaPos;
+            // Matrix with total clearance from obstacles
+            Expression ab_mat(2, 2);
+            ab_mat(0, 0) = 1 / (a * a);
+            ab_mat(1, 1) = 1 / (b * b);
+            ab_mat(0, 1) = 0;
+            ab_mat(1, 0) = 0;
 
-        OCP_problem.subjectTo(c_k >= 1);
+            // Total contraint on obstacle
+            Expression c_k;
+            c_k = deltaPos.transpose() * R_obst.transpose() * ab_mat * R_obst * deltaPos;
+
+            // Add constraint to OCP problem
+            OCP_problem.subjectTo(c_k >= 1);
+        }
     }
 }
 
@@ -381,7 +414,6 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 
 	// Clear state, control variable
 	//clearAllStaticCounters();
-
 }
 
 // setup acado algorithm options, need to set solver when calling this function

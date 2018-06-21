@@ -3,7 +3,7 @@
 
 # Debug mode
 activate_output: true
-activate_debug_output: false
+activate_debug_output: true
 activate_controller_node_output: true
 plotting_result: true
 
@@ -25,9 +25,9 @@ tracking_frame: odom
 
 # Parameters for collision constraints
 obstacles:
-      n_obstacles: 2
+      n_obstacles: 1
       sub_ellipse_topic: ellipse_objects_feed
-      n_discs: 3
+      n_discs: 1
       ego_l: 0.5
       ego_w: 0.4
 
@@ -51,8 +51,8 @@ acado_config:
      kkt_tolerance: 1e-6
      integrator_tolerance: 1e-8
      start_time_horizon: 0.0
-     end_time_horizon: 3.0  # control and prediction horizon
-     discretization_intervals: 4
+     end_time_horizon: 5.0  # control and prediction horizon
+     discretization_intervals: 10
      sampling_time: 0.02
      use_lagrange_term: false
      use_LSQ_term: false
@@ -63,4 +63,4 @@ acado_config:
                 [5.0, 5.0, 5.0, 5.0]
            lsq_control_weight_factors:
                 # same as degree of freedom
-                [5.0, 5.0]
+                [5.0, 20.0]

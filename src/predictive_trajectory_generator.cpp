@@ -124,6 +124,8 @@ void pd_frame_tracker::computeEgoDiscs()
 
     // Compute radius of the discs
     r_discs_ = sqrt(pow(x_discs_[n_discs - 1] - length/2,2) + pow(width/2,2));
+
+    ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_);
 }
 
 // calculate quternion product
@@ -141,7 +143,6 @@ void pd_frame_tracker::calculateQuaternionProduct(const geometry_msgs::Quaternio
   quat_resultant.x = ( (quat_1.w * quat_2.x) + (quat_2.w * quat_1.x) + cross_prod(0) );
   quat_resultant.y = ( (quat_1.w * quat_2.y) + (quat_2.w * quat_1.y) + cross_prod(1) );
   quat_resultant.z = ( (quat_1.w * quat_2.z) + (quat_2.w * quat_1.z) + cross_prod(2) );
-
 }
 
 // calculate inverse of quternion
@@ -211,8 +212,6 @@ bool pd_frame_tracker::getTransform(const std::string& from, const std::string& 
   return transform;
 }
 
-
-
 // Generate collision cost used to avoid self collision
 void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
                                                      const DifferentialState& x,
@@ -233,18 +232,26 @@ void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const Different
         for (int discs_it = 0; discs_it < predictive_configuration::n_discs_; discs_it++) {
 
             // Expression for position of obstacle
-            Expression x_obst = obstacles.Obstacles[obst_it].pose.position.x;
-            Expression y_obst = obstacles.Obstacles[obst_it].pose.position.y;
+            double x_obst = obstacles.Obstacles[obst_it].pose.position.x;
+            double y_obst = obstacles.Obstacles[obst_it].pose.position.y;
 
             // Size and heading of allipse
-            Expression a = obstacles.Obstacles[obst_it].major_semiaxis + r_discs_;
-            Expression b = obstacles.Obstacles[obst_it].minor_semiaxis + r_discs_;
-            Expression phi = obstacles.Obstacles[obst_it].pose.orientation.z;       // Orientation is an Euler angle
+            double a = obstacles.Obstacles[obst_it].major_semiaxis + r_discs_;
+            double b = obstacles.Obstacles[obst_it].minor_semiaxis + r_discs_;
+            double phi = obstacles.Obstacles[obst_it].pose.orientation.z;       // Orientation is an Euler angle
 
             // Distance from individual ego-vehicle discs to obstacle
             Expression deltaPos(2, 1);
-            deltaPos(0) = x(0) - cos(x(2))*x_discs_[discs_it] - x_obst;
-            deltaPos(1) = x(1) - sin(x(2))*x_discs_[discs_it] - y_obst;
+//            deltaPos(0) = x(0) - cos(x(2))*x_discs_[discs_it] - x_obst;
+//            deltaPos(1) = x(1) - sin(x(2))*x_discs_[discs_it] - y_obst;
+
+            deltaPos(0) = x(0) - x_obst;
+            deltaPos(1) = x(1) - y_obst;
+
+//            deltaPos(0) = deltaPos(0).getEuclideanNorm();
+//            deltaPos(1) = deltaPos(1).getEuclideanNorm();
+//            deltaPos(0) = x_obst - x(0);
+//            deltaPos(1) = y_obst - x(1);
 
             // Rotation matrix corresponding to the obstacle heading
             Expression R_obst(2, 2);
@@ -262,7 +269,8 @@ void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const Different
 
             // Total contraint on obstacle
             Expression c_k;
-            c_k = deltaPos.transpose() * R_obst.transpose() * ab_mat * R_obst * deltaPos;
+//            c_k = deltaPos.transpose() * R_obst.transpose() * ab_mat * R_obst * deltaPos;
+            c_k = deltaPos.transpose()  * ab_mat *  deltaPos;
 
             // Add constraint to OCP problem
             OCP_problem.subjectTo(c_k >= 1);

@@ -372,17 +372,17 @@ void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 //    std::cout << "same frame = " << frame_same << std::endl;
 
     // Transform obstacles to robot frame if they are represented in another frame
-    if (!(obstacles.header.frame_id == controller_config_->robot_base_link_)){
-        getTransform("base_link", obstacles.header.frame_id, stampedpose);
-    }
+//    if (!(obstacles.header.frame_id == controller_config_->robot_base_link_)){
+//        getTransform("base_link", obstacles.header.frame_id, stampedpose);
+//    }
 
-    obstacle_feed::Obstacles obstacles_temp;
-    obstacles_temp = obstacles;
-    obstacles_temp.Obstacles[0].pose.position.x += stampedpose.pose.position.x;
-    obstacles_temp.Obstacles[0].pose.position.y += stampedpose.pose.position.y;
+//    obstacle_feed::Obstacles obstacles_temp;
+//    obstacles_temp = obstacles;
+//    obstacles_temp.Obstacles[0].pose.position.x += stampedpose.pose.position.x;
+//    obstacles_temp.Obstacles[0].pose.position.y += stampedpose.pose.position.y;
 
-    obstacles_ = obstacles_temp;
-
+//    obstacles_ = obstacles_temp;
+    obstacles_ = obstacles;
 //    std::cout << "Before transform: x = " << obstacles.Obstacles[0].pose.position.x << ", y = " << obstacles.Obstacles[0].pose.position.y << std::endl;
 //
 //    std::cout << "Before transform: x = " << obstacles_temp.Obstacles[0].pose.position.x << ", y = " << obstacles_temp.Obstacles[0].pose.position.y << std::endl;

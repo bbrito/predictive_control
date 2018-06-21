@@ -25,13 +25,14 @@ find_package(catkin REQUIRED COMPONENTS
     visualization_msgs
     shape_msgs
     moveit_msgs
+    obstacle_feed
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
 find_package(Eigen REQUIRED)
 
 find_package(ACADO REQUIRED)
-find_package(CASADI REQUIRED)
+#find_package(CASADI REQUIRED)
 
 add_definitions(${EIGEN_DEFINITIONS})
 
@@ -76,10 +77,11 @@ generate_messages(
             shape_msgs
             visualization_msgs
             moveit_msgs
+            obstacle_feed
 )
 
 catkin_package(
-  CATKIN_DEPENDS actionlib_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core
+  CATKIN_DEPENDS actionlib_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core obstacle_feed
   DEPENDS Boost ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_DIRS} include/${PROJECT_NAME}
   LIBRARIES  predictive_configuration kinematic_calculations self_collision_detection collision_avoidance predictive_trajectory_generator predictive_controller

@@ -87,6 +87,11 @@ bool pd_frame_tracker::initialize()
 	iniKinematics(x_,v_);
 	s_ = 0;
 
+  // Initialize parameters concerning obstacles
+  n_obstacles_ = predictive_configuration::n_obstacles_;
+
+  computeEgoDiscs();
+
   ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
 }
@@ -100,6 +105,27 @@ void pd_frame_tracker::iniKinematics(const DifferentialState& x, const Control& 
 	f << dot(x(1)) == v(0)*sin(x(2));
 	f << dot(x(2)) == v(1);
 	f << dot(x(3)) == v(0);
+}
+
+void pd_frame_tracker::computeEgoDiscs()
+{
+    // Collect parameters for disc representation
+    int n_discs = predictive_configuration::n_discs_;
+    double length = predictive_configuration::ego_l_;
+    double width = predictive_configuration::ego_w_;
+
+    // Initialize positions of discs
+    x_discs_.resize(n_discs);
+
+    // Loop over discs and assign positions
+    for ( int discs_it = 0; discs_it < n_discs; discs_it++){
+        x_discs_[discs_it] = -length/2 + (discs_it + 1)*(length/(n_discs + 1));
+    }
+
+    // Compute radius of the discs
+    r_discs_ = sqrt(pow(x_discs_[n_discs - 1] - length/2,2) + pow(width/2,2));
+
+    ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_);
 }
 
 // calculate quternion product
@@ -117,7 +143,6 @@ void pd_frame_tracker::calculateQuaternionProduct(const geometry_msgs::Quaternio
   quat_resultant.x = ( (quat_1.w * quat_2.x) + (quat_2.w * quat_1.x) + cross_prod(0) );
   quat_resultant.y = ( (quat_1.w * quat_2.y) + (quat_2.w * quat_1.y) + cross_prod(1) );
   quat_resultant.z = ( (quat_1.w * quat_2.z) + (quat_2.w * quat_1.z) + cross_prod(2) );
-
 }
 
 // calculate inverse of quternion
@@ -187,16 +212,70 @@ bool pd_frame_tracker::getTransform(const std::string& from, const std::string& 
   return transform;
 }
 
-
-
 // Generate collision cost used to avoid self collision
 void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
+                                                     const DifferentialState& x,
                                                      const Control& v,
                                                      const Eigen::MatrixXd& Jacobian_Matrix,
                                                      const double& total_distance,
-                                                     const double& delta_t)
+                                                     const double& delta_t
+                                                    )
 {
-  //TO BE IMPLEMENTED
+
+}
+
+void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const DifferentialState& x, const obstacle_feed::Obstacles& obstacles, const double& delta_t){
+
+    // Iterate over all obstacles
+    for (int obst_it = 0; obst_it < n_obstacles_; obst_it++) {
+        // Iterate over all ego-vehicle discs
+        for (int discs_it = 0; discs_it < predictive_configuration::n_discs_; discs_it++) {
+
+            // Expression for position of obstacle
+            double x_obst = obstacles.Obstacles[obst_it].pose.position.x;
+            double y_obst = obstacles.Obstacles[obst_it].pose.position.y;
+
+            // Size and heading of allipse
+            double a = obstacles.Obstacles[obst_it].major_semiaxis + r_discs_;
+            double b = obstacles.Obstacles[obst_it].minor_semiaxis + r_discs_;
+            double phi = obstacles.Obstacles[obst_it].pose.orientation.z;       // Orientation is an Euler angle
+
+            // Distance from individual ego-vehicle discs to obstacle
+            Expression deltaPos(2, 1);
+//            deltaPos(0) = x(0) - cos(x(2))*x_discs_[discs_it] - x_obst;
+//            deltaPos(1) = x(1) - sin(x(2))*x_discs_[discs_it] - y_obst;
+
+            deltaPos(0) = x(0) - x_obst;
+            deltaPos(1) = x(1) - y_obst;
+
+//            deltaPos(0) = deltaPos(0).getEuclideanNorm();
+//            deltaPos(1) = deltaPos(1).getEuclideanNorm();
+//            deltaPos(0) = x_obst - x(0);
+//            deltaPos(1) = y_obst - x(1);
+
+            // Rotation matrix corresponding to the obstacle heading
+            Expression R_obst(2, 2);
+            R_obst(0, 0) = cos(phi-x(2));
+            R_obst(0, 1) = -sin(x(2)-x(2));
+            R_obst(1, 0) = sin(phi-x(2));
+            R_obst(1, 1) = cos(phi-x(2));
+
+            // Matrix with total clearance from obstacles
+            Expression ab_mat(2, 2);
+            ab_mat(0, 0) = 1 / (a * a);
+            ab_mat(1, 1) = 1 / (b * b);
+            ab_mat(0, 1) = 0;
+            ab_mat(1, 0) = 0;
+
+            // Total contraint on obstacle
+            Expression c_k;
+//            c_k = deltaPos.transpose() * R_obst.transpose() * ab_mat * R_obst * deltaPos;
+            c_k = deltaPos.transpose()  * ab_mat *  deltaPos;
+
+            // Add constraint to OCP problem
+            OCP_problem.subjectTo(c_k >= 1);
+        }
+    }
 }
 
 void pd_frame_tracker::path_function_spline_direct(OCP& OCP_problem,
@@ -204,7 +283,7 @@ void pd_frame_tracker::path_function_spline_direct(OCP& OCP_problem,
 												   const Control &v,
 												   const Eigen::Vector3d& goal_pose){
 
-	Expression t = s(3);
+	IntermediateState t = s(3);
 
 	DVector a_x(4),a_y(4);
 
@@ -260,7 +339,8 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
 	  Expression sqp = (lsq_state_weight_factors_(0) * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0)) )
 						+(lsq_state_weight_factors_(1) * ( (x(1) - goal_pose(1)) * (x(1) - goal_pose(1))))
 						+lsq_state_weight_factors_(2) * ( (x(2) - goal_pose(2)) * (x(2) - goal_pose(2))))
-					   + lsq_control_weight_factors_(0) * (v.transpose() * v);
+					   + lsq_control_weight_factors_(0) * (v.transpose() * v) +
+	  x(2) * x(2);
 
 	  OCP_problem.minimizeMayerTerm( sqp );
 
@@ -277,10 +357,11 @@ void pd_frame_tracker::initializeOptimalControlProblem(std::vector<double> param
 }
 
 
-void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
+VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
 												  const Eigen::Vector3d &prev_pose,
 												  const Eigen::Vector3d &next_pose,
 												  const Eigen::Vector3d &goal_pose,
+												  const obstacle_feed::Obstacles &obstacles,
 												  geometry_msgs::Twist& controlled_velocity)
 {
 
@@ -294,16 +375,20 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 	state_initialize_(2) = last_position(2);
 	state_initialize_(3) = s_;
 
+	obstacles_ = obstacles;
+
 	// OCP variables
 	// Optimal control problem
 	OCP OCP_problem_(start_time_, end_time_, discretization_intervals_);
 
-	//Equal consttraints
+	//Equal constraints
 	OCP_problem_.subjectTo(f);
 
   // generate cost function
   generateCostFunction(OCP_problem_, x_, v_, goal_pose);
   //path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
+
+  setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
 
   // Optimal Control Algorithm
   RealTimeAlgorithm OCP_solver(OCP_problem_, 0.025); // 0.025 sampling time
@@ -313,19 +398,15 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 
   setAlgorithmOptions(OCP_solver);
 
-  // setup controller
-  Controller controller(OCP_solver);
-  controller.init(0.0, state_initialize_);
-  controller.step(0.0, state_initialize_);
+	OCP_solver.solve(0.0,state_initialize_);
+
+	OCP_solver.getDifferentialStates(pred_states);
+
 
   // get control at first step and update controlled velocity vector
-  DVector u;
-  controller.getU(u);
-  if (activate_debug_output_) {
-    ROS_WARN("================");
-    u.print();
-    ROS_WARN("================");
-  }
+
+	OCP_solver.getU(u);
+
 	if (u.size()>0){
 		controlled_velocity.linear.x = u(0);
 		controlled_velocity.angular.z = u(1);
@@ -336,9 +417,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 		s_ += u(0) * sampling_time_;
 	}
 
-	// Clear state, control variable
-	//clearAllStaticCounters();
-
+	return pred_states;
 }
 
 // setup acado algorithm options, need to set solver when calling this function

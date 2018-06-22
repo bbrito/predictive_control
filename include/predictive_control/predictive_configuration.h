@@ -69,6 +69,7 @@ public:
   // use for finding kinematic chain and urdf model
   std::string robot_base_link_;
   std::string tracking_frame_;  //  End effector of arm
+  std::string sub_ellipse_topic_;
 
   // limiting parameter, use to enforce joint to be in limit
   std::vector<std::string> collision_check_obstacles_;
@@ -99,6 +100,11 @@ public:
   double integrator_tolerance_;
   double start_time_horizon_;
   double end_time_horizon_;
+
+  int n_obstacles_;
+  int n_discs_;
+  double ego_l_;
+  double ego_w_;
 
 
 private:

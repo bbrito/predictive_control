@@ -54,6 +54,11 @@
 #include <predictive_control/trajAction.h>
 #include <predictive_control/trajActionGoal.h>
 
+#include <nav_msgs/Path.h>
+
+// Add obstacle messages
+#include <obstacle_feed/Obstacle.h>
+#include <obstacle_feed/Obstacles.h>
 
 /*
 struct hold_pose
@@ -95,6 +100,8 @@ public:
      */
     void StateCallBack(const geometry_msgs::Pose::ConstPtr& msg);
 
+    void ObstacleCallBack(const obstacle_feed::Obstacles& obstacles);
+
     /**
      * @brief controlSquence: Known as main control of all classes
      */
@@ -107,10 +114,10 @@ public:
      * @param stamped_pose: Resultant poseStamed between source and target frame
      * @return: true if transform else false
      */
-    /*bool getTransform(const std::string& from,
+    bool getTransform(const std::string& from,
                                         const std::string& to,
                                         geometry_msgs::PoseStamped& stamped_pose
-                                        );*/
+                                        );
 
     /**
      * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
@@ -119,10 +126,10 @@ public:
      * @param stamped_pose: Resultant poseStamed between source and target frame
      * @return: true if transform else false
      */
-    bool getTransform(const std::string& from,
-                                        const std::string& to,
-                                        Eigen::VectorXd& stamped_pose
-                                        );
+//    bool getTransform(const std::string& from,
+//                                        const std::string& to,
+//                                        Eigen::VectorXd& stamped_pose
+//                                        );
 
 
     bool transformEigenToGeometryPose(const Eigen::VectorXd& eigen_vector, geometry_msgs::Pose& pose);
@@ -131,6 +138,9 @@ public:
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
 
+    // subscriber for obstacle feed
+    ros::Subscriber obstacle_feed_sub_;
+
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
 
@@ -138,7 +148,11 @@ public:
     ros::Publisher cartesian_error_pub_;
 
     // publish trajectory
-    ros::Publisher traj_pub_;
+    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_;
+	//Predicted trajectory
+	nav_msgs::Path pred_traj_;
+	VariablesGrid states;
+	DVector state;
 
 private:
 
@@ -184,6 +198,9 @@ private:
 
     // Kinematic variables
 	//To be done kinematic model car
+
+    // Obstacles
+    obstacle_feed::Obstacles obstacles_;
 
     // Current and last position and velocity from joint state callback
     //Eigen::VectorXd current_position_;
@@ -250,7 +267,12 @@ private:
 
 
     void publishTrajectory(void);
+	/**
+	 * @brief publishPredictedTrajectory: publish predicted trajectory
+	 */
+	void publishPredictedTrajectory(void);
 
+    void publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj);
     /**
      * @brief checkVelocityLimitViolation: check velocity limit violate, limit containts lower and upper limit
      * @param joint_velocity: current velocity joint values

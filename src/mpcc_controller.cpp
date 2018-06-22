@@ -125,8 +125,11 @@ bool MPCC::initialize()
 
         robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
 
+        obstacle_feed_sub_ = nh.subscribe(controller_config_->sub_ellipse_topic_, 1, &MPCC::ObstacleCallBack, this);
+
         //To be implemented
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
+        tr_path_pub_ = nh.advertise<nav_msgs::Path>("horizon",1);
         controlled_velocity_pub_ = nh.advertise<geometry_msgs::Twist>(controller_config_->output_cmd,1);
 
         ros::Duration(1).sleep();
@@ -142,8 +145,42 @@ bool MPCC::initialize()
 		idy = 1;
 		epsilon_ = 0.01;
 
+		//Initialize obstacles
+		obstacle_feed::Obstacle obstacle_init;
+		obstacle_feed::Obstacles obstacles_init;
+
+        std_msgs::Header obst_header_init;
+
+        obst_header_init.stamp = ros::Time::now();
+        obst_header_init.frame_id = controller_config_->robot_base_link_;
+
+        for (int it_obst; it_obst < controller_config_->n_obstacles_; it_obst++)
+        {
+            obstacle_init.pose.orientation.z = 0;
+            obstacle_init.pose.position.x = 1000;
+            obstacle_init.pose.position.y = 1000;
+            obstacle_init.minor_semiaxis = 0.01;
+            obstacle_init.major_semiaxis = 0.01;
+
+            obstacles_init.header = obst_header_init;
+            obstacles_init.Obstacles.push_back(obstacle_init);
+        }
+
+        obstacles_ = obstacles_init;
+
+        std::cout << "initialized " << obstacles_.Obstacles.size() << " obstacles" << std::endl;
+
 		moveit_msgs::RobotTrajectory j;
 		traj = j;
+		//initialize trajectory variable to plot prediction trajectory
+		pred_traj_.poses.resize(controller_config_->discretization_intervals_+1);
+		for(int i=0;i < controller_config_->discretization_intervals_; i++)
+		{
+			pred_traj_.poses[i].header.frame_id = "odom";
+			pred_traj_.header.frame_id = "odom";
+		}
+
+		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
         ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
         return true;
@@ -158,61 +195,24 @@ bool MPCC::initialize()
 // update this function 1/colck_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
-    if (activate_debug_output_)
-    {
-        ROS_INFO("MPCC::runNode");
-    }
 
 	if(((int)traj.multi_dof_joint_trajectory.points.size()) > 1){
 
 		//Eigen::Vector3d dist = current_state_-goal_pose_;
 		idx = (int)traj.multi_dof_joint_trajectory.points.size() -2;
-		//if(dist.norm() < epsilon_ || idx==1){
-			//idx++;
-		//	pd_trajectory_generator_->s_=0;
-		//	ROS_INFO_STREAM("TRajectory point " << idx);
-
-			//assigning next point as goal pose since initial point of trajectory is actual pose
-			/*prev_pose_(0) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.x;
-			prev_pose_(1) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.y;
-			prev_pose_(2) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.z;
-			next_pose_(0) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].translation.x;
-			next_pose_(1) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].translation.y;
-			next_pose_(2) = traj.multi_dof_joint_trajectory.points[idx ].transforms[0].rotation.z;*/
-			//assigning next point as goal pose since initial point of trajectory is actual pose
 			goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.x;
 			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.y;
 			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].rotation.z;
-			//Initialize and build splines for x and y
-			/*std::vector<double> X, Y, S;
-			ROS_INFO_STREAM("goal_pose " << goal_pose_);
-			ROS_INFO_STREAM("goal_pose " << prev_pose_);
-			Eigen::Vector3d dist = goal_pose_-prev_pose_;
-			X.push_back(prev_pose_[0]);
-			X.push_back(next_pose_[0]);
-			X.push_back(goal_pose_[0]);
-			Y.push_back(prev_pose_[1]);
-			Y.push_back(next_pose_[0]);
-			Y.push_back(goal_pose_[1]);
-			S.push_back(0);
-			S.push_back(dist.norm());
-			ROS_INFO_STREAM("Distance " << dist.norm());
-			pd_trajectory_generator_->ref_path_x.set_points(S, X);
-			pd_trajectory_generator_->ref_path_y.set_points(S, Y);
-			ROS_INFO_STREAM("ref_path_x.m_a " << pd_trajectory_generator_->ref_path_x.m_a);
-			ROS_INFO_STREAM("ref_path_x.m_b " << pd_trajectory_generator_->ref_path_x.m_b);
-			ROS_INFO_STREAM("ref_path_x.m_c " << pd_trajectory_generator_->ref_path_x.m_c);
-			ROS_INFO_STREAM("ref_path_x.m_d " << pd_trajectory_generator_->ref_path_x.m_d);
-			*/
-		//}
-			pd_trajectory_generator_->solveOptimalControlProblem(current_state_,prev_pose_,next_pose_, goal_pose_, controlled_velocity_);
+
+			states = pd_trajectory_generator_->solveOptimalControlProblem(current_state_,prev_pose_,next_pose_, goal_pose_, obstacles_, controlled_velocity_);
+
+			publishPredictedTrajectory();
 		}
 		// solver optimal control problem
 
 
-		// publishes error stamped for plot, trajectory
-		//this->publishErrorPose(tf_traget_from_tracking_vector_);
-		//this->publishTrajectory();
+            //publishPathFromTrajectory(traj);
+
 
 			// publish zero controlled velocity
 			if (!tracking_)
@@ -283,78 +283,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 		tracking_ = true;
 	}
 
-	/*
-	int MPCC::moveCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr)
-	{
 
-		predictive_control::moveResult result;
-		predictive_control::moveFeedback feedback;
-		goal_pose_.resize(6);
-
-		// asume that not any target frame id set than it should use interative marker node
-		if (move_action_goal_ptr->target_frame_id.empty() || move_action_goal_ptr->target_endeffector_pose.header.frame_id.empty())
-		{
-			tracking_ = true;
-			result.reach = false;
-			move_action_server_->setAborted(result, " Not set desired goal and frame id, Now use to intractive marker to set desired goal");
-			//target_frame_ = controller_config_->target_frame_;
-		}
-
-		else
-		{
-			ROS_WARN("==========***********============ MPCC::moveCallBack: recieving new goal request ==========***********============");
-			tracking_ = false;
-
-			collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
-
-			target_frame_ = move_action_goal_ptr->target_frame_id;
-
-			////
-			// extract goal gripper position and orientation
-			goal_pose_(0) = move_action_goal_ptr->target_endeffector_pose.pose.position.x;
-			goal_pose_(1) = move_action_goal_ptr->target_endeffector_pose.pose.position.y;
-			goal_pose_(2) = move_action_goal_ptr->target_endeffector_pose.pose.position.z;
-
-			tf::Quaternion quat(move_action_goal_ptr->target_endeffector_pose.pose.orientation.x,
-													move_action_goal_ptr->target_endeffector_pose.pose.orientation.y,
-													move_action_goal_ptr->target_endeffector_pose.pose.orientation.z,
-													move_action_goal_ptr->target_endeffector_pose.pose.orientation.w);
-
-			tf::Matrix3x3 matrix(quat);
-			double r(0.0), p(0.0), y(0.0);
-			matrix.getRPY(r, p, y);
-
-			goal_pose_(3) = r;
-			goal_pose_(4) = p;
-			goal_pose_(5) = y;
-	////
-			// set result for validation
-			move_action_server_->setSucceeded(result, "successfully reach to desired pose");
-
-			// publish feed to tracking information
-			tf::Matrix3x3 return_matrix;
-			tf::Quaternion current_quat;
-			return_matrix.setRPY(current_pose_(3), current_pose_(4), current_pose_(5));
-			return_matrix.getRotation(current_quat);
-
-			feedback.current_endeffector_pose.position.x = current_pose_(0);
-			feedback.current_endeffector_pose.position.y = current_pose_(1);
-			feedback.current_endeffector_pose.position.z = current_pose_(2);
-			feedback.current_endeffector_pose.orientation.w = current_quat.w();
-			feedback.current_endeffector_pose.orientation.x = current_quat.x();
-			feedback.current_endeffector_pose.orientation.y = current_quat.y();
-			feedback.current_endeffector_pose.orientation.z = current_quat.z();
-			move_action_server_->publishFeedback(feedback);
-
-		}
-			return 0;
-		/////
-		predictive_control::moveResult result;
-		result.reach = true;
-		move_action_server_.setSucceeded(result, "move to target pose successful ");
-		return 0;////
-	}
-	*/
 // read current position and velocity of robot joints
 void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {
@@ -366,72 +295,35 @@ void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
     current_state_(0) =    msg->position.x;
     current_state_(1) =    msg->position.y;
     current_state_(2) =    msg->orientation.z;
-
 }
 
-/*
-void MPCC_node::run_node(const ros::TimerEvent& event)
+void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 {
-	ros::Duration period = event.current_real - event.last_real;
+    geometry_msgs::PoseStamped stampedpose;
+    stampedpose.header.frame_id = obstacles.header.frame_id;
+    stampedpose.header.stamp = ros::Time::now();
 
-	std::vector<double> current_position_vec_copy = current_position;
+//    bool frame_same = obstacles.header.frame_id == controller_config_->robot_base_link_;
+//    std::cout << "same frame = " << frame_same << std::endl;
 
-	// current pose of gripper using fk, jacobian matrix
-	kinematic_solver_->compute_gripper_pose_and_jacobian(current_position_vec_copy, current_gripper_pose, Jacobian_Mat);
+    // Transform obstacles to robot frame if they are represented in another frame
+//    if (!(obstacles.header.frame_id == controller_config_->robot_base_link_)){
+//        getTransform("base_link", obstacles.header.frame_id, stampedpose);
+//    }
 
-	std::vector<geometry_msgs::Vector3> link_length;
-	kinematic_solver_->compute_and_get_each_joint_pose(current_position_vec_copy, tranformation_matrix_stamped, link_length);
+//    obstacle_feed::Obstacles obstacles_temp;
+//    obstacles_temp = obstacles;
+//    obstacles_temp.Obstacles[0].pose.position.x += stampedpose.pose.position.x;
+//    obstacles_temp.Obstacles[0].pose.position.y += stampedpose.pose.position.y;
 
-	std::map<std::string, geometry_msgs::PoseStamped> self_collsion_matrix;
-	kinematic_solver_->compute_and_get_each_joint_pose(current_position_vec_copy, self_collsion_matrix);
-
-	std::cout<<"\033[20;1m" << "############"<< "links " << self_collsion_matrix.size() << "###########" << "\033[0m\n" << std::endl;
-
-
-	int id=0u;
-	for (auto it = self_collsion_matrix.begin(); it != self_collsion_matrix.end(); ++it, ++id)
-	{
-		pd_frame_tracker_->create_collision_ball(it->second, 0.15, id);
-	}
-
-	marker_pub.publish(pd_frame_tracker_->get_collision_ball_marker());
-
-	//boost::thread mux_thread{pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix)};
-	//pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix, collision_distance_matrix);
-	//mux_thread.join();
-
-	collision_distance_vector = pd_frame_tracker_->compute_self_collision_distance(self_collsion_matrix, 0.20, 0.01);
-
-	// target poseStamped
-	pd_frame_tracker_->get_transform("/arm_base_link", new_config.target_frame, target_gripper_pose);
-
-	// optimal problem solver
-	//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
-	pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose, joint_velocity_data); //, collision_distance_vector
-
-	// error poseStamped, computation of euclidean distance error
-	geometry_msgs::PoseStamped tip_Target_Frame_error_stamped;
-	pd_frame_tracker_->get_transform(new_config.tip_link, new_config.target_frame, tip_Target_Frame_error_stamped);
-
-	pd_frame_tracker_->compute_euclidean_distance(tip_Target_Frame_error_stamped.pose.position, cartesian_dist);
-	pd_frame_tracker_->compute_rotation_distance(tip_Target_Frame_error_stamped.pose.orientation, rotation_dist);
-
-	std::cout<<"\033[36;1m" << "***********************"<< "cartesian distance: " << cartesian_dist << "***********************" << std::endl
-							<< "***********************"<< "rotation distance: " << rotation_dist << "***********************" << std::endl
-			<< "\033[0m\n" << std::endl;
-
-
-	if (cartesian_dist < 0.03 && rotation_dist < 0.05)
-	{
-			publish_zero_jointVelocity();
-	}
-	else
-	{
-		joint_velocity_pub.publish(joint_velocity_data);
-	}
+//    obstacles_ = obstacles_temp;
+    obstacles_ = obstacles;
+//    std::cout << "Before transform: x = " << obstacles.Obstacles[0].pose.position.x << ", y = " << obstacles.Obstacles[0].pose.position.y << std::endl;
+//
+//    std::cout << "Before transform: x = " << obstacles_temp.Obstacles[0].pose.position.x << ", y = " << obstacles_temp.Obstacles[0].pose.position.y << std::endl;
 
 }
-*/
+
 
 void MPCC::publishZeroJointVelocity()
 {
@@ -510,6 +402,41 @@ void MPCC::publishTrajectory()
     traj_pub_.publish(traj_marker_array_);
 }
 
+void MPCC::publishPredictedTrajectory(void)
+{
+	//pred_traj_.header.stamp = ros::Time::now();
+
+	for(int i=0;i<states.getNumPoints();i++){
+		state = states.getVector(i);
+		//pred_traj_.poses[i].header.stamp = ros::Time::now();
+		pred_traj_.poses[i].pose.position.x= state(0);
+		pred_traj_.poses[i].pose.position.y= state(1);
+	}
+	pred_traj_pub_.publish(pred_traj_);
+}
+
+void MPCC::publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj)
+{
+
+    nav_msgs::Path path;
+    geometry_msgs::PoseStamped pose;
+
+    pose.header.frame_id = "odom";
+    pose.header.stamp = ros::Time::now();
+
+    for (int sample_it = 0 ; sample_it < traj.multi_dof_joint_trajectory.points.size() ; sample_it++){
+        pose.pose.position.x = traj.multi_dof_joint_trajectory.points[sample_it].transforms[0].translation.x;
+        pose.pose.position.y = traj.multi_dof_joint_trajectory.points[sample_it].transforms[0].translation.y;
+        path.poses.push_back(pose);
+    }
+
+    path.header.frame_id = "odom";
+    path.header.stamp = ros::Time::now();
+
+    tr_path_pub_.publish(path);
+}
+
+
 // convert Eigen Vector to geomentry Pose
 bool MPCC::transformEigenToGeometryPose(const Eigen::VectorXd &eigen_vector, geometry_msgs::Pose &pose)
 {
@@ -540,70 +467,70 @@ bool MPCC::transformEigenToGeometryPose(const Eigen::VectorXd &eigen_vector, geo
 }
 
 
-bool MPCC::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
-{
-    bool transform = false;
-    stamped_pose = Eigen::VectorXd(6);
-    tf::StampedTransform stamped_tf;
+//bool MPCC::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
+//{
+//    bool transform = false;
+//    stamped_pose = Eigen::VectorXd(6);
+//    tf::StampedTransform stamped_tf;
+//
+//    // make sure source and target frame exist
+//    if (tf_listener_.frameExists(to) && tf_listener_.frameExists(from))
+//    {
+//        try
+//        {
+//            // find transforamtion between souce and target frame
+//            tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.02));
+//            tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
+//
+//            // translation
+//            stamped_pose(0) = stamped_tf.getOrigin().x();
+//            stamped_pose(1) = stamped_tf.getOrigin().y();
+//            stamped_pose(2) = stamped_tf.getOrigin().z();
+//
+//            // convert quternion to rpy
+//            tf::Quaternion quat(stamped_tf.getRotation().getX(),
+//                                                    stamped_tf.getRotation().getY(),
+//                                                    stamped_tf.getRotation().getZ(),
+//                                                    stamped_tf.getRotation().getW()
+//            );
+//
+//            if (activate_debug_output_)
+//            {
+//                std::cout << "\033[94m" << "getTransform:" << " qx:" << stamped_tf.getRotation().getX()
+//                                    << "qy:" << stamped_tf.getRotation().getY()
+//                                    << "qz:" << stamped_tf.getRotation().getZ()
+//                                    << "qw:" << stamped_tf.getRotation().getW() << "\033[0m" <<std::endl;
+//            }
+//
+//            tf::Matrix3x3 quat_matrix(quat);
+//            quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
+//
+//            if (activate_debug_output_)
+//            {
+//                std::cout << "\033[32m" << "getTransform:" << " roll:" << stamped_pose(3)
+//                                    << " pitch:" << stamped_pose(4)
+//                                    << " yaw:" << stamped_pose(5)
+//                                    << "\033[0m" <<std::endl;
+//            }
+//
+//            transform = true;
+//        }
+//        catch (tf::TransformException& ex)
+//        {
+//            ROS_ERROR("MPCC::getTransform: %s", ex.what());
+//        }
+//    }
+//
+//    else
+//    {
+//        ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
+//                         from.c_str(), to.c_str());
+//    }
+//
+//    return transform;
+//}
 
-    // make sure source and target frame exist
-    if (tf_listener_.frameExists(to) && tf_listener_.frameExists(from))
-    {
-        try
-        {
-            // find transforamtion between souce and target frame
-            tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.02));
-            tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
 
-            // translation
-            stamped_pose(0) = stamped_tf.getOrigin().x();
-            stamped_pose(1) = stamped_tf.getOrigin().y();
-            stamped_pose(2) = stamped_tf.getOrigin().z();
-
-            // convert quternion to rpy
-            tf::Quaternion quat(stamped_tf.getRotation().getX(),
-                                                    stamped_tf.getRotation().getY(),
-                                                    stamped_tf.getRotation().getZ(),
-                                                    stamped_tf.getRotation().getW()
-            );
-
-            if (activate_debug_output_)
-            {
-                std::cout << "\033[94m" << "getTransform:" << " qx:" << stamped_tf.getRotation().getX()
-                                    << "qy:" << stamped_tf.getRotation().getY()
-                                    << "qz:" << stamped_tf.getRotation().getZ()
-                                    << "qw:" << stamped_tf.getRotation().getW() << "\033[0m" <<std::endl;
-            }
-
-            tf::Matrix3x3 quat_matrix(quat);
-            quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
-
-            if (activate_debug_output_)
-            {
-                std::cout << "\033[32m" << "getTransform:" << " roll:" << stamped_pose(3)
-                                    << " pitch:" << stamped_pose(4)
-                                    << " yaw:" << stamped_pose(5)
-                                    << "\033[0m" <<std::endl;
-            }
-
-            transform = true;
-        }
-        catch (tf::TransformException& ex)
-        {
-            ROS_ERROR("MPCC::getTransform: %s", ex.what());
-        }
-    }
-
-    else
-    {
-        ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
-                         from.c_str(), to.c_str());
-    }
-
-    return transform;
-}
-
-/*
 bool MPCC::getTransform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
 {
     bool transform = false;
@@ -619,10 +546,10 @@ bool MPCC::getTransform(const std::string& from, const std::string& to, geometry
             tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
 
             // rotation
-            stamped_pose.pose.orientation.w =    stamped_tf.getRotation().getW();
-            stamped_pose.pose.orientation.x =    stamped_tf.getRotation().getX();
-            stamped_pose.pose.orientation.y =    stamped_tf.getRotation().getY();
-            stamped_pose.pose.orientation.z =    stamped_tf.getRotation().getZ();
+            stamped_pose.pose.orientation.w = stamped_tf.getRotation().getW();
+            stamped_pose.pose.orientation.x = stamped_tf.getRotation().getX();
+            stamped_pose.pose.orientation.y = stamped_tf.getRotation().getY();
+            stamped_pose.pose.orientation.z = stamped_tf.getRotation().getZ();
 
             // translation
             stamped_pose.pose.position.x = stamped_tf.getOrigin().x();
@@ -648,7 +575,7 @@ bool MPCC::getTransform(const std::string& from, const std::string& to, geometry
 
     return transform;
 }
-*/
+
 
 // check position lower and upper limit violation
 bool MPCC::checkVelocityLimitViolation(const std_msgs::Float64MultiArray &joint_velocity, const double &velocity_tolerance)

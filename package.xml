@@ -35,12 +35,15 @@
   <depend>urdf</depend>
   <depend>visualization_msgs</depend>
   <depend>shape_msgs</depend>	
-  <depend>moveit_msgs</depend>		
+  <depend>moveit_msgs</depend>
+  <depend>obstacle_feed</depend>
+
 
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>rviz</exec_depend>
   <exec_depend>topic_tools</exec_depend>
   <exec_depend>xacro</exec_depend>
+
 
 </package>

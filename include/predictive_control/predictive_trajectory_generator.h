@@ -33,7 +33,7 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-//adado includes
+//acado includes
 #include <acado/acado_toolkit.hpp>
 #include <acado/acado_optimal_control.hpp>
 #include <acado/bindings/acado_gnuplot/gnuplot_window.hpp>
@@ -43,6 +43,13 @@
 
 //splines
 #include <tkspline/spline.h>
+
+// Add obstacle messages
+#include <obstacle_feed/Obstacle.h>
+#include <obstacle_feed/Obstacles.h>
+
+// Trajectory info
+#include <nav_msgs/Path.h>
 
 using namespace ACADO;
 
@@ -93,10 +100,11 @@ public:
     * @param goal_pose: Goal pose where want to reach
     * @param controlled_velocity: controlled velocity use to publish
     */
-   void solveOptimalControlProblem(const Eigen::VectorXd& last_position,
+	VariablesGrid solveOptimalControlProblem(const Eigen::VectorXd& last_position,
 								   const Eigen::Vector3d& prev_pose,
 								   const Eigen::Vector3d& next_pose,
                                    const Eigen::Vector3d& goal_pose,
+                                   const obstacle_feed::Obstacles& obstacles,
                                    geometry_msgs::Twist& controlled_velocity
                                   );
 
@@ -142,6 +150,13 @@ private:
    DVector control_min_constraint_;
    DVector control_max_constraint_;
 
+   // Obstacles
+   obstacle_feed::Obstacles obstacles_;
+   int n_obstacles_;
+   double r_discs_;
+   Eigen::VectorXd x_discs_;
+
+
    //acado configuration paramter,
    int max_num_iteration_;
    double kkt_tolerance_;
@@ -175,7 +190,8 @@ private:
     DifferentialEquation f;
 	DifferentialState x_;       // position
 	Control v_;            // velocities
-
+	VariablesGrid pred_states;
+	DVector u;
 
    /**
     * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector
@@ -211,12 +227,18 @@ private:
     * @param delta_t: time discretization (end_time - start_time / number of interval)
     */
    void generateCollisionCostFunction(OCP& OCP_problem,
+                             const DifferentialState& x,
                              const Control& v,
                              const Eigen::MatrixXd& Jacobian_Matrix,
                              const double& total_distance,
                              const double& delta_t
                              );
 
+   void setCollisionConstraints(OCP& OCP_problem,
+                                const DifferentialState& x,
+                                const obstacle_feed::Obstacles& obstacles,
+                                const double& delta_t
+                                );
 
    /**
     * @brief setAlgorithmOptions: setup solver options, Optimal control solver or RealTimeSolver(MPC)
@@ -272,6 +294,8 @@ private:
    * @brief clearDataMember: clear vectors means free allocated memory
    */
   void clearDataMember();
+
+  void computeEgoDiscs();
 
 };
 

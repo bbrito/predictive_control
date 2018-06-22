@@ -172,6 +172,15 @@ bool MPCC::initialize()
 
 		moveit_msgs::RobotTrajectory j;
 		traj = j;
+		//initialize trajectory variable to plot prediction trajectory
+		pred_traj_.poses.resize(controller_config_->discretization_intervals_+1);
+		for(int i=0;i < controller_config_->discretization_intervals_; i++)
+		{
+			pred_traj_.poses[i].header.frame_id = "odom";
+			pred_traj_.header.frame_id = "odom";
+		}
+
+		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
         ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
         return true;
@@ -186,10 +195,6 @@ bool MPCC::initialize()
 // update this function 1/colck_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
-    if (activate_debug_output_)
-    {
-        ROS_INFO("MPCC::runNode");
-    }
 
 	if(((int)traj.multi_dof_joint_trajectory.points.size()) > 1){
 
@@ -199,14 +204,15 @@ void MPCC::runNode(const ros::TimerEvent &event)
 			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.y;
 			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].rotation.z;
 
-			pd_trajectory_generator_->solveOptimalControlProblem(current_state_,prev_pose_,next_pose_, goal_pose_, obstacles_, controlled_velocity_);
+			states = pd_trajectory_generator_->solveOptimalControlProblem(current_state_,prev_pose_,next_pose_, goal_pose_, obstacles_, controlled_velocity_);
+
+			publishPredictedTrajectory();
 		}
 		// solver optimal control problem
 
 
-//		    this->publishTrajectory();
+            //publishPathFromTrajectory(traj);
 
-            publishPathFromTrajectory(traj);
 
 			// publish zero controlled velocity
 			if (!tracking_)
@@ -277,78 +283,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 		tracking_ = true;
 	}
 
-	/*
-	int MPCC::moveCallBack(const predictive_control::moveGoalConstPtr& move_action_goal_ptr)
-	{
 
-		predictive_control::moveResult result;
-		predictive_control::moveFeedback feedback;
-		goal_pose_.resize(6);
-
-		// asume that not any target frame id set than it should use interative marker node
-		if (move_action_goal_ptr->target_frame_id.empty() || move_action_goal_ptr->target_endeffector_pose.header.frame_id.empty())
-		{
-			tracking_ = true;
-			result.reach = false;
-			move_action_server_->setAborted(result, " Not set desired goal and frame id, Now use to intractive marker to set desired goal");
-			//target_frame_ = controller_config_->target_frame_;
-		}
-
-		else
-		{
-			ROS_WARN("==========***********============ MPCC::moveCallBack: recieving new goal request ==========***********============");
-			tracking_ = false;
-
-			collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
-
-			target_frame_ = move_action_goal_ptr->target_frame_id;
-
-			////
-			// extract goal gripper position and orientation
-			goal_pose_(0) = move_action_goal_ptr->target_endeffector_pose.pose.position.x;
-			goal_pose_(1) = move_action_goal_ptr->target_endeffector_pose.pose.position.y;
-			goal_pose_(2) = move_action_goal_ptr->target_endeffector_pose.pose.position.z;
-
-			tf::Quaternion quat(move_action_goal_ptr->target_endeffector_pose.pose.orientation.x,
-													move_action_goal_ptr->target_endeffector_pose.pose.orientation.y,
-													move_action_goal_ptr->target_endeffector_pose.pose.orientation.z,
-													move_action_goal_ptr->target_endeffector_pose.pose.orientation.w);
-
-			tf::Matrix3x3 matrix(quat);
-			double r(0.0), p(0.0), y(0.0);
-			matrix.getRPY(r, p, y);
-
-			goal_pose_(3) = r;
-			goal_pose_(4) = p;
-			goal_pose_(5) = y;
-	////
-			// set result for validation
-			move_action_server_->setSucceeded(result, "successfully reach to desired pose");
-
-			// publish feed to tracking information
-			tf::Matrix3x3 return_matrix;
-			tf::Quaternion current_quat;
-			return_matrix.setRPY(current_pose_(3), current_pose_(4), current_pose_(5));
-			return_matrix.getRotation(current_quat);
-
-			feedback.current_endeffector_pose.position.x = current_pose_(0);
-			feedback.current_endeffector_pose.position.y = current_pose_(1);
-			feedback.current_endeffector_pose.position.z = current_pose_(2);
-			feedback.current_endeffector_pose.orientation.w = current_quat.w();
-			feedback.current_endeffector_pose.orientation.x = current_quat.x();
-			feedback.current_endeffector_pose.orientation.y = current_quat.y();
-			feedback.current_endeffector_pose.orientation.z = current_quat.z();
-			move_action_server_->publishFeedback(feedback);
-
-		}
-			return 0;
-		/////
-		predictive_control::moveResult result;
-		result.reach = true;
-		move_action_server_.setSucceeded(result, "move to target pose successful ");
-		return 0;////
-	}
-	*/
 // read current position and velocity of robot joints
 void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {
@@ -389,69 +324,6 @@ void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 
 }
 
-/*
-void MPCC_node::run_node(const ros::TimerEvent& event)
-{
-	ros::Duration period = event.current_real - event.last_real;
-
-	std::vector<double> current_position_vec_copy = current_position;
-
-	// current pose of gripper using fk, jacobian matrix
-	kinematic_solver_->compute_gripper_pose_and_jacobian(current_position_vec_copy, current_gripper_pose, Jacobian_Mat);
-
-	std::vector<geometry_msgs::Vector3> link_length;
-	kinematic_solver_->compute_and_get_each_joint_pose(current_position_vec_copy, tranformation_matrix_stamped, link_length);
-
-	std::map<std::string, geometry_msgs::PoseStamped> self_collsion_matrix;
-	kinematic_solver_->compute_and_get_each_joint_pose(current_position_vec_copy, self_collsion_matrix);
-
-	std::cout<<"\033[20;1m" << "############"<< "links " << self_collsion_matrix.size() << "###########" << "\033[0m\n" << std::endl;
-
-
-	int id=0u;
-	for (auto it = self_collsion_matrix.begin(); it != self_collsion_matrix.end(); ++it, ++id)
-	{
-		pd_frame_tracker_->create_collision_ball(it->second, 0.15, id);
-	}
-
-	marker_pub.publish(pd_frame_tracker_->get_collision_ball_marker());
-
-	//boost::thread mux_thread{pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix)};
-	//pd_frame_tracker_->generate_self_collision_distance_matrix(self_collsion_matrix, collision_distance_matrix);
-	//mux_thread.join();
-
-	collision_distance_vector = pd_frame_tracker_->compute_self_collision_distance(self_collsion_matrix, 0.20, 0.01);
-
-	// target poseStamped
-	pd_frame_tracker_->get_transform("/arm_base_link", new_config.target_frame, target_gripper_pose);
-
-	// optimal problem solver
-	//pd_frame_tracker_->solver(J_Mat, current_gripper_pose, joint_velocity_data);
-	pd_frame_tracker_->optimal_control_solver(Jacobian_Mat, current_gripper_pose, target_gripper_pose, joint_velocity_data); //, collision_distance_vector
-
-	// error poseStamped, computation of euclidean distance error
-	geometry_msgs::PoseStamped tip_Target_Frame_error_stamped;
-	pd_frame_tracker_->get_transform(new_config.tip_link, new_config.target_frame, tip_Target_Frame_error_stamped);
-
-	pd_frame_tracker_->compute_euclidean_distance(tip_Target_Frame_error_stamped.pose.position, cartesian_dist);
-	pd_frame_tracker_->compute_rotation_distance(tip_Target_Frame_error_stamped.pose.orientation, rotation_dist);
-
-	std::cout<<"\033[36;1m" << "***********************"<< "cartesian distance: " << cartesian_dist << "***********************" << std::endl
-							<< "***********************"<< "rotation distance: " << rotation_dist << "***********************" << std::endl
-			<< "\033[0m\n" << std::endl;
-
-
-	if (cartesian_dist < 0.03 && rotation_dist < 0.05)
-	{
-			publish_zero_jointVelocity();
-	}
-	else
-	{
-		joint_velocity_pub.publish(joint_velocity_data);
-	}
-
-}
-*/
 
 void MPCC::publishZeroJointVelocity()
 {
@@ -528,6 +400,19 @@ void MPCC::publishTrajectory()
 
     //publishes
     traj_pub_.publish(traj_marker_array_);
+}
+
+void MPCC::publishPredictedTrajectory(void)
+{
+	//pred_traj_.header.stamp = ros::Time::now();
+
+	for(int i=0;i<states.getNumPoints();i++){
+		state = states.getVector(i);
+		//pred_traj_.poses[i].header.stamp = ros::Time::now();
+		pred_traj_.poses[i].pose.position.x= state(0);
+		pred_traj_.poses[i].pose.position.y= state(1);
+	}
+	pred_traj_pub_.publish(pred_traj_);
 }
 
 void MPCC::publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj)

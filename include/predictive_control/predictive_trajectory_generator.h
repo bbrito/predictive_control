@@ -48,6 +48,9 @@
 #include <obstacle_feed/Obstacle.h>
 #include <obstacle_feed/Obstacles.h>
 
+// Trajectory info
+#include <nav_msgs/Path.h>
+
 using namespace ACADO;
 
 class pd_frame_tracker: public predictive_configuration
@@ -97,7 +100,7 @@ public:
     * @param goal_pose: Goal pose where want to reach
     * @param controlled_velocity: controlled velocity use to publish
     */
-   void solveOptimalControlProblem(const Eigen::VectorXd& last_position,
+	VariablesGrid solveOptimalControlProblem(const Eigen::VectorXd& last_position,
 								   const Eigen::Vector3d& prev_pose,
 								   const Eigen::Vector3d& next_pose,
                                    const Eigen::Vector3d& goal_pose,
@@ -187,7 +190,8 @@ private:
     DifferentialEquation f;
 	DifferentialState x_;       // position
 	Control v_;            // velocities
-
+	VariablesGrid pred_states;
+	DVector u;
 
    /**
     * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector

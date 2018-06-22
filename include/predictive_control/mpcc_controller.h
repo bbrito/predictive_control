@@ -148,7 +148,11 @@ public:
     ros::Publisher cartesian_error_pub_;
 
     // publish trajectory
-    ros::Publisher traj_pub_, tr_path_pub_;
+    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_;
+	//Predicted trajectory
+	nav_msgs::Path pred_traj_;
+	VariablesGrid states;
+	DVector state;
 
 private:
 
@@ -263,6 +267,11 @@ private:
 
 
     void publishTrajectory(void);
+	/**
+	 * @brief publishPredictedTrajectory: publish predicted trajectory
+	 */
+	void publishPredictedTrajectory(void);
+
     void publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj);
     /**
      * @brief checkVelocityLimitViolation: check velocity limit violate, limit containts lower and upper limit

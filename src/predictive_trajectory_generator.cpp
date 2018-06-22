@@ -255,10 +255,10 @@ void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const Different
 
             // Rotation matrix corresponding to the obstacle heading
             Expression R_obst(2, 2);
-            R_obst(0, 0) = cos(phi);
-            R_obst(0, 1) = -sin(phi);
-            R_obst(1, 0) = sin(phi);
-            R_obst(1, 1) = cos(phi);
+            R_obst(0, 0) = cos(phi-x(2));
+            R_obst(0, 1) = -sin(x(2)-x(2));
+            R_obst(1, 0) = sin(phi-x(2));
+            R_obst(1, 1) = cos(phi-x(2));
 
             // Matrix with total clearance from obstacles
             Expression ab_mat(2, 2);
@@ -283,7 +283,7 @@ void pd_frame_tracker::path_function_spline_direct(OCP& OCP_problem,
 												   const Control &v,
 												   const Eigen::Vector3d& goal_pose){
 
-	Expression t = s(3);
+	IntermediateState t = s(3);
 
 	DVector a_x(4),a_y(4);
 
@@ -339,7 +339,8 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
 	  Expression sqp = (lsq_state_weight_factors_(0) * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0)) )
 						+(lsq_state_weight_factors_(1) * ( (x(1) - goal_pose(1)) * (x(1) - goal_pose(1))))
 						+lsq_state_weight_factors_(2) * ( (x(2) - goal_pose(2)) * (x(2) - goal_pose(2))))
-					   + lsq_control_weight_factors_(0) * (v.transpose() * v);
+					   + lsq_control_weight_factors_(0) * (v.transpose() * v) +
+	  x(2) * x(2);
 
 	  OCP_problem.minimizeMayerTerm( sqp );
 
@@ -356,7 +357,7 @@ void pd_frame_tracker::initializeOptimalControlProblem(std::vector<double> param
 }
 
 
-void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
+VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
 												  const Eigen::Vector3d &prev_pose,
 												  const Eigen::Vector3d &next_pose,
 												  const Eigen::Vector3d &goal_pose,
@@ -397,19 +398,15 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 
   setAlgorithmOptions(OCP_solver);
 
-  // setup controller
-  Controller controller(OCP_solver);
-  controller.init(0.0, state_initialize_);
-  controller.step(0.0, state_initialize_);
+	OCP_solver.solve(0.0,state_initialize_);
+
+	OCP_solver.getDifferentialStates(pred_states);
+
 
   // get control at first step and update controlled velocity vector
-  DVector u;
-  controller.getU(u);
-  if (activate_debug_output_) {
-    ROS_WARN("================");
-    u.print();
-    ROS_WARN("================");
-  }
+
+	OCP_solver.getU(u);
+
 	if (u.size()>0){
 		controlled_velocity.linear.x = u(0);
 		controlled_velocity.angular.z = u(1);
@@ -420,8 +417,7 @@ void pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_po
 		s_ += u(0) * sampling_time_;
 	}
 
-	// Clear state, control variable
-	//clearAllStaticCounters();
+	return pred_states;
 }
 
 // setup acado algorithm options, need to set solver when calling this function

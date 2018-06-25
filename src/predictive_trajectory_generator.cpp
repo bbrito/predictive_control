@@ -283,8 +283,6 @@ void pd_frame_tracker::path_function_spline_direct(OCP& OCP_problem,
 												   const Control &v,
 												   const Eigen::Vector3d& goal_pose){
 
-	IntermediateState t = s(3);
-
 	DVector a_x(4),a_y(4);
 
 	a_x(3) = ref_path_x.m_a[0];
@@ -295,31 +293,26 @@ void pd_frame_tracker::path_function_spline_direct(OCP& OCP_problem,
 	a_y(2) = ref_path_y.m_b[0];
 	a_y(1) = ref_path_y.m_c[0];
 	a_y(0) = ref_path_y.m_d[0];
-	ROS_INFO_STREAM("a_x: " << a_x);
-	ROS_INFO_STREAM("a_y: " << a_y);
 
-	Expression x_path = (a_x(3)*t.getPowInt(3) + a_x(2)*t.getPowInt(2) + a_x(1)*t + a_x(0)) ;
-	Expression y_path = (a_y(3)*t.getPowInt(3) + a_y(2)*t.getPowInt(2) + a_y(1)*t + a_y(0)) ;
-	Expression dx_path = (3*a_x(3)*t.getPowInt(2) + 2*a_x(2)*t + a_x(1)) ;
-	Expression dy_path = (3*a_y(3)*t.getPowInt(2) + 2*a_y(2)*t + a_y(1)) ;
+	Expression x_path = (a_x(3)*s(3)*s(3)*s(3) + a_x(2)*s(3)*s(3) + a_x(1)*s(3) + a_x(0)) ;
+	Expression y_path = (a_y(3)*s(3)*s(3)*s(3) + a_y(2)*s(3)*s(3) + a_y(1)*s(3) + a_y(0)) ;
+	Expression dx_path = (3*a_x(3)*s(3)*s(3) + 2*a_x(2)*s(3) + a_x(1)) ;
+	Expression dy_path = (3*a_y(3)*s(3)*s(3) + 2*a_y(2)*s(3) + a_y(1)) ;
 
 
-	//Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
-	//Expression dx_path_norm = dx_path/abs_grad;
-	//Expression dy_path_norm =  dy_path/abs_grad;
+	Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
+	Expression dx_path_norm = dx_path/abs_grad;
+	Expression dy_path_norm =  dy_path/abs_grad;
 	// Compute the errors
-	Expression theta_path = dy_path/dx_path;
-	theta_path = theta_path.getAtan();
-	Expression dx_path_norm = theta_path.getCos();
-	Expression dy_path_norm =  theta_path.getSin();
+	//Expression theta_path = dy_path/dx_path;
+	//theta_path = theta_path.getAtan();
+	//Expression dx_path_norm = theta_path.getCos();
+	//Expression dy_path_norm =  theta_path.getSin();
 
 	Expression error_contour   = dy_path_norm * (s(0) - x_path) - dx_path_norm * (s(1) - y_path);
 
 	Expression error_lag       = dx_path_norm * (s(0) - x_path) + dy_path_norm * (s(1) - y_path);
 
-	theta_path.print(std::cout);
-	ROS_INFO_STREAM(" ");
-	error_contour.print(std::cout);
 	OCP_problem.minimizeMayerTerm(error_contour.getPowInt(2) + error_lag.getPowInt(2) + 0.01*v.transpose() * v -0.1*s(3));
 
 }
@@ -344,8 +337,6 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
 
 	  OCP_problem.minimizeMayerTerm( sqp );
 
-    //OCP_problem.minimizeMayerTerm( 10.0* ( (x-goal_pose) * (x-goal_pose) ) + 1.00* (v.transpose() * v) );
-
   }
 
 }
@@ -358,8 +349,6 @@ void pd_frame_tracker::initializeOptimalControlProblem(std::vector<double> param
 
 
 VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
-												  const Eigen::Vector3d &prev_pose,
-												  const Eigen::Vector3d &next_pose,
 												  const Eigen::Vector3d &goal_pose,
 												  const obstacle_feed::Obstacles &obstacles,
 												  geometry_msgs::Twist& controlled_velocity)
@@ -384,9 +373,9 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 	//Equal constraints
 	OCP_problem_.subjectTo(f);
 
-  // generate cost function
-  generateCostFunction(OCP_problem_, x_, v_, goal_pose);
-  //path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
+	// generate cost function
+ 	//generateCostFunction(OCP_problem_, x_, v_, goal_pose);
+  	path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
 
   setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
 
@@ -413,8 +402,9 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 
 		// Simulate path varible
 		// this should be later replaced by a process
-
+		ROS_INFO_STREAM("Path distance: " << s_);
 		s_ += u(0) * sampling_time_;
+		s_ = 0;
 	}
 
 	return pred_states;

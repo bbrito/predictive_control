@@ -101,8 +101,6 @@ public:
     * @param controlled_velocity: controlled velocity use to publish
     */
 	VariablesGrid solveOptimalControlProblem(const Eigen::VectorXd& last_position,
-								   const Eigen::Vector3d& prev_pose,
-								   const Eigen::Vector3d& next_pose,
                                    const Eigen::Vector3d& goal_pose,
                                    const obstacle_feed::Obstacles& obstacles,
                                    geometry_msgs::Twist& controlled_velocity

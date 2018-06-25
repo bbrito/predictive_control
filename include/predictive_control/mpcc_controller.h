@@ -195,6 +195,7 @@ private:
 	double next_point_dist, goal_dist, prev_point_dist;
 	int idx, idy;
 	double epsilon_;
+	std::vector<std::vector <double>> dummy;
 
     // Kinematic variables
 	//To be done kinematic model car
@@ -213,17 +214,6 @@ private:
 
     // predictive configuration
     boost::shared_ptr<predictive_configuration> controller_config_;
-
-    // kinematic calculation
-    //TO BE REPLACED BY CAR CLASS CALCULATION
-    //boost::shared_ptr<Kinematic_calculations> kinematic_solver_;
-
-    // self collision detector/avoidance
-    //boost::shared_ptr<CollisionRobot> collision_detect_;
-    //boost::shared_ptr<CollisionAvoidance> collision_avoidance_;
-
-    // static collision detector/avoidance
-    //boost::shared_ptr<StaticCollision> static_collision_avoidance_;
 
     // predictive trajectory generator
     boost::shared_ptr<pd_frame_tracker> pd_trajectory_generator_;

@@ -147,14 +147,13 @@ bool MPCC::initialize()
 
 		//Initialize obstacles
 		obstacle_feed::Obstacle obstacle_init;
-		obstacle_feed::Obstacles obstacles_init;
 
         std_msgs::Header obst_header_init;
 
         obst_header_init.stamp = ros::Time::now();
         obst_header_init.frame_id = controller_config_->robot_base_link_;
 
-        for (int it_obst; it_obst < controller_config_->n_obstacles_; it_obst++)
+        for (int it_obst = 0; it_obst < controller_config_->n_obstacles_; it_obst++)
         {
             obstacle_init.pose.orientation.z = 0;
             obstacle_init.pose.position.x = 1000;
@@ -162,11 +161,11 @@ bool MPCC::initialize()
             obstacle_init.minor_semiaxis = 0.01;
             obstacle_init.major_semiaxis = 0.01;
 
-            obstacles_init.header = obst_header_init;
-            obstacles_init.Obstacles.push_back(obstacle_init);
+            obstacles_init_.header = obst_header_init;
+            obstacles_init_.Obstacles.push_back(obstacle_init);
         }
 
-        obstacles_ = obstacles_init;
+        obstacles_ = obstacles_init_;
 
         std::cout << "initialized " << obstacles_.Obstacles.size() << " obstacles" << std::endl;
 
@@ -302,28 +301,13 @@ void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
     geometry_msgs::PoseStamped stampedpose;
     stampedpose.header.frame_id = obstacles.header.frame_id;
     stampedpose.header.stamp = ros::Time::now();
+    obstacle_feed::Obstacles obstacles_temp;
 
-//    bool frame_same = obstacles.header.frame_id == controller_config_->robot_base_link_;
-//    std::cout << "same frame = " << frame_same << std::endl;
-
-    // Transform obstacles to robot frame if they are represented in another frame
-//    if (!(obstacles.header.frame_id == controller_config_->robot_base_link_)){
-//        getTransform("base_link", obstacles.header.frame_id, stampedpose);
-//    }
-
-//    obstacle_feed::Obstacles obstacles_temp;
-//    obstacles_temp = obstacles;
-//    obstacles_temp.Obstacles[0].pose.position.x += stampedpose.pose.position.x;
-//    obstacles_temp.Obstacles[0].pose.position.y += stampedpose.pose.position.y;
-
-//    obstacles_ = obstacles_temp;
-    obstacles_ = obstacles;
-//    std::cout << "Before transform: x = " << obstacles.Obstacles[0].pose.position.x << ", y = " << obstacles.Obstacles[0].pose.position.y << std::endl;
-//
-//    std::cout << "Before transform: x = " << obstacles_temp.Obstacles[0].pose.position.x << ", y = " << obstacles_temp.Obstacles[0].pose.position.y << std::endl;
+    obstacles_temp = obstacles_init_;
+    obstacles_temp = obstacles;
+    obstacles_ = obstacles_temp;
 
 }
-
 
 void MPCC::publishZeroJointVelocity()
 {

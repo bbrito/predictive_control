@@ -152,6 +152,8 @@ public:
 	VariablesGrid states;
 	DVector state;
 
+	int idx;
+
 private:
 
     ros::NodeHandle nh;
@@ -191,7 +193,6 @@ private:
 
 	//TRajectory execution variables
 	double next_point_dist, goal_dist, prev_point_dist;
-	int idx, idy;
 	double epsilon_;
 	std::vector<std::vector <double>> dummy;
 

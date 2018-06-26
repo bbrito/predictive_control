@@ -296,20 +296,20 @@ void pd_frame_tracker::path_function_spline_direct(OCP& OCP_problem,
 	Expression dy_path = (3*a_y(3)*s(3)*s(3) + 2*a_y(2)*s(3) + a_y(1)) ;
 
 
-	Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
-	Expression dx_path_norm = dx_path/abs_grad;
-	Expression dy_path_norm =  dy_path/abs_grad;
+	//Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
+	//Expression dx_path_norm = dx_path/abs_grad;
+	//Expression dy_path_norm =  dy_path/abs_grad;
 	// Compute the errors
-	//Expression theta_path = dy_path/dx_path;
-	//theta_path = theta_path.getAtan();
-	//Expression dx_path_norm = theta_path.getCos();
-	//Expression dy_path_norm =  theta_path.getSin();
+	Expression theta_path = dy_path/dx_path;
+	theta_path = theta_path.getAtan();
+	Expression dx_path_norm = theta_path.getCos();
+	Expression dy_path_norm =  theta_path.getSin();
 
 	Expression error_contour   = dy_path_norm * (s(0) - x_path) - dx_path_norm * (s(1) - y_path);
 
-	Expression error_lag       = dx_path_norm * (s(0) - x_path) + dy_path_norm * (s(1) - y_path);
+	Expression error_lag       = -dx_path_norm * (s(0) - x_path) - dy_path_norm * (s(1) - y_path);
 
-	OCP_problem.minimizeMayerTerm(error_contour.getPowInt(2) + error_lag.getPowInt(2) + 0.01*v.transpose() * v -0.1*s(3));
+	OCP_problem.minimizeMayerTerm(error_contour.getPowInt(2) + error_lag.getPowInt(2) + 0.01*v.transpose() * v -0.5*s(3));
 
 }
 
@@ -370,10 +370,10 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 	OCP_problem_.subjectTo(f);
 
 	// generate cost function
- 	generateCostFunction(OCP_problem_, x_, v_, goal_pose);
-  	//path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
+ 	//generateCostFunction(OCP_problem_, x_, v_, goal_pose);
+  	path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
 
-  setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
+  //setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
 
   // Optimal Control Algorithm
   RealTimeAlgorithm OCP_solver(OCP_problem_, 0.025); // 0.025 sampling time
@@ -399,8 +399,7 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 		// Simulate path varible
 		// this should be later replaced by a process
 		ROS_INFO_STREAM("Path distance: " << s_);
-		s_ += u(0) * sampling_time_;
-		s_ = 0;
+		s_ += std::abs(u(0)) * sampling_time_;
 	}
 
 	return pred_states;
@@ -409,21 +408,6 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 // setup acado algorithm options, need to set solver when calling this function
 void pd_frame_tracker::setAlgorithmOptions(RealTimeAlgorithm& OCP_solver)
 {
- /* // intergrator
-  OCP_solver.set(INTEGRATOR_TYPE, LEVENBERG_MARQUARDT);                                      // default INT_RK45: (INT_RK12, INT_RK23, INT_RK45, INT_RK78, INT_BDF)
-  OCP_solver.set(INTEGRATOR_TOLERANCE, 1e-5);     // default 1e-8
-
-  // SQP method
-  OCP_solver.set(HESSIAN_APPROXIMATION, EXACT_HESSIAN);                                      // default BLOCK_BFGS_UPDATE: (CONSTANT_HESSIAN, FULL_BFGS_UPDATE, BLOCK_BFGS_UPDATE, GAUSS_NEWTON, EXACT_HESSIAN)
-  OCP_solver.set(MAX_NUM_ITERATIONS, 10);          // default 1000
-  //OCP_solver.set(KKT_TOLERANCE, predictive_configuration::kkt_tolerance_);                   // default 1e-6
-//  OCP_solver.set(HOTSTART_QP, true);                   // default true
-//  OCP_solver.set(SPARSE_QP_SOLUTION, CONDENSING);      // CONDENSING, FULL CONDENSING, SPARSE SOLVER
-
-  // Discretization Type
-  OCP_solver.set(DISCRETIZATION_TYPE, COLLOCATION); // default MULTIPLE_SHOOTING: (SINGLE_SHOOTING, MULTIPLE_SHOOTING)
-  //OCP_solver.set(TERMINATE_AT_CONVERGENCE, true);         // default true
-*/
   // output
   OCP_solver.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
   OCP_solver.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
@@ -445,89 +429,3 @@ void pd_frame_tracker::setAlgorithmOptions(RealTimeAlgorithm& OCP_solver)
   // Discretization Type
   //OCP_solver.set(TERMINATE_AT_CONVERGENCE, true);         // default true
 }
-
-
-/*
-// setup acado algorithm options, need to set solver when calling this function
-template<typename T>
-void pd_frame_tracker::setAlgorithmOptions(boost::shared_ptr<T> OCP_solver)
-{
-  // intergrator
-  OCP_solver->set(INTEGRATOR_TYPE, LEVENBERG_MARQUARDT);                                      // default INT_RK45: (INT_RK12, INT_RK23, INT_RK45, INT_RK78, INT_BDF)
-  OCP_solver->set(INTEGRATOR_TOLERANCE, predictive_configuration::integrator_tolerance_);     // default 1e-8
-
-  // SQP method
-  OCP_solver->set(HESSIAN_APPROXIMATION, EXACT_HESSIAN);                                      // default BLOCK_BFGS_UPDATE: (CONSTANT_HESSIAN, FULL_BFGS_UPDATE, BLOCK_BFGS_UPDATE, GAUSS_NEWTON, EXACT_HESSIAN)
-  OCP_solver->set(MAX_NUM_ITERATIONS, predictive_configuration::max_num_iteration_);          // default 1000
-  OCP_solver->set(KKT_TOLERANCE, predictive_configuration::kkt_tolerance_);                   // default 1e-6
-//  OCP_solver->set(HOTSTART_QP, true);                   // default true
-//  OCP_solver->set(SPARSE_QP_SOLUTION, CONDENSING);      // CONDENSING, FULL CONDENSING, SPARSE SOLVER
-
-  // Discretization Type
-  OCP_solver->set(DISCRETIZATION_TYPE, MULTIPLE_SHOOTING); // default MULTIPLE_SHOOTING: (SINGLE_SHOOTING, MULTIPLE_SHOOTING)
-  OCP_solver->set(TERMINATE_AT_CONVERGENCE, true);         // default true
-
-  // output
-  OCP_solver->set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
-  OCP_solver->set(PRINT_SCP_METHOD_PROFILE, false);        // default false
-  OCP_solver->set(PRINT_COPYRIGHT, false);                 // default true
-
-}
-*/
-
-/*
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-MatrixVariablesGrid:
-    shiftBackwards (Matrix lastValue=emptyMatrix)
-    Shifts all grid points backwards by one grid point, deleting the first one and doubling the value at last grid point.
-    shiftTimes (double timeShift)
-    Shifts times at all grid points by a given offset.
-Optimization Algorithm:
-    double  getObjectiveValue () const
-    returnValue     getSensitivitiesX
-// add NLP solver options
-    addOption( MAX_NUM_ITERATIONS          , defaultMaxNumIterations        );
-    addOption( KKT_TOLERANCE               , defaultKKTtolerance            );
-    addOption( KKT_TOLERANCE_SAFEGUARD     , defaultKKTtoleranceSafeguard   );
-    addOption( LEVENBERG_MARQUARDT         , defaultLevenbergMarguardt      );
-    addOption( HESSIAN_PROJECTION_FACTOR   , defaultHessianProjectionFactor );
-    addOption( PRINTLEVEL                  , defaultPrintlevel              );
-    addOption( PRINT_COPYRIGHT             , defaultPrintCopyright          );
-    addOption( HESSIAN_APPROXIMATION       , defaultHessianApproximation    );
-    addOption( DYNAMIC_HESSIAN_APPROXIMATION, defaultDynamicHessianApproximation );
-    addOption( DYNAMIC_SENSITIVITY         , defaultDynamicSensitivity      );
-    addOption( OBJECTIVE_SENSITIVITY       , defaultObjectiveSensitivity    );
-    addOption( CONSTRAINT_SENSITIVITY      , defaultConstraintSensitivity   );
-    addOption( DISCRETIZATION_TYPE         , defaultDiscretizationType      );
-    addOption( LINESEARCH_TOLERANCE        , defaultLinesearchTolerance     );
-    addOption( MIN_LINESEARCH_PARAMETER    , defaultMinLinesearchParameter  );
-    addOption( MAX_NUM_QP_ITERATIONS       , defaultMaxNumQPiterations      );
-    addOption( HOTSTART_QP                 , defaultHotstartQP              );
-    addOption( INFEASIBLE_QP_RELAXATION    , defaultInfeasibleQPrelaxation  );
-    addOption( INFEASIBLE_QP_HANDLING      , defaultInfeasibleQPhandling    );
-    addOption( USE_REALTIME_ITERATIONS     , defaultUseRealtimeIterations   );
-    addOption( TERMINATE_AT_CONVERGENCE    , defaultTerminateAtConvergence  );
-    addOption( SPARSE_QP_SOLUTION          , defaultSparseQPsolution        );
-    addOption( GLOBALIZATION_STRATEGY      , defaultGlobalizationStrategy   );
-    addOption( PRINT_SCP_METHOD_PROFILE    , defaultprintSCPmethodProfile   );
-    // add integration options
-    addOption( FREEZE_INTEGRATOR           , defaultFreezeIntegrator        );
-    addOption( INTEGRATOR_TYPE             , defaultIntegratorType          );
-    addOption( FEASIBILITY_CHECK           , defaultFeasibilityCheck        );
-    addOption( PLOT_RESOLUTION             , defaultPlotResoltion           );
-
-    // add integrator options
-    addOption( MAX_NUM_INTEGRATOR_STEPS    , defaultMaxNumSteps             );
-    addOption( INTEGRATOR_TOLERANCE        , defaultIntegratorTolerance     );
-    addOption( ABSOLUTE_TOLERANCE          , defaultAbsoluteTolerance       );
-    addOption( INITIAL_INTEGRATOR_STEPSIZE , defaultInitialStepsize         );
-    addOption( MIN_INTEGRATOR_STEPSIZE     , defaultMinStepsize             );
-    addOption( MAX_INTEGRATOR_STEPSIZE     , defaultMaxStepsize             );
-    addOption( STEPSIZE_TUNING             , defaultStepsizeTuning          );
-    addOption( CORRECTOR_TOLERANCE         , defaultCorrectorTolerance      );
-    addOption( INTEGRATOR_PRINTLEVEL       , defaultIntegratorPrintlevel    );
-    addOption( LINEAR_ALGEBRA_SOLVER       , defaultLinearAlgebraSolver     );
-    addOption( ALGEBRAIC_RELAXATION        , defaultAlgebraicRelaxation     );
-    addOption( RELAXATION_PARAMETER        , defaultRelaxationParameter     );
-    addOption( PRINT_INTEGRATOR_PROFILE    , defaultprintIntegratorProfile  );
-*/

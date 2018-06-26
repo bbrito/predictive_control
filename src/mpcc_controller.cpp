@@ -141,9 +141,8 @@ bool MPCC::initialize()
 		next_point_dist = 0;
 		goal_dist = 0;
 		prev_point_dist = 0;
-		idx = 1;
-		idy = 1;
 		epsilon_ = 0.01;
+		idx=0;
 
 		moveit_msgs::RobotTrajectory j;
 		traj = j;
@@ -171,52 +170,77 @@ bool MPCC::initialize()
 void MPCC::runNode(const ros::TimerEvent &event)
 {
 	ROS_INFO_STREAM("MPCC::runNode");
-	if(traj.multi_dof_joint_trajectory.points.size()>4) {
-		int idx = 0;
-		//for (int idx = 0; idx < traj.multi_dof_joint_trajectory.points.size(); idx++) {
+	if(idx<traj.multi_dof_joint_trajectory.points.size()-1) {
+		if (traj.multi_dof_joint_trajectory.points.size() > 4) {
 
-		//assigning next point as goal pose since initial point of trajectory is actual pose
+			//for (int idx = 0; idx < traj.multi_dof_joint_trajectory.points.size(); idx++) {
 
-		//Initialize and build splines for x and y
-		std::vector<double> X, Y, S;
+			//assigning next point as goal pose since initial point of trajectory is actual pose
 
-		X.push_back(traj.multi_dof_joint_trajectory.points[idx].transforms[0].translation.x);
-		X.push_back(traj.multi_dof_joint_trajectory.points[idx + 1].transforms[0].translation.x);
-		X.push_back(traj.multi_dof_joint_trajectory.points[idx + 2].transforms[0].translation.x);
-		X.push_back(traj.multi_dof_joint_trajectory.points[idx + 3].transforms[0].translation.x);
-		Y.push_back(traj.multi_dof_joint_trajectory.points[idx].transforms[0].translation.y);
-		Y.push_back(traj.multi_dof_joint_trajectory.points[idx + 1].transforms[0].translation.y);
-		Y.push_back(traj.multi_dof_joint_trajectory.points[idx + 2].transforms[0].translation.y);
-		Y.push_back(traj.multi_dof_joint_trajectory.points[idx + 3].transforms[0].translation.y);
-		S.push_back(0);
-		S.push_back(2);
+			//Initialize and build splines for x and y
+			std::vector<double> X(2), Y(2), S(2);
 
-		pd_trajectory_generator_->ref_path_x.set_points(S, X);
-		pd_trajectory_generator_->ref_path_y.set_points(S, Y);
-		ROS_INFO_STREAM("ref_path_x.m_a " << pd_trajectory_generator_->ref_path_y.m_a);
-		ROS_INFO_STREAM("ref_path_x.m_b " << pd_trajectory_generator_->ref_path_y.m_b);
-		ROS_INFO_STREAM("ref_path_x.m_c " << pd_trajectory_generator_->ref_path_y.m_c);
-		ROS_INFO_STREAM("ref_path_x.m_d " << pd_trajectory_generator_->ref_path_y.m_d);
-		//}
-		idx = traj.multi_dof_joint_trajectory.points.size();
-		goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.x;
-		goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.y;
-		goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.z;
+			X[0] = traj.multi_dof_joint_trajectory.points[idx].transforms[0].translation.x;
+			X[1] = traj.multi_dof_joint_trajectory.points[idx + 1].transforms[0].translation.x;
+			Y[0] = traj.multi_dof_joint_trajectory.points[idx].transforms[0].translation.y;
+			Y[1] = traj.multi_dof_joint_trajectory.points[idx + 1].transforms[0].translation.y;
 
-		states = pd_trajectory_generator_->solveOptimalControlProblem(current_state_, goal_pose_, obstacles_,
-																	  controlled_velocity_);
-		publishPredictedTrajectory();
+			/*X[0]=0.1; X[1]=0.4; X[2]=1.2; X[3]=1.8; X[4]=2.0;
+			Y[0]=0.1; Y[1]=0.7; Y[2]=0.6; Y[3]=1.1; Y[4]=0.9;
+			pd_trajectory_generator_->ref_path_x.set_points(X, Y);
+			for(int j=0;j<5;j++){
+				ROS_INFO_STREAM("INdex: " << j << "spline point: " <<pd_trajectory_generator_->ref_path_x.operator()(X[j]));
+			}
+
+			Y[0]=0;
+			Y[1]=0;
+			Y[2]=0;
+			Y[3]=0;
+			Y[4]=0;
+			S[0]=0;
+			//S[1]=1;
+			//S[2]=2;
+			S[1]=3;
+
+			ROS_INFO_STREAM("ref_path_x.m_a " << pd_trajectory_generator_->ref_path_x.m_a);
+			ROS_INFO_STREAM("ref_path_x.m_b " << pd_trajectory_generator_->ref_path_x.m_b);
+			ROS_INFO_STREAM("ref_path_x.m_c " << pd_trajectory_generator_->ref_path_x.m_c);
+			ROS_INFO_STREAM("ref_path_x.m_d " << pd_trajectory_generator_->ref_path_x.m_d);*/
+
+			S[0] = 0;
+			S[1] = 3;
+			pd_trajectory_generator_->ref_path_x.set_points(S, X);
+			pd_trajectory_generator_->ref_path_y.set_points(S, Y);
+
+			ROS_INFO_STREAM("ref_path_x " << X[0] << " " << X[1]);
+			ROS_INFO_STREAM("ref_path_x " << Y[0] << " " << Y[1]);
+
+			//}
+			//idx = traj.multi_dof_joint_trajectory.points.size();
+			goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx].transforms[0].translation.x;
+			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx].transforms[0].translation.y;
+			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx].transforms[0].rotation.z;
+
+			states = pd_trajectory_generator_->solveOptimalControlProblem(current_state_, goal_pose_, obstacles_,
+																		  controlled_velocity_);
+			publishPredictedTrajectory();
 
 
-		//publishPathFromTrajectory(traj);
+			//publishPathFromTrajectory(traj);
 
 
-		// publish zero controlled velocity
-		if (!tracking_) {
-			actionSuccess();
+			// publish zero controlled velocity
+			if (!tracking_) {
+				actionSuccess();
+			}
+			//publishZeroJointVelocity();
+			controlled_velocity_pub_.publish(controlled_velocity_);
+			ROS_INFO_STREAM("Distance: " << std::sqrt(std::pow(X[1] - X[0], 2) + std::pow(Y[1] - Y[0], 2)) << " idx: " << idx <<" distance: " << pd_trajectory_generator_->s_);
+			if (pd_trajectory_generator_->s_ > std::sqrt(std::pow(X[1] - X[0], 2) + std::pow(Y[1] - Y[0], 2))) {
+				pd_trajectory_generator_->s_ = 0;
+				idx++;
+			}
 		}
-		//publishZeroJointVelocity();
-		controlled_velocity_pub_.publish(controlled_velocity_);
 	}
 }
 
@@ -252,6 +276,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 			boost::shared_ptr<const predictive_control::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
 			traj = moveit_action_goal_ptr->trajectory;
 			tracking_ = false;
+			idx = 0;
 			//start trajectory execution
 		}
 	}

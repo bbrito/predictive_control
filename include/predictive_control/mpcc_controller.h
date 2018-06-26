@@ -38,8 +38,6 @@
 
 // predicitve includes
 #include <predictive_control/predictive_configuration.h>
-#include <predictive_control/kinematic_calculations.h>
-#include <predictive_control/collision_detection.h>
 #include <predictive_control/predictive_trajectory_generator.h>
 
 // actions, srvs, msgs
@@ -47,7 +45,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <predictive_control/moveAction.h>
 #include <predictive_control/moveActionGoal.h>
-#include <predictive_control/collision_avoidance.h>
+#include <visualization_msgs/MarkerArray.h>
 
 // joint trajectory interface
 #include <control_msgs/FollowJointTrajectoryAction.h>

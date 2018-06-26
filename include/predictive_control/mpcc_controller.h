@@ -202,6 +202,7 @@ private:
 
     // Obstacles
     obstacle_feed::Obstacles obstacles_;
+    obstacle_feed::Obstacles obstacles_init_;
 
     // Current and last position and velocity from joint state callback
     //Eigen::VectorXd current_position_;

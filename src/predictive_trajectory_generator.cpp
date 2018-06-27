@@ -104,7 +104,7 @@ void pd_frame_tracker::iniKinematics(const DifferentialState& x, const Control& 
 	f << dot(x(0)) == v(0)*cos(x(2));
 	f << dot(x(1)) == v(0)*sin(x(2));
 	f << dot(x(2)) == v(1);
-	f << dot(x(3)) == v(0);
+	f << dot(x(3)) == v(0)*sampling_time_;
 }
 
 void pd_frame_tracker::computeEgoDiscs()
@@ -295,21 +295,39 @@ void pd_frame_tracker::path_function_spline_direct(OCP& OCP_problem,
 	Expression dx_path = (3*a_x(3)*s(3)*s(3) + 2*a_x(2)*s(3) + a_x(1)) ;
 	Expression dy_path = (3*a_y(3)*s(3)*s(3) + 2*a_y(2)*s(3) + a_y(1)) ;
 
-
-	//Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
-	//Expression dx_path_norm = dx_path/abs_grad;
-	//Expression dy_path_norm =  dy_path/abs_grad;
+	double x_p =a_x(3)*s_*s_*s_ + a_x(2)*s_*s_ + a_x(1)*s_ + a_x(0);
+	double y_p = a_y(3)*s_*s_*s_ + a_y(2)*s_*s_ + a_y(1)*s_ + a_y(0);
+	double dx_p =3*a_x(3)*s_*s_ + 2*a_x(2)*s_ + a_x(1);
+	double dy_p =3*a_y(3)*s_*s_ + 2*a_y(2)*s_ + a_y(1);
+	double theta_p = dy_p/dx_p;
+	double dx_p_n = cos(atan(theta_p));
+	double dy_p_n = sin(atan(theta_p));
+	double ec = dy_p_n*(goal_pose(0)-x_p) - dx_p_n *(goal_pose(1)-y_p);
+	double el = -dx_p_n*(goal_pose(0)-x_p) - dy_p_n *(goal_pose(1)-y_p);
+	ROS_INFO_STREAM("x_path:" << x_p);
+	ROS_INFO_STREAM("y_path:" << y_p);
+	ROS_INFO_STREAM("dx_path:" << dx_p);
+	ROS_INFO_STREAM("dy_path:" << dy_p);
+	ROS_INFO_STREAM("theta_path:" << theta_p);
+	ROS_INFO_STREAM("cos:" << dx_p_n);
+	ROS_INFO_STREAM("sin:" << dy_p_n);
+	ROS_INFO_STREAM("ec:" << ec );
+	ROS_INFO_STREAM("el:" << el );
+	Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
+	Expression dx_path_norm = dx_path/abs_grad;
+	Expression dy_path_norm =  dy_path/abs_grad;
 	// Compute the errors
-	Expression theta_path = dy_path/dx_path;
-	theta_path = theta_path.getAtan();
-	Expression dx_path_norm = theta_path.getCos();
-	Expression dy_path_norm =  theta_path.getSin();
+	//Expression theta_path = dy_path/dx_path;
+	//theta_path = theta_path.getAtan();
+	//Expression dx_path_norm = theta_path.getCos();
+	//Expression dy_path_norm =  theta_path.getSin();
 
 	Expression error_contour   = dy_path_norm * (s(0) - x_path) - dx_path_norm * (s(1) - y_path);
 
 	Expression error_lag       = -dx_path_norm * (s(0) - x_path) - dy_path_norm * (s(1) - y_path);
-
-	OCP_problem.minimizeMayerTerm(error_contour.getPowInt(2) + error_lag.getPowInt(2) + 0.01*v.transpose() * v -0.5*s(3));
+	Function h ;
+	h << v(0);
+	OCP_problem.minimizeLSQ(1.0,h,0.1);//+ 1000*error_lag*error_lag -s(3)*0.02); //0.01*v.transpose()*v
 
 }
 
@@ -371,10 +389,10 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 
 	// generate cost function
  	//generateCostFunction(OCP_problem_, x_, v_, goal_pose);
-  	path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
+  	path_function_spline_direct(OCP_problem_, x_, v_, last_position);
 
   //setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
-
+	OCP_problem_.subjectTo(v_(0) >= 0);
   // Optimal Control Algorithm
   RealTimeAlgorithm OCP_solver(OCP_problem_, 0.025); // 0.025 sampling time
 
@@ -389,8 +407,10 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 
 
   // get control at first step and update controlled velocity vector
-
+	pred_states.print(std::cout);
 	OCP_solver.getU(u);
+	double cost;
+	ROS_INFO_STREAM("COST: " << OCP_solver.getObjectiveValue());
 
 	if (u.size()>0){
 		controlled_velocity.linear.x = u(0);

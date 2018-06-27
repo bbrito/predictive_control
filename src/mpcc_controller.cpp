@@ -170,7 +170,7 @@ bool MPCC::initialize()
 void MPCC::runNode(const ros::TimerEvent &event)
 {
 	ROS_INFO_STREAM("MPCC::runNode");
-	if(idx<traj.multi_dof_joint_trajectory.points.size()-1) {
+
 		if (traj.multi_dof_joint_trajectory.points.size() > 4) {
 
 			//for (int idx = 0; idx < traj.multi_dof_joint_trajectory.points.size(); idx++) {
@@ -208,7 +208,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 			ROS_INFO_STREAM("ref_path_x.m_d " << pd_trajectory_generator_->ref_path_x.m_d);*/
 
 			S[0] = 0;
-			S[1] = 3;
+			S[1] = std::sqrt(std::pow(X[1] - X[0], 2) + std::pow(Y[1] - Y[0], 2));
 			pd_trajectory_generator_->ref_path_x.set_points(S, X);
 			pd_trajectory_generator_->ref_path_y.set_points(S, Y);
 
@@ -235,13 +235,14 @@ void MPCC::runNode(const ros::TimerEvent &event)
 			}
 			//publishZeroJointVelocity();
 			controlled_velocity_pub_.publish(controlled_velocity_);
-			ROS_INFO_STREAM("Distance: " << std::sqrt(std::pow(X[1] - X[0], 2) + std::pow(Y[1] - Y[0], 2)) << " idx: " << idx <<" distance: " << pd_trajectory_generator_->s_);
-			if (pd_trajectory_generator_->s_ > std::sqrt(std::pow(X[1] - X[0], 2) + std::pow(Y[1] - Y[0], 2))) {
-				pd_trajectory_generator_->s_ = 0;
-				idx++;
+			if(idx<traj.multi_dof_joint_trajectory.points.size()-2) {
+				ROS_INFO_STREAM("Distance: " << std::sqrt(std::pow(X[1] - X[0], 2) + std::pow(Y[1] - Y[0], 2)) << " idx: " << idx <<" distance: " << pd_trajectory_generator_->s_);
+				if (pd_trajectory_generator_->s_ > std::sqrt(std::pow(X[1] - X[0], 2) + std::pow(Y[1] - Y[0], 2))) {
+					pd_trajectory_generator_->s_ = 0;
+					idx++;
+				}
 			}
 		}
-	}
 }
 
 	void MPCC::moveGoalCB()

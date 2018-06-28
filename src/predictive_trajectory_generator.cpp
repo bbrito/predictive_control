@@ -349,7 +349,7 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
 					   + lsq_control_weight_factors_(0) * (v.transpose() * v) +
 	  x(2) * x(2);
 
-	  OCP_problem.minimizeMayerTerm( sqp );
+	  OCP_problem.minimizeLagrangeTerm( sqp );
 
   }
 
@@ -358,7 +358,21 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
 void pd_frame_tracker::initializeOptimalControlProblem(std::vector<double> parameters){
 
 	ROS_INFO("pd_frame_tracker::initializeOptimalControlProblem");
+	Grid timeGrid(start_time_,end_time_,11); // end_time_/discretization_intervals_+1
+	// state initialize
+	VariablesGrid x_init(4,timeGrid);
+	VariablesGrid u_init(2,timeGrid);
 
+
+	for(int i=0;i<11;i++){
+		x_init(i,1) = 0;
+		x_init(i,2) = 0;
+		x_init(i,3) = 0;
+		x_init(i,4) = 0;
+		// control initialize with previous command
+		u_init(i,0) = 0;
+		u_init(i,1) = 0;
+	}
 }
 
 
@@ -367,6 +381,22 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 												  const obstacle_feed::Obstacles &obstacles,
 												  geometry_msgs::Twist& controlled_velocity)
 {
+	ROS_INFO("pd_frame_tracker::initializeOptimalControlProblem");
+	Grid timeGrid(start_time_,end_time_,11); // end_time_/discretization_intervals_+1
+	// state initialize
+	VariablesGrid x_init(4,timeGrid);
+	VariablesGrid u_init(2,timeGrid);
+
+
+	for(int i=0;i<11;i++){
+		x_init(i,1) = 0;
+		x_init(i,2) = 0;
+		x_init(i,3) = 0;
+		x_init(i,4) = 0;
+		// control initialize with previous command
+		u_init(i,0) = 0;
+		u_init(i,1) = 0;
+	}
 
 	// control initialize with previous command
 	control_initialize_(0) = controlled_velocity.linear.x;
@@ -380,37 +410,53 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 
 	obstacles_ = obstacles;
 
+	//ROS_INFO("pd_frame_tracker::initializeOptimalControlProblem");
 	// OCP variables
-	// Optimal control problem
+
+	//ROS_INFO("Optimal control problem");
 	OCP OCP_problem_(start_time_, end_time_, discretization_intervals_);
 
-	//Equal constraints
+	//ROS_INFO("Equal constraints");
 	OCP_problem_.subjectTo(f);
+	OCP_problem_.subjectTo(AT_START, v_(0) == 0.0);
 
-	// generate cost function
- 	//generateCostFunction(OCP_problem_, x_, v_, goal_pose);
-  	path_function_spline_direct(OCP_problem_, x_, v_, last_position);
+	//ROS_INFO("generate cost function");
+ 	generateCostFunction(OCP_problem_, x_, v_, goal_pose);
+  	//path_function_spline_direct(OCP_problem_, x_, v_, last_position);
 
-  //setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
-	OCP_problem_.subjectTo(v_(0) >= 0);
-  // Optimal Control Algorithm
-  RealTimeAlgorithm OCP_solver(OCP_problem_, 0.025); // 0.025 sampling time
+	//Inequality constraints
+  	//setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
+	//OCP_problem_.subjectTo(v_(0) >= 0);
 
-  OCP_solver.initializeControls(control_initialize_);
-  OCP_solver.initializeDifferentialStates(state_initialize_);
+	//ROS_INFO(" Optimal Control Algorithm");
+  	//RealTimeAlgorithm OCP_solver(OCP_problem_, 0.025); // 0.025 sampling time
+	RealTimeAlgorithm OCP_solver(OCP_problem_, sampling_time_); // 0.025 sampling time
 
-  setAlgorithmOptions(OCP_solver);
+	//ROS_INFO(" Initialize variables");
+	OCP_solver.initializeControls(u_init);
+	OCP_solver.initializeDifferentialStates(x_init);
 
-	OCP_solver.solve(0.0,state_initialize_);
+	//ROS_INFO(" SOlver settings");
+	setAlgorithmOptions(OCP_solver);
 
-	OCP_solver.getDifferentialStates(pred_states);
+	//ROS_INFO(" Solving...");
+	//OCP_solver.solve(0.0,state_initialize_);
+	// setup controller
+	StaticReferenceTrajectory zeroReference( u_init );
+	Controller controller(OCP_solver,zeroReference);
+	controller.initializeAlgebraicStates(x_init);
 
+	controller.init(0.0, state_initialize_);
+	controller.step(0.0, state_initialize_);
 
-  // get control at first step and update controlled velocity vector
+	//ROS_INFO(" Get predicted trajectory...");
+	//OCP_solver.getDifferentialStates(pred_states);
+
+	// get control at first step and update controlled velocity vector
 	pred_states.print(std::cout);
-	OCP_solver.getU(u);
-	double cost;
-	ROS_INFO_STREAM("COST: " << OCP_solver.getObjectiveValue());
+	controller.getU(u);
+
+	//ROS_INFO_STREAM("COST: " << OCP_solver.getObjectiveValue());
 
 	if (u.size()>0){
 		controlled_velocity.linear.x = u(0);
@@ -421,7 +467,7 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 		ROS_INFO_STREAM("Path distance: " << s_);
 		s_ += std::abs(u(0)) * sampling_time_;
 	}
-
+	clearAllStaticCounters();
 	return pred_states;
 }
 

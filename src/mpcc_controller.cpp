@@ -217,13 +217,13 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
 			//}
 			//idx = traj.multi_dof_joint_trajectory.points.size();
-			goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx].transforms[0].translation.x;
-			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx].transforms[0].translation.y;
-			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx].transforms[0].rotation.z;
+			goal_pose_(0) = traj.multi_dof_joint_trajectory.points[traj.multi_dof_joint_trajectory.points.size()-1].transforms[0].translation.x;
+			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[traj.multi_dof_joint_trajectory.points.size()-1].transforms[0].translation.y;
+			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[traj.multi_dof_joint_trajectory.points.size()-1].transforms[0].rotation.z;
 
 			states = pd_trajectory_generator_->solveOptimalControlProblem(current_state_, goal_pose_, obstacles_,
 																		  controlled_velocity_);
-			publishPredictedTrajectory();
+			//publishPredictedTrajectory();
 
 
 			//publishPathFromTrajectory(traj);

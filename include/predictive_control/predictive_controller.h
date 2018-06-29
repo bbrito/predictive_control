@@ -38,6 +38,8 @@
 
 // predicitve includes
 #include <predictive_control/predictive_configuration.h>
+//#include <predictive_control/kinematic_calculations.h>
+//#include <predictive_control/collision_detection.h>
 #include <predictive_control/predictive_trajectory_generator.h>
 
 // actions, srvs, msgs

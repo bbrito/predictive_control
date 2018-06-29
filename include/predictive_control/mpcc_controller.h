@@ -32,6 +32,12 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 
+// Visualization messages
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/InteractiveMarker.h>
+#include <visualization_msgs/InteractiveMarkerControl.h>
+
 // yaml parsing
 #include <fstream>
 #include <yaml-cpp/yaml.h>
@@ -45,7 +51,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <predictive_control/moveAction.h>
 #include <predictive_control/moveActionGoal.h>
-#include <visualization_msgs/MarkerArray.h>
+//#include <predictive_control/collision_avoidance.h>
 
 // joint trajectory interface
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -152,8 +158,6 @@ public:
 	VariablesGrid states;
 	DVector state;
 
-	int idx;
-
 private:
 
     ros::NodeHandle nh;
@@ -178,7 +182,7 @@ private:
 
     // store pose value for visualize trajectory
     //geometry_msgs::PoseArray traj_pose_array_;
-        visualization_msgs::MarkerArray traj_marker_array_;
+    visualization_msgs::MarkerArray traj_marker_array_;
 
     // Distance between traget frame and tracking frame relative to base link
     Eigen::Vector3d current_state_, last_state_;
@@ -193,8 +197,8 @@ private:
 
 	//TRajectory execution variables
 	double next_point_dist, goal_dist, prev_point_dist;
+	int idx, idy;
 	double epsilon_;
-	std::vector<std::vector <double>> dummy;
 
     // Kinematic variables
 	//To be done kinematic model car
@@ -214,6 +218,17 @@ private:
 
     // predictive configuration
     boost::shared_ptr<predictive_configuration> controller_config_;
+
+    // kinematic calculation
+    //TO BE REPLACED BY CAR CLASS CALCULATION
+    //boost::shared_ptr<Kinematic_calculations> kinematic_solver_;
+
+    // self collision detector/avoidance
+    //boost::shared_ptr<CollisionRobot> collision_detect_;
+    //boost::shared_ptr<CollisionAvoidance> collision_avoidance_;
+
+    // static collision detector/avoidance
+    //boost::shared_ptr<StaticCollision> static_collision_avoidance_;
 
     // predictive trajectory generator
     boost::shared_ptr<pd_frame_tracker> pd_trajectory_generator_;
@@ -269,17 +284,17 @@ private:
      * @param velocity_tolerance: tolerance in joint values after reaching minimum and maximum values
      * @return true with velocity limit violation else false
      */
-    bool checkVelocityLimitViolation(const std_msgs::Float64MultiArray& joint_velocity,
-                                                                     const double& velocity_tolerance = 0.0
-                                                                    );
-    void enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
-									     std_msgs::Float64MultiArray& enforced_joint_velocity);
-
-    /**
-     * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
-     * @param vector: std vectors want to tranfrom
-     * @return Eigen vectors transform from std vectos
-     */
+//    bool checkVelocityLimitViolation(const std_msgs::Float64MultiArray& joint_velocity,
+//                                                                     const double& velocity_tolerance = 0.0
+//                                                                    );
+//    void enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
+//									     std_msgs::Float64MultiArray& enforced_joint_velocity);
+//
+//    /**
+//     * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
+//     * @param vector: std vectors want to tranfrom
+//     * @return Eigen vectors transform from std vectos
+//     */
     /*template<typename T>
     static inline Eigen::VectorXd transformStdVectorToEigenVector(const std::vector<T>& vector)
     {

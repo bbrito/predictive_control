@@ -42,7 +42,7 @@
 #include <predictive_control/predictive_configuration.h>
 
 //splines
-#include <tkspline/spline.h>
+//#include <tkspline/spline.h>
 
 // Add obstacle messages
 #include <obstacle_feed/Obstacle.h>
@@ -66,7 +66,7 @@ public:
 	double s_; // this variable is going to be later replaced by a ACADO Process to simulate
 	//spline and other parameters
 	double* p;
-	tk::spline ref_path_x, ref_path_y;
+//	tk::spline ref_path_x, ref_path_y;
 
 
   /**
@@ -101,6 +101,8 @@ public:
     * @param controlled_velocity: controlled velocity use to publish
     */
 	VariablesGrid solveOptimalControlProblem(const Eigen::VectorXd& last_position,
+								   const Eigen::Vector3d& prev_pose,
+								   const Eigen::Vector3d& next_pose,
                                    const Eigen::Vector3d& goal_pose,
                                    const obstacle_feed::Obstacles& obstacles,
                                    geometry_msgs::Twist& controlled_velocity
@@ -253,27 +255,6 @@ private:
    void setupLSQWeightsAndReferences(DMatrix& Q,
                                      VariablesGrid& grid
                                      );
-
-
-   /**
-   * @brief calculateQuaternionProduct: calculate quternion product used for finding quternion error
-   * @param quat_1: quternion 1
-   * @param quat_2: quatenion 2
-   * @param quat_resultant: resultant quternion, result after multiplication of two quternion
-   */
-  void calculateQuaternionProduct(const geometry_msgs::Quaternion& quat_1,
-                          const geometry_msgs::Quaternion& quat_2,
-                          geometry_msgs::Quaternion& quat_resultant
-                          );
-
-  /**
-   * @brief calculateQuaternionInverse: Calculate quternion inverse used for getting quternion error
-   * @param quat: Given quternion
-   * @param quat_inv: Inversed quaternion
-   */
-  void calculateQuaternionInverse(const geometry_msgs::Quaternion& quat,
-                                  geometry_msgs::Quaternion& quat_inv
-                                  );
 
   /**
    * @brief getTransform: Find transformation stamed rotation is in the form of quaternion

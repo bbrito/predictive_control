@@ -122,19 +122,19 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz/Axes
-      Enabled: false
+      Enabled: true
       Length: 1
       Name: Axes
       Radius: 0.100000001
       Reference Frame: base_link
-      Value: false
+      Value: true
     - Class: rviz/Axes
-      Enabled: false
+      Enabled: true
       Length: 1
       Name: Axes
       Radius: 0.100000001
       Reference Frame: odom
-      Value: false
+      Value: true
     - Class: moveit_rviz_plugin/MotionPlanning
       Enabled: true
       Move Group Namespace: ""
@@ -380,7 +380,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.39362788
+      Distance: 5.65891981
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -395,10 +395,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.25539768
+      Pitch: 1.28039777
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.62540007
+      Yaw: 1.44540024
     Saved: ~
 Window Geometry:
   Displays:

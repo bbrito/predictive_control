@@ -141,8 +141,9 @@ bool MPCC::initialize()
 		next_point_dist = 0;
 		goal_dist = 0;
 		prev_point_dist = 0;
+		idx = 1;
+		idy = 1;
 		epsilon_ = 0.01;
-		idx=0;
 
 		moveit_msgs::RobotTrajectory j;
 		traj = j;
@@ -169,81 +170,33 @@ bool MPCC::initialize()
 // update this function 1/colck_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
-	ROS_INFO_STREAM("MPCC::runNode");
 
-		if (traj.multi_dof_joint_trajectory.points.size() > 4) {
+	if(((int)traj.multi_dof_joint_trajectory.points.size()) > 1){
 
-			//for (int idx = 0; idx < traj.multi_dof_joint_trajectory.points.size(); idx++) {
+		//Eigen::Vector3d dist = current_state_-goal_pose_;
+		idx = (int)traj.multi_dof_joint_trajectory.points.size() -2;
+			goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.x;
+			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.y;
+			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].rotation.z;
 
-			//assigning next point as goal pose since initial point of trajectory is actual pose
+			states = pd_trajectory_generator_->solveOptimalControlProblem(current_state_,prev_pose_,next_pose_, goal_pose_, obstacles_, controlled_velocity_);
 
-			//Initialize and build splines for x and y
-			std::vector<double> X(2), Y(2), S(2);
-
-			X[0] = traj.multi_dof_joint_trajectory.points[idx].transforms[0].translation.x;
-			X[1] = traj.multi_dof_joint_trajectory.points[idx + 1].transforms[0].translation.x;
-			Y[0] = traj.multi_dof_joint_trajectory.points[idx].transforms[0].translation.y;
-			Y[1] = traj.multi_dof_joint_trajectory.points[idx + 1].transforms[0].translation.y;
-
-			/*X[0]=0.1; X[1]=0.4; X[2]=1.2; X[3]=1.8; X[4]=2.0;
-			Y[0]=0.1; Y[1]=0.7; Y[2]=0.6; Y[3]=1.1; Y[4]=0.9;
-			pd_trajectory_generator_->ref_path_x.set_points(X, Y);
-			for(int j=0;j<5;j++){
-				ROS_INFO_STREAM("INdex: " << j << "spline point: " <<pd_trajectory_generator_->ref_path_x.operator()(X[j]));
-			}
-
-			Y[0]=0;
-			Y[1]=0;
-			Y[2]=0;
-			Y[3]=0;
-			Y[4]=0;
-			S[0]=0;
-			//S[1]=1;
-			//S[2]=2;
-			S[1]=3;
-
-			ROS_INFO_STREAM("ref_path_x.m_a " << pd_trajectory_generator_->ref_path_x.m_a);
-			ROS_INFO_STREAM("ref_path_x.m_b " << pd_trajectory_generator_->ref_path_x.m_b);
-			ROS_INFO_STREAM("ref_path_x.m_c " << pd_trajectory_generator_->ref_path_x.m_c);
-			ROS_INFO_STREAM("ref_path_x.m_d " << pd_trajectory_generator_->ref_path_x.m_d);*/
-
-			S[0] = 0;
-			S[1] = std::sqrt(std::pow(X[1] - X[0], 2) + std::pow(Y[1] - Y[0], 2));
-			pd_trajectory_generator_->ref_path_x.set_points(S, X);
-			pd_trajectory_generator_->ref_path_y.set_points(S, Y);
-
-			ROS_INFO_STREAM("ref_path_x " << X[0] << " " << X[1]);
-			ROS_INFO_STREAM("ref_path_x " << Y[0] << " " << Y[1]);
-
-			//}
-			//idx = traj.multi_dof_joint_trajectory.points.size();
-			goal_pose_(0) = traj.multi_dof_joint_trajectory.points[traj.multi_dof_joint_trajectory.points.size()-1].transforms[0].translation.x;
-			goal_pose_(1) = traj.multi_dof_joint_trajectory.points[traj.multi_dof_joint_trajectory.points.size()-1].transforms[0].translation.y;
-			goal_pose_(2) = traj.multi_dof_joint_trajectory.points[traj.multi_dof_joint_trajectory.points.size()-1].transforms[0].rotation.z;
-
-			states = pd_trajectory_generator_->solveOptimalControlProblem(current_state_, goal_pose_, obstacles_,
-																		  controlled_velocity_);
-			//publishPredictedTrajectory();
+			publishPredictedTrajectory();
+		}
+		// solver optimal control problem
 
 
-			//publishPathFromTrajectory(traj);
-
+            //publishPathFromTrajectory(traj);
 
 			// publish zero controlled velocity
-			if (!tracking_) {
+			if (!tracking_)
+			{
 				actionSuccess();
 			}
 			//publishZeroJointVelocity();
 			controlled_velocity_pub_.publish(controlled_velocity_);
-			if(idx<traj.multi_dof_joint_trajectory.points.size()-2) {
-				ROS_INFO_STREAM("Distance: " << std::sqrt(std::pow(X[1] - X[0], 2) + std::pow(Y[1] - Y[0], 2)) << " idx: " << idx <<" distance: " << pd_trajectory_generator_->s_);
-				if (pd_trajectory_generator_->s_ > std::sqrt(std::pow(X[1] - X[0], 2) + std::pow(Y[1] - Y[0], 2))) {
-					pd_trajectory_generator_->s_ = 0;
-					idx++;
-				}
-			}
-		}
-}
+
+	}
 
 	void MPCC::moveGoalCB()
 	{
@@ -251,15 +204,12 @@ void MPCC::runNode(const ros::TimerEvent &event)
 		{
 			boost::shared_ptr<const predictive_control::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
 			tracking_ = false;
-			//collision_detect_->createStaticFrame(move_action_goal_ptr->target_endeffector_pose, move_action_goal_ptr->target_frame_id);
-			//target_frame_ = move_action_goal_ptr->target_frame_id;
 
 			//erase previous trajectory
 			for (auto it = traj_marker_array_.markers.begin(); it != traj_marker_array_.markers.end(); ++it)
 			{
 				it->action = visualization_msgs::Marker::DELETE;
 				traj_pub_.publish(traj_marker_array_);
-				//traj_marker_array_.markers.erase(it);
 			}
 
 			traj_marker_array_.markers.clear();
@@ -277,7 +227,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
 			boost::shared_ptr<const predictive_control::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
 			traj = moveit_action_goal_ptr->trajectory;
 			tracking_ = false;
-			idx = 0;
 			//start trajectory execution
 		}
 	}
@@ -326,7 +275,6 @@ void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 
 }
 
-
 void MPCC::publishZeroJointVelocity()
 {
     if (activate_debug_output_)
@@ -369,7 +317,6 @@ void MPCC::publishTrajectory()
 {
     geometry_msgs::Pose pose;
     visualization_msgs::Marker marker;
-
 
     marker.type = visualization_msgs::Marker::SPHERE;
     //marker.lifetime = ros::Duration(5.0);
@@ -468,200 +415,135 @@ bool MPCC::transformEigenToGeometryPose(const Eigen::VectorXd &eigen_vector, geo
     return true;
 }
 
-
-//bool MPCC::getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& stamped_pose)
+//bool MPCC::getTransform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
 //{
 //    bool transform = false;
-//    stamped_pose = Eigen::VectorXd(6);
 //    tf::StampedTransform stamped_tf;
 //
 //    // make sure source and target frame exist
-//    if (tf_listener_.frameExists(to) && tf_listener_.frameExists(from))
+//    if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
 //    {
 //        try
 //        {
 //            // find transforamtion between souce and target frame
-//            tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.02));
+//            tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
 //            tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
 //
+//            // rotation
+//            stamped_pose.pose.orientation.w = stamped_tf.getRotation().getW();
+//            stamped_pose.pose.orientation.x = stamped_tf.getRotation().getX();
+//            stamped_pose.pose.orientation.y = stamped_tf.getRotation().getY();
+//            stamped_pose.pose.orientation.z = stamped_tf.getRotation().getZ();
+//
 //            // translation
-//            stamped_pose(0) = stamped_tf.getOrigin().x();
-//            stamped_pose(1) = stamped_tf.getOrigin().y();
-//            stamped_pose(2) = stamped_tf.getOrigin().z();
+//            stamped_pose.pose.position.x = stamped_tf.getOrigin().x();
+//            stamped_pose.pose.position.y = stamped_tf.getOrigin().y();
+//            stamped_pose.pose.position.z = stamped_tf.getOrigin().z();
 //
-//            // convert quternion to rpy
-//            tf::Quaternion quat(stamped_tf.getRotation().getX(),
-//                                                    stamped_tf.getRotation().getY(),
-//                                                    stamped_tf.getRotation().getZ(),
-//                                                    stamped_tf.getRotation().getW()
-//            );
-//
-//            if (activate_debug_output_)
-//            {
-//                std::cout << "\033[94m" << "getTransform:" << " qx:" << stamped_tf.getRotation().getX()
-//                                    << "qy:" << stamped_tf.getRotation().getY()
-//                                    << "qz:" << stamped_tf.getRotation().getZ()
-//                                    << "qw:" << stamped_tf.getRotation().getW() << "\033[0m" <<std::endl;
-//            }
-//
-//            tf::Matrix3x3 quat_matrix(quat);
-//            quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
-//
-//            if (activate_debug_output_)
-//            {
-//                std::cout << "\033[32m" << "getTransform:" << " roll:" << stamped_pose(3)
-//                                    << " pitch:" << stamped_pose(4)
-//                                    << " yaw:" << stamped_pose(5)
-//                                    << "\033[0m" <<std::endl;
-//            }
+//            // header frame_id should be parent frame
+//            stamped_pose.header.frame_id = stamped_tf.frame_id_;    //from or to
+//            stamped_pose.header.stamp = ros::Time(0);
 //
 //            transform = true;
 //        }
 //        catch (tf::TransformException& ex)
 //        {
-//            ROS_ERROR("MPCC::getTransform: %s", ex.what());
+//            ROS_ERROR("MPCC_node::getTransform: \n%s", ex.what());
 //        }
 //    }
 //
 //    else
 //    {
-//        ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
-//                         from.c_str(), to.c_str());
+//        ROS_WARN("%s or %s frame doesn't exist, pass existing frame", from.c_str(), to.c_str());
 //    }
 //
 //    return transform;
 //}
 
 
-bool MPCC::getTransform(const std::string& from, const std::string& to, geometry_msgs::PoseStamped& stamped_pose)
-{
-    bool transform = false;
-    tf::StampedTransform stamped_tf;
-
-    // make sure source and target frame exist
-    if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
-    {
-        try
-        {
-            // find transforamtion between souce and target frame
-            tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
-            tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
-
-            // rotation
-            stamped_pose.pose.orientation.w = stamped_tf.getRotation().getW();
-            stamped_pose.pose.orientation.x = stamped_tf.getRotation().getX();
-            stamped_pose.pose.orientation.y = stamped_tf.getRotation().getY();
-            stamped_pose.pose.orientation.z = stamped_tf.getRotation().getZ();
-
-            // translation
-            stamped_pose.pose.position.x = stamped_tf.getOrigin().x();
-            stamped_pose.pose.position.y = stamped_tf.getOrigin().y();
-            stamped_pose.pose.position.z = stamped_tf.getOrigin().z();
-
-            // header frame_id should be parent frame
-            stamped_pose.header.frame_id = stamped_tf.frame_id_;    //from or to
-            stamped_pose.header.stamp = ros::Time(0);
-
-            transform = true;
-        }
-        catch (tf::TransformException& ex)
-        {
-            ROS_ERROR("MPCC_node::getTransform: \n%s", ex.what());
-        }
-    }
-
-    else
-    {
-        ROS_WARN("%s or %s frame doesn't exist, pass existing frame", from.c_str(), to.c_str());
-    }
-
-    return transform;
-}
-
-
 // check position lower and upper limit violation
-bool MPCC::checkVelocityLimitViolation(const std_msgs::Float64MultiArray &joint_velocity, const double &velocity_tolerance)
-{
-    int size = joint_velocity.data.size();
-    // confirm size using conditional operator
-    //size == 0? min_position_limit_.rows()* min_position_limit_.cols(): size;
-
-    for (int i = 0u; i < size; ++i )
-    {
-        // Current position is below than minimum position limit + tolerance, check lower limit violation
-        if ( (min_velocity_limit_(i) - velocity_tolerance) >= joint_velocity.data[i] )
-        {
-            ROS_WARN("lower velocity tolerance violate with current velocity %f required velocity %f",
-                             joint_velocity.data[i], (min_velocity_limit_(i) - velocity_tolerance));
-            return true;
-        }
-
-            // Current position is above than maximum position limit + tolerance, check upper limit violation
-        else if ( (max_velocity_limit_(i) + velocity_tolerance) <= joint_velocity.data[i] )
-        {
-            ROS_WARN("upper velocity tolerance violate with current velocity %f required velocity %f",
-                             joint_velocity.data[i], (max_velocity_limit_(i) + velocity_tolerance));
-            return true;
-        }
-
-            // Current velocity is within range of minimum and maximum velocity limit
-        else if ( activate_debug_output_ &&
-                            (((min_velocity_limit_(i)+ velocity_tolerance) - joint_velocity.data[i]) <= 0.0) &&
-                            ((joint_velocity.data[i] - (max_velocity_limit_(i) + velocity_tolerance) <= 0.0) )
-                )
-        {
-            ROS_INFO("Current velocity is within range of minimum and maximum velocity limit");
-        }
-    }
-    return false;
-}
-
-// enforcing joint locity to be in velocity limits
-void MPCC::enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
-                                                                     std_msgs::Float64MultiArray& enforced_joint_velocity)
-{
-    // initialze enforced joint position vector, if limit violate than update otherwise remain same as joint position
-    enforced_joint_velocity = joint_velocity;
-    int size = joint_velocity.data.size();
-    // confirm size using conditional operator
-    //size == 0? min_velocity_limit_.rows()* min_position_limit_.cols(): size;
-
-    for (int i = 0u; i < size; ++i )
-    {
-        // Current position is below than minimum velocity limit + tolerance, check lower limit violation
-        if ( ( (min_velocity_limit_(i) ) >= joint_velocity.data[i] ) &&
-                 ( std::abs(joint_velocity.data[i]-min_velocity_limit_(i)) < std::abs(max_velocity_limit_(i)-joint_velocity.data[i]) )
-                )
-        {
-            ROS_WARN("lower velocity tolerance violate with current position %f required position %f",
-                             joint_velocity.data[i], (min_velocity_limit_(i) ));
-
-            // enforced lower joint limit
-            enforced_joint_velocity.data[i] = min_velocity_limit_(i);
-            ROS_INFO("new velocity %f", min_velocity_limit_(i));
-        }
-
-            // Current velocity is above than maximum position limit + tolerance, check upper limit violation
-        else if ( ( (max_velocity_limit_(i) ) <= joint_velocity.data[i] ) &&
-                            ( std::abs(joint_velocity.data[i]-min_velocity_limit_(i)) > std::abs(max_velocity_limit_(i)-joint_velocity.data[i]) )
-                )
-        {
-            ROS_WARN("upper velocity tolerance violate with current position %f required position %f",
-                             joint_velocity.data[i], (max_velocity_limit_(i) ));
-
-            // enforced lower joint limit
-            enforced_joint_velocity.data[i] = max_velocity_limit_(i);
-            ROS_INFO("new velocity %f", max_velocity_limit_(i));
-        }
-
-            // Current position is within range of minimum and maximum position limit
-        else if ( activate_debug_output_ &&
-                            (((min_velocity_limit_(i)) - joint_velocity.data[i]) <= 0.0) &&
-                            ((joint_velocity.data[i] - (max_velocity_limit_(i) ) <= 0.0) )
-                )
-        {
-            ROS_INFO("Current velocity is within range of minimum and maximum velocity limit");
-        }
-    }
-
-}
+//bool MPCC::checkVelocityLimitViolation(const std_msgs::Float64MultiArray &joint_velocity, const double &velocity_tolerance)
+//{
+//    int size = joint_velocity.data.size();
+//    // confirm size using conditional operator
+//    //size == 0? min_position_limit_.rows()* min_position_limit_.cols(): size;
+//
+//    for (int i = 0u; i < size; ++i )
+//    {
+//        // Current position is below than minimum position limit + tolerance, check lower limit violation
+//        if ( (min_velocity_limit_(i) - velocity_tolerance) >= joint_velocity.data[i] )
+//        {
+//            ROS_WARN("lower velocity tolerance violate with current velocity %f required velocity %f",
+//                             joint_velocity.data[i], (min_velocity_limit_(i) - velocity_tolerance));
+//            return true;
+//        }
+//
+//            // Current position is above than maximum position limit + tolerance, check upper limit violation
+//        else if ( (max_velocity_limit_(i) + velocity_tolerance) <= joint_velocity.data[i] )
+//        {
+//            ROS_WARN("upper velocity tolerance violate with current velocity %f required velocity %f",
+//                             joint_velocity.data[i], (max_velocity_limit_(i) + velocity_tolerance));
+//            return true;
+//        }
+//
+//            // Current velocity is within range of minimum and maximum velocity limit
+//        else if ( activate_debug_output_ &&
+//                            (((min_velocity_limit_(i)+ velocity_tolerance) - joint_velocity.data[i]) <= 0.0) &&
+//                            ((joint_velocity.data[i] - (max_velocity_limit_(i) + velocity_tolerance) <= 0.0) )
+//                )
+//        {
+//            ROS_INFO("Current velocity is within range of minimum and maximum velocity limit");
+//        }
+//    }
+//    return false;
+//}
+//
+//// enforcing joint locity to be in velocity limits
+//void MPCC::enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
+//                                                                     std_msgs::Float64MultiArray& enforced_joint_velocity)
+//{
+//    // initialze enforced joint position vector, if limit violate than update otherwise remain same as joint position
+//    enforced_joint_velocity = joint_velocity;
+//    int size = joint_velocity.data.size();
+//    // confirm size using conditional operator
+//    //size == 0? min_velocity_limit_.rows()* min_position_limit_.cols(): size;
+//
+//    for (int i = 0u; i < size; ++i )
+//    {
+//        // Current position is below than minimum velocity limit + tolerance, check lower limit violation
+//        if ( ( (min_velocity_limit_(i) ) >= joint_velocity.data[i] ) &&
+//                 ( std::abs(joint_velocity.data[i]-min_velocity_limit_(i)) < std::abs(max_velocity_limit_(i)-joint_velocity.data[i]) )
+//                )
+//        {
+//            ROS_WARN("lower velocity tolerance violate with current position %f required position %f",
+//                             joint_velocity.data[i], (min_velocity_limit_(i) ));
+//
+//            // enforced lower joint limit
+//            enforced_joint_velocity.data[i] = min_velocity_limit_(i);
+//            ROS_INFO("new velocity %f", min_velocity_limit_(i));
+//        }
+//
+//            // Current velocity is above than maximum position limit + tolerance, check upper limit violation
+//        else if ( ( (max_velocity_limit_(i) ) <= joint_velocity.data[i] ) &&
+//                            ( std::abs(joint_velocity.data[i]-min_velocity_limit_(i)) > std::abs(max_velocity_limit_(i)-joint_velocity.data[i]) )
+//                )
+//        {
+//            ROS_WARN("upper velocity tolerance violate with current position %f required position %f",
+//                             joint_velocity.data[i], (max_velocity_limit_(i) ));
+//
+//            // enforced lower joint limit
+//            enforced_joint_velocity.data[i] = max_velocity_limit_(i);
+//            ROS_INFO("new velocity %f", max_velocity_limit_(i));
+//        }
+//
+//            // Current position is within range of minimum and maximum position limit
+//        else if ( activate_debug_output_ &&
+//                            (((min_velocity_limit_(i)) - joint_velocity.data[i]) <= 0.0) &&
+//                            ((joint_velocity.data[i] - (max_velocity_limit_(i) ) <= 0.0) )
+//                )
+//        {
+//            ROS_INFO("Current velocity is within range of minimum and maximum velocity limit");
+//        }
+//    }
+//
+//}

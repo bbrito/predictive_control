@@ -1,30 +1,10 @@
-# predictive_control
-- Reactive motion planning using Model predictive control(MPC)
+This repository contains a MPC regulator for Jackal.
 
-# Kinematic_calculation:
-- Impliment compute_mass_matrix, compute_initeria_matrix. 
-- improve code structure but not priority.
-- Add function for calculating Inverse Kinematics using KDL
+# predictive_trajectory_generator.cpp
+- Contains code to pregenerate MPC solver using ACADO
 
-# predicitve_config:
-- Change to read data from yaml to Dynamic config. 
+# predictive_configuration.cpp
+- Contains code to MPC load parameters from predictive_config_parameter.yaml in the config directory
 
-# install LaTex
-sudo apt-get install texlive-full
-
-# Compile ACADO Toolkit
-- cmake ..
-- make
-- lsq_term.cpp for teminal cost
-- getting_started.cpp for self collision avoidance 
-
-# Extension to robot body
-- cob_robot: mt_experiment
-- predictive_control: current
-- Note: careful with yaml file becuse base and tip link match to cartesian_control.yaml
-Therefore, it gives error about Filed kinematic chain ....
-
-Launch:
- roslaunch predictive_control mpc_experiment_cob.launch  
-
-MIN_DISTANCE: for obstracle avoidance is 0.50 define in obstacle_distance_data_types.hpp
+# mpcc_controller.cpp
+- Contains the controller class that is launched by the predictive_control_node

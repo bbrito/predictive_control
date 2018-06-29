@@ -68,7 +68,6 @@ public:
 	double* p;
 //	tk::spline ref_path_x, ref_path_y;
 
-
   /**
    * @brief pd_frame_tracker: Default constructor, allocate memory
    */
@@ -162,12 +161,12 @@ private:
    double kkt_tolerance_;
    double integrator_tolerance_;
 
-    // control and/or prediction horizon parameter
-    double start_time_;
-    double end_time_;
-    int discretization_intervals_;
-    double sampling_time_;
-	int horizon_steps_;
+   // control and/or prediction horizon parameter
+   double start_time_;
+   double end_time_;
+   int discretization_intervals_;
+   double sampling_time_;
+   int horizon_steps_;
 
    // objective function minimization type
    bool use_lagrange_term_;
@@ -183,15 +182,15 @@ private:
    Eigen::VectorXd lsq_control_weight_factors_;
    uint32_t control_vector_size_;
 
-    //OCP Parameters
-    DVector param_;
+   //OCP Parameters
+   DVector param_;
 
-    //ACADO variables
-    DifferentialEquation f;
-	DifferentialState x_;       // position
-	Control v_;            // velocities
-	VariablesGrid pred_states;
-	DVector u;
+   //ACADO variables
+   DifferentialEquation f;
+   DifferentialState x_;       // position
+   Control v_;                 // velocities
+   VariablesGrid pred_states;
+   DVector u;
 
    /**
     * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector
@@ -208,31 +207,9 @@ private:
 							 const Eigen::Vector3d& goal_pose
    );
 
-	void iniKinematics(const DifferentialState& x,
-							   const Control& v
-	);
-
-	void path_function_spline_direct(OCP& OCP_problem,
-									 const DifferentialState &s,
-									 const Control &v,
-									 const Eigen::Vector3d& goal_pose);
-
-   /**
-    * @brief generateCostFunction: generate collision cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector
-    *                               Langrange
-    * @param OCP_problem: Current optimal control problem
-    * @param v: Control state use to control manipulator, in our case joint velocity
-    * @param Jacobian_Matrix: Jacobian Matrix used to get cartesian velocity
-    * @param total_distance: total distance between center of ball, sum all distance
-    * @param delta_t: time discretization (end_time - start_time / number of interval)
-    */
-   void generateCollisionCostFunction(OCP& OCP_problem,
-                             const DifferentialState& x,
-                             const Control& v,
-                             const Eigen::MatrixXd& Jacobian_Matrix,
-                             const double& total_distance,
-                             const double& delta_t
-                             );
+   void iniKinematics(const DifferentialState& x,
+                      const Control& v
+   );
 
    void setCollisionConstraints(OCP& OCP_problem,
                                 const DifferentialState& x,
@@ -245,29 +222,6 @@ private:
     * @param OCP_solver: optimal control solver used to solver system of equations
     */
     void setAlgorithmOptions(RealTimeAlgorithm& OCP_solver);
-    //void setAlgorithmOptions(boost::shared_ptr<RealTimeAlgorithm> OCP_solver);
-
-   /**
-    * @brief setupLSQWeightsAndReferences: generate LSQ weight matrix and references
-    * @param Q LSQ weight matrix
-    * @param grid set state initialization as reference
-    */
-   void setupLSQWeightsAndReferences(DMatrix& Q,
-                                     VariablesGrid& grid
-                                     );
-
-  /**
-   * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
-   * @param from: source frame from find transformation
-   * @param to: target frame till find transformation
-   * @param stamped_pose: Resultant poseStamed between source and target frame
-   * @return: true if transform else false
-   */
-  bool getTransform(const std::string& from,
-                    const std::string& to,
-                    Eigen::VectorXd& stamped_pose,
-                    geometry_msgs::Quaternion &quat_msg
-                    );
 
   /**
    * @brief clearDataMember: clear vectors means free allocated memory

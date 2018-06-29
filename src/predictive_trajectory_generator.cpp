@@ -120,74 +120,6 @@ void pd_frame_tracker::computeEgoDiscs()
     ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_);
 }
 
-// get transformation matrix between source and target frame
-bool pd_frame_tracker::getTransform(const std::string& from, const std::string& to,
-                                    Eigen::VectorXd& stamped_pose,
-                                    geometry_msgs::Quaternion &quat_msg)
-{
-  bool transform = false;
-  stamped_pose = Eigen::VectorXd(6);
-  tf::StampedTransform stamped_tf;
-
-  // make sure source and target frame exist
-  if (tf_listener_.frameExists(to) & tf_listener_.frameExists(from))
-  {
-    try
-    {
-      // find transforamtion between souce and target frame
-      tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.2));
-      tf_listener_.lookupTransform(from, to, ros::Time(0), stamped_tf);
-
-      // translation
-      stamped_pose(0) = stamped_tf.getOrigin().x();
-      stamped_pose(1) = stamped_tf.getOrigin().y();
-      stamped_pose(2) = stamped_tf.getOrigin().z();
-
-      // convert quternion to rpy
-      tf::Quaternion quat(stamped_tf.getRotation().getX(),
-                          stamped_tf.getRotation().getY(),
-                          stamped_tf.getRotation().getZ(),
-                          stamped_tf.getRotation().getW()
-                          );
-
-      // filled quaternion stamped pose
-      quat_msg.w = quat.w();
-      quat_msg.x = quat.x();
-      quat_msg.y = quat.y();
-      quat_msg.z = quat.z();
-
-      tf::Matrix3x3 quat_matrix(quat);
-      quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
-
-      transform = true;
-    }
-    catch (tf::TransformException& ex)
-    {
-      ROS_ERROR("pd_frame_tracker::getTransform: %s", ex.what());
-    }
-  }
-
-  else
-  {
-    ROS_WARN("pd_frame_tracker::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
-             from.c_str(), to.c_str());
-  }
-
-  return transform;
-}
-
-// Generate collision cost used to avoid self collision
-void pd_frame_tracker::generateCollisionCostFunction(OCP& OCP_problem,
-                                                     const DifferentialState& x,
-                                                     const Control& v,
-                                                     const Eigen::MatrixXd& Jacobian_Matrix,
-                                                     const double& total_distance,
-                                                     const double& delta_t
-                                                    )
-{
-
-}
-
 void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const DifferentialState& x, const obstacle_feed::Obstacles& obstacles, const double& delta_t) {
 
 
@@ -207,11 +139,11 @@ void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const Different
 
             // Distance from individual ego-vehicle discs to obstacle
             Expression deltaPos(2, 1);
-//            deltaPos(0) = x(0) - cos(x(2))*x_discs_[discs_it] - x_obst;
-//            deltaPos(1) = x(1) - sin(x(2))*x_discs_[discs_it] - y_obst;
+            deltaPos(0) = x(0) - cos(x(2))*x_discs_[discs_it] - x_obst;
+            deltaPos(1) = x(1) - sin(x(2))*x_discs_[discs_it] - y_obst;
 
-            deltaPos(0) = x(0) - x_obst;
-            deltaPos(1) = x(1) - y_obst;
+//            deltaPos(0) = x(0) - x_obst;
+//            deltaPos(1) = x(1) - y_obst;
 
             // Rotation matrix corresponding to the obstacle heading
             Expression R_obst(2, 2);
@@ -229,8 +161,8 @@ void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const Different
 
             // Total contraint on obstacle
             Expression c_k;
-//            c_k = deltaPos.transpose() * R_obst.transpose() * ab_mat * R_obst * deltaPos;
-            c_k = deltaPos.transpose()  * ab_mat *  deltaPos;
+            c_k = deltaPos.transpose() * R_obst.transpose() * ab_mat * R_obst * deltaPos;
+//            c_k = deltaPos.transpose()  * ab_mat *  deltaPos;
 
             // Add constraint to OCP problem
             OCP_problem.subjectTo(c_k >= 1);
@@ -260,13 +192,6 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
   }
 
 }
-
-void pd_frame_tracker::initializeOptimalControlProblem(std::vector<double> parameters){
-
-	ROS_INFO("pd_frame_tracker::initializeOptimalControlProblem");
-
-}
-
 
 VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
 												  const Eigen::Vector3d &prev_pose,

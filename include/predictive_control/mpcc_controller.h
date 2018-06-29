@@ -130,11 +130,6 @@ public:
      * @param stamped_pose: Resultant poseStamed between source and target frame
      * @return: true if transform else false
      */
-//    bool getTransform(const std::string& from,
-//                                        const std::string& to,
-//                                        Eigen::VectorXd& stamped_pose
-//                                        );
-
 
     bool transformEigenToGeometryPose(const Eigen::VectorXd& eigen_vector, geometry_msgs::Pose& pose);
 

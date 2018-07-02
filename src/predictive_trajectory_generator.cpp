@@ -186,7 +186,7 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
 						+ (lsq_state_weight_factors_(1) * ( (x(1) - goal_pose(1)) * (x(1) - goal_pose(1))))
 						+ lsq_state_weight_factors_(2) * ( (x(2) - goal_pose(2)) * (x(2) - goal_pose(2))))
 					    + lsq_control_weight_factors_(0) * (v.transpose() * v)
-                        + x(2) * x(2);
+                        ;
 
 	  OCP_problem.minimizeMayerTerm( sqp );
   }

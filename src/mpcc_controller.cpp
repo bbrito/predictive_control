@@ -256,10 +256,10 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
 		pd_trajectory_generator_->ref_path_x.set_points(S, X);
 		pd_trajectory_generator_->ref_path_y.set_points(S, Y);
-		ROS_INFO_STREAM("ref_path_x.m_a " << pd_trajectory_generator_->ref_path_y.m_a);
-		ROS_INFO_STREAM("ref_path_x.m_b " << pd_trajectory_generator_->ref_path_y.m_b);
-		ROS_INFO_STREAM("ref_path_x.m_c " << pd_trajectory_generator_->ref_path_y.m_c);
-		ROS_INFO_STREAM("ref_path_x.m_d " << pd_trajectory_generator_->ref_path_y.m_d);
+		//ROS_INFO_STREAM("ref_path_x.m_a " << pd_trajectory_generator_->ref_path_y.m_a);
+		//ROS_INFO_STREAM("ref_path_x.m_b " << pd_trajectory_generator_->ref_path_y.m_b);
+		//ROS_INFO_STREAM("ref_path_x.m_c " << pd_trajectory_generator_->ref_path_y.m_c);
+		//ROS_INFO_STREAM("ref_path_x.m_d " << pd_trajectory_generator_->ref_path_y.m_d);
 		//}
 		idx = traj.multi_dof_joint_trajectory.points.size();
 		pose_in.position.x = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.x;
@@ -270,9 +270,16 @@ void MPCC::runNode(const ros::TimerEvent &event)
 		pose_in.orientation.z = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.z;
 		pose_in.orientation.w = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.w;
 		transformPose("odom", "base_link", pose_in, pose_out);
+		double ysqr, t3, t4;
+
+		ysqr = pose_out.orientation.y *pose_out.orientation.y;
+		t3 = +2.0 * (pose_out.orientation.w * pose_out.orientation.z
+					 + pose_out.orientation.x * pose_out.orientation.y);
+		t4 = +1.0 - 2.0 * (ysqr + pose_out.orientation.z * pose_out.orientation.z);
+
+		goal_pose_(2) = atan2(t3, t4);
 		goal_pose_(0) = pose_out.position.x;
 		goal_pose_(1) = pose_out.position.y;
-		goal_pose_(2) = pose_out.position.z;
 
 		states = pd_trajectory_generator_->solveOptimalControlProblem(current_state_, goal_pose_, obstacles_,
 																	  controlled_velocity_);

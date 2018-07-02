@@ -101,8 +101,8 @@ void pd_frame_tracker::iniKinematics(const DifferentialState& x, const Control& 
 	ROS_WARN("pd_frame_tracker::iniKinematics");
 
 	f.reset();
-	f << dot(x(0)) == v(1)*x(2)-v(0)*cos(x(2));
-	f << dot(x(1)) == -v(1)*x(2)-v(0)*sin(x(2));
+	f << dot(x(0)) == v(1)*x(1)-v(0)*cos(x(2));
+	f << dot(x(1)) == -v(1)*x(0)-v(0)*sin(x(2));
 	f << dot(x(2)) == -v(1);
 	//f << dot(x(3)) == v(0);
 }

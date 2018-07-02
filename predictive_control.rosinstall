@@ -18,3 +18,7 @@
     local-name: obstacle_feed
     uri: https://github.com/bbrito/obstacle_feed.git
     version: master
+- git:
+    local-name: autoware_msgs
+    uri: https://github.com/bbrito/autoware_msgs
+    version: master

@@ -276,26 +276,7 @@ private:
     void enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
 									     std_msgs::Float64MultiArray& enforced_joint_velocity);
 
-    /**
-     * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
-     * @param vector: std vectors want to tranfrom
-     * @return Eigen vectors transform from std vectos
-     */
-    /*template<typename T>
-    static inline Eigen::VectorXd transformStdVectorToEigenVector(const std::vector<T>& vector)
-    {
-        // resize eigen vector
-        Eigen::VectorXd eigen_vector = Eigen::VectorXd(vector.size());
-
-        // convert std to eigen vector
-        for (uint32_t i = 0; i < vector.size(); ++i)
-        {
-            std::cout << vector.at(i) << std::endl;
-            eigen_vector(i) = vector.at(i);
-     }
-
-        return eigen_vector;
-    }*/
+	void transformPose(const std::string source_frame, const std::string target_frame, const geometry_msgs::Pose pose_in, geometry_msgs::Pose& pose_out);
 
     /**
      * @brief clearDataMember: clear vectors means free allocated memory

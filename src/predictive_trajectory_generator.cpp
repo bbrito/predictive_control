@@ -101,8 +101,8 @@ void pd_frame_tracker::iniKinematics(const DifferentialState& x, const Control& 
 	ROS_WARN("pd_frame_tracker::iniKinematics");
 
 	f.reset();
-	f << dot(x(0)) == -v(0)*cos(x(2));
-	f << dot(x(1)) == -v(0)*sin(x(2));
+	f << dot(x(0)) == v(1)*x(2)-v(0)*cos(x(2));
+	f << dot(x(1)) == -v(1)*x(2)-v(0)*sin(x(2));
 	f << dot(x(2)) == -v(1);
 	//f << dot(x(3)) == v(0);
 }
@@ -358,9 +358,10 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 	control_initialize_(1) = controlled_velocity.angular.z;
 
 	// state initialize
-	state_initialize_(0) = -last_position(0)+goal_pose(0);
-	state_initialize_(1) = -last_position(1)+goal_pose(1);
-	state_initialize_(2) = -last_position(2)+goal_pose(2);
+	ROS_INFO_STREAM("GOAL: " << goal_pose);
+	state_initialize_(0) = goal_pose(0)-last_position(0);
+	state_initialize_(1) = goal_pose(1)-last_position(1);
+	state_initialize_(2) = goal_pose(2)-last_position(2);
 	//state_initialize_(3) = s_;
 
 	obstacles_ = obstacles;

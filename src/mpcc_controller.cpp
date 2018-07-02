@@ -191,10 +191,49 @@ bool MPCC::initialize()
     }
 }
 
+void MPCC::transformPose(const std::string source_frame, const std::string target_frame, const geometry_msgs::Pose pose_in, geometry_msgs::Pose& pose_out)
+{
+	ROS_WARN_STREAM("MPCC::transformPose ... find transformation matrix between "
+						<< target_frame.c_str() << " and " << source_frame.c_str());
+	bool transform = false;
+	geometry_msgs::PoseStamped stamped_in, stamped_out;
+	stamped_in.header.frame_id = source_frame;
+	stamped_in.pose = pose_in;
+	do
+	{
+		try
+		{
+			if (tf_listener_.frameExists(target_frame))
+			{
+				// clear output
+				pose_out = geometry_msgs::Pose();
+
+				ros::Time now = ros::Time::now();
+				tf_listener_.waitForTransform(target_frame, source_frame, now, ros::Duration(0.1));
+				tf_listener_.transformPose(target_frame, stamped_in, stamped_out);
+				pose_out = stamped_out.pose;
+				transform = true;
+			}
+
+			else
+			{
+				ROS_WARN_STREAM("MPCC::transformPose" << target_frame.c_str() << " does not exist");
+				transform = false;
+			}
+		}
+		catch (tf::TransformException& ex)
+		{
+			ROS_ERROR("MPCC::transformPose: \n%s", ex.what());
+			ros::Duration(0.1).sleep();
+		}
+	} while (!transform && ros::ok());
+}
+
 // update this function 1/colck_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
 	ROS_INFO_STREAM("MPCC::runNode");
+	geometry_msgs::Pose pose_in,pose_out;
 	if(traj.multi_dof_joint_trajectory.points.size()>4) {
 		int idx = 0;
 		//for (int idx = 0; idx < traj.multi_dof_joint_trajectory.points.size(); idx++) {
@@ -223,9 +262,17 @@ void MPCC::runNode(const ros::TimerEvent &event)
 		ROS_INFO_STREAM("ref_path_x.m_d " << pd_trajectory_generator_->ref_path_y.m_d);
 		//}
 		idx = traj.multi_dof_joint_trajectory.points.size();
-		goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.x;
-		goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.y;
-		goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.z;
+		pose_in.position.x = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.x;
+		pose_in.position.y = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].translation.y;
+		pose_in.position.z = 0;
+		pose_in.orientation.x = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.x;
+		pose_in.orientation.y = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.y;
+		pose_in.orientation.z = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.z;
+		pose_in.orientation.w = traj.multi_dof_joint_trajectory.points[idx - 1].transforms[0].rotation.w;
+		transformPose("odom", "base_link", pose_in, pose_out);
+		goal_pose_(0) = pose_out.position.x;
+		goal_pose_(1) = pose_out.position.y;
+		goal_pose_(2) = pose_out.position.z;
 
 		states = pd_trajectory_generator_->solveOptimalControlProblem(current_state_, goal_pose_, obstacles_,
 																	  controlled_velocity_);

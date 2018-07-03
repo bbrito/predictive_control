@@ -49,10 +49,10 @@ constraints:
 acado_config:
      max_num_iteration: 70
      kkt_tolerance: 1e-6
-     integrator_tolerance: 1e-8
+     integrator_tolerance: 1e-3
      start_time_horizon: 0.0
      end_time_horizon: 5.0  # control and prediction horizon
-     discretization_intervals: 10
+     discretization_intervals: 20
      sampling_time: 0.02
      use_lagrange_term: false
      use_LSQ_term: false

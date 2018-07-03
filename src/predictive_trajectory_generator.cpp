@@ -216,7 +216,7 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 
 	//Equal constraints
 	OCP_problem_.subjectTo(f);
-	OCP_problem_.in
+
 	//OCP_problem_.subjectTo(AT_START, x_(0) ==  last_position(0));
 	//OCP_problem_.subjectTo(AT_START, x_(1) ==  last_position(1));
 	//OCP_problem_.subjectTo(AT_START, x_(2) ==  last_position(2));
@@ -230,7 +230,7 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
   //setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
 
   // Optimal Control Algorithm
-  RealTimeAlgorithm OCP_solver(OCP_problem_,0.025); // 0.025 sampling time
+  RealTimeAlgorithm OCP_solver(OCP_problem_); // 0.025 sampling time
 
 	setAlgorithmOptions(OCP_solver);
 	DVector state_ini(4);
@@ -246,7 +246,7 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 	DVector control;
 	OCP_solver.getU(control);
 	u = control;
-	//ROS_INFO_STREAM("cONTROL: " << u);
+	ROS_INFO_STREAM("cONTROL: " << u);
 	if (u.size()>0){
 		controlled_velocity.linear.x = u(0);
 		controlled_velocity.angular.z = u(1);
@@ -256,8 +256,8 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 
 		s_ += u(0) * sampling_time_;
 	}
-	x_.clearStaticCounters();
-	v_.clearStaticCounters();
+	//x_.clearStaticCounters();
+	//v_.clearStaticCounters();
 	return pred_states;
 }
 
@@ -287,12 +287,12 @@ void pd_frame_tracker::setAlgorithmOptions(RealTimeAlgorithm& OCP_solver)
 
   OCP_solver.set(MAX_NUM_ITERATIONS, max_num_iteration_);
   OCP_solver.set(LEVENBERG_MARQUARDT, integrator_tolerance_);
-  OCP_solver.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
+  OCP_solver.set( HESSIAN_APPROXIMATION, BLOCK_BFGS_UPDATE );
   OCP_solver.set( DISCRETIZATION_TYPE, COLLOCATION);
   OCP_solver.set(KKT_TOLERANCE, kkt_tolerance_);
   OCP_solver.set(HOTSTART_QP, true);                   // default true
   OCP_solver.set(SPARSE_QP_SOLUTION, CONDENSING);      // CONDENSING, FULL CONDENSING, SPARSE SOLVER
-
+	OCP_solver.set( MAX_NUM_INTEGRATOR_STEPS, 10000);
 
   OCP_solver.set(INFEASIBLE_QP_HANDLING, defaultInfeasibleQPhandling);
   OCP_solver.set(INFEASIBLE_QP_RELAXATION, defaultInfeasibleQPrelaxation);

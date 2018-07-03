@@ -76,7 +76,7 @@ catkin_package(
   CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core obstacle_feed
   DEPENDS Boost ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_DIRS} include/${PROJECT_NAME}
-  LIBRARIES  predictive_configuration kinematic_calculations self_collision_detection collision_avoidance predictive_trajectory_generator predictive_controller
+  LIBRARIES  predictive_configuration predictive_trajectory_generator predictive_controller
 )
 
 ### BUILD ###

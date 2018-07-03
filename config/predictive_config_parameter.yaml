@@ -11,7 +11,7 @@ plotting_result: true
 clock_frequency: 50
 
 #Optimal control problem dimensions
-state_dim: 4
+state_dim: 3
 control_dim: 2
 
 #Inputs and output topics topic
@@ -47,7 +47,7 @@ constraints:
      #orientation_constraints:
 
 acado_config:
-     max_num_iteration: 10
+     max_num_iteration: 70
      kkt_tolerance: 1e-6
      integrator_tolerance: 1e-8
      start_time_horizon: 0.0
@@ -60,7 +60,7 @@ acado_config:
      weight_factors:
            lsq_state_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [5.0, 5.0, 5.0, 5.0]
+                [5.0, 5.0, 5.0]
            lsq_control_weight_factors:
                 # same as degree of freedom
                 [5.0, 20.0]

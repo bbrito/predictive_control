@@ -96,7 +96,7 @@ void pd_frame_tracker::iniKinematics(const DifferentialState& x, const Control& 
 	f << dot(x(0)) == v(0)*cos(x(2));
 	f << dot(x(1)) == v(0)*sin(x(2));
 	f << dot(x(2)) == v(1);
-	f << dot(x(3)) == v(0);
+	//f << dot(x(3)) == v(0);
 }
 
 void pd_frame_tracker::computeEgoDiscs()
@@ -182,13 +182,10 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
     {
       ROS_INFO("pd_frame_tracker::generateCostFunction: use_mayer_term_");
     }
-	  Expression sqp = (lsq_state_weight_factors_(0) * ( (x(0) - goal_pose(0)) * (x(0) - goal_pose(0)) )
-						+ (lsq_state_weight_factors_(1) * ( (x(1) - goal_pose(1)) * (x(1) - goal_pose(1))))
-						+ lsq_state_weight_factors_(2) * ( (x(2) - goal_pose(2)) * (x(2) - goal_pose(2))))
-					    + lsq_control_weight_factors_(0) * (v.transpose() * v)
-                        + x(2) * x(2);
+	  Expression sqp = (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
+						;
 
-	  OCP_problem.minimizeMayerTerm( sqp );
+	  OCP_problem.minimizeLagrangeTerm( sqp );
   }
 
 }
@@ -209,40 +206,47 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 	state_initialize_(0) = last_position(0);
 	state_initialize_(1) = last_position(1);
 	state_initialize_(2) = last_position(2);
-	state_initialize_(3) = s_;
+	//state_initialize_(3) = s_;
 
 	obstacles_ = obstacles;
 
 	// OCP variables
 	// Optimal control problem
-	OCP OCP_problem_(start_time_, end_time_, discretization_intervals_);
+	OCP OCP_problem_(start_time_, end_time_);
 
 	//Equal constraints
 	OCP_problem_.subjectTo(f);
+	OCP_problem_.in
+	//OCP_problem_.subjectTo(AT_START, x_(0) ==  last_position(0));
+	//OCP_problem_.subjectTo(AT_START, x_(1) ==  last_position(1));
+	//OCP_problem_.subjectTo(AT_START, x_(2) ==  last_position(2));
+	//OCP_problem_.subjectTo(AT_START, v_(0) ==  control_initialize_(0));
+	//OCP_problem_.subjectTo(AT_START, v_(1) ==  control_initialize_(1));
 
   // generate cost function
   generateCostFunction(OCP_problem_, x_, v_, goal_pose);
   //path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
 
-  setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
+  //setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
 
   // Optimal Control Algorithm
-  RealTimeAlgorithm OCP_solver(OCP_problem_, 0.025); // 0.025 sampling time
+  RealTimeAlgorithm OCP_solver(OCP_problem_,0.025); // 0.025 sampling time
 
-  OCP_solver.initializeControls(control_initialize_);
-  OCP_solver.initializeDifferentialStates(state_initialize_);
-
-  setAlgorithmOptions(OCP_solver);
-
-	OCP_solver.solve(0.0,state_initialize_);
+	setAlgorithmOptions(OCP_solver);
+	DVector state_ini(4);
+	OCP_solver.solve(0.0,state_ini);
 
 	OCP_solver.getDifferentialStates(pred_states);
 
 
   // get control at first step and update controlled velocity vector
-
-	OCP_solver.getU(u);
-
+	//VariablesGrid control;
+	//OCP_solver.getControls(control);
+	//control.print(std::cout);
+	DVector control;
+	OCP_solver.getU(control);
+	u = control;
+	//ROS_INFO_STREAM("cONTROL: " << u);
 	if (u.size()>0){
 		controlled_velocity.linear.x = u(0);
 		controlled_velocity.angular.z = u(1);
@@ -252,7 +256,8 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 
 		s_ += u(0) * sampling_time_;
 	}
-
+	x_.clearStaticCounters();
+	v_.clearStaticCounters();
 	return pred_states;
 }
 

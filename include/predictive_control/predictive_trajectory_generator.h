@@ -71,7 +71,7 @@ public:
   /**
    * @brief pd_frame_tracker: Default constructor, allocate memory
    */
-   pd_frame_tracker(): x_("", 4, 1),
+   pd_frame_tracker(): x_("", 3, 1),
 	v_("",2,1){};
 
    /**

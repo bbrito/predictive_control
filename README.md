@@ -1,14 +1,5 @@
 This repository contains a MPC regulator for Jackal.
 
-# predictive_trajectory_generator.cpp
-- Contains code to pregenerate MPC solver using ACADO
-
-# predictive_configuration.cpp
-- Contains code to MPC load parameters from predictive_config_parameter.yaml in the config directory
-
-# mpcc_controller.cpp
-- Contains the controller class that is launched by the predictive_control_node
-
 # Singularity image installing all dependencies
 singularity pull shub://bbrito/singularity_images:2.2
 
@@ -43,3 +34,13 @@ The MPC regulator is called with a reference trajectory using an action service.
 
 Withing the predictive controller node source files, mpcc_controller.cpp contains the controller class that is launched by predictive_control_node.cpp. This controller class iteratively calls the pregenerated mpc solver. Within the file predictive_trajectory_generator.cpp, the MPC controller is defined using ACADO, which is generated during compilation.
 
+# Files description
+
+#predictive_trajectory_generator.cpp
+- Contains code to pregenerate MPC solver using ACADO
+
+#predictive_configuration.cpp
+- Contains code to MPC load parameters from predictive_config_parameter.yaml in the config directory
+
+#mpcc_controller.cpp
+- Contains the controller class that is launched by the predictive_control_node

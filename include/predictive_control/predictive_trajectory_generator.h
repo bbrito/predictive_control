@@ -71,8 +71,7 @@ public:
   /**
    * @brief pd_frame_tracker: Default constructor, allocate memory
    */
-   pd_frame_tracker(): x_("", 3, 1),
-	v_("",2,1){};
+   pd_frame_tracker(){};
 
    /**
     *@brief ~pd_frame_tracker: Default distructor, free memory
@@ -186,9 +185,9 @@ private:
    DVector param_;
 
    //ACADO variables
-   DifferentialEquation f;
-   DifferentialState x_;       // position
-   Control v_;                 // velocities
+   //DifferentialEquation f;
+   //DifferentialState x_, y_, theta_;       // position
+   //Control v_,w_;                 // velocities
    VariablesGrid pred_states;
    DVector u;
 
@@ -202,8 +201,6 @@ private:
     */
 
    void generateCostFunction(OCP& OCP_problem,
-							 const DifferentialState& x,
-							 const Control& v,
 							 const Eigen::Vector3d& goal_pose
    );
 

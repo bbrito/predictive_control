@@ -8,7 +8,7 @@ activate_controller_node_output: true
 plotting_result: true
 
 # Clock frequency //hz
-clock_frequency: 50
+clock_frequency: 20
 
 #Optimal control problem dimensions
 state_dim: 3
@@ -42,18 +42,18 @@ self_collision:
 
 constraints:
      velocity_constraints:
-           min: [-0.2, 0.2]
-           max: [0.2,0.2]
+           min: [-1, -1]
+           max: [1,1]
      #orientation_constraints:
 
 acado_config:
      max_num_iteration: 70
-     kkt_tolerance: 1e-6
+     kkt_tolerance: 1e-3
      integrator_tolerance: 1e-3
      start_time_horizon: 0.0
      end_time_horizon: 5.0  # control and prediction horizon
      discretization_intervals: 20
-     sampling_time: 0.02
+     sampling_time: 0.1
      use_lagrange_term: false
      use_LSQ_term: false
      use_mayer_term: true

@@ -75,7 +75,7 @@ bool pd_frame_tracker::initialize()
 
   //move to a kinematic function
   // Differential Kinematic
-  iniKinematics(x_,v_);
+  //iniKinematics(x_,v_);
   s_ = 0;
 
   // Initialize parameters concerning obstacles
@@ -92,10 +92,10 @@ void pd_frame_tracker::iniKinematics(const DifferentialState& x, const Control& 
 
 	ROS_WARN("pd_frame_tracker::iniKinematics");
 
-	f.reset();
-	f << dot(x(0)) == v(0)*cos(x(2));
-	f << dot(x(1)) == v(0)*sin(x(2));
-	f << dot(x(2)) == v(1);
+	/*f.reset();
+	f << dot(x_) == v_*cos(theta_);
+	f << dot(y_) == v_*sin(theta_);
+	f << dot(theta_) == w_;*/
 	//f << dot(x(3)) == v(0);
 }
 
@@ -172,8 +172,6 @@ void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const Different
 
 // Generate cost function of optimal control problem
 void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
-											const DifferentialState &x,
-                                            const Control &v,
                                             const Eigen::Vector3d& goal_pose)
 {
   if (use_mayer_term_)
@@ -182,10 +180,12 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
     {
       ROS_INFO("pd_frame_tracker::generateCostFunction: use_mayer_term_");
     }
-	  Expression sqp = (x(0) - goal_pose(0)) * (x(0) - goal_pose(0))
-						;
+	  /*Expression sqp = (x_ - 1) * (x_ - 1) +
+		  (y_ - 1) * (y_ - 1)+
+			(theta_ - 1) * (theta_ - 1)+v_*v_+w_*w_;
 
 	  OCP_problem.minimizeLagrangeTerm( sqp );
+	  //OCP_problem.minimizeMayerTerm( sqp );*/
   }
 
 }
@@ -197,56 +197,77 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 												  const obstacle_feed::Obstacles &obstacles,
 												  geometry_msgs::Twist& controlled_velocity)
 {
+	DifferentialState x_, y_, theta_;       // position
+	Control v_,w_;                 // velocities
 
-	// control initialize with previous command
-	control_initialize_(0) = controlled_velocity.linear.x;
-	control_initialize_(1) = controlled_velocity.angular.z;
-
-	// state initialize
-	state_initialize_(0) = last_position(0);
-	state_initialize_(1) = last_position(1);
-	state_initialize_(2) = last_position(2);
-	//state_initialize_(3) = s_;
+	DifferentialEquation f;
+	f << dot(x_) == v_*cos(theta_);
+	f << dot(y_) == v_*sin(theta_);
+	f << dot(theta_) == w_;
 
 	obstacles_ = obstacles;
 
 	// OCP variables
 	// Optimal control problem
-	OCP OCP_problem_(start_time_, end_time_);
+	OCP OCP_problem_(start_time_, end_time_,discretization_intervals_);
 
 	//Equal constraints
 	OCP_problem_.subjectTo(f);
 
-	//OCP_problem_.subjectTo(AT_START, x_(0) ==  last_position(0));
-	//OCP_problem_.subjectTo(AT_START, x_(1) ==  last_position(1));
-	//OCP_problem_.subjectTo(AT_START, x_(2) ==  last_position(2));
-	//OCP_problem_.subjectTo(AT_START, v_(0) ==  control_initialize_(0));
-	//OCP_problem_.subjectTo(AT_START, v_(1) ==  control_initialize_(1));
+	OCP_problem_.subjectTo(AT_START, x_ ==  last_position(0));
+	OCP_problem_.subjectTo(AT_START, y_ ==  last_position(1));
+	OCP_problem_.subjectTo(AT_START, theta_ ==  last_position(2));
 
-  // generate cost function
-  generateCostFunction(OCP_problem_, x_, v_, goal_pose);
-  //path_function_spline_direct(OCP_problem_, x_, v_, goal_pose);
+	//Inequality constraints
+	OCP_problem_.subjectTo( control_min_constraint_(0)<= v_ <=  control_max_constraint_(0));
+	OCP_problem_.subjectTo( control_min_constraint_(1)<= w_ <=  control_max_constraint_(1));
 
-  //setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
+	// generate cost function
+	//generateCostFunction(OCP_problem_, goal_pose);
+	Expression sqp = (x_ - goal_pose(0)) * (x_ - goal_pose(0)) +
+					 (y_ - goal_pose(1)) * (y_ - goal_pose(1))+
+					 (theta_ - goal_pose(2)) * (theta_ - goal_pose(2))+v_*v_+w_*w_;
 
-  // Optimal Control Algorithm
-  RealTimeAlgorithm OCP_solver(OCP_problem_); // 0.025 sampling time
+	OCP_problem_.minimizeLagrangeTerm( sqp );
+	OCP_problem_.minimizeMayerTerm( sqp );
 
-	setAlgorithmOptions(OCP_solver);
-	DVector state_ini(4);
-	OCP_solver.solve(0.0,state_ini);
+	//Collision constraints
+	//setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);
 
+	// Optimal Control Algorithm
+	OptimizationAlgorithm OCP_solver(OCP_problem_); // 0.025 sampling time
+
+	//setAlgorithmOptions(OCP_solver);
+	OCP_solver.set( HESSIAN_APPROXIMATION, BLOCK_BFGS_UPDATE );
+	OCP_solver.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
+	OCP_solver.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
+	OCP_solver.set(PRINT_COPYRIGHT, false);                 // default true
+	OCP_solver.set( DISCRETIZATION_TYPE, COLLOCATION);
+	OCP_solver.set(KKT_TOLERANCE, kkt_tolerance_);
+	OCP_solver.set( ABSOLUTE_TOLERANCE, 1e-4);
+	OCP_solver.set( INTEGRATOR_TOLERANCE, 1e-4);
+	OCP_solver.set( MAX_NUM_ITERATIONS, 1000);
+	OCP_solver.set( MAX_NUM_INTEGRATOR_STEPS, 10000);
+	OCP_solver.set(HOTSTART_QP, true);                   // default true
+
+	//Intialize variable grids
+	VariablesGrid s2(state_dim_,start_time_,end_time_,discretization_intervals_);
+	VariablesGrid c2(control_dim_,start_time_,end_time_,discretization_intervals_);
+	OCP_solver.initializeDifferentialStates(s2);
+	OCP_solver.initializeControls          (c2);
+
+	//Solve problem
+	OCP_solver.solve();
+
+	//Get prediction horizon
 	OCP_solver.getDifferentialStates(pred_states);
 
+	//Get control input
+	VariablesGrid c3;
+	OCP_solver.getControls(c3);
 
-  // get control at first step and update controlled velocity vector
-	//VariablesGrid control;
-	//OCP_solver.getControls(control);
-	//control.print(std::cout);
-	DVector control;
-	OCP_solver.getU(control);
-	u = control;
-	ROS_INFO_STREAM("cONTROL: " << u);
+	u = c3.getFirstVector();
+	//ROS_INFO_STREAM("cONTROL: " << u);
 	if (u.size()>0){
 		controlled_velocity.linear.x = u(0);
 		controlled_velocity.angular.z = u(1);
@@ -254,10 +275,10 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 		// Simulate path varible
 		// this should be later replaced by a process
 
-		s_ += u(0) * sampling_time_;
 	}
 	//x_.clearStaticCounters();
 	//v_.clearStaticCounters();
+	clearAllStaticCounters();
 	return pred_states;
 }
 
@@ -291,7 +312,7 @@ void pd_frame_tracker::setAlgorithmOptions(RealTimeAlgorithm& OCP_solver)
   OCP_solver.set( DISCRETIZATION_TYPE, COLLOCATION);
   OCP_solver.set(KKT_TOLERANCE, kkt_tolerance_);
   OCP_solver.set(HOTSTART_QP, true);                   // default true
-  OCP_solver.set(SPARSE_QP_SOLUTION, CONDENSING);      // CONDENSING, FULL CONDENSING, SPARSE SOLVER
+  OCP_solver.set(SPARSE_QP_SOLUTION, SPARSE_SOLVER);      // CONDENSING, FULL CONDENSING, SPARSE SOLVER
 	OCP_solver.set( MAX_NUM_INTEGRATOR_STEPS, 10000);
 
   OCP_solver.set(INFEASIBLE_QP_HANDLING, defaultInfeasibleQPhandling);

@@ -7,7 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
     actionlib_msgs
     cmake_modules
     control_msgs
-    cob_srvs
+    dynamic_reconfigure
     eigen_conversions
     geometry_msgs
     kdl_conversions
@@ -29,13 +29,19 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
-find_package(Eigen REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 find_package(ACADO REQUIRED)
 
 add_definitions(${EIGEN_DEFINITIONS})
 
 find_package(orocos_kdl REQUIRED)
+
+catkin_python_setup()
+
+generate_dynamic_reconfigure_options(
+        cfg/PredictiveController.cfg
+)
 
 ## Generate messages in the 'action' folder
 add_action_files(

@@ -54,6 +54,12 @@
 //Time
 #include <sys/time.h>
 
+//Dynamic Reconfigure server
+#include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <dynamic_reconfigure/server.h>
+#include <predictive_control/PredictiveControllerConfig.h>
+
 using namespace ACADO;
 
 class pd_frame_tracker: public predictive_configuration
@@ -69,12 +75,19 @@ public:
 	double s_; // this variable is going to be later replaced by a ACADO Process to simulate
 	//spline and other parameters
 	double* p;
-//	tk::spline ref_path_x, ref_path_y;
+    //	tk::spline ref_path_x, ref_path_y;
 
-  /**
-   * @brief pd_frame_tracker: Default constructor, allocate memory
-   */
-   pd_frame_tracker(){};
+    //DYnamic reconfigure server
+    boost::shared_ptr< dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig> > reconfigure_server_;
+    boost::recursive_mutex reconfig_mutex_;
+    void reconfigureCallback(predictive_control::PredictiveControllerConfig& config, uint32_t level);
+
+    /**
+    * @brief pd_frame_tracker: Default constructor, allocate memory
+    */
+    pd_frame_tracker(){
+      this->reconfigure_server_.reset();
+    };
 
    /**
     *@brief ~pd_frame_tracker: Default distructor, free memory

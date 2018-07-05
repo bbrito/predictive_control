@@ -34,7 +34,7 @@ bool pd_frame_tracker::initialize()
   {
     predictive_configuration::initialize();
   }
-
+    ros::NodeHandle nh_predictive("predictive_controller");
   // intialize data members
   state_initialize_.resize(state_dim_);
   state_initialize_.setAll(1E-5);
@@ -81,11 +81,26 @@ bool pd_frame_tracker::initialize()
   // Initialize parameters concerning obstacles
   n_obstacles_ = predictive_configuration::n_obstacles_;
 
+    /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
+    reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
+    reconfigure_server_->setCallback(boost::bind(&pd_frame_tracker::reconfigureCallback,   this, _1, _2));
+
   // Compute ego discs for collision constraints
   computeEgoDiscs();
 
   ROS_WARN("PD_FRAME_TRACKER INITIALIZED!!");
   return true;
+}
+
+void pd_frame_tracker::reconfigureCallback(predictive_control::PredictiveControllerConfig& config, uint32_t level){
+
+    lsq_state_weight_factors_(0) = config.Kx;
+    lsq_state_weight_factors_(1) = config.Ky;
+    lsq_state_weight_factors_(2) = config.Ktheta;
+    lsq_control_weight_factors_(0) = config.Kv;
+    lsq_control_weight_factors_(1) = config.Kw;
+
+
 }
 
 void pd_frame_tracker::iniKinematics(const DifferentialState& x, const Control& v){
@@ -180,12 +195,6 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
     {
       ROS_INFO("pd_frame_tracker::generateCostFunction: use_mayer_term_");
     }
-	  /*Expression sqp = (x_ - 1) * (x_ - 1) +
-		  (y_ - 1) * (y_ - 1)+
-			(theta_ - 1) * (theta_ - 1)+v_*v_+w_*w_;
-
-	  OCP_problem.minimizeLagrangeTerm( sqp );
-	  //OCP_problem.minimizeMayerTerm( sqp );*/
   }
 
 }
@@ -234,12 +243,13 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 
 	// generate cost function
 	//generateCostFunction(OCP_problem_, goal_pose);
-	Expression sqp = (x_ - goal_pose(0)) * (x_ - goal_pose(0)) +
-					 (y_ - goal_pose(1)) * (y_ - goal_pose(1))+
-					 (theta_ - goal_pose(2)) * (theta_ - goal_pose(2))+v_*v_+w_*w_;
+	Expression sqp = lsq_state_weight_factors_(0)*(x_ - goal_pose(0)) * (x_ - goal_pose(0)) +
+                     lsq_state_weight_factors_(1)*(y_ - goal_pose(1)) * (y_ - goal_pose(1))+
+
+                     lsq_control_weight_factors_(0)*v_*v_+lsq_control_weight_factors_(1)*w_*w_;
 
 	OCP_problem_.minimizeLagrangeTerm( sqp );
-	OCP_problem_.minimizeMayerTerm( sqp );
+	OCP_problem_.minimizeMayerTerm( sqp +lsq_state_weight_factors_(2)*(theta_ - goal_pose(2)) * (theta_ - goal_pose(2)));
 
 	//Collision constraints
 	//setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);

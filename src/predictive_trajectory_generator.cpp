@@ -245,11 +245,11 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 	//generateCostFunction(OCP_problem_, goal_pose);
 	Expression sqp = lsq_state_weight_factors_(0)*(x_ - goal_pose(0)) * (x_ - goal_pose(0)) +
                      lsq_state_weight_factors_(1)*(y_ - goal_pose(1)) * (y_ - goal_pose(1))+
-
+                     lsq_state_weight_factors_(2)*(theta_ - goal_pose(2)) * (theta_ - goal_pose(2))+
                      lsq_control_weight_factors_(0)*v_*v_+lsq_control_weight_factors_(1)*w_*w_;
 
 	OCP_problem_.minimizeLagrangeTerm( sqp );
-	OCP_problem_.minimizeMayerTerm( sqp +lsq_state_weight_factors_(2)*(theta_ - goal_pose(2)) * (theta_ - goal_pose(2)));
+	OCP_problem_.minimizeMayerTerm( sqp );
 
 	//Collision constraints
 	//setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);

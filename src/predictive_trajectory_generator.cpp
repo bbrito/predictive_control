@@ -190,6 +190,14 @@ void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
 
 }
 
+inline double get_time_second() {
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+
+    return tv.tv_sec + tv.tv_usec / 1000000.0;
+}
+
 VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
 												  const Eigen::Vector3d &prev_pose,
 												  const Eigen::Vector3d &next_pose,
@@ -197,6 +205,8 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 												  const obstacle_feed::Obstacles &obstacles,
 												  geometry_msgs::Twist& controlled_velocity)
 {
+    double start_t = get_time_second();
+
 	DifferentialState x_, y_, theta_;       // position
 	Control v_,w_;                 // velocities
 
@@ -279,6 +289,9 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
 	//x_.clearStaticCounters();
 	//v_.clearStaticCounters();
 	clearAllStaticCounters();
+    double end_t = get_time_second();
+    double search_time = (end_t - start_t);
+    std::cout << "[RunStep] Time spent in " << "::Solving(): " << search_time << std::endl;
 	return pred_states;
 }
 

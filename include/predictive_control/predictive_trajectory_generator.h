@@ -51,6 +51,9 @@
 // Trajectory info
 #include <nav_msgs/Path.h>
 
+//Time
+#include <sys/time.h>
+
 using namespace ACADO;
 
 class pd_frame_tracker: public predictive_configuration

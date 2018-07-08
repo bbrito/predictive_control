@@ -193,8 +193,10 @@ private:
 
    // lsq weight factors
    Eigen::VectorXd lsq_state_weight_factors_;
+   Eigen::VectorXd lsq_state_terminal_weight_factors_;
    uint32_t state_vector_size_;
    Eigen::VectorXd lsq_control_weight_factors_;
+   Eigen::VectorXd lsq_control_terminal_weight_factors_;
    uint32_t control_vector_size_;
 
    //OCP Parameters

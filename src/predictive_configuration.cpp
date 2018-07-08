@@ -92,10 +92,37 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
 
     for (int i = 0u; i < lsq_control_weight_factors_.size(); ++i)
     {
-      ROS_INFO("Defualt lsq control weight factors value %f", lsq_control_weight_factors_.at(i));
+      ROS_INFO("Default lsq control weight factors value %f", lsq_control_weight_factors_.at(i));
     }
   }
 
+  // read and set lsq state terminal weight factors
+  if (!nh_config.getParam ("acado_config/weight_factors/lsq_state_terminal_weight_factors", lsq_state_terminal_weight_factors_) )
+  {
+    ROS_WARN(" Parameter 'acado_config/weight_factors/lsq_state_terminal_weight_factors' not set on %s node " ,
+             ros::this_node::getName().c_str());
+    // 3 position and 3 orientation(rpy) tolerance
+    lsq_state_terminal_weight_factors_.resize(6, 5.0);
+
+    for (int i = 0u; i < lsq_state_terminal_weight_factors_.size(); ++i)
+    {
+      ROS_INFO("Default lsq state terminal weight factors value %f", lsq_state_terminal_weight_factors_.at(i));
+    }
+  }
+
+  // read and set lsq control terminal weight factors
+  if (!nh_config.getParam ("acado_config/weight_factors/lsq_control_terminal_weight_factors", lsq_control_terminal_weight_factors_) )
+  {
+    ROS_WARN(" Parameter 'acado_config/weight_factors/lsq_control_terminal_weight_factors' not set on %s node " ,
+             ros::this_node::getName().c_str());
+    // same as degree of freedom
+    lsq_control_terminal_weight_factors_.resize(degree_of_freedom_, 1.0);
+
+    for (int i = 0u; i < lsq_control_terminal_weight_factors_.size(); ++i)
+    {
+      ROS_INFO("Default lsq control terminal weight factors value %f", lsq_control_terminal_weight_factors_.at(i));
+    }
+  }
   // Set optimal control problem dimensions
   if (!nh.getParam("state_dim", state_dim_) )
   {
@@ -207,9 +234,11 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
   vel_min_limit_ = new_config.vel_min_limit_;
   vel_max_limit_ = new_config.vel_max_limit_;
 
-
   lsq_state_weight_factors_ = new_config.lsq_state_weight_factors_;
   lsq_control_weight_factors_ = new_config.lsq_control_weight_factors_;
+
+  lsq_state_terminal_weight_factors_ = new_config.lsq_state_terminal_weight_factors_;
+  lsq_control_terminal_weight_factors_ = new_config.lsq_control_terminal_weight_factors_;
 
   clock_frequency_ = new_config.clock_frequency_;
   sampling_time_ = new_config.sampling_time_;
@@ -318,7 +347,8 @@ void predictive_configuration::free_allocated_memory()
   vel_min_limit_.clear();
   vel_max_limit_.clear();
 
-
   lsq_state_weight_factors_.clear();
+  lsq_state_terminal_weight_factors_.clear();
   lsq_control_weight_factors_.clear();
+  lsq_control_terminal_weight_factors_.clear();
 }

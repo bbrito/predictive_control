@@ -77,7 +77,9 @@ public:
   std::vector<double> vel_max_limit_;
 
   std::vector<double> lsq_state_weight_factors_;
+  std::vector<double> lsq_state_terminal_weight_factors_;
   std::vector<double> lsq_control_weight_factors_;
+  std::vector<double> lsq_control_terminal_weight_factors_;
 
   // predictive control
   double clock_frequency_;  //hz clock Frequency

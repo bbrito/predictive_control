@@ -8,7 +8,7 @@ activate_controller_node_output: true
 plotting_result: true
 
 # Clock frequency //hz
-clock_frequency: 20
+clock_frequency: 5 # 20
 
 #Optimal control problem dimensions
 state_dim: 3
@@ -51,7 +51,7 @@ acado_config:
      kkt_tolerance: 1e-3
      integrator_tolerance: 1e-3
      start_time_horizon: 0.0
-     end_time_horizon: 5.0  # control and prediction horizon
+     end_time_horizon: 3.0 # 5.0  # control and prediction horizon
      discretization_intervals: 20
      sampling_time: 0.1
      use_lagrange_term: false
@@ -64,3 +64,9 @@ acado_config:
            lsq_control_weight_factors:
                 # same as degree of freedom
                 [5.0, 20.0]
+           lsq_state_terminal_weight_factors:
+                #always 6 component 3 linear/position and 3 angular/Euler angle
+                [1.0, 1.0, 1.0]
+           lsq_control_terminal_weight_factors:
+                # same as degree of freedom
+                [1.0, 1.0]

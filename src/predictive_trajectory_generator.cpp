@@ -24,6 +24,9 @@ void pd_frame_tracker::clearDataMember()
 
   lsq_state_weight_factors_.resize(state_dim_);
   lsq_control_weight_factors_.resize(control_dim_);
+
+  lsq_state_terminal_weight_factors_.resize(state_dim_);
+  lsq_control_terminal_weight_factors_.resize(control_dim_);
 }
 
 // initialize data member of pd_frame_tracker class
@@ -61,6 +64,9 @@ bool pd_frame_tracker::initialize()
   lsq_state_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_state_weight_factors_);
   lsq_control_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_control_weight_factors_);
 
+  lsq_state_terminal_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_state_terminal_weight_factors_);
+  lsq_control_terminal_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_control_terminal_weight_factors_);
+
   //state_vector_size_ = predictive_configuration::lsq_state_weight_factors_.size();
   //control_vector_size_ = predictive_configuration::lsq_control_weight_factors_.size();
   state_vector_size_ = lsq_state_weight_factors_.rows()* lsq_state_weight_factors_.cols();
@@ -69,9 +75,6 @@ bool pd_frame_tracker::initialize()
 
   control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_min_limit_);
   control_max_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_max_limit_);
-
-  // self collision cost constant term
-  self_collision_cost_constant_term_ = discretization_intervals_/ (end_time_-start_time_);
 
   //move to a kinematic function
   // Differential Kinematic
@@ -100,6 +103,11 @@ void pd_frame_tracker::reconfigureCallback(predictive_control::PredictiveControl
     lsq_control_weight_factors_(0) = config.Kv;
     lsq_control_weight_factors_(1) = config.Kw;
 
+    lsq_state_terminal_weight_factors_(0) = config.Px;
+    lsq_state_terminal_weight_factors_(1) = config.Py;
+    lsq_state_terminal_weight_factors_(2) = config.Ptheta;
+    lsq_control_terminal_weight_factors_(0) = config.Pv;
+    lsq_control_terminal_weight_factors_(1) = config.Pw;
 
 }
 
@@ -248,8 +256,13 @@ VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd
                      lsq_state_weight_factors_(2)*(theta_ - goal_pose(2)) * (theta_ - goal_pose(2))+
                      lsq_control_weight_factors_(0)*v_*v_+lsq_control_weight_factors_(1)*w_*w_;
 
-	OCP_problem_.minimizeLagrangeTerm( sqp );
-	OCP_problem_.minimizeMayerTerm( sqp );
+    Expression sqp_terminal =   lsq_state_terminal_weight_factors_(0)*(x_ - goal_pose(0)) * (x_ - goal_pose(0)) +
+                                lsq_state_terminal_weight_factors_(1)*(y_ - goal_pose(1)) * (y_ - goal_pose(1))+
+                                lsq_state_terminal_weight_factors_(2)*(theta_ - goal_pose(2)) * (theta_ - goal_pose(2))+
+                                lsq_control_terminal_weight_factors_(0)*v_*v_+lsq_control_terminal_weight_factors_(1)*w_*w_;
+
+    OCP_problem_.minimizeLagrangeTerm( sqp );
+	OCP_problem_.minimizeMayerTerm( sqp_terminal );
 
 	//Collision constraints
 	//setCollisionConstraints(OCP_problem_, x_, obstacles_, discretization_intervals_);

@@ -71,7 +71,6 @@ bool pd_frame_tracker::initialize()
   //control_vector_size_ = predictive_configuration::lsq_control_weight_factors_.size();
   state_vector_size_ = lsq_state_weight_factors_.rows()* lsq_state_weight_factors_.cols();
   control_vector_size_ = lsq_control_weight_factors_.rows()*lsq_control_weight_factors_.cols();
-  horizon_steps_ = (int)(end_time_/sampling_time_);
 
   control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_min_limit_);
   control_max_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_max_limit_);
@@ -108,6 +107,9 @@ void pd_frame_tracker::reconfigureCallback(predictive_control::PredictiveControl
     lsq_state_terminal_weight_factors_(2) = config.Ptheta;
     lsq_control_terminal_weight_factors_(0) = config.Pv;
     lsq_control_terminal_weight_factors_(1) = config.Pw;
+
+    discretization_intervals_ = config.N;
+    end_time_ = config.end_time;
 
 }
 

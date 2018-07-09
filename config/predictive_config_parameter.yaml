@@ -60,10 +60,10 @@ acado_config:
      weight_factors:
            lsq_state_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [2.0, 2.0, 2.0]
+                [1.0, 1.0, 1.0] #[2.0, 2.0, 2.0]
            lsq_control_weight_factors:
                 # same as degree of freedom
-                [2.0, 2.0]
+                [1.0, 1.0] # [2.0, 2.0]
            lsq_state_terminal_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
                 [5.0, 5.0, 5.0]

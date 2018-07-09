@@ -6,11 +6,6 @@
 ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
-MPCC::MPCC()
-{
-    ;
-}
-
 MPCC::~MPCC()
 {
     clearDataMember();
@@ -41,6 +36,8 @@ bool MPCC::initialize()
         bool controller_config_success = controller_config_->initialize();
 
         bool kinematic_success = true;
+
+
 
         if (controller_config_success == false)
          {
@@ -131,16 +128,17 @@ bool MPCC::initialize()
 		// Initialize pregenerated mpc solver
 		acado_initializeSolver( );
 
-		//Bruno can you fix this?
         // initialize state and control weight factors
-        lsq_state_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_weight_factors_);
-        lsq_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_weight_factors_);
+        cost_state_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_weight_factors_);
+        cost_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_weight_factors_);
 
-        lsq_state_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_terminal_weight_factors_);
-        lsq_control_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_terminal_weight_factors_);
+        cost_state_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_terminal_weight_factors_);
+        cost_control_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_terminal_weight_factors_);
+
+        ros::NodeHandle nh_predictive("predictive_controller");
 
         /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
-        reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh));
+        reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
 
         ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
@@ -187,19 +185,16 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[ (ACADO_NOD * N_iter) + 1 ] = goal_pose_(1);
             acadoVariables.od[ (ACADO_NOD * N_iter) + 2 ] = goal_pose_(2);
 
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 3 ] = 1;
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 4 ] = 1;
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 5 ] = 1;
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 6 ] = 1;
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 7 ] = 1;
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 3 ] = 1;//cost_state_weight_factors_(0);
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 4 ] = 1;//cost_state_weight_factors_(1);
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 5 ] = 1;//cost_state_weight_factors_(2);
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 6 ] = 1;//cost_control_weight_factors_(0);
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 7 ] = 1;//cost_control_weight_factors_(1);
         }
 
         acadoVariables.x0[ 0 ] = current_state_(0);
         acadoVariables.x0[ 1 ] = current_state_(1);
         acadoVariables.x0[ 2 ] = current_state_(2);
-
-        acadoVariables.x0[ 4 ] = controlled_velocity_.linear.x;
-        acadoVariables.x0[ 5 ] = controlled_velocity_.angular.z;
 
         acado_preparationStep();
 
@@ -212,7 +207,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
         ROS_INFO_STREAM("Solve time " << te*1e6 );
 
-        acado_printDifferentialVariables();
+//        acado_printDifferentialVariables();
 
         publishPredictedTrajectory();
 
@@ -263,17 +258,18 @@ void MPCC::moveitGoalCB()
 
 void MPCC::reconfigureCallback(predictive_control::PredictiveControllerConfig& config, uint32_t level){
 
-    lsq_state_weight_factors_(0) = config.Kx;
-    lsq_state_weight_factors_(1) = config.Ky;
-    lsq_state_weight_factors_(2) = config.Ktheta;
-    lsq_control_weight_factors_(0) = config.Kv;
-    lsq_control_weight_factors_(1) = config.Kw;
+    ROS_INFO("reconfigure callback!");
+    cost_state_weight_factors_(0) = config.Kx;
+    cost_state_weight_factors_(1) = config.Ky;
+    cost_state_weight_factors_(2) = config.Ktheta;
+    cost_control_weight_factors_(0) = config.Kv;
+    cost_control_weight_factors_(1) = config.Kw;
 
-    lsq_state_terminal_weight_factors_(0) = config.Px;
-    lsq_state_terminal_weight_factors_(1) = config.Py;
-    lsq_state_terminal_weight_factors_(2) = config.Ptheta;
-    lsq_control_terminal_weight_factors_(0) = config.Pv;
-    lsq_control_terminal_weight_factors_(1) = config.Pw;
+    cost_state_terminal_weight_factors_(0) = config.Px;
+    cost_state_terminal_weight_factors_(1) = config.Py;
+    cost_state_terminal_weight_factors_(2) = config.Ptheta;
+    cost_control_terminal_weight_factors_(0) = config.Pv;
+    cost_control_terminal_weight_factors_(1) = config.Pw;
 }
 
 void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){

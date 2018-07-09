@@ -91,10 +91,18 @@ class MPCC
 
 public:
 
+    //DYnamic reconfigure server
+    boost::shared_ptr<dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig> > reconfigure_server_;
+    boost::recursive_mutex reconfig_mutex_;
+    void reconfigureCallback(predictive_control::PredictiveControllerConfig& config, uint32_t level);
+
     /**
      * @brief MPCC: Default constructor, allocate memory
      */
-    MPCC();
+    MPCC()
+    {
+        this->reconfigure_server_.reset();
+    };
 
     /**
      * @brief ~MPCC: Default distructor, free memory
@@ -142,10 +150,6 @@ public:
 
     bool transformEigenToGeometryPose(const Eigen::VectorXd& eigen_vector, geometry_msgs::Pose& pose);
 
-    //DYnamic reconfigure server
-    boost::shared_ptr< dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig> > reconfigure_server_;
-    boost::recursive_mutex reconfig_mutex_;
-    void reconfigureCallback(predictive_control::PredictiveControllerConfig& config, uint32_t level);
 
     /**
      * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
@@ -219,10 +223,10 @@ private:
     Eigen::VectorXd min_velocity_limit_;
     Eigen::VectorXd max_velocity_limit_;
 
-    Eigen::VectorXd lsq_state_weight_factors_;
-    Eigen::VectorXd lsq_state_terminal_weight_factors_;
-    Eigen::VectorXd lsq_control_weight_factors_;
-    Eigen::VectorXd lsq_control_terminal_weight_factors_;
+    Eigen::VectorXd cost_state_weight_factors_;
+    Eigen::VectorXd cost_state_terminal_weight_factors_;
+    Eigen::VectorXd cost_control_weight_factors_;
+    Eigen::VectorXd cost_control_terminal_weight_factors_;
 
 	//MoveIt TRAJECTORY VARIABLE
 	moveit_msgs::RobotTrajectory traj;

@@ -83,7 +83,7 @@ catkin_package(
   CATKIN_DEPENDS actionlib_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core obstacle_feed
   DEPENDS Boost ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_DIRS} include/${PROJECT_NAME}
-  LIBRARIES  predictive_configuration predictive_trajectory_generator predictive_controller
+  LIBRARIES  predictive_configuration predictive_controller
 )
 
 ### BUILD ###
@@ -140,7 +140,6 @@ target_link_libraries(predictive_control_node
 add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ### Test Case ####
-
 install(
   DIRECTORY include/predictive_control/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
@@ -148,6 +147,6 @@ install(
 
 install(
   TARGETS
-        predictive_controller
+  predictive_controller
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )

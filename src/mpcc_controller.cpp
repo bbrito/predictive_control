@@ -133,11 +133,11 @@ bool MPCC::initialize()
 
 		//Bruno can you fix this?
         // initialize state and control weight factors
-        lsq_state_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_state_weight_factors_);
-        lsq_control_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_control_weight_factors_);
+        lsq_state_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_weight_factors_);
+        lsq_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_weight_factors_);
 
-        lsq_state_terminal_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_state_terminal_weight_factors_);
-        lsq_control_terminal_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_control_terminal_weight_factors_);
+        lsq_state_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_terminal_weight_factors_);
+        lsq_control_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_terminal_weight_factors_);
 
         /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
         reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh));

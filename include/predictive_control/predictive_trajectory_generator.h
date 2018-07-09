@@ -33,11 +33,6 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-//acado includes
-#include <acado/acado_toolkit.hpp>
-#include <acado/acado_optimal_control.hpp>
-#include <acado/bindings/acado_gnuplot/gnuplot_window.hpp>
-
 // predictive includes
 #include <predictive_control/predictive_configuration.h>
 
@@ -114,7 +109,7 @@ public:
     * @param goal_pose: Goal pose where want to reach
     * @param controlled_velocity: controlled velocity use to publish
     */
-	VariablesGrid solveOptimalControlProblem(const Eigen::VectorXd& last_position,
+    bool solveOptimalControlProblem(const Eigen::VectorXd& last_position,
 								   const Eigen::Vector3d& prev_pose,
 								   const Eigen::Vector3d& next_pose,
                                    const Eigen::Vector3d& goal_pose,
@@ -154,16 +149,6 @@ private:
    // tf listerner
    tf::TransformListener tf_listener_;
 
-   // state initialization
-   DVector state_initialize_;
-
-   // control initialization
-   DVector control_initialize_;
-
-   // constraints
-   DVector control_min_constraint_;
-   DVector control_max_constraint_;
-
    // Obstacles
    obstacle_feed::Obstacles obstacles_;
    int n_obstacles_;
@@ -198,16 +183,6 @@ private:
    Eigen::VectorXd lsq_control_weight_factors_;
    Eigen::VectorXd lsq_control_terminal_weight_factors_;
    uint32_t control_vector_size_;
-
-   //OCP Parameters
-   DVector param_;
-
-   //ACADO variables
-   //DifferentialEquation f;
-   //DifferentialState x_, y_, theta_;       // position
-   //Control v_,w_;                 // velocities
-   VariablesGrid pred_states;
-   DVector u;
 
    /**
     * @brief generateCostFunction: generate cost function, minimizeMayaerTerm, LSQ using weighting matrix and reference vector

@@ -93,6 +93,9 @@ include_directories(include
     ${orocos_kdl_INCLUDE_DIRS}
     ${ACADO_INCLUDE_DIRS}
     include/${PROJECT_NAME}
+    include/${PROJECT_NAME}/generated_mpc
+    qpoases/INCLUDE
+    qpoases/SRC
     )
 
 FIND_LIBRARY(libacado libacado_toolkit_s.so ${ACADO_DIR}/build/lib)
@@ -102,35 +105,38 @@ add_dependencies(predictive_configuration ${${PROJECT_NAME}_EXPORTED_TARGETS} ${
 target_link_libraries(predictive_configuration
     ${catkin_LIBRARIES}
     ${orocos_kdl_LIBRARIES}
-    ${libacado}
     ${CASADI_LIBRARIES}
     )
 
-add_library(predictive_trajectory_generator src/predictive_trajectory_generator.cpp)
-add_dependencies(predictive_trajectory_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_trajectory_generator
-    predictive_configuration
-    ${catkin_LIBRARIES}
-    ${orocos_kdl_LIBRARIES}
-    ${libacado}
-    )
+add_library(predictive_controller
+        src/mpcc_controller.cpp
+        src/predictive_configuration.cpp
+        qpoases/SRC/Bounds.cpp
+        qpoases/SRC/Constraints.cpp
+        qpoases/SRC/CyclingManager.cpp
+        qpoases/SRC/Indexlist.cpp
+        qpoases/SRC/MessageHandling.cpp
+        qpoases/SRC/QProblem.cpp
+        qpoases/SRC/QProblemB.cpp
+        qpoases/SRC/SubjectTo.cpp
+        qpoases/SRC/Utils.cpp
+        qpoases/SRC/EXTRAS/SolutionAnalysis.cpp
+        src/generated_mpc/acado_qpoases_interface.cpp
+        src/generated_mpc/acado_integrator.c
+        src/generated_mpc/acado_solver.c
+        src/generated_mpc/acado_auxiliary_functions.c)
 
-add_library(predictive_controller src/mpcc_controller.cpp)
-add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_controller
-    predictive_configuration
-    predictive_trajectory_generator
-    ${catkin_LIBRARIES}
-    ${orocos_kdl_LIBRARIES}
-    ${libacado}
-    )
+target_include_directories(predictive_controller PUBLIC
+                qpoases
+                qpoases/INCLUDE
+                qpoases/SRC)
 
 add_executable(predictive_control_node src/predictive_control_node.cpp)
-add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(predictive_control_node
-    predictive_controller
-    ${catkin_LIBRARIES}
-    )
+                    predictive_controller
+                    ${catkin_LIBRARIES})
+
+add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ### Test Case ####
 
@@ -141,7 +147,6 @@ install(
 
 install(
   TARGETS
-        predictive_trajectory_generator
         predictive_controller
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )

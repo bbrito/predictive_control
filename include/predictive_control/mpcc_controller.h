@@ -20,6 +20,10 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 
+// Include pre-generated MPC
+#include <acado_common.h>
+#include <acado_auxiliary_functions.h>
+
 // std includes
 #include <iostream>
 #include <string>
@@ -44,7 +48,6 @@
 
 // predicitve includes
 #include <predictive_control/predictive_configuration.h>
-#include <predictive_control/predictive_trajectory_generator.h>
 
 // actions, srvs, msgs
 #include <actionlib/server/simple_action_server.h>
@@ -150,8 +153,6 @@ public:
     ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_;
 	//Predicted trajectory
 	nav_msgs::Path pred_traj_;
-	VariablesGrid states;
-	DVector state;
 
 private:
 
@@ -224,9 +225,6 @@ private:
 
     // static collision detector/avoidance
     //boost::shared_ptr<StaticCollision> static_collision_avoidance_;
-
-    // predictive trajectory generator
-    boost::shared_ptr<pd_frame_tracker> pd_trajectory_generator_;
 
     // move to goal position action
     boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::moveAction> > move_action_server_;

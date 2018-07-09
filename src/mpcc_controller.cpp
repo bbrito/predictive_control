@@ -3,6 +3,9 @@
 
 #include <predictive_control/mpcc_controller.h>
 
+ACADOvariables acadoVariables;
+ACADOworkspace acadoWorkspace;
+
 MPCC::MPCC()
 {
     ;
@@ -39,10 +42,7 @@ bool MPCC::initialize()
 
         bool kinematic_success = true;
 
-        pd_trajectory_generator_.reset(new pd_frame_tracker());
-        bool pd_traj_success = pd_trajectory_generator_->initialize();
-
-        if (pd_traj_success == false || controller_config_success == false)
+        if (controller_config_success == false)
          {
             ROS_ERROR("MPCC: FAILED TO INITILIZED!!");
             std::cout << "States: \n"
@@ -51,7 +51,6 @@ bool MPCC::initialize()
                                 //<< " collision avoidance: " << std::boolalpha << collision_avoidance_success << "\n"
                                 //<< " collision detect: " << std::boolalpha << collision_success << "\n"
                                 //<< " static collision avoidance: " << std::boolalpha << static_collision_success << "\n"
-                                << " pd traj generator: " << std::boolalpha << pd_traj_success << "\n"
                                 << " pd config init success: " << std::boolalpha << controller_config_->initialize_success_
                                 << std::endl;
             return false;
@@ -65,10 +64,6 @@ bool MPCC::initialize()
         tracking_ = true;
         move_action_result_.reach = false;
         plotting_result_ = controller_config_->plotting_result_;
-
-        /// INFO: static function called transformStdVectorToEigenVector define in the predictive_trajectory_generator.h
-        min_velocity_limit_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(controller_config_->vel_min_limit_);
-        max_velocity_limit_ = pd_frame_tracker::transformStdVectorToEigenVector<double>(controller_config_->vel_max_limit_);
 
         // DEBUG
         if (controller_config_->activate_controller_node_output_)
@@ -133,6 +128,9 @@ bool MPCC::initialize()
 
 		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
+		// Initialize pregenerated mpc solver
+		int acado_initializeSolver( );
+
         ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
         return true;
     }
@@ -143,21 +141,46 @@ bool MPCC::initialize()
     }
 }
 
+
 // update this function 1/clock_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
+    int N_iter;
+    int a, b;
 
-	if(((int)traj.multi_dof_joint_trajectory.points.size()) > 1){
+    goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.x;
+    goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.y;
+    goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].rotation.z;
 
-		idx = (int)traj.multi_dof_joint_trajectory.points.size() -2;
-        goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.x;
-        goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.y;
-        goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].rotation.z;
+    a = acado_initializeSolver( );
 
-        states = pd_trajectory_generator_->solveOptimalControlProblem(current_state_,prev_pose_,next_pose_, goal_pose_, obstacles_, controlled_velocity_);
+    for (N_iter = 0; N_iter < (ACADO_N + 1); N_iter++)
+    {
+        //
+        acadoVariables.x[ (ACADO_NX * N_iter) + 0 ] = 0;
+        acadoVariables.x[ (ACADO_NX * N_iter) + 1 ] = 0;
+        acadoVariables.x[ (ACADO_NX * N_iter) + 2 ] = 0;
 
-        publishPredictedTrajectory();
+        acadoVariables.u[ (ACADO_NU * N_iter) + 0 ] = 0;
+        acadoVariables.u[ (ACADO_NU * N_iter) + 1 ] = 0;
+
+        acadoVariables.od[ (ACADO_NOD * N_iter) + 0 ] = goal_pose_(0);
+        acadoVariables.od[ (ACADO_NOD * N_iter) + 1 ] = goal_pose_(1);
+        acadoVariables.od[ (ACADO_NOD * N_iter) + 2 ] = goal_pose_(2);
     }
+
+    acadoVariables.x0[ 0 ] = current_state_(0);
+    acadoVariables.x0[ 1 ] = current_state_(1);
+    acadoVariables.x0[ 2 ] = current_state_(2);
+
+    acadoVariables.x0[ 4 ] = controlled_velocity_.linear.x;
+    acadoVariables.x0[ 5 ] = controlled_velocity_.angular.z;
+
+    b = acado_preparationStep();
+
+
+
+    publishPredictedTrajectory();
 
     // publish zero controlled velocity
     if (!tracking_)
@@ -191,7 +214,6 @@ void MPCC::moveitGoalCB()
     ROS_INFO_STREAM("Got new MoveIt goal!!!");
     //Reset trajectory index
     idx = 1;
-    pd_trajectory_generator_->s_=0;
     if(moveit_action_server_->isNewGoalAvailable())
     {
         boost::shared_ptr<const predictive_control::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
@@ -259,13 +281,5 @@ void MPCC::publishZeroJointVelocity()
 
 void MPCC::publishPredictedTrajectory(void)
 {
-
-	for(int i=0;i<states.getNumPoints();i++){
-		state = states.getVector(i);
-		//pred_traj_.poses[i].header.stamp = ros::Time::now();
-		pred_traj_.poses[i].pose.position.x= state(0);
-		pred_traj_.poses[i].pose.position.y= state(1);
-	}
-
 	pred_traj_pub_.publish(pred_traj_);
 }

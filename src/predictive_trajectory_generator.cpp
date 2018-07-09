@@ -12,16 +12,6 @@ pd_frame_tracker::~pd_frame_tracker()
 void pd_frame_tracker::clearDataMember()
 {
   // resize matrix and vectors
-  state_initialize_.resize(state_dim_);
-  state_initialize_.setAll(0.0);
-  control_initialize_.resize(control_dim_);
-  control_initialize_.setAll(0.0);
-
-  control_min_constraint_.resize(control_dim_);
-  control_min_constraint_.setAll(0.0);
-  control_max_constraint_.resize(control_dim_);
-  control_max_constraint_.setAll(0.0);
-
   lsq_state_weight_factors_.resize(state_dim_);
   lsq_control_weight_factors_.resize(control_dim_);
 
@@ -38,11 +28,6 @@ bool pd_frame_tracker::initialize()
     predictive_configuration::initialize();
   }
     ros::NodeHandle nh_predictive("predictive_controller");
-  // intialize data members
-  state_initialize_.resize(state_dim_);
-  state_initialize_.setAll(1E-5);
-  control_initialize_.resize(control_dim_);
-  control_initialize_.setAll(1E-5);
 
   // initialize acado configuration parameters
   max_num_iteration_ = predictive_configuration::max_num_iteration_;
@@ -71,14 +56,6 @@ bool pd_frame_tracker::initialize()
   //control_vector_size_ = predictive_configuration::lsq_control_weight_factors_.size();
   state_vector_size_ = lsq_state_weight_factors_.rows()* lsq_state_weight_factors_.cols();
   control_vector_size_ = lsq_control_weight_factors_.rows()*lsq_control_weight_factors_.cols();
-
-  control_min_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_min_limit_);
-  control_max_constraint_ = transformStdVectorToEigenVector(predictive_configuration::vel_max_limit_);
-
-  //move to a kinematic function
-  // Differential Kinematic
-  //iniKinematics(x_,v_);
-  s_ = 0;
 
   // Initialize parameters concerning obstacles
   n_obstacles_ = predictive_configuration::n_obstacles_;
@@ -145,70 +122,6 @@ void pd_frame_tracker::computeEgoDiscs()
     ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_);
 }
 
-void pd_frame_tracker::setCollisionConstraints(OCP& OCP_problem, const DifferentialState& x, const obstacle_feed::Obstacles& obstacles, const double& delta_t) {
-
-
-    // Iterate over all given obstacles upto defined bound
-    for (int obst_it = 0; obst_it < obstacles.Obstacles.size(); obst_it++) {
-        // Iterate over all ego-vehicle discs
-        for (int discs_it = 0; discs_it < predictive_configuration::n_discs_ && obst_it < n_obstacles_; discs_it++) {
-
-            // Expression for position of obstacle
-            double x_obst = obstacles.Obstacles[obst_it].pose.position.x;
-            double y_obst = obstacles.Obstacles[obst_it].pose.position.y;
-
-            // Size and heading of allipse
-            double a = obstacles.Obstacles[obst_it].major_semiaxis + r_discs_;
-            double b = obstacles.Obstacles[obst_it].minor_semiaxis + r_discs_;
-            double phi = obstacles.Obstacles[obst_it].pose.orientation.z;       // Orientation is an Euler angle
-
-            // Distance from individual ego-vehicle discs to obstacle
-            Expression deltaPos(2, 1);
-            deltaPos(0) = x(0) - cos(x(2))*x_discs_[discs_it] - x_obst;
-            deltaPos(1) = x(1) - sin(x(2))*x_discs_[discs_it] - y_obst;
-
-//            deltaPos(0) = x(0) - x_obst;
-//            deltaPos(1) = x(1) - y_obst;
-
-            // Rotation matrix corresponding to the obstacle heading
-            Expression R_obst(2, 2);
-            R_obst(0, 0) = cos(phi-x(2));
-            R_obst(0, 1) = -sin(x(2)-x(2));
-            R_obst(1, 0) = sin(phi-x(2));
-            R_obst(1, 1) = cos(phi-x(2));
-
-            // Matrix with total clearance from obstacles
-            Expression ab_mat(2, 2);
-            ab_mat(0, 0) = 1 / (a * a);
-            ab_mat(1, 1) = 1 / (b * b);
-            ab_mat(0, 1) = 0;
-            ab_mat(1, 0) = 0;
-
-            // Total contraint on obstacle
-            Expression c_k;
-            c_k = deltaPos.transpose() * R_obst.transpose() * ab_mat * R_obst * deltaPos;
-//            c_k = deltaPos.transpose()  * ab_mat *  deltaPos;
-
-            // Add constraint to OCP problem
-            OCP_problem.subjectTo(c_k >= 1);
-        }
-    }
-}
-
-// Generate cost function of optimal control problem
-void pd_frame_tracker::generateCostFunction(OCP& OCP_problem,
-                                            const Eigen::Vector3d& goal_pose)
-{
-  if (use_mayer_term_)
-  {
-    if (activate_debug_output_)
-    {
-      ROS_INFO("pd_frame_tracker::generateCostFunction: use_mayer_term_");
-    }
-  }
-
-}
-
 inline double get_time_second() {
     struct timeval tv;
 
@@ -217,7 +130,7 @@ inline double get_time_second() {
     return tv.tv_sec + tv.tv_usec / 1000000.0;
 }
 
-VariablesGrid pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
+bool pd_frame_tracker::solveOptimalControlProblem(const Eigen::VectorXd &last_position,
 												  const Eigen::Vector3d &prev_pose,
 												  const Eigen::Vector3d &next_pose,
 												  const Eigen::Vector3d &goal_pose,

@@ -133,7 +133,6 @@ bool MPCC::initialize()
         cost_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_weight_factors_);
 
         cost_state_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_terminal_weight_factors_);
-        cost_control_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_terminal_weight_factors_);
 
         ros::NodeHandle nh_predictive("predictive_controller");
 
@@ -170,26 +169,29 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
         acado_initializeSolver( );
 
-        for (N_iter = 0; N_iter < ACADO_N; N_iter++)
-        {
-         //
-            acadoVariables.x[ (ACADO_NX * N_iter) + 0 ] = current_state_(0);
-            acadoVariables.x[ (ACADO_NX * N_iter) + 1 ] = current_state_(1);
-            acadoVariables.x[ (ACADO_NX * N_iter) + 2 ] = current_state_(2);
+        for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+            //
+            acadoVariables.x[(ACADO_NX * N_iter) + 0] = current_state_(0);
+            acadoVariables.x[(ACADO_NX * N_iter) + 1] = current_state_(1);
+            acadoVariables.x[(ACADO_NX * N_iter) + 2] = current_state_(2);
 
-            acadoVariables.u[ (ACADO_NU * N_iter) + 0 ] = controlled_velocity_.linear.x;
-            acadoVariables.u[ (ACADO_NU * N_iter) + 1 ] = controlled_velocity_.angular.z;
+            acadoVariables.u[(ACADO_NU * N_iter) + 0] = controlled_velocity_.linear.x;
+            acadoVariables.u[(ACADO_NU * N_iter) + 1] = controlled_velocity_.angular.z;
 
             // Initialize Online Data variables
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 0 ] = goal_pose_(0);
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 1 ] = goal_pose_(1);
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 2 ] = goal_pose_(2);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 0] = goal_pose_(0);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 1] = goal_pose_(1);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 2] = goal_pose_(2);
 
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 3 ] = 1;//cost_state_weight_factors_(0);
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 4 ] = 1;//cost_state_weight_factors_(1);
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 5 ] = 1;//cost_state_weight_factors_(2);
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 6 ] = 1;//cost_control_weight_factors_(0);
-            acadoVariables.od[ (ACADO_NOD * N_iter) + 7 ] = 1;//cost_control_weight_factors_(1);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 3 ] = cost_state_weight_factors_(0);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 4 ] = cost_state_weight_factors_(1);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 5 ] = cost_state_weight_factors_(2);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 6 ] = cost_control_weight_factors_(0);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 7 ] = cost_control_weight_factors_(1);
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 8 ] = cost_state_terminal_weight_factors_(0);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 9 ] = cost_state_terminal_weight_factors_(1);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 10] = cost_state_terminal_weight_factors_(2);
         }
 
         acadoVariables.x0[ 0 ] = current_state_(0);
@@ -268,8 +270,6 @@ void MPCC::reconfigureCallback(predictive_control::PredictiveControllerConfig& c
     cost_state_terminal_weight_factors_(0) = config.Px;
     cost_state_terminal_weight_factors_(1) = config.Py;
     cost_state_terminal_weight_factors_(2) = config.Ptheta;
-    cost_control_terminal_weight_factors_(0) = config.Pv;
-    cost_control_terminal_weight_factors_(1) = config.Pw;
 }
 
 void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){

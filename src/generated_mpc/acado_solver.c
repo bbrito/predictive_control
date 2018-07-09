@@ -46,14 +46,17 @@ acadoWorkspace.state[4] = acadoVariables.mu[lRun1 * 3 + 1];
 acadoWorkspace.state[5] = acadoVariables.mu[lRun1 * 3 + 2];
 acadoWorkspace.state[36] = acadoVariables.u[lRun1 * 2];
 acadoWorkspace.state[37] = acadoVariables.u[lRun1 * 2 + 1];
-acadoWorkspace.state[38] = acadoVariables.od[lRun1 * 8];
-acadoWorkspace.state[39] = acadoVariables.od[lRun1 * 8 + 1];
-acadoWorkspace.state[40] = acadoVariables.od[lRun1 * 8 + 2];
-acadoWorkspace.state[41] = acadoVariables.od[lRun1 * 8 + 3];
-acadoWorkspace.state[42] = acadoVariables.od[lRun1 * 8 + 4];
-acadoWorkspace.state[43] = acadoVariables.od[lRun1 * 8 + 5];
-acadoWorkspace.state[44] = acadoVariables.od[lRun1 * 8 + 6];
-acadoWorkspace.state[45] = acadoVariables.od[lRun1 * 8 + 7];
+acadoWorkspace.state[38] = acadoVariables.od[lRun1 * 11];
+acadoWorkspace.state[39] = acadoVariables.od[lRun1 * 11 + 1];
+acadoWorkspace.state[40] = acadoVariables.od[lRun1 * 11 + 2];
+acadoWorkspace.state[41] = acadoVariables.od[lRun1 * 11 + 3];
+acadoWorkspace.state[42] = acadoVariables.od[lRun1 * 11 + 4];
+acadoWorkspace.state[43] = acadoVariables.od[lRun1 * 11 + 5];
+acadoWorkspace.state[44] = acadoVariables.od[lRun1 * 11 + 6];
+acadoWorkspace.state[45] = acadoVariables.od[lRun1 * 11 + 7];
+acadoWorkspace.state[46] = acadoVariables.od[lRun1 * 11 + 8];
+acadoWorkspace.state[47] = acadoVariables.od[lRun1 * 11 + 9];
+acadoWorkspace.state[48] = acadoVariables.od[lRun1 * 11 + 10];
 
 ret = acado_integrate(acadoWorkspace.state, 1);
 
@@ -177,6 +180,49 @@ out[23] = a[31];
 out[24] = a[32];
 }
 
+void acado_evaluateMayer(const real_t* in, real_t* out)
+{
+const real_t* xd = in;
+const real_t* od = in + 3;
+/* Vector of auxiliary variables; number of elements: 18. */
+real_t* a = acadoWorkspace.objAuxVar;
+
+/* Compute intermediate quantities: */
+a[0] = (xd[0]-od[0]);
+a[1] = (od[8]*a[0]);
+a[2] = (od[8]*(xd[0]-od[0]));
+a[3] = (a[1]+a[2]);
+a[4] = (xd[1]-od[1]);
+a[5] = (od[9]*a[4]);
+a[6] = (od[9]*(xd[1]-od[1]));
+a[7] = (a[5]+a[6]);
+a[8] = (xd[2]-od[2]);
+a[9] = (od[10]*a[8]);
+a[10] = (od[10]*(xd[2]-od[2]));
+a[11] = (a[9]+a[10]);
+a[12] = (od[8]*(real_t)(2.0000000000000000e+00));
+a[13] = (real_t)(0.0000000000000000e+00);
+a[14] = (real_t)(0.0000000000000000e+00);
+a[15] = (od[9]*(real_t)(2.0000000000000000e+00));
+a[16] = (real_t)(0.0000000000000000e+00);
+a[17] = (od[10]*(real_t)(2.0000000000000000e+00));
+
+/* Compute outputs: */
+out[0] = ((((od[8]*(xd[0]-od[0]))*(xd[0]-od[0]))+((od[9]*(xd[1]-od[1]))*(xd[1]-od[1])))+((od[10]*(xd[2]-od[2]))*(xd[2]-od[2])));
+out[1] = a[3];
+out[2] = a[7];
+out[3] = a[11];
+out[4] = a[12];
+out[5] = a[13];
+out[6] = a[14];
+out[7] = a[13];
+out[8] = a[15];
+out[9] = a[16];
+out[10] = a[14];
+out[11] = a[16];
+out[12] = a[17];
+}
+
 void acado_addObjTerm( real_t* const tmpFxx, real_t* const tmpFxu, real_t* const tmpFuu, real_t* const tmpEH )
 {
 tmpEH[0] += tmpFxx[0];
@@ -215,6 +261,19 @@ tmpDu[0] = tmpDF[3];
 tmpDu[1] = tmpDF[4];
 }
 
+void acado_addObjEndTerm( real_t* const tmpFxxEnd, real_t* const tmpEH_N )
+{
+tmpEH_N[0] = tmpFxxEnd[0];
+tmpEH_N[1] = tmpFxxEnd[1];
+tmpEH_N[2] = tmpFxxEnd[2];
+tmpEH_N[3] = tmpFxxEnd[3];
+tmpEH_N[4] = tmpFxxEnd[4];
+tmpEH_N[5] = tmpFxxEnd[5];
+tmpEH_N[6] = tmpFxxEnd[6];
+tmpEH_N[7] = tmpFxxEnd[7];
+tmpEH_N[8] = tmpFxxEnd[8];
+}
+
 void acado_evaluateObjective(  )
 {
 int runObj;
@@ -225,14 +284,17 @@ acadoWorkspace.objValueIn[1] = acadoVariables.x[runObj * 3 + 1];
 acadoWorkspace.objValueIn[2] = acadoVariables.x[runObj * 3 + 2];
 acadoWorkspace.objValueIn[3] = acadoVariables.u[runObj * 2];
 acadoWorkspace.objValueIn[4] = acadoVariables.u[runObj * 2 + 1];
-acadoWorkspace.objValueIn[5] = acadoVariables.od[runObj * 8];
-acadoWorkspace.objValueIn[6] = acadoVariables.od[runObj * 8 + 1];
-acadoWorkspace.objValueIn[7] = acadoVariables.od[runObj * 8 + 2];
-acadoWorkspace.objValueIn[8] = acadoVariables.od[runObj * 8 + 3];
-acadoWorkspace.objValueIn[9] = acadoVariables.od[runObj * 8 + 4];
-acadoWorkspace.objValueIn[10] = acadoVariables.od[runObj * 8 + 5];
-acadoWorkspace.objValueIn[11] = acadoVariables.od[runObj * 8 + 6];
-acadoWorkspace.objValueIn[12] = acadoVariables.od[runObj * 8 + 7];
+acadoWorkspace.objValueIn[5] = acadoVariables.od[runObj * 11];
+acadoWorkspace.objValueIn[6] = acadoVariables.od[runObj * 11 + 1];
+acadoWorkspace.objValueIn[7] = acadoVariables.od[runObj * 11 + 2];
+acadoWorkspace.objValueIn[8] = acadoVariables.od[runObj * 11 + 3];
+acadoWorkspace.objValueIn[9] = acadoVariables.od[runObj * 11 + 4];
+acadoWorkspace.objValueIn[10] = acadoVariables.od[runObj * 11 + 5];
+acadoWorkspace.objValueIn[11] = acadoVariables.od[runObj * 11 + 6];
+acadoWorkspace.objValueIn[12] = acadoVariables.od[runObj * 11 + 7];
+acadoWorkspace.objValueIn[13] = acadoVariables.od[runObj * 11 + 8];
+acadoWorkspace.objValueIn[14] = acadoVariables.od[runObj * 11 + 9];
+acadoWorkspace.objValueIn[15] = acadoVariables.od[runObj * 11 + 10];
 
 acado_evaluateLagrange( acadoWorkspace.objValueIn, acadoWorkspace.objValueOut );
 
@@ -240,9 +302,27 @@ acado_addObjTerm( &(acadoWorkspace.objValueOut[ 6 ]), &(acadoWorkspace.objValueO
 acado_addObjLinearTerm( &(acadoWorkspace.QDy[ runObj * 3 ]), &(acadoWorkspace.g[ runObj * 2 ]), &(acadoWorkspace.objValueOut[ 1 ]) );
 
 }
-acadoWorkspace.QDy[150] = 0.0000000000000000e+00;
-acadoWorkspace.QDy[151] = 0.0000000000000000e+00;
-acadoWorkspace.QDy[152] = 0.0000000000000000e+00;
+acadoWorkspace.objValueIn[0] = acadoVariables.x[150];
+acadoWorkspace.objValueIn[1] = acadoVariables.x[151];
+acadoWorkspace.objValueIn[2] = acadoVariables.x[152];
+acadoWorkspace.objValueIn[3] = acadoVariables.od[550];
+acadoWorkspace.objValueIn[4] = acadoVariables.od[551];
+acadoWorkspace.objValueIn[5] = acadoVariables.od[552];
+acadoWorkspace.objValueIn[6] = acadoVariables.od[553];
+acadoWorkspace.objValueIn[7] = acadoVariables.od[554];
+acadoWorkspace.objValueIn[8] = acadoVariables.od[555];
+acadoWorkspace.objValueIn[9] = acadoVariables.od[556];
+acadoWorkspace.objValueIn[10] = acadoVariables.od[557];
+acadoWorkspace.objValueIn[11] = acadoVariables.od[558];
+acadoWorkspace.objValueIn[12] = acadoVariables.od[559];
+acadoWorkspace.objValueIn[13] = acadoVariables.od[560];
+acado_evaluateMayer( acadoWorkspace.objValueIn, acadoWorkspace.objValueOut );
+
+acado_addObjEndTerm( &(acadoWorkspace.objValueOut[ 4 ]), acadoWorkspace.EH_N );
+acadoWorkspace.QDy[150] = acadoWorkspace.objValueOut[1];
+acadoWorkspace.QDy[151] = acadoWorkspace.objValueOut[2];
+acadoWorkspace.QDy[152] = acadoWorkspace.objValueOut[3];
+
 }
 
 void acado_regularizeHessian(  )
@@ -271,6 +351,15 @@ acadoWorkspace.R1[lRun1 * 4 + 1] = acadoWorkspace.EH[lRun1 * 25 + 19];
 acadoWorkspace.R1[lRun1 * 4 + 2] = acadoWorkspace.EH[lRun1 * 25 + 23];
 acadoWorkspace.R1[lRun1 * 4 + 3] = acadoWorkspace.EH[lRun1 * 25 + 24];
 }
+acadoWorkspace.QN1[0] = acadoWorkspace.EH_N[0];
+acadoWorkspace.QN1[1] = acadoWorkspace.EH_N[1];
+acadoWorkspace.QN1[2] = acadoWorkspace.EH_N[2];
+acadoWorkspace.QN1[3] = acadoWorkspace.EH_N[3];
+acadoWorkspace.QN1[4] = acadoWorkspace.EH_N[4];
+acadoWorkspace.QN1[5] = acadoWorkspace.EH_N[5];
+acadoWorkspace.QN1[6] = acadoWorkspace.EH_N[6];
+acadoWorkspace.QN1[7] = acadoWorkspace.EH_N[7];
+acadoWorkspace.QN1[8] = acadoWorkspace.EH_N[8];
 }
 
 void acado_multGxGu( real_t* const Gx1, real_t* const Gu1, real_t* const Gu2 )
@@ -1531,14 +1620,17 @@ acadoWorkspace.state[1] = acadoVariables.x[index * 3 + 1];
 acadoWorkspace.state[2] = acadoVariables.x[index * 3 + 2];
 acadoWorkspace.state[36] = acadoVariables.u[index * 2];
 acadoWorkspace.state[37] = acadoVariables.u[index * 2 + 1];
-acadoWorkspace.state[38] = acadoVariables.od[index * 8];
-acadoWorkspace.state[39] = acadoVariables.od[index * 8 + 1];
-acadoWorkspace.state[40] = acadoVariables.od[index * 8 + 2];
-acadoWorkspace.state[41] = acadoVariables.od[index * 8 + 3];
-acadoWorkspace.state[42] = acadoVariables.od[index * 8 + 4];
-acadoWorkspace.state[43] = acadoVariables.od[index * 8 + 5];
-acadoWorkspace.state[44] = acadoVariables.od[index * 8 + 6];
-acadoWorkspace.state[45] = acadoVariables.od[index * 8 + 7];
+acadoWorkspace.state[38] = acadoVariables.od[index * 11];
+acadoWorkspace.state[39] = acadoVariables.od[index * 11 + 1];
+acadoWorkspace.state[40] = acadoVariables.od[index * 11 + 2];
+acadoWorkspace.state[41] = acadoVariables.od[index * 11 + 3];
+acadoWorkspace.state[42] = acadoVariables.od[index * 11 + 4];
+acadoWorkspace.state[43] = acadoVariables.od[index * 11 + 5];
+acadoWorkspace.state[44] = acadoVariables.od[index * 11 + 6];
+acadoWorkspace.state[45] = acadoVariables.od[index * 11 + 7];
+acadoWorkspace.state[46] = acadoVariables.od[index * 11 + 8];
+acadoWorkspace.state[47] = acadoVariables.od[index * 11 + 9];
+acadoWorkspace.state[48] = acadoVariables.od[index * 11 + 10];
 
 acado_integrate(acadoWorkspace.state, index == 0);
 
@@ -1579,14 +1671,17 @@ else
 acadoWorkspace.state[36] = acadoVariables.u[98];
 acadoWorkspace.state[37] = acadoVariables.u[99];
 }
-acadoWorkspace.state[38] = acadoVariables.od[400];
-acadoWorkspace.state[39] = acadoVariables.od[401];
-acadoWorkspace.state[40] = acadoVariables.od[402];
-acadoWorkspace.state[41] = acadoVariables.od[403];
-acadoWorkspace.state[42] = acadoVariables.od[404];
-acadoWorkspace.state[43] = acadoVariables.od[405];
-acadoWorkspace.state[44] = acadoVariables.od[406];
-acadoWorkspace.state[45] = acadoVariables.od[407];
+acadoWorkspace.state[38] = acadoVariables.od[550];
+acadoWorkspace.state[39] = acadoVariables.od[551];
+acadoWorkspace.state[40] = acadoVariables.od[552];
+acadoWorkspace.state[41] = acadoVariables.od[553];
+acadoWorkspace.state[42] = acadoVariables.od[554];
+acadoWorkspace.state[43] = acadoVariables.od[555];
+acadoWorkspace.state[44] = acadoVariables.od[556];
+acadoWorkspace.state[45] = acadoVariables.od[557];
+acadoWorkspace.state[46] = acadoVariables.od[558];
+acadoWorkspace.state[47] = acadoVariables.od[559];
+acadoWorkspace.state[48] = acadoVariables.od[560];
 
 acado_integrate(acadoWorkspace.state, 1);
 
@@ -1645,18 +1740,37 @@ acadoWorkspace.objValueIn[1] = acadoVariables.x[lRun1 * 3 + 1];
 acadoWorkspace.objValueIn[2] = acadoVariables.x[lRun1 * 3 + 2];
 acadoWorkspace.objValueIn[3] = acadoVariables.u[lRun1 * 2];
 acadoWorkspace.objValueIn[4] = acadoVariables.u[lRun1 * 2 + 1];
-acadoWorkspace.objValueIn[5] = acadoVariables.od[lRun1 * 8];
-acadoWorkspace.objValueIn[6] = acadoVariables.od[lRun1 * 8 + 1];
-acadoWorkspace.objValueIn[7] = acadoVariables.od[lRun1 * 8 + 2];
-acadoWorkspace.objValueIn[8] = acadoVariables.od[lRun1 * 8 + 3];
-acadoWorkspace.objValueIn[9] = acadoVariables.od[lRun1 * 8 + 4];
-acadoWorkspace.objValueIn[10] = acadoVariables.od[lRun1 * 8 + 5];
-acadoWorkspace.objValueIn[11] = acadoVariables.od[lRun1 * 8 + 6];
-acadoWorkspace.objValueIn[12] = acadoVariables.od[lRun1 * 8 + 7];
+acadoWorkspace.objValueIn[5] = acadoVariables.od[lRun1 * 11];
+acadoWorkspace.objValueIn[6] = acadoVariables.od[lRun1 * 11 + 1];
+acadoWorkspace.objValueIn[7] = acadoVariables.od[lRun1 * 11 + 2];
+acadoWorkspace.objValueIn[8] = acadoVariables.od[lRun1 * 11 + 3];
+acadoWorkspace.objValueIn[9] = acadoVariables.od[lRun1 * 11 + 4];
+acadoWorkspace.objValueIn[10] = acadoVariables.od[lRun1 * 11 + 5];
+acadoWorkspace.objValueIn[11] = acadoVariables.od[lRun1 * 11 + 6];
+acadoWorkspace.objValueIn[12] = acadoVariables.od[lRun1 * 11 + 7];
+acadoWorkspace.objValueIn[13] = acadoVariables.od[lRun1 * 11 + 8];
+acadoWorkspace.objValueIn[14] = acadoVariables.od[lRun1 * 11 + 9];
+acadoWorkspace.objValueIn[15] = acadoVariables.od[lRun1 * 11 + 10];
 
 acado_evaluateLagrange( acadoWorkspace.objValueIn, acadoWorkspace.objValueOut );
 objVal += acadoWorkspace.objValueOut[0];
 }
+acadoWorkspace.objValueIn[0] = acadoVariables.x[150];
+acadoWorkspace.objValueIn[1] = acadoVariables.x[151];
+acadoWorkspace.objValueIn[2] = acadoVariables.x[152];
+acadoWorkspace.objValueIn[3] = acadoVariables.od[550];
+acadoWorkspace.objValueIn[4] = acadoVariables.od[551];
+acadoWorkspace.objValueIn[5] = acadoVariables.od[552];
+acadoWorkspace.objValueIn[6] = acadoVariables.od[553];
+acadoWorkspace.objValueIn[7] = acadoVariables.od[554];
+acadoWorkspace.objValueIn[8] = acadoVariables.od[555];
+acadoWorkspace.objValueIn[9] = acadoVariables.od[556];
+acadoWorkspace.objValueIn[10] = acadoVariables.od[557];
+acadoWorkspace.objValueIn[11] = acadoVariables.od[558];
+acadoWorkspace.objValueIn[12] = acadoVariables.od[559];
+acadoWorkspace.objValueIn[13] = acadoVariables.od[560];
+acado_evaluateMayer( acadoWorkspace.objValueIn, acadoWorkspace.objValueOut );
+objVal += acadoWorkspace.objValueOut[0];
 return objVal;
 }
 

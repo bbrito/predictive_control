@@ -226,7 +226,6 @@ private:
     Eigen::VectorXd cost_state_weight_factors_;
     Eigen::VectorXd cost_state_terminal_weight_factors_;
     Eigen::VectorXd cost_control_weight_factors_;
-    Eigen::VectorXd cost_control_terminal_weight_factors_;
 
 	//MoveIt TRAJECTORY VARIABLE
 	moveit_msgs::RobotTrajectory traj;

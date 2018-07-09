@@ -119,8 +119,8 @@ bool MPCC::initialize()
 		traj = j;
 
 		//initialize trajectory variable to plot prediction trajectory
-		pred_traj_.poses.resize(controller_config_->discretization_intervals_+1);
-		for(int i=0;i < controller_config_->discretization_intervals_; i++)
+		pred_traj_.poses.resize(ACADO_N);
+		for(int i=0;i < ACADO_N; i++)
 		{
 			pred_traj_.poses[i].header.frame_id = "odom";
 			pred_traj_.header.frame_id = "odom";
@@ -129,7 +129,19 @@ bool MPCC::initialize()
 		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
 		// Initialize pregenerated mpc solver
-		int acado_initializeSolver( );
+		acado_initializeSolver( );
+
+		//Bruno can you fix this?
+        // initialize state and control weight factors
+        lsq_state_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_state_weight_factors_);
+        lsq_control_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_control_weight_factors_);
+
+        lsq_state_terminal_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_state_terminal_weight_factors_);
+        lsq_control_terminal_weight_factors_ = transformStdVectorToEigenVector(predictive_configuration::lsq_control_terminal_weight_factors_);
+
+        /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
+        reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh));
+        reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
 
         ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
         return true;
@@ -145,54 +157,79 @@ bool MPCC::initialize()
 // update this function 1/clock_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
+//    ROS_INFO("RUNNODE");
+
     int N_iter;
-    int a, b;
+    acado_timer t;
+    acado_tic( &t );
 
-    goal_pose_(0) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.x;
-    goal_pose_(1) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].translation.y;
-    goal_pose_(2) = traj.multi_dof_joint_trajectory.points[idx+1].transforms[0].rotation.z;
+    int traj_n = traj.multi_dof_joint_trajectory.points.size();
 
-    a = acado_initializeSolver( );
+    if (traj_n > 0) {
+        goal_pose_(0) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.x;
+        goal_pose_(1) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.y;
+        goal_pose_(2) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].rotation.z;
 
-    for (N_iter = 0; N_iter < (ACADO_N + 1); N_iter++)
-    {
-        //
-        acadoVariables.x[ (ACADO_NX * N_iter) + 0 ] = 0;
-        acadoVariables.x[ (ACADO_NX * N_iter) + 1 ] = 0;
-        acadoVariables.x[ (ACADO_NX * N_iter) + 2 ] = 0;
+        acado_initializeSolver( );
 
-        acadoVariables.u[ (ACADO_NU * N_iter) + 0 ] = 0;
-        acadoVariables.u[ (ACADO_NU * N_iter) + 1 ] = 0;
+        for (N_iter = 0; N_iter < ACADO_N; N_iter++)
+        {
+         //
+            acadoVariables.x[ (ACADO_NX * N_iter) + 0 ] = current_state_(0);
+            acadoVariables.x[ (ACADO_NX * N_iter) + 1 ] = current_state_(1);
+            acadoVariables.x[ (ACADO_NX * N_iter) + 2 ] = current_state_(2);
 
-        acadoVariables.od[ (ACADO_NOD * N_iter) + 0 ] = goal_pose_(0);
-        acadoVariables.od[ (ACADO_NOD * N_iter) + 1 ] = goal_pose_(1);
-        acadoVariables.od[ (ACADO_NOD * N_iter) + 2 ] = goal_pose_(2);
-    }
+            acadoVariables.u[ (ACADO_NU * N_iter) + 0 ] = controlled_velocity_.linear.x;
+            acadoVariables.u[ (ACADO_NU * N_iter) + 1 ] = controlled_velocity_.angular.z;
 
-    acadoVariables.x0[ 0 ] = current_state_(0);
-    acadoVariables.x0[ 1 ] = current_state_(1);
-    acadoVariables.x0[ 2 ] = current_state_(2);
+            // Initialize Online Data variables
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 0 ] = goal_pose_(0);
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 1 ] = goal_pose_(1);
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 2 ] = goal_pose_(2);
 
-    acadoVariables.x0[ 4 ] = controlled_velocity_.linear.x;
-    acadoVariables.x0[ 5 ] = controlled_velocity_.angular.z;
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 3 ] = 1;
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 4 ] = 1;
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 5 ] = 1;
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 6 ] = 1;
+            acadoVariables.od[ (ACADO_NOD * N_iter) + 7 ] = 1;
+        }
 
-    b = acado_preparationStep();
+        acadoVariables.x0[ 0 ] = current_state_(0);
+        acadoVariables.x0[ 1 ] = current_state_(1);
+        acadoVariables.x0[ 2 ] = current_state_(2);
 
+        acadoVariables.x0[ 4 ] = controlled_velocity_.linear.x;
+        acadoVariables.x0[ 5 ] = controlled_velocity_.angular.z;
 
+        acado_preparationStep();
 
-    publishPredictedTrajectory();
+        acado_feedbackStep();
+
+        controlled_velocity_.linear.x = acadoVariables.u[0];
+        controlled_velocity_.angular.z = acadoVariables.u[1];
+
+        real_t te = acado_toc( &t );
+
+        ROS_INFO_STREAM("Solve time " << te*1e6 );
+
+        acado_printDifferentialVariables();
+
+        publishPredictedTrajectory();
 
     // publish zero controlled velocity
-    if (!tracking_)
-    {
-        actionSuccess();
+        if (!tracking_)
+        {
+            actionSuccess();
+        }
+
+        //publishZeroJointVelocity();
+        controlled_velocity_pub_.publish(controlled_velocity_);
     }
-    //publishZeroJointVelocity();
-    controlled_velocity_pub_.publish(controlled_velocity_);
 }
 
 void MPCC::moveGoalCB()
 {
+//    ROS_INFO("MOVEGOALCB");
     if(move_action_server_->isNewGoalAvailable())
     {
         boost::shared_ptr<const predictive_control::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
@@ -223,6 +260,22 @@ void MPCC::moveitGoalCB()
     }
 }
 
+
+void MPCC::reconfigureCallback(predictive_control::PredictiveControllerConfig& config, uint32_t level){
+
+    lsq_state_weight_factors_(0) = config.Kx;
+    lsq_state_weight_factors_(1) = config.Ky;
+    lsq_state_weight_factors_(2) = config.Ktheta;
+    lsq_control_weight_factors_(0) = config.Kv;
+    lsq_control_weight_factors_(1) = config.Kw;
+
+    lsq_state_terminal_weight_factors_(0) = config.Px;
+    lsq_state_terminal_weight_factors_(1) = config.Py;
+    lsq_state_terminal_weight_factors_(2) = config.Ptheta;
+    lsq_control_terminal_weight_factors_(0) = config.Pv;
+    lsq_control_terminal_weight_factors_(1) = config.Pw;
+}
+
 void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){
 
 }
@@ -251,7 +304,7 @@ void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {
     if (activate_debug_output_)
     {
-        //ROS_INFO("MPCC::StateCallBack");
+//        ROS_INFO("MPCC::StateCallBack");
     }
     last_state_ = current_state_;
     current_state_(0) =    msg->position.x;
@@ -261,6 +314,7 @@ void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 
 void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 {
+//    ROS_INFO("OBSTACLECB");
 
     obstacles_ = obstacles;
 
@@ -270,7 +324,7 @@ void MPCC::publishZeroJointVelocity()
 {
     if (activate_debug_output_)
     {
-        ROS_INFO("Publishing ZERO joint velocity!!");
+//        ROS_INFO("Publishing ZERO joint velocity!!");
     }
     geometry_msgs::Twist pub_msg;
 
@@ -281,5 +335,11 @@ void MPCC::publishZeroJointVelocity()
 
 void MPCC::publishPredictedTrajectory(void)
 {
+    for (int i = 0; i < ACADO_N; i++)
+    {
+        pred_traj_.poses[i].pose.position.x = acadoVariables.x[i * ACADO_NX + 0];
+        pred_traj_.poses[i].pose.position.y = acadoVariables.x[i * ACADO_NX + 1];
+    }
+
 	pred_traj_pub_.publish(pred_traj_);
 }

@@ -67,6 +67,12 @@
 #include <obstacle_feed/Obstacle.h>
 #include <obstacle_feed/Obstacles.h>
 
+//Dynamic Reconfigure server
+#include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <dynamic_reconfigure/server.h>
+#include <predictive_control/PredictiveControllerConfig.h>
+
 /*
 struct hold_pose
 {
@@ -136,6 +142,31 @@ public:
 
     bool transformEigenToGeometryPose(const Eigen::VectorXd& eigen_vector, geometry_msgs::Pose& pose);
 
+    //DYnamic reconfigure server
+    boost::shared_ptr< dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig> > reconfigure_server_;
+    boost::recursive_mutex reconfig_mutex_;
+    void reconfigureCallback(predictive_control::PredictiveControllerConfig& config, uint32_t level);
+
+    /**
+     * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
+     * @param vector: std vectors want to tranfrom
+     * @return Eigen vectors transform from std vectos
+     */
+    template<typename T>
+    static inline Eigen::VectorXd transformStdVectorToEigenVector(const std::vector<T>& vector)
+    {
+        // resize eigen vector
+        Eigen::VectorXd eigen_vector = Eigen::VectorXd(vector.size());
+
+        // convert std to eigen vector
+        for (uint32_t i = 0; i < vector.size(); ++i)
+        {
+            eigen_vector(i) = vector.at(i);
+        }
+
+        return eigen_vector;
+    }
+
     /** public data member */
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
@@ -187,6 +218,11 @@ private:
 
     Eigen::VectorXd min_velocity_limit_;
     Eigen::VectorXd max_velocity_limit_;
+
+    Eigen::VectorXd lsq_state_weight_factors_;
+    Eigen::VectorXd lsq_state_terminal_weight_factors_;
+    Eigen::VectorXd lsq_control_weight_factors_;
+    Eigen::VectorXd lsq_control_terminal_weight_factors_;
 
 	//MoveIt TRAJECTORY VARIABLE
 	moveit_msgs::RobotTrajectory traj;

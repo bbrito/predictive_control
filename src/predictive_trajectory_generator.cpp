@@ -62,7 +62,7 @@ bool pd_frame_tracker::initialize()
 
     /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
     reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
-    reconfigure_server_->setCallback(boost::bind(&pd_frame_tracker::reconfigureCallback,   this, _1, _2));
+    reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
 
   // Compute ego discs for collision constraints
   computeEgoDiscs();

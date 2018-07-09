@@ -122,6 +122,7 @@ add_library(predictive_controller
         qpoases/SRC/Utils.cpp
         qpoases/SRC/EXTRAS/SolutionAnalysis.cpp
         src/generated_mpc/acado_qpoases_interface.cpp
+        src/generated_mpc/acado_hessian_regularization.c
         src/generated_mpc/acado_integrator.c
         src/generated_mpc/acado_solver.c
         src/generated_mpc/acado_auxiliary_functions.c)

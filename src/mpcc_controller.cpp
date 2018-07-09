@@ -140,6 +140,8 @@ bool MPCC::initialize()
         reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
 
+        computeEgoDiscs();
+
         ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
         return true;
     }
@@ -148,6 +150,27 @@ bool MPCC::initialize()
         ROS_ERROR("MPCC: Failed to initialize as ROS Node is shoutdown");
         return false;
     }
+}
+
+void MPCC::computeEgoDiscs()
+{
+    // Collect parameters for disc representation
+    int n_discs = controller_config_->n_discs_;
+    double length = controller_config_->ego_l_;
+    double width = controller_config_->ego_w_;
+
+    // Initialize positions of discs
+    x_discs_.resize(n_discs);
+
+    // Loop over discs and assign positions
+    for ( int discs_it = 0; discs_it < n_discs; discs_it++){
+        x_discs_[discs_it] = -length/2 + (discs_it + 1)*(length/(n_discs + 1));
+    }
+
+    // Compute radius of the discs
+    r_discs_ = sqrt(pow(x_discs_[n_discs - 1] - length/2,2) + pow(width/2,2));
+
+    ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_ );
 }
 
 
@@ -159,6 +182,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
     int N_iter;
     acado_timer t;
     acado_tic( &t );
+
+    obstacle_feed::Obstacles obstacles = obstacles_;
 
     int traj_n = traj.multi_dof_joint_trajectory.points.size();
 
@@ -179,19 +204,28 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.u[(ACADO_NU * N_iter) + 1] = controlled_velocity_.angular.z;
 
             // Initialize Online Data variables
-            acadoVariables.od[(ACADO_NOD * N_iter) + 0] = goal_pose_(0);
-            acadoVariables.od[(ACADO_NOD * N_iter) + 1] = goal_pose_(1);
-            acadoVariables.od[(ACADO_NOD * N_iter) + 2] = goal_pose_(2);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 0] = goal_pose_(0);                        // Goal x
+            acadoVariables.od[(ACADO_NOD * N_iter) + 1] = goal_pose_(1);                        // Goal y
+            acadoVariables.od[(ACADO_NOD * N_iter) + 2] = goal_pose_(2);                        // Goal theta
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 3 ] = cost_state_weight_factors_(0);
-            acadoVariables.od[(ACADO_NOD * N_iter) + 4 ] = cost_state_weight_factors_(1);
-            acadoVariables.od[(ACADO_NOD * N_iter) + 5 ] = cost_state_weight_factors_(2);
-            acadoVariables.od[(ACADO_NOD * N_iter) + 6 ] = cost_control_weight_factors_(0);
-            acadoVariables.od[(ACADO_NOD * N_iter) + 7 ] = cost_control_weight_factors_(1);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 3 ] = cost_state_weight_factors_(0);       // weight factor on x
+            acadoVariables.od[(ACADO_NOD * N_iter) + 4 ] = cost_state_weight_factors_(1);       // weight factor on y
+            acadoVariables.od[(ACADO_NOD * N_iter) + 5 ] = cost_state_weight_factors_(2);       // weight factor on theta
+            acadoVariables.od[(ACADO_NOD * N_iter) + 6 ] = cost_control_weight_factors_(0);     // weight factor on v
+            acadoVariables.od[(ACADO_NOD * N_iter) + 7 ] = cost_control_weight_factors_(1);     // weight factor on w
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 8 ] = cost_state_terminal_weight_factors_(0);
-            acadoVariables.od[(ACADO_NOD * N_iter) + 9 ] = cost_state_terminal_weight_factors_(1);
-            acadoVariables.od[(ACADO_NOD * N_iter) + 10] = cost_state_terminal_weight_factors_(2);
+            acadoVariables.od[(ACADO_NOD * N_iter) + 8 ] = cost_state_terminal_weight_factors_(0);  // terminal weight factor on x
+            acadoVariables.od[(ACADO_NOD * N_iter) + 9 ] = cost_state_terminal_weight_factors_(1);  // terminal weight factor on y
+            acadoVariables.od[(ACADO_NOD * N_iter) + 10] = cost_state_terminal_weight_factors_(2);  // terminal weight factor on theta
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 11] = r_discs_;                                // radius of car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 12] = x_discs_[1];                             // position of the car discs
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 13] = obstacles.Obstacles[0].pose.position.x;      // x position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 14] = obstacles.Obstacles[0].pose.position.y;      // y position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 15] = obstacles.Obstacles[0].pose.orientation.z;   // heading of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 16] = obstacles.Obstacles[0].major_semiaxis;       // major semiaxis of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 17] = obstacles.Obstacles[0].minor_semiaxis;       // minor semiaxis of obstacle 1
         }
 
         acadoVariables.x0[ 0 ] = current_state_(0);
@@ -207,7 +241,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
         real_t te = acado_toc( &t );
 
-        ROS_INFO_STREAM("Solve time " << te*1e6 );
+        ROS_INFO_STREAM("Solve time " << te*1e6 << " us" );
 
 //        acado_printDifferentialVariables();
 

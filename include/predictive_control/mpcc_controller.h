@@ -201,6 +201,9 @@ private:
     // Clock frequency
     double clock_frequency_;
 
+    double r_discs_;
+    Eigen::VectorXd x_discs_;
+
     // Timmer
     ros::Timer timer_;
 
@@ -286,6 +289,7 @@ private:
      */
     void spinNode();
 
+    void computeEgoDiscs();
     /**
      * @brief runNode: Continue updating this function depend on clock frequency
      * @param event: Used for computation of duration of first and last event

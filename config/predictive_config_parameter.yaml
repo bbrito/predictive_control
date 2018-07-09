@@ -25,7 +25,7 @@ tracking_frame: odom
 
 # Parameters for collision constraints
 obstacles:
-      n_obstacles: 3
+      n_obstacles: 1
       sub_ellipse_topic: ellipse_objects_feed
       n_discs: 2
       ego_l: 0.5

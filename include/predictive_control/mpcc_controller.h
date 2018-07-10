@@ -230,6 +230,8 @@ private:
     Eigen::VectorXd cost_state_terminal_weight_factors_;
     Eigen::VectorXd cost_control_weight_factors_;
 
+    double slack_weight_;
+
 	//MoveIt TRAJECTORY VARIABLE
 	moveit_msgs::RobotTrajectory traj;
 

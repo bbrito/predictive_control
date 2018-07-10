@@ -131,6 +131,7 @@ bool MPCC::initialize()
         // initialize state and control weight factors
         cost_state_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_weight_factors_);
         cost_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_weight_factors_);
+        slack_weight_ = controller_config_->slack_weight_;
 
         cost_state_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_terminal_weight_factors_);
 
@@ -199,9 +200,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.x[(ACADO_NX * N_iter) + 0] = current_state_(0);
             acadoVariables.x[(ACADO_NX * N_iter) + 1] = current_state_(1);
             acadoVariables.x[(ACADO_NX * N_iter) + 2] = current_state_(2);
+            acadoVariables.x[(ACADO_NX * N_iter) + 3] = 0.0000001;          //dummy state
 
             acadoVariables.u[(ACADO_NU * N_iter) + 0] = controlled_velocity_.linear.x;
             acadoVariables.u[(ACADO_NU * N_iter) + 1] = controlled_velocity_.angular.z;
+            acadoVariables.u[(ACADO_NU * N_iter) + 2] = 0.0000001;           //slack variable
 
             // Initialize Online Data variables
             acadoVariables.od[(ACADO_NOD * N_iter) + 0] = goal_pose_(0);                        // Goal x
@@ -218,19 +221,22 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 9 ] = cost_state_terminal_weight_factors_(1);  // terminal weight factor on y
             acadoVariables.od[(ACADO_NOD * N_iter) + 10] = cost_state_terminal_weight_factors_(2);  // terminal weight factor on theta
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 11] = r_discs_;                                // radius of car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 12] = x_discs_[1];                             // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 11] = slack_weight_;                           // weight on the slack variable
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 13] = obstacles.Obstacles[0].pose.position.x;      // x position of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 14] = obstacles.Obstacles[0].pose.position.y;      // y position of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 15] = obstacles.Obstacles[0].pose.orientation.z;   // heading of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 16] = obstacles.Obstacles[0].major_semiaxis;       // major semiaxis of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 17] = obstacles.Obstacles[0].minor_semiaxis;       // minor semiaxis of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 12] = r_discs_;                                // radius of car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 13] = x_discs_[1];                             // position of the car discs
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 14] = obstacles.Obstacles[0].pose.position.x;      // x position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 15] = obstacles.Obstacles[0].pose.position.y;      // y position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 16] = obstacles.Obstacles[0].pose.orientation.z;   // heading of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 17] = obstacles.Obstacles[0].major_semiaxis;       // major semiaxis of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 18] = obstacles.Obstacles[0].minor_semiaxis;       // minor semiaxis of obstacle 1
         }
 
         acadoVariables.x0[ 0 ] = current_state_(0);
         acadoVariables.x0[ 1 ] = current_state_(1);
         acadoVariables.x0[ 2 ] = current_state_(2);
+        acadoVariables.x0[ 3 ] = 0.0000001;             //dummy state
 
         acado_preparationStep();
 
@@ -304,6 +310,8 @@ void MPCC::reconfigureCallback(predictive_control::PredictiveControllerConfig& c
     cost_state_terminal_weight_factors_(0) = config.Px;
     cost_state_terminal_weight_factors_(1) = config.Py;
     cost_state_terminal_weight_factors_(2) = config.Ptheta;
+
+    slack_weight_= config.Ws;
 }
 
 void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){

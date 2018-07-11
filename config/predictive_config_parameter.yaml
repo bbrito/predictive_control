@@ -15,7 +15,7 @@ state_dim: 3
 control_dim: 2
 
 #Inputs and output topics topic
-output_cmd: '/jackal_velocity_controller/cmd_vel'
+output_cmd: '/cmd_vel'    # '/jackal_velocity_controller/cmd_vel'
 robot_state_topic: '/robot_state'
 
 # Kinematic chain parameter
@@ -63,10 +63,10 @@ acado_config:
      weight_factors:
            lsq_state_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [10.0, 10.0, 3.0]
+                [10.0, 40.0, 3.0]
            lsq_control_weight_factors:
                 # same as degree of freedom
                 [2.0, 2.0]
            lsq_state_terminal_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [10.0, 10.0, 3.0]
+                [10.0, 40.0, 3.0]

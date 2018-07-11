@@ -84,7 +84,7 @@ extern "C"
 /** Number of integration steps per shooting interval. */
 #define ACADO_RK_NIS 1
 /** Number of Runge-Kutta stages per integration step. */
-#define ACADO_RK_NSTAGES 4
+#define ACADO_RK_NSTAGES 2
 /** Single versus double precision data type representation. */
 #define ACADO_SINGLE_PRECISION 0
 /** Providing interface for arrival cost. */
@@ -168,22 +168,75 @@ real_t mu[ 200 ];
  */
 typedef struct ACADOworkspace_
 {
-/** Column vector of size: 88 */
-real_t rhs_aux[ 88 ];
+real_t rk_dim8_swap;
+
+/** Column vector of size: 8 */
+real_t rk_dim8_bPerm[ 8 ];
+
+/** Column vector of size: 8 */
+real_t rk_dim8_bPerm_trans[ 8 ];
+
+/** Column vector of size: 54 */
+real_t rhs_aux[ 54 ];
 
 real_t rk_ttt;
 
-/** Row vector of size: 86 */
-real_t rk_xxx[ 86 ];
+/** Row vector of size: 26 */
+real_t rk_xxx[ 26 ];
 
-/** Matrix of size: 4 x 56 (row major format) */
-real_t rk_kkk[ 224 ];
+/** Matrix of size: 4 x 2 (row major format) */
+real_t rk_Ktraj[ 8 ];
 
-/** Row vector of size: 16 */
-real_t rk_sweep1[ 16 ];
+/** Matrix of size: 8 x 8 (row major format) */
+real_t rk_A[ 64 ];
 
-/** Row vector of size: 16 */
-real_t rk_sweep2[ 16 ];
+/** Column vector of size: 8 */
+real_t rk_b[ 8 ];
+
+/** Row vector of size: 8 */
+int rk_dim8_perm[ 8 ];
+
+/** Column vector of size: 4 */
+real_t rk_rhsTemp[ 4 ];
+
+/** Matrix of size: 2 x 28 (row major format) */
+real_t rk_diffsTemp2[ 56 ];
+
+/** Matrix of size: 28 x 2 (row major format) */
+real_t rk_diffKtraj[ 56 ];
+
+/** Matrix of size: 4 x 7 (row major format) */
+real_t rk_diffsPrev2[ 28 ];
+
+/** Matrix of size: 4 x 7 (row major format) */
+real_t rk_diffsNew2[ 28 ];
+
+/** Matrix of size: 8 x 8 (row major format) */
+real_t rk_A_traj[ 64 ];
+
+/** Row vector of size: 8 */
+int rk_aux_traj[ 8 ];
+
+/** Matrix of size: 4 x 7 (row major format) */
+real_t rk_S_traj[ 28 ];
+
+/** Row vector of size: 8 */
+real_t rk_stageV_traj[ 8 ];
+
+/** Row vector of size: 8 */
+real_t rk_b_trans[ 8 ];
+
+/** Row vector of size: 58 */
+real_t rk_seed[ 58 ];
+
+/** Row vector of size: 32 */
+real_t rk_adjoint[ 32 ];
+
+/** Matrix of size: 7 x 7 (row major format) */
+real_t rk_hess1[ 49 ];
+
+/** Matrix of size: 7 x 7 (row major format) */
+real_t rk_hess2[ 49 ];
 
 /** Row vector of size: 86 */
 real_t state[ 86 ];
@@ -312,7 +365,7 @@ real_t y[ 200 ];
 
 /** Performs the integration and sensitivity propagation for one shooting interval.
  *
- *  \param rk_eta Working array to pass the input values and return the results.
+ *  \param rk_eta Working array of size 26 to pass the input values and return the results.
  *  \param resetIntegrator The internal memory of the integrator can be reset.
  *
  *  \return Status code of the integrator.
@@ -324,14 +377,14 @@ int acado_integrate( real_t* const rk_eta, int resetIntegrator );
  *  \param in Input to the exported function.
  *  \param out Output of the exported function.
  */
-void acado_acado_forward(const real_t* in, real_t* out);
+void acado_acado_rhs(const real_t* in, real_t* out);
 
 /** Export of an ACADO symbolic function.
  *
  *  \param in Input to the exported function.
  *  \param out Output of the exported function.
  */
-void acado_acado_backward(const real_t* in, real_t* out);
+void acado_acado_diffs(const real_t* in, real_t* out);
 
 /** Preparation step of the RTI scheme.
  *

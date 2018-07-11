@@ -178,8 +178,6 @@ void MPCC::computeEgoDiscs()
 // update this function 1/clock_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
-//    ROS_INFO("RUNNODE");
-
     int N_iter;
     acado_timer t;
     acado_tic( &t );
@@ -189,43 +187,16 @@ void MPCC::runNode(const ros::TimerEvent &event)
     int traj_n = traj.multi_dof_joint_trajectory.points.size();
 
     if (traj_n > 0) {
-        goal_pose_(0) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.x;
-        goal_pose_(1) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.y;
-        goal_pose_(2) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].rotation.z;
+        acadoVariables.x[0] = current_state_(0);
+        acadoVariables.x[1] = current_state_(1);
+        acadoVariables.x[2] = current_state_(2);
+        acadoVariables.x[3] = 0.0000001;          //dummy state
 
-        acado_initializeSolver( );
+        acadoVariables.u[0] = controlled_velocity_.linear.x;
+        acadoVariables.u[1] = controlled_velocity_.angular.z;
+        acadoVariables.u[2] = 0.0000001;           //slack variable
 
         for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-            //
-            acadoVariables.x[(ACADO_NX * N_iter) + 0] = current_state_(0);
-            acadoVariables.x[(ACADO_NX * N_iter) + 1] = current_state_(1);
-            acadoVariables.x[(ACADO_NX * N_iter) + 2] = current_state_(2);
-            acadoVariables.x[(ACADO_NX * N_iter) + 3] = 0.0000001;          //dummy state
-
-            acadoVariables.u[(ACADO_NU * N_iter) + 0] = controlled_velocity_.linear.x;
-            acadoVariables.u[(ACADO_NU * N_iter) + 1] = controlled_velocity_.angular.z;
-            acadoVariables.u[(ACADO_NU * N_iter) + 2] = 0.0000001;           //slack variable
-
-            // Initialize Online Data variables
-            acadoVariables.od[(ACADO_NOD * N_iter) + 0] = goal_pose_(0);                        // Goal x
-            acadoVariables.od[(ACADO_NOD * N_iter) + 1] = goal_pose_(1);                        // Goal y
-            acadoVariables.od[(ACADO_NOD * N_iter) + 2] = goal_pose_(2);                        // Goal theta
-
-            acadoVariables.od[(ACADO_NOD * N_iter) + 3 ] = cost_state_weight_factors_(0);       // weight factor on x
-            acadoVariables.od[(ACADO_NOD * N_iter) + 4 ] = cost_state_weight_factors_(1);       // weight factor on y
-            acadoVariables.od[(ACADO_NOD * N_iter) + 5 ] = cost_state_weight_factors_(2);       // weight factor on theta
-            acadoVariables.od[(ACADO_NOD * N_iter) + 6 ] = cost_control_weight_factors_(0);     // weight factor on v
-            acadoVariables.od[(ACADO_NOD * N_iter) + 7 ] = cost_control_weight_factors_(1);     // weight factor on w
-
-            acadoVariables.od[(ACADO_NOD * N_iter) + 8 ] = cost_state_terminal_weight_factors_(0);  // terminal weight factor on x
-            acadoVariables.od[(ACADO_NOD * N_iter) + 9 ] = cost_state_terminal_weight_factors_(1);  // terminal weight factor on y
-            acadoVariables.od[(ACADO_NOD * N_iter) + 10] = cost_state_terminal_weight_factors_(2);  // terminal weight factor on theta
-
-            acadoVariables.od[(ACADO_NOD * N_iter) + 11] = slack_weight_;                           // weight on the slack variable
-
-            acadoVariables.od[(ACADO_NOD * N_iter) + 12] = r_discs_;                                // radius of car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 13] = x_discs_[1];                             // position of the car discs
-
             acadoVariables.od[(ACADO_NOD * N_iter) + 14] = obstacles.Obstacles[0].pose.position.x;      // x position of obstacle 1
             acadoVariables.od[(ACADO_NOD * N_iter) + 15] = obstacles.Obstacles[0].pose.position.y;      // y position of obstacle 1
             acadoVariables.od[(ACADO_NOD * N_iter) + 16] = obstacles.Obstacles[0].pose.orientation.z;   // heading of obstacle 1
@@ -293,6 +264,38 @@ void MPCC::moveitGoalCB()
         boost::shared_ptr<const predictive_control::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
         traj = moveit_action_goal_ptr->trajectory;
         tracking_ = false;
+
+        int traj_n = traj.multi_dof_joint_trajectory.points.size();
+        goal_pose_(0) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.x;
+        goal_pose_(1) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.y;
+        goal_pose_(2) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].rotation.z;
+        
+        acado_initializeSolver( );
+
+        int N_iter;
+        for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+
+            // Initialize Online Data variables
+            acadoVariables.od[(ACADO_NOD * N_iter) + 0] = goal_pose_(0);                        // Goal x
+            acadoVariables.od[(ACADO_NOD * N_iter) + 1] = goal_pose_(1);                        // Goal y
+            acadoVariables.od[(ACADO_NOD * N_iter) + 2] = goal_pose_(2);                        // Goal theta
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 3 ] = cost_state_weight_factors_(0);       // weight factor on x
+            acadoVariables.od[(ACADO_NOD * N_iter) + 4 ] = cost_state_weight_factors_(1);       // weight factor on y
+            acadoVariables.od[(ACADO_NOD * N_iter) + 5 ] = cost_state_weight_factors_(2);       // weight factor on theta
+            acadoVariables.od[(ACADO_NOD * N_iter) + 6 ] = cost_control_weight_factors_(0);     // weight factor on v
+            acadoVariables.od[(ACADO_NOD * N_iter) + 7 ] = cost_control_weight_factors_(1);     // weight factor on w
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 8 ] = cost_state_terminal_weight_factors_(0);  // terminal weight factor on x
+            acadoVariables.od[(ACADO_NOD * N_iter) + 9 ] = cost_state_terminal_weight_factors_(1);  // terminal weight factor on y
+            acadoVariables.od[(ACADO_NOD * N_iter) + 10] = cost_state_terminal_weight_factors_(2);  // terminal weight factor on theta
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 11] = slack_weight_;                           // weight on the slack variable
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 12] = r_discs_;                                // radius of car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 13] = x_discs_[1];                             // position of the car discs
+        }
+
         //start trajectory execution
     }
 }

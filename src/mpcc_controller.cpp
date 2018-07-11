@@ -169,7 +169,7 @@ void MPCC::computeEgoDiscs()
 
     // Compute radius of the discs
     r_discs_ = sqrt(pow(x_discs_[n_discs - 1] - length/2,2) + pow(width/2,2));
-
+    r_discs_ = 0.2603;
     ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_ );
 }
 
@@ -219,7 +219,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 10] = cost_state_terminal_weight_factors_(2);  // terminal weight factor on theta
 
             acadoVariables.od[(ACADO_NOD * N_iter) + 11] = r_discs_;                                // radius of car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 12] = x_discs_[1];                             // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 12] = 0.0833;                             // position of the car discs
 
             acadoVariables.od[(ACADO_NOD * N_iter) + 13] = obstacles.Obstacles[0].pose.position.x;      // x position of obstacle 1
             acadoVariables.od[(ACADO_NOD * N_iter) + 14] = obstacles.Obstacles[0].pose.position.y;      // y position of obstacle 1

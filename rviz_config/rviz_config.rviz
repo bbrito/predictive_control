@@ -355,6 +355,14 @@ Visualization Manager:
       Topic: /mpc_horizon
       Unreliable: false
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /visualize_ellipses_array
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -395,10 +403,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.28039777
+      Pitch: 1.27039778
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.44540024
+      Yaw: 1.53540075
     Saved: ~
 Window Geometry:
   Displays:

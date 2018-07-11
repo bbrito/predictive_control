@@ -17,8 +17,8 @@
  */
 
 
-#ifndef QPOASES_HEADER
-#define QPOASES_HEADER
+#ifndef QPOASES3_HEADER
+#define QPOASES3_HEADER
 
 #ifdef PC_DEBUG
 #include <stdio.h>
@@ -33,19 +33,18 @@
 #endif
 
 /*
- * A set of options for qpOASES
+ * A set of options for qpOASES_e-3.1.1
  */
 
 /** Maximum number of optimization variables. */
-#define QPOASES_NVMAX      100
+#define QPOASES_NVMAX      200
 /** Maximum number of constraints. */
 #define QPOASES_NCMAX      100
 /** Maximum number of working set recalculations. */
-#define QPOASES_NWSRMAX    600
+#define QPOASES_NWSRMAX    900
 /** Print level for qpOASES. */
 #define QPOASES_PRINTLEVEL PL_NONE
 /** The value of EPS */
-#define QPOASES_EPS        2.221e-16
 /** Internally used floating point type */
 typedef double real_t;
 
@@ -62,4 +61,4 @@ EXTERNC int acado_getNWSR( void );
 /** Get the error string. */
 const char* acado_getErrorString( int error );
 
-#endif /* QPOASES_HEADER */
+#endif /* QPOASES3_HEADER */

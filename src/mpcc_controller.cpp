@@ -202,6 +202,12 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 16] = obstacles.Obstacles[0].pose.orientation.z;   // heading of obstacle 1
             acadoVariables.od[(ACADO_NOD * N_iter) + 17] = obstacles.Obstacles[0].major_semiaxis;       // major semiaxis of obstacle 1
             acadoVariables.od[(ACADO_NOD * N_iter) + 18] = obstacles.Obstacles[0].minor_semiaxis;       // minor semiaxis of obstacle 1
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 19] = obstacles.Obstacles[1].pose.position.x;      // x position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 20] = obstacles.Obstacles[1].pose.position.y;      // y position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 21] = obstacles.Obstacles[1].pose.orientation.z;   // heading of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 22] = obstacles.Obstacles[1].major_semiaxis;       // major semiaxis of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 23] = obstacles.Obstacles[1].minor_semiaxis;       // minor semiaxis of obstacle 1
         }
 
         acadoVariables.x0[ 0 ] = current_state_(0);
@@ -293,7 +299,7 @@ void MPCC::moveitGoalCB()
             acadoVariables.od[(ACADO_NOD * N_iter) + 11] = slack_weight_;                           // weight on the slack variable
 
             acadoVariables.od[(ACADO_NOD * N_iter) + 12] = r_discs_;                                // radius of car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 13] = x_discs_[1];                             // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 13] = 0; //x_discs_[1];                        // position of the car discs
         }
 
         //start trajectory execution

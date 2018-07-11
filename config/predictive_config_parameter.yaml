@@ -15,7 +15,7 @@ state_dim: 3
 control_dim: 2
 
 #Inputs and output topics topic
-output_cmd: '/cmd_vel'    # '/jackal_velocity_controller/cmd_vel'
+output_cmd: '/jackal_velocity_controller/cmd_vel'
 robot_state_topic: '/robot_state'
 
 # Kinematic chain parameter
@@ -28,9 +28,9 @@ slack_weight: 1000
 
 # Parameters for collision constraints
 obstacles:
-      n_obstacles: 1
+      n_obstacles: 2
       sub_ellipse_topic: ellipse_objects_feed
-      n_discs: 2
+      n_discs: 1
       ego_l: 0.5
       ego_w: 0.4
 

@@ -94,8 +94,8 @@ include_directories(include
     ${ACADO_INCLUDE_DIRS}
     include/${PROJECT_NAME}
     include/${PROJECT_NAME}/generated_mpc
-    qpoases3/include
-    qpoases3/src
+    qpoases/include
+    qpoases/src
     )
 
 FIND_LIBRARY(libacado libacado_toolkit_s.so ${ACADO_DIR}/build/lib)
@@ -111,33 +111,31 @@ target_link_libraries(predictive_configuration
 add_library(predictive_controller
         src/mpcc_controller.cpp
         src/predictive_configuration.cpp
-        qpoases3/src/Bounds.c
-        qpoases3/src/Constraints.c
-        qpoases3/src/Flipper.c
-        qpoases3/src/Indexlist.c
-        qpoases3/src/Matrices.c
-        qpoases3/src/MessageHandling.c
-        qpoases3/src/Options.c
-        qpoases3/src/OQPinterface.c
-        qpoases3/src/QProblem.c
-        qpoases3/src/QProblemB.c
-        qpoases3/src/Utils.c
-        src/generated_mpc/acado_qpoases3_interface.c
-        #src/generated_mpc/acado_qpoases_interface.cpp
+        qpoases/SRC/Bounds.cpp
+        qpoases/SRC/Constraints.cpp
+        qpoases/SRC/CyclingManager.cpp
+        qpoases/SRC/Indexlist.cpp
+        qpoases/SRC/MessageHandling.cpp
+        qpoases/SRC/QProblem.cpp
+        qpoases/SRC/QProblemB.cpp
+        qpoases/SRC/SubjectTo.cpp
+        qpoases/SRC/Utils.cpp
+        qpoases/SRC/EXTRAS/SolutionAnalysis.cpp
+        src/generated_mpc/acado_qpoases_interface.cpp
         src/generated_mpc/acado_hessian_regularization.c
         src/generated_mpc/acado_integrator.c
         src/generated_mpc/acado_solver.c
         src/generated_mpc/acado_auxiliary_functions.c)
 
 target_include_directories(predictive_controller PUBLIC
-                qpoases3
-                qpoases3/include
-                qpoases3/src)
+        qpoases
+        qpoases/INCLUDE
+        qpoases/SRC)
 
 add_executable(predictive_control_node src/predictive_control_node.cpp)
 target_link_libraries(predictive_control_node
-                    predictive_controller
-                    ${catkin_LIBRARIES})
+        predictive_controller
+        ${catkin_LIBRARIES})
 
 add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

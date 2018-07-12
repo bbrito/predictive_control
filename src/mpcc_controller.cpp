@@ -119,10 +119,10 @@ bool MPCC::initialize()
 		//initialize trajectory variable to plot prediction trajectory
 		pred_traj_.poses.resize(ACADO_N);
 		pred_cmd_.poses.resize(ACADO_N);
+		pred_traj_.header.frame_id = "odom";
 		for(int i=0;i < ACADO_N; i++)
 		{
 			pred_traj_.poses[i].header.frame_id = "odom";
-			pred_traj_.header.frame_id = "odom";
 		}
 
 		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
@@ -290,7 +290,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 			j++;    //        acado_printDifferentialVariables();
         }
         publishPredictedTrajectory();
-
+		publishPredictedOutput();
 		real_t te = acado_toc(&t);
 
 		ROS_INFO_STREAM("Solve time " << te * 1e6 << " us");
@@ -433,8 +433,8 @@ void MPCC::publishPredictedOutput(void)
 {
 	for (int i = 0; i < ACADO_N; i++)
 	{
-		pred_cmd_.poses[i].pose.position.x = acadoVariables.u[i * ACADO_NX + 0]; //x
-		pred_cmd_.poses[i].pose.position.y = acadoVariables.u[i * ACADO_NX + 1]; //y
+		pred_cmd_.poses[i].pose.position.x = acadoVariables.u[i + 0]; //x
+		pred_cmd_.poses[i].pose.position.y = acadoVariables.u[i + 1]; //y
 	}
 
 	pred_cmd_pub_.publish(pred_cmd_);

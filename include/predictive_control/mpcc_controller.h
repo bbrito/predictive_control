@@ -73,6 +73,11 @@
 #include <dynamic_reconfigure/server.h>
 #include <predictive_control/PredictiveControllerConfig.h>
 
+//TF
+#include <tf2_ros/transform_broadcaster.h>
+
+//Joint states
+#include <sensor_msgs/JointState.h>
 /*
 struct hold_pose
 {
@@ -181,13 +186,23 @@ public:
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
 
+	ros::Publisher joint_state_pub_;
+
     // publishes error vector between tracking and target frame
     ros::Publisher cartesian_error_pub_;
 
     // publish trajectory
-    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_;
+    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_, pred_cmd_pub_;
 	//Predicted trajectory
 	nav_msgs::Path pred_traj_;
+	nav_msgs::Path pred_cmd_;
+
+	//Controller options
+	bool enable_output_;
+	int n_iterations_;
+	bool simulation_mode_;
+
+	tf2_ros::TransformBroadcaster state_pub_;
 
 private:
 
@@ -313,39 +328,11 @@ private:
 	 */
 	void publishPredictedTrajectory(void);
 
+	void publishPredictedOutput(void);
+
     void publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj);
-    /**
-     * @brief checkVelocityLimitViolation: check velocity limit violate, limit containts lower and upper limit
-     * @param joint_velocity: current velocity joint values
-     * @param velocity_tolerance: tolerance in joint values after reaching minimum and maximum values
-     * @return true with velocity limit violation else false
-     */
-//    bool checkVelocityLimitViolation(const std_msgs::Float64MultiArray& joint_velocity,
-//                                                                     const double& velocity_tolerance = 0.0
-//                                                                    );
-//    void enforceVelocityInLimits(const std_msgs::Float64MultiArray& joint_velocity,
-//									     std_msgs::Float64MultiArray& enforced_joint_velocity);
-//
-//    /**
-//     * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
-//     * @param vector: std vectors want to tranfrom
-//     * @return Eigen vectors transform from std vectos
-//     */
-    /*template<typename T>
-    static inline Eigen::VectorXd transformStdVectorToEigenVector(const std::vector<T>& vector)
-    {
-        // resize eigen vector
-        Eigen::VectorXd eigen_vector = Eigen::VectorXd(vector.size());
 
-        // convert std to eigen vector
-        for (uint32_t i = 0; i < vector.size(); ++i)
-        {
-            std::cout << vector.at(i) << std::endl;
-            eigen_vector(i) = vector.at(i);
-     }
-
-        return eigen_vector;
-    }*/
+	void broadcastTF();
 
     /**
      * @brief clearDataMember: clear vectors means free allocated memory

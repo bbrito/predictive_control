@@ -110,20 +110,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     }
   }
 
-  // read and set lsq control terminal weight factors
-  if (!nh_config.getParam ("acado_config/weight_factors/lsq_control_terminal_weight_factors", lsq_control_terminal_weight_factors_) )
-  {
-    ROS_WARN(" Parameter 'acado_config/weight_factors/lsq_control_terminal_weight_factors' not set on %s node " ,
-             ros::this_node::getName().c_str());
-    // same as degree of freedom
-    lsq_control_terminal_weight_factors_.resize(degree_of_freedom_, 1.0);
-
-    for (int i = 0u; i < lsq_control_terminal_weight_factors_.size(); ++i)
-    {
-      ROS_INFO("Default lsq control terminal weight factors value %f", lsq_control_terminal_weight_factors_.at(i));
-    }
-  }
-  // Set optimal control problem dimensions
+  ROS_WARN("Set optimal control problem dimensions");
   if (!nh.getParam("state_dim", state_dim_) )
   {
     ROS_WARN(" Parameter 'state_dim' not set on %s node " , ros::this_node::getName().c_str());

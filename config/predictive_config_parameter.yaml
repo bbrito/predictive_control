@@ -23,11 +23,15 @@ robot_base_link: base_link
 target_frame: odom
 tracking_frame: odom
 
+# Weight on the slack variable for collision collision
+slack_weight: 10000
+repulsive_weight: 5
+
 # Parameters for collision constraints
 obstacles:
-      n_obstacles: 1
+      n_obstacles: 2
       sub_ellipse_topic: ellipse_objects_feed
-      n_discs: 2
+      n_discs: 1
       ego_l: 0.5
       ego_w: 0.4
 
@@ -60,10 +64,10 @@ acado_config:
      weight_factors:
            lsq_state_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [10.0, 10.0, 3.0] #[2.0, 2.0, 2.0]
+                [10.0, 40.0, 3.0]
            lsq_control_weight_factors:
                 # same as degree of freedom
-                [2.0, 2.0] # [2.0, 2.0]
+                [2.0, 2.0]
            lsq_state_terminal_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [10.0, 10.0, 3.0]
+                [10.0, 40.0, 3.0]

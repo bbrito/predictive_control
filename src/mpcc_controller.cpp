@@ -96,10 +96,12 @@ bool MPCC::initialize()
 
         //Publishers
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
-		pred_cmd_pub_ = nh.advertise<visualization_msgs::MarkerArray>("predicted_cmd",1);
+		pred_cmd_pub_ = nh.advertise<nav_msgs::Path>("predicted_cmd",1);
         tr_path_pub_ = nh.advertise<nav_msgs::Path>("horizon",1);
+		cost_pub_ = nh.advertise<std_msgs::Float64>("cost",1);
         controlled_velocity_pub_ = nh.advertise<geometry_msgs::Twist>(controller_config_->output_cmd,1);
 		joint_state_pub_ = nh.advertise<sensor_msgs::JointState>("/joint_states",1);
+		robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
         ros::Duration(1).sleep();
 
         timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
@@ -149,6 +151,19 @@ bool MPCC::initialize()
 		n_iterations_ = 1;
 		simulation_mode_ = true;
 
+		//Plot variables
+		ellips1.type = visualization_msgs::Marker::CYLINDER;
+		ellips1.id = 60;
+		ellips1.color.b = 1.0;
+		ellips1.color.a = 0.5;
+		ellips1.header.frame_id = controller_config_->tracking_frame_;
+		ellips1.ns = "trajectory";
+		ellips1.action = visualization_msgs::Marker::ADD;
+		ellips1.lifetime = ros::Duration(0.1);
+		ellips1.scale.x = r_discs_*2.0;
+		ellips1.scale.y = r_discs_*2.0;
+		ellips1.scale.z = 0.05;
+
         ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
         return true;
     }
@@ -176,7 +191,7 @@ void MPCC::computeEgoDiscs()
 
     // Compute radius of the discs
     r_discs_ = sqrt(pow(x_discs_[n_discs - 1] - length/2,2) + pow(width/2,2));
-    r_discs_ = 0.001;
+    r_discs_ = 0.25;
     ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_ );
 }
 
@@ -186,15 +201,29 @@ void MPCC::broadcastTF(){
 	transformStamped.header.stamp = ros::Time::now();
 	transformStamped.header.frame_id = "odom";
 	transformStamped.child_frame_id = controller_config_->robot_base_link_;
-	transformStamped.transform.translation.x = pred_traj_.poses[1].pose.position.x;
-	transformStamped.transform.translation.y = pred_traj_.poses[1].pose.position.y;
-	transformStamped.transform.translation.z = 0.0;
+	if(!enable_output_){
+		transformStamped.transform.translation.x = current_state_(0);
+		transformStamped.transform.translation.y = current_state_(1);
+		transformStamped.transform.translation.z = 0.0;
+		tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
+		transformStamped.transform.rotation.x = 0;
+		transformStamped.transform.rotation.y = 0;
+		transformStamped.transform.rotation.z = 0;
+		transformStamped.transform.rotation.w = 1;
+	}
 
-	tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
-	transformStamped.transform.rotation.x = q.x();
-	transformStamped.transform.rotation.y = q.y();
-	transformStamped.transform.rotation.z = q.z();
-	transformStamped.transform.rotation.w = q.w();
+	else{
+		transformStamped.transform.translation.x = pred_traj_.poses[1].pose.position.x;
+		transformStamped.transform.translation.y = pred_traj_.poses[1].pose.position.y;
+		transformStamped.transform.translation.z = 0.0;
+
+		tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
+		transformStamped.transform.rotation.x = q.x();
+		transformStamped.transform.rotation.y = q.y();
+		transformStamped.transform.rotation.z = q.z();
+		transformStamped.transform.rotation.w = q.w();
+	}
+
 	state_pub_.sendTransform(transformStamped);
 
 	sensor_msgs::JointState empty;
@@ -216,7 +245,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
     obstacle_feed::Obstacles obstacles = obstacles_;
 
     int traj_n = traj.multi_dof_joint_trajectory.points.size();
-	broadcastTF();
+	if(!simulation_mode_)
+		broadcastTF();
     if (traj_n > 0) {
         goal_pose_(0) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.x;
         goal_pose_(1) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.y;
@@ -290,9 +320,12 @@ void MPCC::runNode(const ros::TimerEvent &event)
 			j++;    //        acado_printDifferentialVariables();
         }
         publishPredictedTrajectory();
+		publishPredictedCollisionSpace();
 		publishPredictedOutput();
-		real_t te = acado_toc(&t);
 
+		cost_.data = acado_getObjective();
+		publishCost();
+		real_t te = acado_toc(&t);
 		ROS_INFO_STREAM("Solve time " << te * 1e6 << " us");
 
     // publish zero controlled velocity
@@ -411,7 +444,8 @@ void MPCC::publishZeroJointVelocity()
 //        ROS_INFO("Publishing ZERO joint velocity!!");
     }
     geometry_msgs::Twist pub_msg;
-	broadcastTF();
+	if(!simulation_mode_)
+		broadcastTF();
     controlled_velocity_ = pub_msg;
 
     controlled_velocity_pub_.publish(controlled_velocity_);
@@ -438,4 +472,29 @@ void MPCC::publishPredictedOutput(void)
 	}
 
 	pred_cmd_pub_.publish(pred_cmd_);
+}
+
+void MPCC::publishPredictedCollisionSpace(void)
+{
+	visualization_msgs::MarkerArray collision_space;
+
+
+	for (int i = 0; i < ACADO_N; i++)
+	{
+		ellips1.id = 60+i;
+		ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0];
+		ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1];
+		ellips1.pose.orientation.x = 0;
+		ellips1.pose.orientation.y = 0;
+		ellips1.pose.orientation.z = 0;
+		ellips1.pose.orientation.w = 1;
+		collision_space.markers.push_back(ellips1);
+	}
+
+	robot_collision_space_pub_.publish(collision_space);
+}
+
+void MPCC::publishCost(void){
+
+	cost_pub_.publish(cost_);
 }

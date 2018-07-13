@@ -33,6 +33,12 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     return false;
   }
 
+	if (!nh.getParam ("tracking_frame", target_frame_) )
+	{
+		ROS_WARN(" Parameter 'tracking_frame' not set on %s node " , ros::this_node::getName().c_str());
+		return false;
+	}
+
   if (!nh.getParam ("self_collision/collision_check_obstacles", collision_check_obstacles_) )
   {
     ROS_WARN(" Parameter 'self_collision/collision_check_obstacles' not set on %s node please look at ../self_collision.yaml" , ros::this_node::getName().c_str());

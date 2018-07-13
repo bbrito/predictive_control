@@ -8,6 +8,8 @@ Panels:
         - /Status1
         - /Axes1
         - /Axes2
+        - /MarkerArray2
+        - /MarkerArray2/Status1
       Splitter Ratio: 0.5
     Tree Height: 124
   - Class: rviz/Selection
@@ -361,6 +363,14 @@ Visualization Manager:
       Name: MarkerArray
       Namespaces:
         "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /robot_collision_space
+      Name: MarkerArray
+      Namespaces:
+        trajectory: true
       Queue Size: 100
       Value: true
   Enabled: true

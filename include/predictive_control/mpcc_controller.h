@@ -192,7 +192,7 @@ public:
     ros::Publisher cartesian_error_pub_;
 
     // publish trajectory
-    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_, pred_cmd_pub_;
+    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_;
 	//Predicted trajectory
 	nav_msgs::Path pred_traj_;
 	nav_msgs::Path pred_cmd_;
@@ -203,7 +203,7 @@ public:
 	bool simulation_mode_;
 
 	tf2_ros::TransformBroadcaster state_pub_;
-
+	std_msgs::Float64 cost_;
 private:
 
     ros::NodeHandle nh;
@@ -253,6 +253,8 @@ private:
 	int idx, idy;
 	double epsilon_;
 
+	visualization_msgs::Marker ellips1;
+
     // Kinematic variables
 	//To be done kinematic model car
 
@@ -271,17 +273,6 @@ private:
 
     // predictive configuration
     boost::shared_ptr<predictive_configuration> controller_config_;
-
-    // kinematic calculation
-    //TO BE REPLACED BY CAR CLASS CALCULATION
-    //boost::shared_ptr<Kinematic_calculations> kinematic_solver_;
-
-    // self collision detector/avoidance
-    //boost::shared_ptr<CollisionRobot> collision_detect_;
-    //boost::shared_ptr<CollisionAvoidance> collision_avoidance_;
-
-    // static collision detector/avoidance
-    //boost::shared_ptr<StaticCollision> static_collision_avoidance_;
 
     // move to goal position action
     boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::moveAction> > move_action_server_;
@@ -329,6 +320,10 @@ private:
 	void publishPredictedTrajectory(void);
 
 	void publishPredictedOutput(void);
+
+	void publishPredictedCollisionSpace(void);
+
+	void publishCost(void);
 
     void publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj);
 

@@ -367,6 +367,7 @@ out[20] = a[22];
 void acado_evaluatePathConstraints(const real_t* in, real_t* out)
 {
 const real_t* xd = in;
+const real_t* u = in + 6;
 const real_t* od = in + 9;
 /* Vector of auxiliary variables; number of elements: 134. */
 real_t* a = acadoWorkspace.conAuxVar;
@@ -468,10 +469,10 @@ a[92] = (real_t)(0.0000000000000000e+00);
 a[93] = (real_t)(0.0000000000000000e+00);
 a[94] = (real_t)(0.0000000000000000e+00);
 a[95] = (real_t)(0.0000000000000000e+00);
-a[96] = (real_t)(0.0000000000000000e+00);
+a[96] = (real_t)(-1.0000000000000000e+00);
 a[97] = (real_t)(0.0000000000000000e+00);
 a[98] = (real_t)(0.0000000000000000e+00);
-a[99] = (real_t)(0.0000000000000000e+00);
+a[99] = (real_t)(-1.0000000000000000e+00);
 a[100] = (a[46]*(real_t)(2.0000000000000000e+00));
 a[101] = (a[72]*(real_t)(2.0000000000000000e+00));
 a[102] = ((a[100]*xd[4])+(a[101]*xd[5]));
@@ -508,8 +509,8 @@ a[132] = (real_t)(0.0000000000000000e+00);
 a[133] = (real_t)(0.0000000000000000e+00);
 
 /* Compute outputs: */
-out[0] = a[20];
-out[1] = a[41];
+out[0] = (a[20]-u[2]);
+out[1] = (a[41]-u[2]);
 out[2] = a[53];
 out[3] = a[65];
 out[4] = a[66];

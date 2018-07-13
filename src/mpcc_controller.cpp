@@ -38,23 +38,43 @@ bool MPCC::initialize()
         bool kinematic_success = true;
 
 
-
         if (controller_config_success == false)
          {
             ROS_ERROR("MPCC: FAILED TO INITILIZED!!");
             std::cout << "States: \n"
                                 << " pd_config: " << std::boolalpha << controller_config_success << "\n"
-                                //<< " kinematic solver: " << std::boolalpha << kinematic_success << "\n"
-                                //<< " collision avoidance: " << std::boolalpha << collision_avoidance_success << "\n"
-                                //<< " collision detect: " << std::boolalpha << collision_success << "\n"
-                                //<< " static collision avoidance: " << std::boolalpha << static_collision_success << "\n"
                                 << " pd config init success: " << std::boolalpha << controller_config_->initialize_success_
                                 << std::endl;
             return false;
         }
 
-        // initialize data member of class
+        // Initialize data members of class
         clock_frequency_ = controller_config_->clock_frequency_;
+        obstacle_bound_ = 0.3;
+
+        // Initialize ros publishers and subscribers
+        robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
+        obstacle_feed_sub_ = nh.subscribe(controller_config_->sub_ellipse_topic_, 1, &MPCC::ObstacleCallBack, this);
+        traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
+        tr_path_pub_ = nh.advertise<nav_msgs::Path>("horizon",1);
+        controlled_velocity_pub_ = nh.advertise<geometry_msgs::Twist>(controller_config_->output_cmd,1);
+        pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
+
+        // Initialize state and control weight factors
+        cost_state_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_weight_factors_);
+        cost_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_weight_factors_);
+        slack_weight_ = controller_config_->slack_weight_;
+        cost_state_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_terminal_weight_factors_);
+
+        // Initialize trajectory variables
+        next_point_dist = 0;
+        goal_dist = 0;
+        prev_point_dist = 0;
+        idx = 1;
+        idy = 1;
+        epsilon_ = 0.01;
+ 		moveit_msgs::RobotTrajectory j;
+		traj = j;
 
         //DEBUG
         activate_debug_output_ = controller_config_->activate_debug_output_;
@@ -77,45 +97,29 @@ bool MPCC::initialize()
 		prev_pose_.setZero();
         goal_pose_.setZero();
 
-        // ros interfaces
+        // ROS interfaces
         static const std::string MOVE_ACTION_NAME = "move_action";
         move_action_server_.reset(new actionlib::SimpleActionServer<predictive_control::moveAction>(nh, MOVE_ACTION_NAME, false));
         move_action_server_->registerGoalCallback(boost::bind(&MPCC::moveGoalCB, this));
         move_action_server_->registerPreemptCallback(boost::bind(&MPCC::movePreemptCB, this));
         move_action_server_->start();
 
-	    // MOVEIT interfaces
+        ros::Duration(1).sleep();
+        timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
+        timer_.start();
+
+        // Setting up dynamic_reconfigure server
+        ros::NodeHandle nh_predictive("predictive_controller");
+        reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
+        reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
+
+        // MOVEIT interfaces
 	    static const std::string MOVEIT_ACTION_NAME = "fake_base_controller";
 	    moveit_action_server_.reset(new actionlib::SimpleActionServer<predictive_control::trajAction>(nh, MOVEIT_ACTION_NAME, false));
 	    moveit_action_server_->registerGoalCallback(boost::bind(&MPCC::moveitGoalCB, this));
 	    moveit_action_server_->start();
 
-        robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
-
-        obstacle_feed_sub_ = nh.subscribe(controller_config_->sub_ellipse_topic_, 1, &MPCC::ObstacleCallBack, this);
-
-        //To be implemented
-        traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
-        tr_path_pub_ = nh.advertise<nav_msgs::Path>("horizon",1);
-        controlled_velocity_pub_ = nh.advertise<geometry_msgs::Twist>(controller_config_->output_cmd,1);
-
-        ros::Duration(1).sleep();
-
-        timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
-        timer_.start();
-
-		//Initialize trajectory variables
-		next_point_dist = 0;
-		goal_dist = 0;
-		prev_point_dist = 0;
-		idx = 1;
-		idy = 1;
-		epsilon_ = 0.01;
-
-		moveit_msgs::RobotTrajectory j;
-		traj = j;
-
-		//initialize trajectory variable to plot prediction trajectory
+		// Initialize trajectory variable to plot prediction trajectory
 		pred_traj_.poses.resize(ACADO_N);
 		for(int i=0;i < ACADO_N; i++)
 		{
@@ -123,27 +127,24 @@ bool MPCC::initialize()
 			pred_traj_.header.frame_id = "odom";
 		}
 
-		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
+		// Initialize obstacles
+        obstacle_feed::Obstacles obstacles;
+		obstacles.Obstacles.resize(controller_config_->n_obstacles_);
+		for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
+        {
+            obstacles.Obstacles[obst_it].pose.position.x = 1000;
+            obstacles.Obstacles[obst_it].pose.position.y = 1000;
+            obstacles.Obstacles[obst_it].pose.orientation.z = 0;
+            obstacles.Obstacles[obst_it].major_semiaxis = 0.001;
+            obstacles.Obstacles[obst_it].minor_semiaxis = 0.001;
+		}
+		obstacles_ = obstacles;
+
+		// Compute ego-vehicle disc representation
+        computeEgoDiscs();
 
 		// Initialize pregenerated mpc solver
 		acado_initializeSolver( );
-
-        // initialize state and control weight factors
-        cost_state_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_weight_factors_);
-        cost_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_weight_factors_);
-        slack_weight_ = controller_config_->slack_weight_;
-
-        obstacle_bound_ = 0.3;
-
-        cost_state_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_terminal_weight_factors_);
-
-        ros::NodeHandle nh_predictive("predictive_controller");
-
-        /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
-        reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
-        reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
-
-        computeEgoDiscs();
 
         ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
         return true;

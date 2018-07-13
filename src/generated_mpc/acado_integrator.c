@@ -436,6 +436,7 @@ acadoWorkspace.rk_xxx[27] = rk_eta[87];
 acadoWorkspace.rk_xxx[28] = rk_eta[88];
 acadoWorkspace.rk_xxx[29] = rk_eta[89];
 acadoWorkspace.rk_xxx[30] = rk_eta[90];
+acadoWorkspace.rk_xxx[31] = rk_eta[91];
 acadoWorkspace.rk_seed[36] = rk_eta[64];
 acadoWorkspace.rk_seed[37] = rk_eta[65];
 acadoWorkspace.rk_seed[38] = rk_eta[66];
@@ -463,6 +464,7 @@ acadoWorkspace.rk_seed[59] = rk_eta[87];
 acadoWorkspace.rk_seed[60] = rk_eta[88];
 acadoWorkspace.rk_seed[61] = rk_eta[89];
 acadoWorkspace.rk_seed[62] = rk_eta[90];
+acadoWorkspace.rk_seed[63] = rk_eta[91];
 
 /* ------------ Forward loop ------------: */
 for (run = 0; run < 1; ++run)

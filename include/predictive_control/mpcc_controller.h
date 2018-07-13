@@ -231,7 +231,7 @@ private:
     Eigen::VectorXd cost_control_weight_factors_;
 
     double slack_weight_;
-    double obstacle_bound_;
+    double repulsive_weight_;
 
 	//MoveIt TRAJECTORY VARIABLE
 	moveit_msgs::RobotTrajectory traj;

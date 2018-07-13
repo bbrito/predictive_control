@@ -82,6 +82,7 @@ public:
   std::vector<double> lsq_control_terminal_weight_factors_;
 
   double slack_weight_;
+  double repulsive_weight_;
 
   // predictive control
   double clock_frequency_;  //hz clock Frequency

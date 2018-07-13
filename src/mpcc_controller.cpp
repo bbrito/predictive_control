@@ -50,7 +50,6 @@ bool MPCC::initialize()
 
         // Initialize data members of class
         clock_frequency_ = controller_config_->clock_frequency_;
-        obstacle_bound_ = 0.3;
 
         // Initialize ros publishers and subscribers
         robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
@@ -64,6 +63,7 @@ bool MPCC::initialize()
         cost_state_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_weight_factors_);
         cost_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_control_weight_factors_);
         slack_weight_ = controller_config_->slack_weight_;
+        repulsive_weight_ = controller_config_->repulsive_weight_;
         cost_state_terminal_weight_factors_ = transformStdVectorToEigenVector(controller_config_->lsq_state_terminal_weight_factors_);
 
         // Initialize trajectory variables
@@ -202,8 +202,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
         for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
 
             acadoVariables.od[(ACADO_NOD * N_iter) + 11] = slack_weight_;        // weight on the slack variable
-
-            acadoVariables.od[(ACADO_NOD * N_iter) + 14] = obstacle_bound_;      // x position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 12] = repulsive_weight_;    // weight on the repulsive cost
 
             acadoVariables.od[(ACADO_NOD * N_iter) + 15] = obstacles.Obstacles[0].pose.position.x;      // x position of obstacle 1
             acadoVariables.od[(ACADO_NOD * N_iter) + 16] = obstacles.Obstacles[0].pose.position.y;      // y position of obstacle 1
@@ -304,10 +303,11 @@ void MPCC::moveitGoalCB()
             acadoVariables.od[(ACADO_NOD * N_iter) + 9 ] = cost_state_terminal_weight_factors_(1);  // terminal weight factor on y
             acadoVariables.od[(ACADO_NOD * N_iter) + 10] = cost_state_terminal_weight_factors_(2);  // terminal weight factor on theta
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 11] = slack_weight_;                           // weight on the slack variable
+            acadoVariables.od[(ACADO_NOD * N_iter) + 11] = slack_weight_;                       // weight on the slack variable.
+            acadoVariables.od[(ACADO_NOD * N_iter) + 12] = repulsive_weight_;                           // weight on the repulsive cost
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 12] = r_discs_;                                // radius of car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 13] = 0; //x_discs_[1];                        // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 13] = r_discs_;                                // radius of car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 14] = 0; //x_discs_[1];                        // position of the car discs
         }
 
         //start trajectory execution
@@ -329,6 +329,7 @@ void MPCC::reconfigureCallback(predictive_control::PredictiveControllerConfig& c
     cost_state_terminal_weight_factors_(2) = config.Ptheta;
 
     slack_weight_= config.Ws;
+    repulsive_weight_ = config.WR;
 }
 
 void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){
@@ -371,23 +372,24 @@ void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 {
 //    ROS_INFO("OBSTACLECB");
 
-    obstacle_feed::Obstacles total_obstacles;
-    total_obstacles.Obstacles.resize(controller_config_->n_obstacles_);
-    total_obstacles = obstacles;
-
-    if (obstacles.Obstacles.size() < controller_config_->n_obstacles_)
-    {
-        for (int obst_it = obstacles.Obstacles.size(); obst_it < controller_config_->n_obstacles_; obst_it++)
-        {
-            total_obstacles.Obstacles[obst_it].pose.position.x = 1000;
-            total_obstacles.Obstacles[obst_it].pose.position.y = 1000;
-            total_obstacles.Obstacles[obst_it].pose.orientation.z = 0;
-            total_obstacles.Obstacles[obst_it].major_semiaxis = 0.001;
-            total_obstacles.Obstacles[obst_it].minor_semiaxis = 0.001;
-        }
-    }
-
-    obstacles_ = total_obstacles;
+//    obstacle_feed::Obstacles total_obstacles;
+//    total_obstacles.Obstacles.resize(controller_config_->n_obstacles_);
+//    total_obstacles = obstacles;
+//
+//    if (obstacles.Obstacles.size() < controller_config_->n_obstacles_)
+//    {
+//        for (int obst_it = obstacles.Obstacles.size(); obst_it < controller_config_->n_obstacles_; obst_it++)
+//        {
+//            total_obstacles.Obstacles[obst_it].pose.position.x = 1000;
+//            total_obstacles.Obstacles[obst_it].pose.position.y = 1000;
+//            total_obstacles.Obstacles[obst_it].pose.orientation.z = 0;
+//            total_obstacles.Obstacles[obst_it].major_semiaxis = 0.001;
+//            total_obstacles.Obstacles[obst_it].minor_semiaxis = 0.001;
+//        }
+//    }
+//
+//    obstacles_ = total_obstacles;
+    obstacles_ = obstacles;
 }
 
 void MPCC::publishZeroJointVelocity()

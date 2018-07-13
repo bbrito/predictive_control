@@ -182,6 +182,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   nh.param("clock_frequency", clock_frequency_, double(50.0)); // 50 hz
   nh.param("sampling_time", sampling_time_, double(0.025)); // 0.025 second
   nh.param("slack_weight", slack_weight_, double(1000.0)); // 1000 by default
+  nh.param("repulsive_weight", repulsive_weight_, double(1.0)); // 1000 by default
   nh.param("activate_debug_output", activate_debug_output_, bool(false));  // debug
   nh.param("activate_controller_node_output", activate_controller_node_output_, bool(false));  // debug
   nh.param("plotting_result", plotting_result_, bool(false));  // plotting

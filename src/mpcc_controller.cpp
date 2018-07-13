@@ -371,8 +371,23 @@ void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 {
 //    ROS_INFO("OBSTACLECB");
 
-    obstacles_ = obstacles;
+    obstacle_feed::Obstacles total_obstacles;
+    total_obstacles.Obstacles.resize(controller_config_->n_obstacles_);
+    total_obstacles = obstacles;
 
+    if (obstacles.Obstacles.size() < controller_config_->n_obstacles_)
+    {
+        for (int obst_it = obstacles.Obstacles.size(); obst_it < controller_config_->n_obstacles_; obst_it++)
+        {
+            total_obstacles.Obstacles[obst_it].pose.position.x = 1000;
+            total_obstacles.Obstacles[obst_it].pose.position.y = 1000;
+            total_obstacles.Obstacles[obst_it].pose.orientation.z = 0;
+            total_obstacles.Obstacles[obst_it].major_semiaxis = 0.001;
+            total_obstacles.Obstacles[obst_it].minor_semiaxis = 0.001;
+        }
+    }
+
+    obstacles_ = total_obstacles;
 }
 
 void MPCC::publishZeroJointVelocity()

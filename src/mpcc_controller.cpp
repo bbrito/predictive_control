@@ -139,7 +139,7 @@ bool MPCC::initialize()
         reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
 
-	// Initialize obstacles
+	    // Initialize obstacles
         obstacle_feed::Obstacles obstacles;
 		obstacles.Obstacles.resize(controller_config_->n_obstacles_);
 		for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
@@ -152,25 +152,25 @@ bool MPCC::initialize()
 	}
 	obstacles_ = obstacles;
 
-        computeEgoDiscs();
+    computeEgoDiscs();
 
-		//Controller options
-		enable_output_ = true;
-		n_iterations_ = 1;
-		simulation_mode_ = true;
+    //Controller options
+    enable_output_ = true;
+    n_iterations_ = 1;
+    simulation_mode_ = true;
 
-		//Plot variables
-		ellips1.type = visualization_msgs::Marker::CYLINDER;
-		ellips1.id = 60;
-		ellips1.color.b = 1.0;
-		ellips1.color.a = 0.5;
-		ellips1.header.frame_id = controller_config_->tracking_frame_;
-		ellips1.ns = "trajectory";
-		ellips1.action = visualization_msgs::Marker::ADD;
-		ellips1.lifetime = ros::Duration(0.1);
-		ellips1.scale.x = r_discs_*2.0;
-		ellips1.scale.y = r_discs_*2.0;
-		ellips1.scale.z = 0.05;
+    //Plot variables
+    ellips1.type = visualization_msgs::Marker::CYLINDER;
+    ellips1.id = 60;
+    ellips1.color.b = 1.0;
+    ellips1.color.a = 0.5;
+    ellips1.header.frame_id = controller_config_->tracking_frame_;
+    ellips1.ns = "trajectory";
+    ellips1.action = visualization_msgs::Marker::ADD;
+    ellips1.lifetime = ros::Duration(0.1);
+    ellips1.scale.x = r_discs_*2.0;
+    ellips1.scale.y = r_discs_*2.0;
+    ellips1.scale.z = 0.05;
 
 	// Initialize pregenerated mpc solver
 	acado_initializeSolver( );
@@ -252,6 +252,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
     obstacle_feed::Obstacles obstacles = obstacles_;
 
+    acado_initializeSolver( );
+
     int traj_n = traj.multi_dof_joint_trajectory.points.size();
 	if(!simulation_mode_)
 		broadcastTF();
@@ -266,6 +268,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
         acadoVariables.u[2] = 0.0000001;           //slack variable
 
         for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+
+//            acadoVariables.x[(ACADO_NOD * N_iter) + 0] = current_state_(0);
+//            acadoVariables.x[(ACADO_NOD * N_iter) + 1] = current_state_(1);
+//            acadoVariables.x[(ACADO_NOD * N_iter) + 2] = current_state_(2);
+//            acadoVariables.x[(ACADO_NOD * N_iter) + 3] = 0.0000001;          //dummy state
 
             //acadoVariables.u[(ACADO_NU * N_iter) + 0] = controlled_velocity_.linear.x;
             //acadoVariables.u[(ACADO_NU * N_iter) + 1] = controlled_velocity_.angular.z;
@@ -464,24 +471,24 @@ void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 {
 //    ROS_INFO("OBSTACLECB");
 
-    obstacle_feed::Obstacles total_obstacles;
-    total_obstacles.Obstacles.resize(controller_config_->n_obstacles_);
-    total_obstacles = obstacles;
-
-    if (obstacles.Obstacles.size() < controller_config_->n_obstacles_)
-    {
-        for (int obst_it = obstacles.Obstacles.size(); obst_it < controller_config_->n_obstacles_; obst_it++)
-        {
-            total_obstacles.Obstacles[obst_it].pose.position.x = 1000;
-            total_obstacles.Obstacles[obst_it].pose.position.y = 1000;
-            total_obstacles.Obstacles[obst_it].pose.orientation.z = 0;
-            total_obstacles.Obstacles[obst_it].major_semiaxis = 0.001;
-            total_obstacles.Obstacles[obst_it].minor_semiaxis = 0.001;
-        }
-    }
-
-    obstacles_ = total_obstacles;
-//    obstacles_ = obstacles;
+//    obstacle_feed::Obstacles total_obstacles;
+//    total_obstacles.Obstacles.resize(controller_config_->n_obstacles_);
+//    total_obstacles = obstacles;
+//
+//    if (obstacles.Obstacles.size() < controller_config_->n_obstacles_)
+//    {
+//        for (int obst_it = obstacles.Obstacles.size(); obst_it < controller_config_->n_obstacles_; obst_it++)
+//        {
+//            total_obstacles.Obstacles[obst_it].pose.position.x = 1000;
+//            total_obstacles.Obstacles[obst_it].pose.position.y = 1000;
+//            total_obstacles.Obstacles[obst_it].pose.orientation.z = 0;
+//            total_obstacles.Obstacles[obst_it].major_semiaxis = 0.001;
+//            total_obstacles.Obstacles[obst_it].minor_semiaxis = 0.001;
+//        }
+//    }
+//
+//    obstacles_ = total_obstacles;
+    obstacles_ = obstacles;
 }
 
 void MPCC::publishZeroJointVelocity()

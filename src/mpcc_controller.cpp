@@ -268,15 +268,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
         acadoVariables.u[2] = 0.0000001;           //slack variable
 
         for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-
-//            acadoVariables.x[(ACADO_NOD * N_iter) + 0] = current_state_(0);
-//            acadoVariables.x[(ACADO_NOD * N_iter) + 1] = current_state_(1);
-//            acadoVariables.x[(ACADO_NOD * N_iter) + 2] = current_state_(2);
-//            acadoVariables.x[(ACADO_NOD * N_iter) + 3] = 0.0000001;          //dummy state
-
-            //acadoVariables.u[(ACADO_NU * N_iter) + 0] = controlled_velocity_.linear.x;
-            //acadoVariables.u[(ACADO_NU * N_iter) + 1] = controlled_velocity_.angular.z;
-
             // Initialize Online Data variables
             acadoVariables.od[(ACADO_NOD * N_iter) + 11] = slack_weight_;        // weight on the slack variable
             acadoVariables.od[(ACADO_NOD * N_iter) + 12] = repulsive_weight_;    // weight on the repulsive cost
@@ -292,7 +283,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 22] = obstacles.Obstacles[1].pose.orientation.z;   // heading of obstacle 2
             acadoVariables.od[(ACADO_NOD * N_iter) + 23] = obstacles.Obstacles[1].major_semiaxis;       // major semiaxis of obstacle 2
             acadoVariables.od[(ACADO_NOD * N_iter) + 24] = obstacles.Obstacles[1].minor_semiaxis;       // minor semiaxis of obstacle 2
-  
         }
 
         acadoVariables.x0[ 0 ] = current_state_(0);

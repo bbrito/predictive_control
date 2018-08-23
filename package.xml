@@ -37,6 +37,7 @@
   <depend>shape_msgs</depend>	
   <depend>moveit_msgs</depend>
   <depend>obstacle_feed</depend>
+  <depend>prius_msgs</depend>
 
 
   <exec_depend>robot_state_publisher</exec_depend>

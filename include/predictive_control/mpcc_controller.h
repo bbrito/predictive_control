@@ -78,6 +78,8 @@
 
 //Joint states
 #include <sensor_msgs/JointState.h>
+
+#include <prius_msgs/Control.h>
 /*
 struct hold_pose
 {
@@ -192,7 +194,7 @@ public:
     ros::Publisher cartesian_error_pub_;
 
     // publish trajectory
-    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_;
+    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_,brake_pub_;
 	//Predicted trajectory
 	nav_msgs::Path pred_traj_;
 	nav_msgs::Path pred_cmd_;
@@ -204,6 +206,7 @@ public:
 
 	tf2_ros::TransformBroadcaster state_pub_;
 	std_msgs::Float64 cost_;
+	std_msgs::Float64 brake_;
 private:
 
     ros::NodeHandle nh;
@@ -272,7 +275,7 @@ private:
     Eigen::VectorXd last_velocity_;
 
     // Type of variable used to publish joint velocity
-    geometry_msgs::Twist controlled_velocity_;
+	prius_msgs::Control controlled_velocity_;
 
     // predictive configuration
     boost::shared_ptr<predictive_configuration> controller_config_;

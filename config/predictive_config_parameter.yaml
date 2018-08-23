@@ -11,17 +11,17 @@ plotting_result: true
 clock_frequency: 20
 
 #Optimal control problem dimensions
-state_dim: 3
+state_dim: 4
 control_dim: 2
 
 #Inputs and output topics topic
-output_cmd: '/jackal_velocity_controller/cmd_vel'
+output_cmd: '/prius'
 robot_state_topic: '/robot_state'
 
 # Kinematic chain parameter
-robot_base_link: base_link
-target_frame: odom
-tracking_frame: odom
+robot_base_link: chassis
+target_frame: map
+tracking_frame: map
 
 # Weight on the slack variable for collision collision
 slack_weight: 10000
@@ -46,8 +46,8 @@ self_collision:
 
 constraints:
      velocity_constraints:
-           min: [-1, -1]
-           max: [1,1]
+           min: [0]
+           max: [13.8]
      #orientation_constraints:
 
 acado_config:
@@ -64,10 +64,10 @@ acado_config:
      weight_factors:
            lsq_state_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [10.0, 40.0, 3.0]
+                [10.0, 40.0, 3.0,3.0]
            lsq_control_weight_factors:
                 # same as degree of freedom
                 [2.0, 2.0]
            lsq_state_terminal_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [10.0, 40.0, 3.0]
+                [10.0, 40.0, 3.0,3.0]

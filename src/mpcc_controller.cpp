@@ -463,10 +463,14 @@ void MPCC::reconfigureCallback(predictive_control::PredictiveControllerConfig& c
     if(reset_world_) {
         reset_simulation_client_.call(reset_msg_);
         reset_ekf_client_.call(reset_pose_msg_);
-        //reset path variables
-        traj_i = 0;
-        acadoVariables.x[ACADO_NX+3]=0;
-        acadoVariables.x[3]=0;
+        acadoVariables.x[0] = 0;
+        acadoVariables.x[1] = 0;
+        acadoVariables.x[2] = 0;
+        acadoVariables.x[3] = 0;             //it should be obtained by the wheel speed
+        acadoVariables.x0[0] = 0;
+        acadoVariables.x0[1] = 0;
+        acadoVariables.x0[2] = 0;
+        acadoVariables.x0[3] = 0;
     }
 }
 

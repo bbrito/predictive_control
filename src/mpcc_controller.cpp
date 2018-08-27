@@ -126,6 +126,10 @@ bool MPCC::initialize()
 
 		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
+        //service clients
+        reset_simulation_client_ = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_world");
+        reset_ekf_client_ = nh.serviceClient<robot_localization::SetPose>("/set_pose");
+
 		// Initialize pregenerated mpc solver
 		acado_initializeSolver( );
 
@@ -453,6 +457,17 @@ void MPCC::reconfigureCallback(predictive_control::PredictiveControllerConfig& c
 	enable_output_ = config.enable_output;
 	n_iterations_ = config.n_iterations;
 	simulation_mode_ = config.simulation_mode;
+
+    reset_world_ = config.reset_world;
+
+    if(reset_world_) {
+        reset_simulation_client_.call(reset_msg_);
+        reset_ekf_client_.call(reset_pose_msg_);
+        //reset path variables
+        traj_i = 0;
+        acadoVariables.x[ACADO_NX+3]=0;
+        acadoVariables.x[3]=0;
+    }
 }
 
 void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){

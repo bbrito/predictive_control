@@ -81,12 +81,10 @@
 #include <sensor_msgs/JointState.h>
 
 #include <prius_msgs/Control.h>
-/*
-struct hold_pose
-{
-    bool hold_success_;
-    Eigen::VectorXd pose_hold_vector_;
-};*/
+
+//reset msgs
+#include <std_srvs/Empty.h>
+#include <robot_localization/SetPose.h>
 
 class MPCC
 {
@@ -179,6 +177,9 @@ public:
         return eigen_vector;
     }
 
+    //Service clients
+    ros::ServiceClient reset_simulation_client_, reset_ekf_client_;
+
     /** public data member */
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
@@ -202,12 +203,17 @@ public:
 
 	//Controller options
 	bool enable_output_;
+    	bool reset_world_;
 	int n_iterations_;
 	bool simulation_mode_;
 
 	tf2_ros::TransformBroadcaster state_pub_;
 	std_msgs::Float64 cost_;
 	std_msgs::Float64 brake_;
+
+    	//reset simulation msg
+    	std_srvs::Empty reset_msg_;
+    	robot_localization::SetPose reset_pose_msg_;
 private:
 
     ros::NodeHandle nh;
@@ -296,6 +302,7 @@ private:
 	void moveitGoalCB();
     void actionSuccess();
     void actionAbort();
+    void resetSimulatio();
 
     /**
      * @brief spinNode: spin node means ROS is still running

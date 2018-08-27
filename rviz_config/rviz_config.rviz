@@ -1,6 +1,6 @@
 Panels:
   - Class: rviz/Displays
-    Help Height: 78
+    Help Height: 0
     Name: Displays
     Property Tree Widget:
       Expanded:
@@ -9,9 +9,8 @@ Panels:
         - /Axes1
         - /Axes2
         - /MarkerArray2
-        - /MarkerArray2/Status1
       Splitter Ratio: 0.5
-    Tree Height: 124
+    Tree Height: 355
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -66,53 +65,48 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        chassis_link:
+        center_laser_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        chassis:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        fenders_link:
+        fl_axle:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        fr_axle:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_left_wheel:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        front_left_wheel_link:
+        front_right_wheel:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        front_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_right_wheel_link:
+        rear_left_wheel:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        mid_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        navsat_link:
+        rear_right_wheel:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        rear_left_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rear_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        rear_right_wheel_link:
+        steering_wheel:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -154,8 +148,8 @@ Visualization Manager:
           Y: 0
           Z: 0
         Size:
-          X: 15
-          Y: 15
+          X: 100
+          Y: 100
           Z: 15
       Name: MotionPlanning
       Planned Path:
@@ -171,53 +165,48 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          chassis_link:
+          center_laser_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          chassis:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          fenders_link:
+          fl_axle:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          fr_axle:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_left_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          front_left_wheel_link:
+          front_right_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          front_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          front_right_wheel_link:
+          rear_left_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          imu_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          mid_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          navsat_link:
+          rear_right_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          rear_left_wheel_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          rear_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          rear_right_wheel_link:
+          steering_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -271,53 +260,48 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          chassis_link:
+          center_laser_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          chassis:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          fenders_link:
+          fl_axle:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          fr_axle:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_left_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          front_left_wheel_link:
+          front_right_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          front_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          front_right_wheel_link:
+          rear_left_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          imu_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          mid_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          navsat_link:
+          rear_right_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          rear_left_wheel_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          rear_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          rear_right_wheel_link:
+          steering_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -362,7 +346,7 @@ Visualization Manager:
       Marker Topic: /visualize_ellipses_array
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -370,14 +354,14 @@ Visualization Manager:
       Marker Topic: /robot_collision_space
       Name: MarkerArray
       Namespaces:
-        trajectory: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: odom
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -398,7 +382,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.65891981
+      Distance: 26.0968838
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -413,10 +397,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.27039778
+      Pitch: -0.515205503
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.53540075
+      Yaw: 1.3603946
     Saved: ~
 Window Geometry:
   Displays:
@@ -426,9 +410,9 @@ Window Geometry:
   Hide Right Dock: true
   MotionPlanning:
     collapsed: false
-  MotionPlanning - Trajectory Slider:
+  MotionPlanning - Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000002b800000390fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000280000010b000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000120020002d00200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000001390000027f0000018300fffffffb0000002e004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d00200053006c00690064006500720000000000ffffffff0000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004a00ffffff000000010000010f00000347fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000004300000347000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f00000044fc0100000002fb0000000800540069006d006501000000000000073f0000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000004810000039000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000002b800000390fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000001a4000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000120020002d00200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000001d2000001e6000001cc00fffffffb0000002e004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d00200053006c00690064006500720000000000ffffffff0000004a00fffffffb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000000000010000010f00000347fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000004300000347000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f00000044fc0100000002fb0000000800540069006d006501000000000000073f0000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000004810000039000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -438,5 +422,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1855
-  X: 65
+  X: 1985
   Y: 24

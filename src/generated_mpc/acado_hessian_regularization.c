@@ -26,7 +26,7 @@
 
 #include <math.h>
 
-#define DIM 7
+#define DIM 6
 
 static real_t hypot2(real_t x, real_t y) {
   return sqrt(x*x+y*y);

@@ -2,6 +2,7 @@
 //This file containts read parameter from server, callback, call class objects, control all class, objects of all class
 
 #include <predictive_control/mpcc_controller.h>
+#include <nav_msgs/Odometry.h>
 
 ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
@@ -63,8 +64,8 @@ bool MPCC::initialize()
         }
 
         // resize position and velocity velocity vectors
-        current_state_ = Eigen::Vector3d(0,0,0);
-        last_state_ = Eigen::Vector3d(0,0,0);
+        current_state_ = Eigen::Vector4d(0,0,0,0);
+        last_state_ = Eigen::Vector4d(0,0,0,0);
 		prev_pose_ = Eigen::Vector3d(0,0,0);
 		goal_pose_ = Eigen::Vector3d(0,0,0);
 		next_pose_= Eigen::Vector3d(0,0,0);
@@ -215,7 +216,7 @@ void MPCC::broadcastTF(){
 
 	geometry_msgs::TransformStamped transformStamped;
 	transformStamped.header.stamp = ros::Time::now();
-	transformStamped.header.frame_id = "odom";
+	transformStamped.header.frame_id = controller_config_->target_frame_;
 	transformStamped.child_frame_id = controller_config_->robot_base_link_;
 	if(!enable_output_){
 		transformStamped.transform.translation.x = current_state_(0);
@@ -243,8 +244,8 @@ void MPCC::broadcastTF(){
 	state_pub_.sendTransform(transformStamped);
 
 	sensor_msgs::JointState empty;
-	empty.position.resize(4);
-	empty.name ={"front_left_wheel", "front_right_wheel", "rear_left_wheel", "rear_right_wheel"};
+	empty.position.resize(7);
+	empty.name ={"rear_right_wheel_joint", "rear_left_wheel_joint", "front_right_wheel_joint", "front_left_wheel_joint","front_right_steer_joint","front_left_steer_joint","steering_joint"};
 	empty.header.stamp = ros::Time::now();
 	joint_state_pub_.publish(empty);
 }
@@ -265,27 +266,38 @@ void MPCC::runNode(const ros::TimerEvent &event)
 		broadcastTF();
     if (traj_n > 0) {
 
-		if(idx==1){
-			acadoVariables.x[0] = current_state_(0);
-			acadoVariables.x[1] = current_state_(1);
-			acadoVariables.x[2] = current_state_(2);
-			acadoVariables.x[3] = 0;             //it should be obtained by the wheel speed
-			acadoVariables.x0[ 0 ] = current_state_(0);
-			acadoVariables.x0[ 1 ] = current_state_(1);
-			acadoVariables.x0[ 2 ] = current_state_(2);
-			acadoVariables.x0[ 3 ] = 0;             //it should be obtained by the wheel speed
-			idx++;
-		}
-		else{
-			acadoVariables.x[0] = current_state_(0);
-			acadoVariables.x[1] = current_state_(1);
-			acadoVariables.x[2] = current_state_(2);
-			acadoVariables.x[3] = acadoVariables.x[ACADO_NX + 3];             //it should be obtained by the wheel speed
-			acadoVariables.x0[ 0 ] = current_state_(0);
-			acadoVariables.x0[ 1 ] = current_state_(1);
-			acadoVariables.x0[ 2 ] = current_state_(2);
-			acadoVariables.x0[ 3 ] = acadoVariables.x[ACADO_NX + 3];             //it should be obtained by the wheel speed
-		}
+        if(simulation_mode_) {
+            acadoVariables.x[0] = current_state_(0);
+            acadoVariables.x[1] = current_state_(1);
+            acadoVariables.x[2] = current_state_(2);
+            acadoVariables.x[3] = current_state_(3);             //it should be obtained by the wheel speed
+            acadoVariables.x0[0] = current_state_(0);
+            acadoVariables.x0[1] = current_state_(1);
+            acadoVariables.x0[2] = current_state_(2);
+            acadoVariables.x0[3] = current_state_(3);             //it should be obtained by the wheel speed
+        }
+        else{
+            if(enable_output_) {
+                acadoVariables.x[0] = acadoVariables.x[0 + ACADO_NX];
+                acadoVariables.x[1] = acadoVariables.x[1 + ACADO_NX];
+                acadoVariables.x[2] = acadoVariables.x[2 + ACADO_NX];
+                acadoVariables.x[3] = acadoVariables.x[3 + ACADO_NX];             //it should be obtained by the wheel speed
+                acadoVariables.x0[0] = acadoVariables.x[0 + ACADO_NX];
+                acadoVariables.x0[1] = acadoVariables.x[1 + ACADO_NX];
+                acadoVariables.x0[2] = acadoVariables.x[2 + ACADO_NX];
+                acadoVariables.x0[3] = acadoVariables.x[3 + ACADO_NX];             //it should be obtained by the wheel speed
+            }
+            else{
+                acadoVariables.x[0] = acadoVariables.x[0];
+                acadoVariables.x[1] = acadoVariables.x[1];
+                acadoVariables.x[2] = acadoVariables.x[2];
+                acadoVariables.x[3] = acadoVariables.x[3];             //it should be obtained by the wheel speed
+                acadoVariables.x0[0] = acadoVariables.x[0];
+                acadoVariables.x0[1] = acadoVariables.x[1];
+                acadoVariables.x0[2] = acadoVariables.x[2];
+                acadoVariables.x0[3] = acadoVariables.x[3];             //it should be obtained by the wheel speed
+            }
+        }
         acadoVariables.u[0] = controlled_velocity_.throttle;
         acadoVariables.u[1] = controlled_velocity_.steer;
 
@@ -324,11 +336,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
         }
 
 		if(acadoVariables.u[0]<0) {
-			controlled_velocity_.brake = acadoVariables.u[0] / (-4.0); // maximum brake
+			controlled_velocity_.brake = -1.0*acadoVariables.u[0];// / (-4.0); // maximum brake
 			controlled_velocity_.throttle = 0.0;
 		}
 		else {
-			controlled_velocity_.throttle = acadoVariables.u[0] / 1.5; // maximum valocity 1.5m/s
+			controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum valocity 1.5m/s
 			controlled_velocity_.brake = 0.0;
 		}
 
@@ -341,7 +353,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 		cost_.data = controlled_velocity_.throttle;
 		publishCost();
 		real_t te = acado_toc(&t);
-		ROS_INFO_STREAM("Solve time " << te * 1e6 << " us");
+		//ROS_INFO_STREAM("Solve time " << te * 1e6 << " us");
 
     // publish zero controlled velocity
         if (!tracking_)
@@ -390,7 +402,7 @@ void MPCC::moveitGoalCB()
         goal_pose_(0) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.x;
         goal_pose_(1) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.y;
         goal_pose_(2) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].rotation.z;
-        
+
         acado_initializeSolver( );
 
         int N_iter;
@@ -467,16 +479,30 @@ void MPCC::actionAbort()
 }
 
 // read current position and velocity of robot joints
-void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
+void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 {
     if (activate_debug_output_)
     {
 //        ROS_INFO("MPCC::StateCallBack");
     }
+    //Intermidiate variables
+    double ysqr, t3, t4;
+
     last_state_ = current_state_;
-    current_state_(0) =    msg->position.x;
-    current_state_(1) =    msg->position.y;
-    current_state_(2) =    msg->orientation.z;
+    current_state_(0) =    msg->pose.pose.position.x;
+    current_state_(1) =    msg->pose.pose.position.y;
+    //ROS_INFO_STREAM("current_state_(0): " << current_state_(0));
+    // Convert quaternion to angle
+
+    ysqr = msg->pose.pose.orientation.y * msg->pose.pose.orientation.y;
+    t3 = +2.0 * (msg->pose.pose.orientation.w * msg->pose.pose.orientation.z
+                 + msg->pose.pose.orientation.x * msg->pose.pose.orientation.y);
+    t4 = +1.0 - 2.0 * (ysqr + msg->pose.pose.orientation.z * msg->pose.pose.orientation.z);
+
+    current_state_(2) = std::atan2(t3, t4);
+
+    current_state_(3) =    msg->twist.twist.linear.x;
+
 }
 
 void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)

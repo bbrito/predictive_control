@@ -62,6 +62,7 @@
 #include <predictive_control/trajActionGoal.h>
 
 #include <nav_msgs/Path.h>
+#include <nav_msgs/Odometry.h>
 
 // Add obstacle messages
 #include <obstacle_feed/Obstacle.h>
@@ -126,7 +127,7 @@ public:
      * @brief StateCallBack: Get current state of the robot
      * @param msg: Read data from mobile_robot_state_publisher_node default type:
      */
-    void StateCallBack(const geometry_msgs::Pose::ConstPtr& msg);
+    void StateCallBack(const nav_msgs::Odometry::ConstPtr& msg);
 
     void ObstacleCallBack(const obstacle_feed::Obstacles& obstacles);
 
@@ -237,7 +238,7 @@ private:
     visualization_msgs::MarkerArray traj_marker_array_;
 
     // Distance between traget frame and tracking frame relative to base link
-    Eigen::Vector3d current_state_, last_state_;
+    Eigen::Vector4d current_state_, last_state_;
     Eigen::Vector3d goal_pose_, prev_pose_,next_pose_;
     Eigen::VectorXd tf_traget_from_tracking_vector_;
 

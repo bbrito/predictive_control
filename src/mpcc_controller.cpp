@@ -682,7 +682,7 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 
     current_state_(2) = std::atan2(t3, t4);
 
-    current_state_(3) =    msg->twist.twist.linear.x;
+    current_state_(3) =    sqrt(pow(msg->twist.twist.linear.x,2)+pow(msg->twist.twist.linear.y,2));
 
 }
 

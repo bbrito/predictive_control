@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(predictive_control)
 
 add_compile_options(-std=c++11)
+add_compile_options(-fstack-protector)
 find_package(catkin REQUIRED COMPONENTS
     actionlib
     actionlib_msgs
@@ -60,6 +61,12 @@ add_action_files(
 #  FILES
 #)
 
+# Generate messages in the 'msg' folder
+add_message_files(
+  FILES
+  control_feedback.msg
+)
+
 ## Generate services in the 'srv' folder
 add_service_files(
   DIRECTORY
@@ -70,14 +77,16 @@ add_service_files(
 # Generate added messages and services with any dependencies listed here
 generate_messages(
     DEPENDENCIES
-            actionlib_msgs
-            geometry_msgs
-            sensor_msgs
-            std_msgs
-            shape_msgs
-            visualization_msgs
-            moveit_msgs
-            obstacle_feed
+    actionlib_msgs
+    geometry_msgs
+    sensor_msgs
+    std_msgs
+    nav_msgs
+    shape_msgs
+    visualization_msgs
+    moveit_msgs
+    obstacle_feed
+    predictive_control
 )
 
 catkin_package(
@@ -112,6 +121,7 @@ target_link_libraries(predictive_configuration
 add_library(predictive_controller
         src/mpcc_controller.cpp
         src/predictive_configuration.cpp
+        src/Clothoid.cpp
         qpoases/SRC/Bounds.cpp
         qpoases/SRC/Constraints.cpp
         qpoases/SRC/CyclingManager.cpp
@@ -136,7 +146,8 @@ target_include_directories(predictive_controller PUBLIC
 add_executable(predictive_control_node src/predictive_control_node.cpp)
 target_link_libraries(predictive_control_node
         predictive_controller
-        ${catkin_LIBRARIES})
+        ${catkin_LIBRARIES}
+        tkspline_lib)
 
 add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

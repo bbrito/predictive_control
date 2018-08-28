@@ -61,15 +61,15 @@ public:
 
 	/** inputs and output topic definition **/
   std::string output_cmd;
-	std::string robot_state_topic_;
+  std::string robot_state_topic_;
 
-  // kinematic of robotics manipulator
-  unsigned int degree_of_freedom_;
+  // road parameters
+  int n_points_spline_;
 
   // use for finding kinematic chain and urdf model
   std::string robot_base_link_;
   std::string tracking_frame_;  //  End effector of arm
-  std::string  target_frame_;
+  std::string target_frame_;
   std::string sub_ellipse_topic_;
 
   // limiting parameter, use to enforce joint to be in limit
@@ -77,24 +77,18 @@ public:
   std::vector<double> vel_min_limit_;
   std::vector<double> vel_max_limit_;
 
-  std::vector<double> lsq_state_weight_factors_;
-  std::vector<double> lsq_state_terminal_weight_factors_;
-  std::vector<double> lsq_control_weight_factors_;
-  std::vector<double> lsq_control_terminal_weight_factors_;
+  std::vector<double> contour_weight_factors_;
+  std::vector<double> control_weight_factors_;
 
   double slack_weight_;
   double repulsive_weight_;
+  double reference_velocity_;
 
   // predictive control
   double clock_frequency_;  //hz clock Frequency
   double sampling_time_;
   int state_dim_;
   int control_dim_;
-
-  // self collision distance
-  double ball_radius_;
-  double minimum_collision_distance_;
-  double collision_weight_factor_;
 
   // acado configuration
   bool use_lagrange_term_;
@@ -111,7 +105,6 @@ public:
   int n_discs_;
   double ego_l_;
   double ego_w_;
-
 
 private:
 

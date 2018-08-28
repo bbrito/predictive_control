@@ -48,6 +48,7 @@
 
 // predicitve includes
 #include <predictive_control/predictive_configuration.h>
+#include <predictive_control/control_feedback.h>
 
 // actions, srvs, msgs
 #include <actionlib/server/simple_action_server.h>
@@ -79,12 +80,17 @@
 
 //Joint states
 #include <sensor_msgs/JointState.h>
+//splines
+#include <tkspline/spline.h>
+#include <predictive_control/Clothoid.h>
 
 #include <prius_msgs/Control.h>
 
 //reset msgs
 #include <std_srvs/Empty.h>
 #include <robot_localization/SetPose.h>
+
+typedef double real_t;
 
 class MPCC
 {
@@ -196,20 +202,38 @@ public:
     ros::Publisher cartesian_error_pub_;
 
     // publish trajectory
-    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_,brake_pub_;
+    ros::Publisher traj_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_,brake_pub_, spline_traj_pub_, contour_error_pub_, feedback_pub_;
 	//Predicted trajectory
 	nav_msgs::Path pred_traj_;
 	nav_msgs::Path pred_cmd_;
-
+	nav_msgs::Path spline_traj_,spline_traj2_;
+	int traj_i;
 	//Controller options
 	bool enable_output_;
     	bool reset_world_;
 	int n_iterations_;
 	bool simulation_mode_;
+    real_t te_;
 
-	tf2_ros::TransformBroadcaster state_pub_;
+	tf2_ros::TransformBroadcaster state_pub_,path_pose_pub_;
 	std_msgs::Float64 cost_;
 	std_msgs::Float64 brake_;
+    double contour_error_;
+    double lag_error_;
+
+	//Spline trajectory generation
+	tk::spline ref_path_x, ref_path_y;
+
+	//MPCC Implementation
+	std::vector<double> X_road, Y_road, Theta_road;
+    double dist_spline_pts_;
+    double total_length_;
+    std::vector<double> ss,xx,yy;
+    int n_clothoid,n_pts;
+    //Search window parameters
+    double window_size_;
+    int n_search_points_;
+    bool goal_reached_;
 
     	//reset simulation msg
     	std_srvs::Empty reset_msg_;
@@ -251,12 +275,12 @@ private:
     Eigen::VectorXd min_velocity_limit_;
     Eigen::VectorXd max_velocity_limit_;
 
-    Eigen::VectorXd cost_state_weight_factors_;
-    Eigen::VectorXd cost_state_terminal_weight_factors_;
+    Eigen::VectorXd cost_contour_weight_factors_;
     Eigen::VectorXd cost_control_weight_factors_;
 
     double slack_weight_;
     double repulsive_weight_;
+    double reference_velocity_;
 
 	//MoveIt TRAJECTORY VARIABLE
 	moveit_msgs::RobotTrajectory traj;
@@ -333,15 +357,29 @@ private:
 	 */
 	void publishPredictedTrajectory(void);
 
+	void publishSplineTrajectory(void);
+
 	void publishPredictedOutput(void);
 
 	void publishPredictedCollisionSpace(void);
 
 	void publishCost(void);
 
+    void publishContourError(void);
+
     void publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj);
 
 	void broadcastTF();
+
+	void broadcastPathPose();
+
+	double spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries);
+
+    inline void Ref_path(std::vector<double> x, std::vector<double> y, std::vector<double> theta);
+
+    void ConstructRefPath();
+
+    void publishFeedback(int& it, double& time);
 
     /**
      * @brief clearDataMember: clear vectors means free allocated memory

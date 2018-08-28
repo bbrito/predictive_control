@@ -39,12 +39,6 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
 		return false;
 	}
 
-  if (!nh.getParam ("self_collision/collision_check_obstacles", collision_check_obstacles_) )
-  {
-    ROS_WARN(" Parameter 'self_collision/collision_check_obstacles' not set on %s node please look at ../self_collision.yaml" , ros::this_node::getName().c_str());
-    collision_check_obstacles_.resize(degree_of_freedom_, std::string(""));
-  }
-
   // read and set constraints
   // read and set velocity constrints
   if (!nh_config.getParam ("constraints/velocity_constraints/min", vel_min_limit_) )
@@ -74,45 +68,17 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
 
   // read and set other constraints...
 
-  // read and set lsq state weight factors
-  if (!nh_config.getParam ("acado_config/weight_factors/lsq_state_weight_factors", lsq_state_weight_factors_) )
+  // read and set contour weight factors
+  if (!nh_config.getParam ("acado_config/weight_factors/contour_weight_factors", contour_weight_factors_) )
   {
-    ROS_WARN(" Parameter 'acado_config/weight_factors/lsq_state_weight_factors' not set on %s node " ,
+    ROS_WARN(" Parameter 'acado_config/weight_factors/contour_weight_factors' not set on %s node " ,
              ros::this_node::getName().c_str());
     // 3 position and 3 orientation(rpy) tolerance
-    lsq_state_weight_factors_.resize(6, 5.0);
+    contour_weight_factors_.resize(6, 5.0);
 
-    for (int i = 0u; i < lsq_state_weight_factors_.size(); ++i)
+    for (int i = 0u; i < contour_weight_factors_.size(); ++i)
     {
-      ROS_INFO("Defualt lsq state weight factors value %f", lsq_state_weight_factors_.at(i));
-    }
-  }
-
-  // read and set lsq control weight factors
-  if (!nh_config.getParam ("acado_config/weight_factors/lsq_control_weight_factors", lsq_control_weight_factors_) )
-  {
-    ROS_WARN(" Parameter 'acado_config/weight_factors/lsq_control_weight_factors' not set on %s node " ,
-             ros::this_node::getName().c_str());
-    // same as degree of freedom
-    lsq_control_weight_factors_.resize(degree_of_freedom_, 1.0);
-
-    for (int i = 0u; i < lsq_control_weight_factors_.size(); ++i)
-    {
-      ROS_INFO("Default lsq control weight factors value %f", lsq_control_weight_factors_.at(i));
-    }
-  }
-
-  // read and set lsq state terminal weight factors
-  if (!nh_config.getParam ("acado_config/weight_factors/lsq_state_terminal_weight_factors", lsq_state_terminal_weight_factors_) )
-  {
-    ROS_WARN(" Parameter 'acado_config/weight_factors/lsq_state_terminal_weight_factors' not set on %s node " ,
-             ros::this_node::getName().c_str());
-    // 3 position and 3 orientation(rpy) tolerance
-    lsq_state_terminal_weight_factors_.resize(6, 5.0);
-
-    for (int i = 0u; i < lsq_state_terminal_weight_factors_.size(); ++i)
-    {
-      ROS_INFO("Default lsq state terminal weight factors value %f", lsq_state_terminal_weight_factors_.at(i));
+      ROS_INFO("Defualt contour weight factors value %f", contour_weight_factors_.at(i));
     }
   }
 
@@ -128,6 +94,22 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     ROS_WARN(" Parameter 'control_dim' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
+
+  // read and set control weight factors
+  if (!nh_config.getParam ("acado_config/weight_factors/control_weight_factors", control_weight_factors_) )
+  {
+    ROS_WARN(" Parameter 'acado_config/weight_factors/control_weight_factors' not set on %s node " ,
+             ros::this_node::getName().c_str());
+    // same as degree of freedom
+    control_weight_factors_.resize(control_dim_, 1.0);
+
+    for (int i = 0u; i < control_weight_factors_.size(); ++i)
+    {
+      ROS_INFO("Default control weight factors value %f", control_weight_factors_.at(i));
+    }
+  }
+
+
 
   if (!nh.getParam ("output_cmd", output_cmd) )
   {
@@ -171,19 +153,21 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     return false;
   }
 
+  if (!nh.getParam ("n_points_spline", n_points_spline_) )
+  {
+    ROS_WARN(" Parameter 'n_points_spline_' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
   // check requested parameter availble on parameter server if not than set default value
   nh.param("clock_frequency", clock_frequency_, double(50.0)); // 50 hz
   nh.param("sampling_time", sampling_time_, double(0.025)); // 0.025 second
   nh.param("slack_weight", slack_weight_, double(1000.0)); // 1000 by default
-  nh.param("repulsive_weight", repulsive_weight_, double(1.0)); // 1000 by default
+  nh.param("reference_velocity", reference_velocity_, double(0.5)); // 0.5 by default
+  nh.param("repulsive_weight", repulsive_weight_, double(0.1)); // 0.1 by default
   nh.param("activate_debug_output", activate_debug_output_, bool(false));  // debug
   nh.param("activate_controller_node_output", activate_controller_node_output_, bool(false));  // debug
   nh.param("plotting_result", plotting_result_, bool(false));  // plotting
-
-  // self collision avoidance parameter
-  nh_config.param("self_collision/ball_radius", ball_radius_, double(0.12));  // self collision avoidance ball radius
-  nh_config.param("self_collision/minimum_collision_distance", minimum_collision_distance_, double(0.12));  // self collision avoidance minimum distance
-  nh_config.param("self_collision/collision_weight_factor", collision_weight_factor_, double(0.01));  // self collision avoidance weight factor
 
   // acado configuration parameter
   nh_config.param("acado_config/max_num_iteration", max_num_iteration_, int(10));  // maximum number of iteration for slution of OCP
@@ -192,9 +176,6 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   nh_config.param("acado_config/integrator_tolerance", integrator_tolerance_, double(1e-8));  // intergrator tolerance
   nh_config.param("acado_config/start_time_horizon", start_time_horizon_, double(0.0));  // start time horizon for defining OCP problem
   nh_config.param("acado_config/end_time_horizon", end_time_horizon_, double(1.0));  // end time horizon for defining OCP problem
-  nh_config.param("acado_config/use_LSQ_term", use_LSQ_term_, bool(false));  // use for minimize objective function
-  nh_config.param("acado_config/use_lagrange_term", use_lagrange_term_, bool(false));  // use for minimize objective function
-  nh_config.param("acado_config/use_mayer_term", use_mayer_term_, bool(true));  // use for minimize objective function
 
   initialize_success_ = true;
 
@@ -218,34 +199,23 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
 
   plotting_result_ = new_config.plotting_result_;
 
-  degree_of_freedom_ = new_config.degree_of_freedom_;
   robot_base_link_ = new_config.robot_base_link_;
 
   tracking_frame_ = new_config.tracking_frame_;
 
-
-  collision_check_obstacles_ = new_config.collision_check_obstacles_;
-
   vel_min_limit_ = new_config.vel_min_limit_;
   vel_max_limit_ = new_config.vel_max_limit_;
 
-  lsq_state_weight_factors_ = new_config.lsq_state_weight_factors_;
-  lsq_control_weight_factors_ = new_config.lsq_control_weight_factors_;
-
-  lsq_state_terminal_weight_factors_ = new_config.lsq_state_terminal_weight_factors_;
-  lsq_control_terminal_weight_factors_ = new_config.lsq_control_terminal_weight_factors_;
+  contour_weight_factors_ = new_config.contour_weight_factors_;
+  control_weight_factors_ = new_config.control_weight_factors_;
 
   slack_weight_ = new_config.slack_weight_;
+  repulsive_weight_ = new_config.repulsive_weight_;
+  reference_velocity_ = new_config.reference_velocity_;
 
   clock_frequency_ = new_config.clock_frequency_;
   sampling_time_ = new_config.sampling_time_;
-  ball_radius_ = new_config.ball_radius_;
-  minimum_collision_distance_ = new_config.minimum_collision_distance_;
-  collision_weight_factor_ = new_config.collision_weight_factor_;
 
-  use_lagrange_term_ = new_config.use_lagrange_term_;
-  use_LSQ_term_ = new_config.use_LSQ_term_;
-  use_mayer_term_ = new_config.use_mayer_term_;
   max_num_iteration_ = new_config.max_num_iteration_;
   discretization_intervals_ = new_config.discretization_intervals_;
   kkt_tolerance_ = new_config.kkt_tolerance_;
@@ -270,17 +240,10 @@ void predictive_configuration::print_configuration_parameter()
   ROS_INFO_STREAM("Set velocity constrints: " << std::boolalpha << set_velocity_constraints_);
 
   ROS_INFO_STREAM("Plotting results: " << std::boolalpha << plotting_result_);
-  ROS_INFO_STREAM("Degree_of_freedom: " << degree_of_freedom_);
   ROS_INFO_STREAM("robot_base_link: " << robot_base_link_);
 
   ROS_INFO_STREAM("Clock_frequency: " << clock_frequency_);
   ROS_INFO_STREAM("Sampling_time: " << sampling_time_);
-  ROS_INFO_STREAM("Ball_radius: " << ball_radius_);
-  ROS_INFO_STREAM("Minimum collision distance: " << minimum_collision_distance_);
-  ROS_INFO_STREAM("Collision weight factor: " << collision_weight_factor_);
-  ROS_INFO_STREAM("Use lagrange term: " << std::boolalpha << use_lagrange_term_);
-  ROS_INFO_STREAM("Use LSQ term: " << std::boolalpha << use_LSQ_term_);
-  ROS_INFO_STREAM("Use mayer term: " << std::boolalpha << use_mayer_term_);
   ROS_INFO_STREAM("Max num iteration: " << max_num_iteration_);
   ROS_INFO_STREAM("Discretization intervals: " << discretization_intervals_);
   ROS_INFO_STREAM("KKT tolerance: " << kkt_tolerance_);
@@ -315,18 +278,18 @@ void predictive_configuration::print_configuration_parameter()
   );
   std::cout<<"]"<<std::endl;
 
-  // print lsq state weight factors
-  std::cout << "LSQ state weight factors: [";
-  for_each(lsq_state_weight_factors_.begin(), lsq_state_weight_factors_.end(), [](double& val)
+  // print contour weight factors
+  std::cout << "Contour weight factors: [";
+  for_each(contour_weight_factors_.begin(), contour_weight_factors_.end(), [](double& val)
   {
     std::cout << val << ", " ;
   }
   );
   std::cout<<"]"<<std::endl;
 
-  // print lsq control weight factors
-  std::cout << "LSQ control weight factors: [";
-  for_each(lsq_control_weight_factors_.begin(), lsq_control_weight_factors_.end(), [](double& val)
+  // print control weight factors
+  std::cout << "Control weight factors: [";
+  for_each(control_weight_factors_.begin(), control_weight_factors_.end(), [](double& val)
   {
     std::cout << val << ", " ;
   }
@@ -344,8 +307,6 @@ void predictive_configuration::free_allocated_memory()
   vel_min_limit_.clear();
   vel_max_limit_.clear();
 
-  lsq_state_weight_factors_.clear();
-  lsq_state_terminal_weight_factors_.clear();
-  lsq_control_weight_factors_.clear();
-  lsq_control_terminal_weight_factors_.clear();
+  contour_weight_factors_.clear();
+  control_weight_factors_.clear();
 }

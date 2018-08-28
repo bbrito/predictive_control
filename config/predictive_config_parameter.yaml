@@ -10,8 +10,11 @@ plotting_result: true
 # Clock frequency //hz
 clock_frequency: 20
 
+#road parameters
+n_points_spline: 3
+
 #Optimal control problem dimensions
-state_dim: 4
+state_dim: 5
 control_dim: 2
 
 #Inputs and output topics topic
@@ -25,7 +28,8 @@ tracking_frame: map
 
 # Weight on the slack variable for collision collision
 slack_weight: 10000
-repulsive_weight: 5
+repulsive_weight: 0.1
+reference_velocity: 1.0
 
 # Parameters for collision constraints
 obstacles:
@@ -34,15 +38,6 @@ obstacles:
       n_discs: 1
       ego_l: 0.5
       ego_w: 0.4
-
-# predictive_config: # minimum_collision_distance should not be larger than ball radius
-self_collision:
-     ball_radius: 0.12
-     minimum_collision_distance: 0.15
-     collision_weight_factor: 0.01
-
-     # the following obstacles are considered for collision avoidance
-     collision_check_obstacles: []
 
 constraints:
      velocity_constraints:
@@ -64,7 +59,7 @@ acado_config:
      weight_factors:
            lsq_state_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle
-                [10.0, 40.0, 3.0,3.0]
+                [1.0, 1.0, 3.0,3.0,3.0]
            lsq_control_weight_factors:
                 # same as degree of freedom
                 [2.0, 2.0]

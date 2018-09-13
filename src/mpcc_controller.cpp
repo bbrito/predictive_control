@@ -384,12 +384,12 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 22] = cost_control_weight_factors_(1);   // weight delta
             acadoVariables.od[(ACADO_NOD * N_iter) + 25] = slack_weight_;                     //slack weight
             acadoVariables.od[(ACADO_NOD * N_iter) + 26] = repulsive_weight_;                     //repulsive weight
-            acadoVariables.od[(ACADO_NOD * N_iter) + 40] = velocity_weight_;                     //repulsive weight
+            acadoVariables.od[(ACADO_NOD * N_iter) + 39] = velocity_weight_;                     //repulsive weight
             
             acadoVariables.od[(ACADO_NOD * N_iter) + 27] = r_discs_; //radius of the disks
             acadoVariables.od[(ACADO_NOD * N_iter) + 28] = x_discs_[0];                        // position of the car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 41] = x_discs_[1];                        // position of the car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 42] = x_discs_[2];                        // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 40] = x_discs_[1];                        // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 41] = x_discs_[2];                        // position of the car discs
             
             acadoVariables.od[(ACADO_NOD * N_iter) + 29] = obstacles_.Obstacles[0].pose.position.x;      // x position of obstacle 1
             acadoVariables.od[(ACADO_NOD * N_iter) + 30] = obstacles_.Obstacles[0].pose.position.y;      // y position of obstacle 1

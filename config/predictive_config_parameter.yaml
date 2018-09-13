@@ -35,9 +35,9 @@ reference_velocity: 1.0
 obstacles:
       n_obstacles: 2
       sub_ellipse_topic: ellipse_objects_feed
-      n_discs: 1
-      ego_l: 0.5
-      ego_w: 0.4
+      n_discs: 3
+      ego_l: 4.540
+      ego_w: 1.760
 
 constraints:
      velocity_constraints:

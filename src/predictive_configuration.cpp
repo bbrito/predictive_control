@@ -211,6 +211,7 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
 
   slack_weight_ = new_config.slack_weight_;
   repulsive_weight_ = new_config.repulsive_weight_;
+  //velocity_weight_ = new_config.velocity_weight_;
   reference_velocity_ = new_config.reference_velocity_;
 
   clock_frequency_ = new_config.clock_frequency_;

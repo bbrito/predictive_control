@@ -281,6 +281,7 @@ private:
     double slack_weight_;
     double repulsive_weight_;
     double reference_velocity_;
+    double velocity_weight_;
 
 	//MoveIt TRAJECTORY VARIABLE
 	moveit_msgs::RobotTrajectory traj;

@@ -66,7 +66,35 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     }
   }
 
-  // read and set other constraints...
+  if (!nh_config.getParam ("global_path/x", ref_x_) )
+  {
+    ROS_WARN(" Parameter '/global_path/x not set on %s node" , ros::this_node::getName().c_str());
+    return false;
+  }
+//
+  if (!nh_config.getParam ("global_path/y", ref_y_) )
+  {
+    ROS_WARN(" Parameter '/global_path/y not set on %s node" , ros::this_node::getName().c_str());
+    return false;
+  }
+
+  if (!nh_config.getParam ("global_path/theta", ref_theta_) )
+  {
+    ROS_WARN(" Parameter '/global_path/theta not set on %s node" , ros::this_node::getName().c_str());
+    return false;
+  }
+
+  if (!nh_config.getParam ("global_path/n_points_clothoid", n_points_clothoid_) )
+  {
+    ROS_WARN(" Parameter '/global_path/n_points_clothoid not set on %s node" , ros::this_node::getName().c_str());
+    return false;
+  }
+
+  if (!nh_config.getParam ("global_path/n_points_spline", n_points_spline_) )
+  {
+    ROS_WARN(" Parameter '/global_path/n_points_spline not set on %s node" , ros::this_node::getName().c_str());
+    return false;
+  }
 
   // read and set contour weight factors
   if (!nh_config.getParam ("acado_config/weight_factors/contour_weight_factors", contour_weight_factors_) )
@@ -150,12 +178,6 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   if (!nh.getParam ("obstacles/ego_w", ego_w_) )
   {
     ROS_WARN(" Parameter 'ego_w' not set on %s node " , ros::this_node::getName().c_str());
-    return false;
-  }
-
-  if (!nh.getParam ("n_points_spline", n_points_spline_) )
-  {
-    ROS_WARN(" Parameter 'n_points_spline_' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
@@ -252,15 +274,6 @@ void predictive_configuration::print_configuration_parameter()
   ROS_INFO_STREAM("Start time horizon: " << start_time_horizon_);
   ROS_INFO_STREAM("End time horizon: " << end_time_horizon_);
 
-  // print joints name
-  std::cout << "self collision map: [";
-  for_each(collision_check_obstacles_.begin(), collision_check_obstacles_.end(), [](std::string& str)
-  {
-    std::cout << str << ", " ;
-  }
-  );
-  std::cout<<"]"<<std::endl;
-
   // print joint vel min limit
   std::cout << "Joint vel min limit: [";
   for_each(vel_min_limit_.begin(), vel_min_limit_.end(), [](double& val)
@@ -302,11 +315,12 @@ void predictive_configuration::print_configuration_parameter()
 // clear allocated data from vector
 void predictive_configuration::free_allocated_memory()
 {
-
-  collision_check_obstacles_.clear();
-
   vel_min_limit_.clear();
   vel_max_limit_.clear();
+
+  ref_x_.clear();
+  ref_y_.clear();
+  ref_theta_.clear();
 
   contour_weight_factors_.clear();
   control_weight_factors_.clear();

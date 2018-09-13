@@ -63,9 +63,6 @@ public:
   std::string output_cmd;
   std::string robot_state_topic_;
 
-  // road parameters
-  int n_points_spline_;
-
   // use for finding kinematic chain and urdf model
   std::string robot_base_link_;
   std::string tracking_frame_;  //  End effector of arm
@@ -77,8 +74,18 @@ public:
   std::vector<double> vel_min_limit_;
   std::vector<double> vel_max_limit_;
 
+  // Initialize vectors for contour error weights
   std::vector<double> contour_weight_factors_;
   std::vector<double> control_weight_factors_;
+
+  // Initialize vectors for reference path points
+  std::vector<double> ref_x_;
+  std::vector<double> ref_y_;
+  std::vector<double> ref_theta_;
+
+  // Numbers of points for spline and clothoid fitting
+  int n_points_clothoid_;
+  int n_points_spline_;
 
   double slack_weight_;
   double repulsive_weight_;
@@ -90,10 +97,10 @@ public:
   int state_dim_;
   int control_dim_;
 
-  // acado configuration
-  bool use_lagrange_term_;
-  bool use_LSQ_term_;
-  bool use_mayer_term_;
+  // self collision distance
+  double collision_weight_factor_;
+
+  // ACADO configuration
   int max_num_iteration_;
   int discretization_intervals_;
   double kkt_tolerance_;

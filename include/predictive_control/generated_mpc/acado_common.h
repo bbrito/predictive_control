@@ -66,7 +66,7 @@ extern "C"
 /** Number of online data values. */
 #define ACADO_NOD 42
 /** Number of path constraints. */
-#define ACADO_NPAC 6
+#define ACADO_NPAC 4
 /** Number of control variables. */
 #define ACADO_NU 3
 /** Number of differential variables. */
@@ -142,17 +142,17 @@ real_t lbValues[ 75 ];
  */
 real_t ubValues[ 75 ];
 
-/** Column vector of size: 175
+/** Column vector of size: 125
  * 
  *  Lower bounds values for affine constraints.
  */
-real_t lbAValues[ 175 ];
+real_t lbAValues[ 125 ];
 
-/** Column vector of size: 175
+/** Column vector of size: 125
  * 
  *  Upper bounds values for affine constraints.
  */
-real_t ubAValues[ 175 ];
+real_t ubAValues[ 125 ];
 
 /** Matrix of size: 25 x 6 (row major format) */
 real_t mu[ 150 ];
@@ -221,29 +221,29 @@ real_t S1[ 450 ];
 /** Matrix of size: 6 x 6 (row major format) */
 real_t QN1[ 36 ];
 
-/** Column vector of size: 1072 */
-real_t conAuxVar[ 1072 ];
+/** Column vector of size: 390 */
+real_t conAuxVar[ 390 ];
 
-/** Row vector of size: 57 */
-real_t conValueIn[ 57 ];
+/** Row vector of size: 55 */
+real_t conValueIn[ 55 ];
 
-/** Row vector of size: 141 */
-real_t conValueOut[ 141 ];
+/** Row vector of size: 121 */
+real_t conValueOut[ 121 ];
 
-/** Column vector of size: 150 */
-real_t evH[ 150 ];
+/** Column vector of size: 100 */
+real_t evH[ 100 ];
 
-/** Matrix of size: 150 x 6 (row major format) */
-real_t evHx[ 900 ];
+/** Matrix of size: 100 x 6 (row major format) */
+real_t evHx[ 600 ];
 
-/** Matrix of size: 150 x 3 (row major format) */
-real_t evHu[ 450 ];
+/** Matrix of size: 100 x 3 (row major format) */
+real_t evHu[ 300 ];
 
 /** Matrix of size: 9 x 9 (row major format) */
 real_t evDDH[ 81 ];
 
-/** Column vector of size: 6 */
-real_t evHxd[ 6 ];
+/** Column vector of size: 4 */
+real_t evHxd[ 4 ];
 
 /** Column vector of size: 156 */
 real_t sbar[ 156 ];
@@ -275,8 +275,8 @@ real_t w2[ 6 ];
 /** Matrix of size: 75 x 75 (row major format) */
 real_t H[ 5625 ];
 
-/** Matrix of size: 175 x 75 (row major format) */
-real_t A[ 13125 ];
+/** Matrix of size: 125 x 75 (row major format) */
+real_t A[ 9375 ];
 
 /** Column vector of size: 75 */
 real_t g[ 75 ];
@@ -287,17 +287,17 @@ real_t lb[ 75 ];
 /** Column vector of size: 75 */
 real_t ub[ 75 ];
 
-/** Column vector of size: 175 */
-real_t lbA[ 175 ];
+/** Column vector of size: 125 */
+real_t lbA[ 125 ];
 
-/** Column vector of size: 175 */
-real_t ubA[ 175 ];
+/** Column vector of size: 125 */
+real_t ubA[ 125 ];
 
 /** Column vector of size: 75 */
 real_t x[ 75 ];
 
-/** Column vector of size: 250 */
-real_t y[ 250 ];
+/** Column vector of size: 200 */
+real_t y[ 200 ];
 
 
 } ACADOworkspace;

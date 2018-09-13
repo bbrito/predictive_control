@@ -117,6 +117,7 @@ bool MPCC::initialize()
         controlled_velocity_.steer = 0;
         controlled_velocity_.throttle = 0;
         controlled_velocity_.brake = 0;
+		last_poly_ = false;
 
 		moveit_msgs::RobotTrajectory j;
 		traj = j;
@@ -192,10 +193,17 @@ bool MPCC::initialize()
 		// Initialize pregenerated mpc solver
 		acado_initializeSolver( );
 
-		//MPCC variables
-		X_road.resize(3);
-		Y_road.resize(3);
-		Theta_road.resize(3);
+		// MPCC reference path variables
+		X_road.resize(controller_config_->ref_x_.size());
+		Y_road.resize(controller_config_->ref_y_.size());
+		Theta_road.resize(controller_config_->ref_theta_.size());
+
+		// Check if all reference vectors are of the same length
+		if (!( (controller_config_->ref_x_.size() == controller_config_->ref_y_.size()) && ( controller_config_->ref_x_.size() == controller_config_->ref_theta_.size() ) && (controller_config_->ref_y_.size() == controller_config_->ref_theta_.size()) ))
+        {
+            ROS_ERROR("Reference path inputs should be of equal length");
+        }
+
 		traj_i =0;
 		ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
 		return true;
@@ -223,7 +231,7 @@ void MPCC::computeEgoDiscs()
     }
 
     // Compute radius of the discs
-    r_discs_ = 1;//0.88;//sqrt(pow(x_discs_[n_discs - 1] - length/2,2) + pow(width/2,2));
+    r_discs_ = sqrt(pow(x_discs_[n_discs - 1] - length/2,2) + pow(width/2,2));
     ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_ );
 }
 
@@ -231,7 +239,7 @@ void MPCC::broadcastPathPose(){
 
 	geometry_msgs::TransformStamped transformStamped;
 	transformStamped.header.stamp = ros::Time::now();
-	transformStamped.header.frame_id = "map";
+	transformStamped.header.frame_id = controller_config_->tracking_frame_;
 	transformStamped.child_frame_id = "path";
 
 	transformStamped.transform.translation.x = ref_path_x(acadoVariables.x[4]);
@@ -330,7 +338,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
         ROS_WARN_STREAM("ss.size():" << ss.size() << " traj_i: " << traj_i);
         if (acadoVariables.x[4] > ss[traj_i + 1]) {
 
-            if (traj_i + 6 == ss.size()) {
+            if (traj_i + 2 == ss.size()) {
                 goal_reached_ = true;
                 ROS_ERROR_STREAM("GOAL REACHED");
             } else {
@@ -341,7 +349,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
         if(idx ==1) {
             double smin;
-            smin = spline_closest_point(ss[traj_i], 100, acadoVariables.x[ACADO_NX+4], window_size_, n_search_points_);
+            smin = spline_closest_point(ss[traj_i], 1000, acadoVariables.x[ACADO_NX+4], window_size_, n_search_points_);
             acadoVariables.x[4] = smin;
             acadoVariables.x0[4] = smin;
             ROS_ERROR_STREAM("smin: " << smin);
@@ -526,9 +534,9 @@ void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<dou
     double k, dk, L;
     std::vector<double> X(10), Y(10);
     std::vector<double> X_all, Y_all, S_all;
-    total_length_=0;
-    n_clothoid = 20;
-    n_pts = 20;
+    total_length_= 0;
+    n_clothoid = controller_config_->n_points_clothoid_;
+    n_pts = controller_config_->n_points_spline_;
     S_all.push_back(0);
 
     for (int i = 0; i < x.size()-1; i++){
@@ -557,7 +565,7 @@ void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<dou
     ref_path_x.set_points(S_all, X_all);
     ref_path_y.set_points(S_all, Y_all);
 
-    dist_spline_pts_ = total_length_ / n_pts;
+    dist_spline_pts_ = total_length_ / (n_pts - 1);
     //ROS_INFO_STREAM("dist_spline_pts_: " << dist_spline_pts_);
     ss.resize(n_pts);
     xx.resize(n_pts);
@@ -578,20 +586,14 @@ void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<dou
 
 void MPCC::ConstructRefPath(){
 
-    X_road[0] = 0;
-    X_road[1] = 15;
-    X_road[2] = 30;
-
-    Y_road[0] = 0;
-    Y_road[1] = 0;
-    Y_road[2] = 0;
-
-    Theta_road[0] = 0;
-    Theta_road[1] = 0;
-    Theta_road[2] = 0;
+    for (int ref_point_it = 0; ref_point_it < controller_config_->ref_x_.size(); ref_point_it++)
+    {
+        X_road[ref_point_it] = controller_config_->ref_x_.at(ref_point_it);
+        Y_road[ref_point_it] = controller_config_->ref_y_.at(ref_point_it);
+        Theta_road[ref_point_it] = controller_config_->ref_theta_.at(ref_point_it);
+    }
 
     Ref_path(X_road, Y_road, Theta_road);
-
 }
 
 void MPCC::moveitGoalCB()
@@ -612,9 +614,17 @@ void MPCC::moveitGoalCB()
 
         acado_initializeSolver( );
 
+        int N_iter;
+	for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+
+            // Initialize Constant Online Data variables
+            acadoVariables.od[(ACADO_NOD * N_iter) + 27] = r_discs_;                                // radius of car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 28] = 0; //x_discs_[1];                        // position of the car discs
+        }
+
         traj_i = 0;
 		goal_reached_ = false;
-
+		last_poly_ = false;
         ConstructRefPath();
 
 		publishSplineTrajectory();

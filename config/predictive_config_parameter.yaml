@@ -10,9 +10,6 @@ plotting_result: true
 # Clock frequency //hz
 clock_frequency: 20
 
-#road parameters
-n_points_spline: 3
-
 #Optimal control problem dimensions
 state_dim: 5
 control_dim: 2
@@ -30,6 +27,14 @@ tracking_frame: map
 slack_weight: 10000
 repulsive_weight: 0.1
 reference_velocity: 1.0
+
+# Parameters for predefined reference path
+global_path:
+  x: [0, 15, 30, 45, 30, 15, 0, -15, 0]
+  y: [0, 25, 50, 30, 0, 25, 50, 25, 0]
+  theta: [0, 1.5708, 0, -1.5708, 3.1416, 1.5708, 3.1416, -1.5708, 0]
+  n_points_clothoid: 20
+  n_points_spline: 20
 
 # Parameters for collision constraints
 obstacles:
@@ -53,9 +58,6 @@ acado_config:
      end_time_horizon: 5.0 # 5.0  # control and prediction horizon
      discretization_intervals: 50
      sampling_time: 0.1
-     use_lagrange_term: false
-     use_LSQ_term: false
-     use_mayer_term: true
      weight_factors:
            lsq_state_weight_factors:
                 #always 6 component 3 linear/position and 3 angular/Euler angle

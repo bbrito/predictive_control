@@ -468,7 +468,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
         broadcastPathPose();
         brake_.data = controlled_velocity_.brake;
         cost_.data = acado_getObjective();
-        publishCost();
+        publishFeedback(j,te_);
 
     }
 	// publish zero controlled velocity
@@ -834,4 +834,39 @@ void MPCC::publishCost(void){
 
 	cost_pub_.publish(cost_);
 	brake_pub_.publish(brake_);
+}
+
+void MPCC::publishFeedback(int& it, double& time)
+{
+
+    predictive_control::control_feedback feedback_msg;
+
+    feedback_msg.header.stamp = ros::Time::now();
+    feedback_msg.header.frame_id = controller_config_->tracking_frame_;
+
+    feedback_msg.cost = cost_.data;
+    feedback_msg.iterations = it;
+    feedback_msg.computation_time = time;
+    feedback_msg.kkt = acado_getKKT();
+
+    feedback_msg.wC = cost_contour_weight_factors_(0);       // weight factor on contour error
+    feedback_msg.wL = cost_contour_weight_factors_(1);       // weight factor on lag error
+    feedback_msg.wV = cost_control_weight_factors_(0);       // weight factor on theta
+    feedback_msg.wW = cost_control_weight_factors_(1);
+
+    // Compute contour errors
+    feedback_msg.contour_errors.data.resize(2);
+
+    feedback_msg.contour_errors.data[0] = contour_error_;
+    feedback_msg.contour_errors.data[1] = lag_error_;
+
+    feedback_msg.reference_path = spline_traj2_;
+    feedback_msg.prediction_horizon = pred_traj_;
+    feedback_msg.prediction_horizon.poses[0].pose.position.z = acadoVariables.x[3];
+
+    //Search window parameters
+    feedback_msg.window = window_size_;
+    feedback_msg.search_points = n_search_points_;
+
+    feedback_pub_.publish(feedback_msg);
 }

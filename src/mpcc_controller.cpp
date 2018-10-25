@@ -181,7 +181,7 @@ bool MPCC::initialize()
 		ellips1.type = visualization_msgs::Marker::CYLINDER;
 		ellips1.id = 60;
 		ellips1.color.b = 1.0;
-		ellips1.color.a = 0.5;
+		ellips1.color.a = 0.2;
 		ellips1.header.frame_id = controller_config_->tracking_frame_;
 		ellips1.ns = "trajectory";
 		ellips1.action = visualization_msgs::Marker::ADD;
@@ -777,7 +777,7 @@ void MPCC::publishSplineTrajectory(void)
 {
 	spline_traj_.header.stamp = ros::Time::now();
 	spline_traj_.header.frame_id = controller_config_->tracking_frame_;
-	for (int i = 0; i < 100; i++) // 100 points
+	for (int i = 0; i < 50; i++) // 100 points
 	{
 		spline_traj_.poses[i].pose.position.x = ref_path_x(i*(n_pts-1)*dist_spline_pts_/100.0); //x
 		spline_traj_.poses[i].pose.position.y = ref_path_y(i*(n_pts-1)*dist_spline_pts_/100.0); //y

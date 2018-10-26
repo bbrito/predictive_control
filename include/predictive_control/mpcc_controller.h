@@ -308,7 +308,7 @@ private:
     Eigen::VectorXd last_velocity_;
 
     // Type of variable used to publish joint velocity
-	prius_msgs::Control controlled_velocity_;
+	geometry_msgs::Pose controlled_velocity_;
 
     // predictive configuration
     boost::shared_ptr<predictive_configuration> controller_config_;

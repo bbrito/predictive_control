@@ -95,7 +95,7 @@ bool MPCC::initialize()
 		cost_pub_ = nh.advertise<std_msgs::Float64>("cost",1);
 		brake_pub_ = nh.advertise<std_msgs::Float64>("break",1);
 		contour_error_pub_ = nh.advertise<std_msgs::Float64MultiArray>("contour_error",1);
-		controlled_velocity_pub_ = nh.advertise<prius_msgs::Control>(controller_config_->output_cmd,1);
+		controlled_velocity_pub_ = nh.advertise<geometry_msgs::Pose>(controller_config_->output_cmd,1);
 		joint_state_pub_ = nh.advertise<sensor_msgs::JointState>("/joint_states",1);
 		robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
 		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
@@ -114,9 +114,7 @@ bool MPCC::initialize()
 		idy = 1;
 		epsilon_ = 0.01;
 		goal_reached_ = false;
-        controlled_velocity_.steer = 0;
-        controlled_velocity_.throttle = 0;
-        controlled_velocity_.brake = 0;
+
 		last_poly_ = false;
 
 		moveit_msgs::RobotTrajectory j;
@@ -359,8 +357,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
         else
             acadoVariables.x[4] = acadoVariables.x[4];
 
-        acadoVariables.u[0] = controlled_velocity_.throttle;
-        acadoVariables.u[1] = controlled_velocity_.steer;
+        acadoVariables.u[0] = controlled_velocity_.position.x; // throtle
+        acadoVariables.u[1] = controlled_velocity_.position.y; // steering
         //acadoVariables.u[2] = 0.0000001;           //slack variable
 
         for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
@@ -452,21 +450,15 @@ void MPCC::runNode(const ros::TimerEvent &event)
             j++;    //        acado_printDifferentialVariables();
         }
         te_ = acado_toc(&t);
-        if (acadoVariables.u[0] < 0) {
-            controlled_velocity_.brake = -1.0 * acadoVariables.u[0];// / (-4.0); // maximum brake
-            controlled_velocity_.throttle = 0.0;
-        } else {
-            controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
-            controlled_velocity_.brake = 0.0;
-        }
+        controlled_velocity_.position.x = acadoVariables.u[0];// / (-4.0); // maximum brake
 
-        controlled_velocity_.steer = acadoVariables.u[1] / 0.52; // maximum steer
+        controlled_velocity_.position.y = acadoVariables.u[1]; // maximum steer
 
         publishPredictedTrajectory();
         publishPredictedCollisionSpace();
         publishPredictedOutput();
         broadcastPathPose();
-        brake_.data = controlled_velocity_.brake;
+
         cost_.data = acado_getObjective();
         publishFeedback(j,te_);
 
@@ -765,11 +757,11 @@ void MPCC::publishZeroJointVelocity()
     {
 //        ROS_INFO("Publishing ZERO joint velocity!!");
     }
-	prius_msgs::Control pub_msg;
+	geometry_msgs::Pose pub_msg;
 	if(!simulation_mode_)
 		broadcastTF();
     controlled_velocity_ = pub_msg;
-    controlled_velocity_.brake = 10.0;
+    controlled_velocity_.position.x = 0.0;
     controlled_velocity_pub_.publish(controlled_velocity_);
 }
 

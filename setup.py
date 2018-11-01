@@ -5,9 +5,9 @@ from catkin_pkg.python_setup import generate_distutils_setup
 
 d = generate_distutils_setup(
     ##  don't do this unless you want a globally visible script
-    # scripts=['bin/myscript'],
-    packages=['predictive_controller_config', 'data_collection', ],
-    package_dir={'': 'src'}
+    scripts=['scripts/predictions_3d.py'],
+    packages=['predictive_control', ],
+    package_dir={'': 'scripts'}
 )
 
 setup(**d)

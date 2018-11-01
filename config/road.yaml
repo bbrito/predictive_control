@@ -1,0 +1,15 @@
+intersection_publisher: {end_point_x: 9.041999618530273, end_point_y: -14.568500381469727,
+  end_point_z: -0.413, intersection_point_x: 0.0, intersection_point_y: 0.0, intersection_point_z: 0.0,
+  road_width_left: 1.0, road_width_right: 1.0, start_point_x: 51.30199984741211, start_point_y: -89.14850030517579,
+  start_point_z: -0.413}
+predictions_3d: {covariance_timestep: 16, show_collapsed_covariance: true, show_collapsed_mean: true,
+  show_mog_covariance: false, show_mog_mean: false}
+rosdistro: 'kinetic
+
+  '
+roslaunch:
+  uris: {host_bdebrito_xps_15_9560__45081: 'http://bdebrito-XPS-15-9560:45081/'}
+rosversion: '1.12.14
+
+  '
+run_id: 7a45c414-dd1d-11e8-bb7d-9cb6d0f84911

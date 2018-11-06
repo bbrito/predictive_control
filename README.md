@@ -4,10 +4,10 @@ This repository contains the code for the paper:
 
 **<a href="https://arxiv.org/abs/1803.10892">Local Model Predictive Contouring Control for Dynamic Environments</a>**
 <br>
-<a href="">Boaz Floor</a>,
-<a href="https://www.tudelft.nl/staff/bruno.debrito//">Bruno Brito</a>,
+<a href="http://www.tudelft.nl/staff/bruno.debrito/">Boaz Floor</a>,
+<a href="http://www.tudelft.nl/staff/bruno.debrito/">Bruno Brito</a>,
 <a href="http://www.tudelft.nl/staff/L.Ferranti/">Laura Ferranti</a>,
-<a href="https://www.tudelft.nl/staff/j.alonsomora/">Javier Alonso-Mora</a>,
+<a href="http://www.tudelft.nl/staff/j.alonsomora/">Javier Alonso-Mora</a>
 <br>
 Submitted to [ICRA 2019].
 
@@ -17,8 +17,8 @@ The code was deployd and tested on a Jackal mobile robot.
 
 <div align='center'>
 <img src="images/car_scenario.png"></img>
-<img src="images/scenario1.eps"></img>
-<img src="images/scenario2.eps"></img>
+<img src="images/scenario1.png"></img>
+<img src="images/scenario2.png"></img>
 </div>
 
 If you find this code useful in your research then please cite

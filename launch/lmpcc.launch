@@ -17,13 +17,9 @@
 
 
     # load Cartesian controller config
-    <rosparam command="load" file="$(find predictive_control)/config/predictive_config_parameter.yaml"/>
+    <rosparam command="load" file="$(find lmpcc)/config/predictive_config_parameter.yaml"/>
 
-    # load road scene
-    <rosparam command="load" file="$(find predictive_control)/config/road.yaml" />
-    <node pkg="ros_intent_slds" type="intersection_publisher.py" name="intersection_publisher" cwd="node" respawn="false" output="screen"/>
-
-    <node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/>
+    <node pkg="lmpcc" type="lmpcc_node" name="lmpcc_node" cwd="node" respawn="false" output="screen"/>
 
     <!-- configured rviz -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find predictive_control)/rviz_config/rviz_config.rviz" />

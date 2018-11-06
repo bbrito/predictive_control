@@ -1,6 +1,6 @@
 
-#ifndef PREDICTIVE_CONTROL_PREDICTIVE_CONTROLLER_H
-#define PREDICTIVE_CONTROL_PREDICTIVE_CONTROLLER_H
+#ifndef LMPCC_LMPCC_H
+#define LMPCC_LMPCC_H
 
 // ros includes
 #include <pluginlib/class_loader.h>
@@ -47,20 +47,19 @@
 #include <yaml-cpp/yaml.h>
 
 // predicitve includes
-#include <predictive_control/predictive_configuration.h>
-#include <predictive_control/control_feedback.h>
+#include <lmpcc/predictive_configuration.h>
+#include <lmpcc/control_feedback.h>
 
 // actions, srvs, msgs
 #include <actionlib/server/simple_action_server.h>
 #include <actionlib/client/simple_action_client.h>
-#include <predictive_control/moveAction.h>
-#include <predictive_control/moveActionGoal.h>
-//#include <predictive_control/collision_avoidance.h>
+#include <lmpcc/moveAction.h>
+#include <lmpcc/moveActionGoal.h>
 
 // joint trajectory interface
 #include <control_msgs/FollowJointTrajectoryAction.h>
-#include <predictive_control/trajAction.h>
-#include <predictive_control/trajActionGoal.h>
+#include <lmpcc/trajAction.h>
+#include <lmpcc/trajActionGoal.h>
 
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
@@ -73,7 +72,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dynamic_reconfigure/server.h>
-#include <predictive_control/PredictiveControllerConfig.h>
+#include <lmpcc/PredictiveControllerConfig.h>
 
 //TF
 #include <tf2_ros/transform_broadcaster.h>
@@ -82,7 +81,7 @@
 #include <sensor_msgs/JointState.h>
 //splines
 #include <tkspline/spline.h>
-#include <predictive_control/Clothoid.h>
+#include <lmpcc/Clothoid.h>
 
 #include <prius_msgs/Control.h>
 
@@ -104,9 +103,9 @@ class MPCC
 public:
 
     //DYnamic reconfigure server
-    boost::shared_ptr<dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig> > reconfigure_server_;
+    boost::shared_ptr<dynamic_reconfigure::Server<lmpcc::PredictiveControllerConfig> > reconfigure_server_;
     boost::recursive_mutex reconfig_mutex_;
-    void reconfigureCallback(predictive_control::PredictiveControllerConfig& config, uint32_t level);
+    void reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level);
 
     /**
      * @brief MPCC: Default constructor, allocate memory
@@ -314,15 +313,15 @@ private:
     boost::shared_ptr<predictive_configuration> controller_config_;
 
     // move to goal position action
-    boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::moveAction> > move_action_server_;
+    boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::moveAction> > move_action_server_;
 
-	boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::trajAction> > moveit_action_server_;
+	boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::trajAction> > moveit_action_server_;
 
     /// Action interface
-    predictive_control::moveResult move_action_result_;
-    predictive_control::moveFeedback move_action_feedback_;
-	predictive_control::trajActionFeedback moveit_action_feedback_;
-	predictive_control::trajActionResult moveit_action_result_;
+    lmpcc::moveResult move_action_result_;
+    lmpcc::moveFeedback move_action_feedback_;
+	lmpcc::trajActionFeedback moveit_action_feedback_;
+	lmpcc::trajActionResult moveit_action_result_;
     void moveGoalCB();
     void movePreemptCB();
 	void moveitGoalCB();

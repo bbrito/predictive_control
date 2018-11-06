@@ -11,9 +11,7 @@ This repository contains the code for the paper:
 <br>
 Submitted to [ICRA 2019].
 
-We present a local motion planner, namely, a \acl{lmpcc} design, for an \acl{agv} (AGV) traversing a dynamic environment. Our design allows the AGV to execute reactive motion while tracking a global plan, thanks to local parametrization of the path. In addition, our framework allows for avoidance of static obstacles (given in an occupancy grid map) and moving obstacles represented by ellipses. Furthermore, we provide a new bound to correct the approximation of the Minkowski sum of an ellipsoid obstacle and the union of discs representation of the controlled vehicle to guarantee collision avoidance. We show that the general definition of the framework applies to both unicycle and bicycle kinematic models, commonly used to represent robots and autonomous cars, respectively. Simulation results for a car and experimental results with a mobile robot are presented.
-
-The code was deployd and tested on a Jackal mobile robot.
+We present a local motion planner, namely, a LMPCC design, for an AGV traversing a dynamic environment. Our design allows the AGV to execute reactive motion while tracking a global plan, thanks to local parametrization of the path. In addition, our framework allows for avoidance of static obstacles (given in an occupancy grid map) and moving obstacles represented by ellipses. Furthermore, we provide a new bound to correct the approximation of the Minkowski sum of an ellipsoid obstacle and the union of discs representation of the controlled vehicle to guarantee collision avoidance. We show that the general definition of the framework applies to both unicycle and bicycle kinematic models, commonly used to represent robots and autonomous cars, respectively. Simulation results for a car and experimental results with a mobile robot are presented.
 
 <div align='center'>
 <img src="images/paper.png"></img>

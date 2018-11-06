@@ -1,6 +1,6 @@
 
-#ifndef PREDICTIVE_CONTROL_PREDICTIVE_CONTROLLER_H
-#define PREDICTIVE_CONTROL_PREDICTIVE_CONTROLLER_H
+#ifndef LMPCC_LMPCC_H
+#define LMPCC_LMPCC_H
 
 // ros includes
 #include <pluginlib/class_loader.h>
@@ -37,17 +37,14 @@
 #include <yaml-cpp/yaml.h>
 
 // predicitve includes
-#include <predictive_control/predictive_configuration.h>
-//#include <predictive_control/kinematic_calculations.h>
-//#include <predictive_control/collision_detection.h>
-#include <predictive_control/predictive_trajectory_generator.h>
+#include <lmpcc/predictive_configuration.h>
 
 // actions, srvs, msgs
 #include <actionlib/server/simple_action_server.h>
 #include <actionlib/client/simple_action_client.h>
-#include <predictive_control/moveAction.h>
-#include <predictive_control/moveActionGoal.h>
-#include <predictive_control/collision_avoidance.h>
+#include <lmpcc/moveAction.h>
+#include <lmpcc/moveActionGoal.h>
+#include <lmpcc/collision_avoidance.h>
 
 /*
 struct hold_pose
@@ -205,11 +202,11 @@ private:
   boost::shared_ptr<pd_frame_tracker> pd_trajectory_generator_;
 
   // move to goal position action
-  boost::scoped_ptr<actionlib::SimpleActionServer<predictive_control::moveAction> > move_action_server_;
+  boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::moveAction> > move_action_server_;
 
   /// Action interface
-  predictive_control::moveResult move_action_result_;
-  predictive_control::moveFeedback move_action_feedback_;
+  lmpcc::moveResult move_action_result_;
+  lmpcc::moveFeedback move_action_feedback_;
   void moveGoalCB();
   void movePreemptCB();
   void actionSuccess();

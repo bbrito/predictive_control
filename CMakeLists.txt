@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(predictive_control)
+project(lmpcc)
 
 add_compile_options(-std=c++11)
 add_compile_options(-fstack-protector)
@@ -54,12 +54,6 @@ add_action_files(
     move.action
 )
 
-## Generate messages in the 'msg' folder
-#add_message_files(
-#  DIRECTORY
-#    msg
-#  FILES
-#)
 
 # Generate messages in the 'msg' folder
 add_message_files(
@@ -143,17 +137,17 @@ target_include_directories(predictive_controller PUBLIC
         qpoases/INCLUDE
         qpoases/SRC)
 
-add_executable(predictive_control_node src/predictive_control_node.cpp)
-target_link_libraries(predictive_control_node
+add_executable(lmpcc_node src/predictive_control_node.cpp)
+target_link_libraries(lmpcc_node
         predictive_controller
         ${catkin_LIBRARIES}
         tkspline_lib)
 
-add_dependencies(predictive_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(lmpcc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ### Test Case ####
 install(
-  DIRECTORY include/predictive_control/
+  DIRECTORY include/lmpcc/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 

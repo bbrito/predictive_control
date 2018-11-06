@@ -1,7 +1,7 @@
 
 //This file containts read parameter from server, callback, call class objects, control all class, objects of all class
 
-#include <predictive_control/mpcc_controller.h>
+#include <lmpcc/mpcc_controller.h>
 #include <nav_msgs/Odometry.h>
 
 ACADOvariables acadoVariables;
@@ -74,14 +74,14 @@ bool MPCC::initialize()
 
         // ros interfaces
         static const std::string MOVE_ACTION_NAME = "move_action";
-        move_action_server_.reset(new actionlib::SimpleActionServer<predictive_control::moveAction>(nh, MOVE_ACTION_NAME, false));
+        move_action_server_.reset(new actionlib::SimpleActionServer<lmpcc::moveAction>(nh, MOVE_ACTION_NAME, false));
         move_action_server_->registerGoalCallback(boost::bind(&MPCC::moveGoalCB, this));
         move_action_server_->registerPreemptCallback(boost::bind(&MPCC::movePreemptCB, this));
         move_action_server_->start();
 
 	    // MOVEIT interfaces
 	    static const std::string MOVEIT_ACTION_NAME = "fake_base_controller";
-	    moveit_action_server_.reset(new actionlib::SimpleActionServer<predictive_control::trajAction>(nh, MOVEIT_ACTION_NAME, false));
+	    moveit_action_server_.reset(new actionlib::SimpleActionServer<lmpcc::trajAction>(nh, MOVEIT_ACTION_NAME, false));
 	    moveit_action_server_->registerGoalCallback(boost::bind(&MPCC::moveitGoalCB, this));
 	    moveit_action_server_->start();
 
@@ -100,7 +100,7 @@ bool MPCC::initialize()
 		robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
 		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
 		spline_traj_pub_ = nh.advertise<nav_msgs::Path>("spline_traj",1);
-		feedback_pub_ = nh.advertise<predictive_control::control_feedback>("controller_feedback",1);
+		feedback_pub_ = nh.advertise<lmpcc::control_feedback>("controller_feedback",1);
         ros::Duration(1).sleep();
 
         timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
@@ -153,7 +153,7 @@ bool MPCC::initialize()
         ros::NodeHandle nh_predictive("predictive_controller");
 
         /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
-        reconfigure_server_.reset(new dynamic_reconfigure::Server<predictive_control::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
+        reconfigure_server_.reset(new dynamic_reconfigure::Server<lmpcc::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
 
 	    // Initialize obstacles
@@ -524,7 +524,7 @@ void MPCC::moveGoalCB()
 //    ROS_INFO("MOVEGOALCB");
     if(move_action_server_->isNewGoalAvailable())
     {
-        boost::shared_ptr<const predictive_control::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
+        boost::shared_ptr<const lmpcc::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
         tracking_ = false;
     }
 }
@@ -603,7 +603,7 @@ void MPCC::moveitGoalCB()
     idx = 1;
     if(moveit_action_server_->isNewGoalAvailable())
     {
-        boost::shared_ptr<const predictive_control::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
+        boost::shared_ptr<const lmpcc::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
         traj = moveit_action_goal_ptr->trajectory;
         tracking_ = false;
 
@@ -632,7 +632,7 @@ void MPCC::moveitGoalCB()
 }
 
 
-void MPCC::reconfigureCallback(predictive_control::PredictiveControllerConfig& config, uint32_t level){
+void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level){
 
 	ROS_INFO("reconfigure callback!");
 	cost_contour_weight_factors_(0) = config.Wcontour;
@@ -839,7 +839,7 @@ void MPCC::publishCost(void){
 void MPCC::publishFeedback(int& it, double& time)
 {
 
-    predictive_control::control_feedback feedback_msg;
+    lmpcc::control_feedback feedback_msg;
 
     feedback_msg.header.stamp = ros::Time::now();
     feedback_msg.header.frame_id = controller_config_->tracking_frame_;

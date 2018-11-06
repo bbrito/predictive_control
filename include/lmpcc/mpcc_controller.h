@@ -89,6 +89,9 @@
 #include <std_srvs/Empty.h>
 #include <robot_localization/SetPose.h>
 
+#include <cv_msgs/PredictedMoGTracks.h>
+#include <geometry_msgs/PoseWithCovariance.h>
+
 typedef double real_t;
 
 class MPCC
@@ -98,7 +101,6 @@ class MPCC
      * - Extract current position and velocity of manipulator joints
      * - Publish controlled joint velocity
      */
-        //Info: static member for transform std::vector to Eigen::vector
 
 public:
 
@@ -147,9 +149,9 @@ public:
      * @return: true if transform else false
      */
     bool getTransform(const std::string& from,
-                                        const std::string& to,
-                                        geometry_msgs::PoseStamped& stamped_pose
-                                        );
+                      const std::string& to,
+                      geometry_msgs::PoseStamped& stamped_pose
+    );
 
     /**
      * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
@@ -195,36 +197,38 @@ public:
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
 
-	ros::Publisher joint_state_pub_;
+    ros::Subscriber  obstacles_state_sub_;
+
+    ros::Publisher  joint_state_pub_;
 
     // publishes error vector between tracking and target frame
     ros::Publisher cartesian_error_pub_;
 
     // publish trajectory
     ros::Publisher traj_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_,brake_pub_, spline_traj_pub_, contour_error_pub_, feedback_pub_;
-	//Predicted trajectory
-	nav_msgs::Path pred_traj_;
-	nav_msgs::Path pred_cmd_;
-	nav_msgs::Path spline_traj_,spline_traj2_;
-	int traj_i;
-	//Controller options
-	bool enable_output_;
-    	bool reset_world_;
-	int n_iterations_;
-	bool simulation_mode_;
+    //Predicted trajectory
+    nav_msgs::Path pred_traj_;
+    nav_msgs::Path pred_cmd_;
+    nav_msgs::Path spline_traj_,spline_traj2_;
+    int traj_i;
+    //Controller options
+    bool enable_output_;
+    bool reset_world_;
+    int n_iterations_;
+    bool simulation_mode_;
     real_t te_;
 
-	tf2_ros::TransformBroadcaster state_pub_,path_pose_pub_;
-	std_msgs::Float64 cost_;
-	std_msgs::Float64 brake_;
+    tf2_ros::TransformBroadcaster state_pub_,path_pose_pub_;
+    std_msgs::Float64 cost_;
+    std_msgs::Float64 brake_;
     double contour_error_;
     double lag_error_;
 
-	//Spline trajectory generation
-	tk::spline ref_path_x, ref_path_y;
+    //Spline trajectory generation
+    tk::spline ref_path_x, ref_path_y;
 
-	//MPCC Implementation
-	std::vector<double> X_road, Y_road, Theta_road;
+    //MPCC Implementation
+    std::vector<double> X_road, Y_road, Theta_road;
     double dist_spline_pts_;
     double total_length_;
     std::vector<double> ss,xx,yy;
@@ -235,9 +239,9 @@ public:
     bool goal_reached_;
     bool last_poly_;
 
-    	//reset simulation msg
-    	std_srvs::Empty reset_msg_;
-    	robot_localization::SetPose reset_pose_msg_;
+    //reset simulation msg
+    std_srvs::Empty reset_msg_;
+    robot_localization::SetPose reset_pose_msg_;
 private:
 
     ros::NodeHandle nh;
@@ -245,7 +249,7 @@ private:
     // DEBUG
     bool plotting_result_;
 
-     tf::TransformListener tf_listener_;
+    tf::TransformListener tf_listener_;
 
     // Clock frequency
     double clock_frequency_;
@@ -283,18 +287,18 @@ private:
     double reference_velocity_;
     double velocity_weight_;
 
-	//MoveIt TRAJECTORY VARIABLE
-	moveit_msgs::RobotTrajectory traj;
+    //MoveIt TRAJECTORY VARIABLE
+    moveit_msgs::RobotTrajectory traj;
 
-	//TRajectory execution variables
-	double next_point_dist, goal_dist, prev_point_dist;
-	int idx, idy;
-	double epsilon_;
+    //TRajectory execution variables
+    double next_point_dist, goal_dist, prev_point_dist;
+    int idx, idy;
+    double epsilon_;
 
-	visualization_msgs::Marker ellips1;
+    visualization_msgs::Marker ellips1;
 
     // Kinematic variables
-	//To be done kinematic model car
+    //To be done kinematic model car
 
     // Obstacles
     obstacle_feed::Obstacles obstacles_;
@@ -307,7 +311,7 @@ private:
     Eigen::VectorXd last_velocity_;
 
     // Type of variable used to publish joint velocity
-	prius_msgs::Control controlled_velocity_;
+    prius_msgs::Control controlled_velocity_;
 
     // predictive configuration
     boost::shared_ptr<predictive_configuration> controller_config_;
@@ -315,16 +319,16 @@ private:
     // move to goal position action
     boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::moveAction> > move_action_server_;
 
-	boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::trajAction> > moveit_action_server_;
+    boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::trajAction> > moveit_action_server_;
 
     /// Action interface
     lmpcc::moveResult move_action_result_;
     lmpcc::moveFeedback move_action_feedback_;
-	lmpcc::trajActionFeedback moveit_action_feedback_;
-	lmpcc::trajActionResult moveit_action_result_;
+    lmpcc::trajActionFeedback moveit_action_feedback_;
+    lmpcc::trajActionResult moveit_action_result_;
     void moveGoalCB();
     void movePreemptCB();
-	void moveitGoalCB();
+    void moveitGoalCB();
     void actionSuccess();
     void actionAbort();
     void resetSimulatio();
@@ -353,28 +357,28 @@ private:
 
 
     void publishTrajectory(void);
-	/**
-	 * @brief publishPredictedTrajectory: publish predicted trajectory
-	 */
-	void publishPredictedTrajectory(void);
+    /**
+     * @brief publishPredictedTrajectory: publish predicted trajectory
+     */
+    void publishPredictedTrajectory(void);
 
-	void publishSplineTrajectory(void);
+    void publishSplineTrajectory(void);
 
-	void publishPredictedOutput(void);
+    void publishPredictedOutput(void);
 
-	void publishPredictedCollisionSpace(void);
+    void publishPredictedCollisionSpace(void);
 
-	void publishCost(void);
+    void publishCost(void);
 
     void publishContourError(void);
 
     void publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj);
 
-	void broadcastTF();
+    void broadcastTF();
 
-	void broadcastPathPose();
+    void broadcastPathPose();
 
-	double spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries);
+    double spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries);
 
     inline void Ref_path(std::vector<double> x, std::vector<double> y, std::vector<double> theta);
 
@@ -382,15 +386,19 @@ private:
 
     void publishFeedback(int& it, double& time);
 
+    void ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects);
+
     /**
      * @brief clearDataMember: clear vectors means free allocated memory
      */
     void clearDataMember();
 
-	/**
+    /**
      * @brief executeTrajectory: changes the goal state of the mpcc to each point of trajectory
      */
-	void executeTrajectory(const moveit_msgs::RobotTrajectory & traj);
+    void executeTrajectory(const moveit_msgs::RobotTrajectory & traj);
+
+    bool transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose);
 };
 
 #endif

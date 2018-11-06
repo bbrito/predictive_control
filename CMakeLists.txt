@@ -80,7 +80,6 @@ generate_messages(
     visualization_msgs
     moveit_msgs
     obstacle_feed
-    predictive_control
 )
 
 catkin_package(
@@ -140,6 +139,7 @@ target_include_directories(predictive_controller PUBLIC
 add_executable(lmpcc_node src/predictive_control_node.cpp)
 target_link_libraries(lmpcc_node
         predictive_controller
+        predictive_configuration
         ${catkin_LIBRARIES}
         tkspline_lib)
 

@@ -39,12 +39,12 @@ bool MPCC::initialize()
         bool kinematic_success = true;
 
         if (controller_config_success == false)
-         {
+        {
             ROS_ERROR("MPCC: FAILED TO INITILIZED!!");
             std::cout << "States: \n"
-                                << " pd_config: " << std::boolalpha << controller_config_success << "\n"                       
-                                << " pd config init success: " << std::boolalpha << controller_config_->initialize_success_
-                                << std::endl;
+                      << " pd_config: " << std::boolalpha << controller_config_success << "\n"
+                      << " pd config init success: " << std::boolalpha << controller_config_->initialize_success_
+                      << std::endl;
             return false;
         }
 
@@ -66,10 +66,10 @@ bool MPCC::initialize()
         // resize position and velocity velocity vectors
         current_state_ = Eigen::Vector4d(0,0,0,0);
         last_state_ = Eigen::Vector4d(0,0,0,0);
-		prev_pose_ = Eigen::Vector3d(0,0,0);
-		goal_pose_ = Eigen::Vector3d(0,0,0);
-		next_pose_= Eigen::Vector3d(0,0,0);
-		prev_pose_.setZero();
+        prev_pose_ = Eigen::Vector3d(0,0,0);
+        goal_pose_ = Eigen::Vector3d(0,0,0);
+        next_pose_= Eigen::Vector3d(0,0,0);
+        prev_pose_.setZero();
         goal_pose_.setZero();
 
         // ros interfaces
@@ -79,68 +79,70 @@ bool MPCC::initialize()
         move_action_server_->registerPreemptCallback(boost::bind(&MPCC::movePreemptCB, this));
         move_action_server_->start();
 
-	    // MOVEIT interfaces
-	    static const std::string MOVEIT_ACTION_NAME = "fake_base_controller";
-	    moveit_action_server_.reset(new actionlib::SimpleActionServer<lmpcc::trajAction>(nh, MOVEIT_ACTION_NAME, false));
-	    moveit_action_server_->registerGoalCallback(boost::bind(&MPCC::moveitGoalCB, this));
-	    moveit_action_server_->start();
+        // MOVEIT interfaces
+        static const std::string MOVEIT_ACTION_NAME = "fake_base_controller";
+        moveit_action_server_.reset(new actionlib::SimpleActionServer<lmpcc::trajAction>(nh, MOVEIT_ACTION_NAME, false));
+        moveit_action_server_->registerGoalCallback(boost::bind(&MPCC::moveitGoalCB, this));
+        moveit_action_server_->start();
 
         robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
 
         obstacle_feed_sub_ = nh.subscribe(controller_config_->sub_ellipse_topic_, 1, &MPCC::ObstacleCallBack, this);
 
+        obstacles_state_sub_ = nh.subscribe(controller_config_->obs_state_topic_, 1, &MPCC::ObstacleStateCallback, this);
+
         //Publishers
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
-		pred_cmd_pub_ = nh.advertise<nav_msgs::Path>("predicted_cmd",1);
-		cost_pub_ = nh.advertise<std_msgs::Float64>("cost",1);
-		brake_pub_ = nh.advertise<std_msgs::Float64>("break",1);
-		contour_error_pub_ = nh.advertise<std_msgs::Float64MultiArray>("contour_error",1);
-		controlled_velocity_pub_ = nh.advertise<prius_msgs::Control>(controller_config_->output_cmd,1);
-		joint_state_pub_ = nh.advertise<sensor_msgs::JointState>("/joint_states",1);
-		robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
-		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
-		spline_traj_pub_ = nh.advertise<nav_msgs::Path>("spline_traj",1);
-		feedback_pub_ = nh.advertise<lmpcc::control_feedback>("controller_feedback",1);
+        pred_cmd_pub_ = nh.advertise<nav_msgs::Path>("predicted_cmd",1);
+        cost_pub_ = nh.advertise<std_msgs::Float64>("cost",1);
+        brake_pub_ = nh.advertise<std_msgs::Float64>("break",1);
+        contour_error_pub_ = nh.advertise<std_msgs::Float64MultiArray>("contour_error",1);
+        controlled_velocity_pub_ = nh.advertise<prius_msgs::Control>(controller_config_->output_cmd,1);
+        joint_state_pub_ = nh.advertise<sensor_msgs::JointState>("/joint_states",1);
+        robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
+        pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
+        spline_traj_pub_ = nh.advertise<nav_msgs::Path>("spline_traj",1);
+        feedback_pub_ = nh.advertise<lmpcc::control_feedback>("controller_feedback",1);
         ros::Duration(1).sleep();
 
         timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
         timer_.start();
 
-		//Initialize trajectory variables
-		next_point_dist = 0;
-		goal_dist = 0;
-		prev_point_dist = 0;
-		idx = 1;
-		idy = 1;
-		epsilon_ = 0.01;
-		goal_reached_ = false;
+        //Initialize trajectory variables
+        next_point_dist = 0;
+        goal_dist = 0;
+        prev_point_dist = 0;
+        idx = 1;
+        idy = 1;
+        epsilon_ = 0.01;
+        goal_reached_ = false;
         controlled_velocity_.steer = 0;
         controlled_velocity_.throttle = 0;
         controlled_velocity_.brake = 0;
-		last_poly_ = false;
+        last_poly_ = false;
 
-		moveit_msgs::RobotTrajectory j;
-		traj = j;
+        moveit_msgs::RobotTrajectory j;
+        traj = j;
 
-		//initialize trajectory variable to plot prediction trajectory
-		spline_traj_.poses.resize(100);
-		spline_traj2_.poses.resize(100);
-		pred_traj_.poses.resize(ACADO_N);
-		pred_cmd_.poses.resize(ACADO_N);
-		pred_traj_.header.frame_id = controller_config_->tracking_frame_;
-		for(int i=0;i < ACADO_N; i++)
-		{
-			pred_traj_.poses[i].header.frame_id = controller_config_->tracking_frame_;
-		}
+        //initialize trajectory variable to plot prediction trajectory
+        spline_traj_.poses.resize(100);
+        spline_traj2_.poses.resize(100);
+        pred_traj_.poses.resize(ACADO_N);
+        pred_cmd_.poses.resize(ACADO_N);
+        pred_traj_.header.frame_id = controller_config_->tracking_frame_;
+        for(int i=0;i < ACADO_N; i++)
+        {
+            pred_traj_.poses[i].header.frame_id = controller_config_->tracking_frame_;
+        }
 
-		pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
+        pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
         //service clients
         reset_simulation_client_ = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_world");
         reset_ekf_client_ = nh.serviceClient<robot_localization::SetPose>("/set_pose");
 
-		// Initialize pregenerated mpc solver
-		acado_initializeSolver( );
+        // Initialize pregenerated mpc solver
+        acado_initializeSolver( );
 
         // initialize state and control weight factors
         cost_contour_weight_factors_ = transformStdVectorToEigenVector(controller_config_->contour_weight_factors_);
@@ -156,63 +158,67 @@ bool MPCC::initialize()
         reconfigure_server_.reset(new dynamic_reconfigure::Server<lmpcc::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
 
-	    // Initialize obstacles
-        obstacle_feed::Obstacles obstacles;
-		obstacles.Obstacles.resize(controller_config_->n_obstacles_);
+        // Initialize obstacles
+        int N = std::max(16,ACADO_N); // hack.. needs to be beter computed
         obstacles_.Obstacles.resize(controller_config_->n_obstacles_);
-		for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
+        for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
         {
-            obstacles.Obstacles[obst_it].pose.position.x = 1000;
-            obstacles.Obstacles[obst_it].pose.position.y = 1000;
-            obstacles.Obstacles[obst_it].pose.orientation.z = 0;
-            obstacles.Obstacles[obst_it].major_semiaxis = 0.001;
-            obstacles.Obstacles[obst_it].minor_semiaxis = 0.001;
-		}
-		obstacles_ = obstacles;
+            obstacles_.Obstacles[obst_it].pose.resize(N);
+            obstacles_.Obstacles[obst_it].distance.resize(N);
+            obstacles_.Obstacles[obst_it].major_semiaxis.resize(N);
+            obstacles_.Obstacles[obst_it].minor_semiaxis.resize(N);
+            for(int t = 0;t<N;t++){
+                obstacles_.Obstacles[obst_it].pose[t].position.x = 1000;
+                obstacles_.Obstacles[obst_it].pose[t].position.y = 1000;
+                obstacles_.Obstacles[obst_it].pose[t].orientation.z = 0;
+                obstacles_.Obstacles[obst_it].major_semiaxis[t] = 0.001;
+                obstacles_.Obstacles[obst_it].minor_semiaxis[t] = 0.001;
+            }
+        }
 
-		computeEgoDiscs();
+        computeEgoDiscs();
 
-		//Controller options
-		enable_output_ = false;
-		n_iterations_ = 100;
-		simulation_mode_ = true;
+        //Controller options
+        enable_output_ = false;
+        n_iterations_ = 100;
+        simulation_mode_ = true;
 
-		//Plot variables
-		ellips1.type = visualization_msgs::Marker::CYLINDER;
-		ellips1.id = 60;
-		ellips1.color.b = 1.0;
-		ellips1.color.a = 0.2;
-		ellips1.header.frame_id = controller_config_->tracking_frame_;
-		ellips1.ns = "trajectory";
-		ellips1.action = visualization_msgs::Marker::ADD;
-		ellips1.lifetime = ros::Duration(0.1);
-		ellips1.scale.x = r_discs_*2.0;
-		ellips1.scale.y = r_discs_*2.0;
-		ellips1.scale.z = 0.05;
+        //Plot variables
+        ellips1.type = visualization_msgs::Marker::CYLINDER;
+        ellips1.id = 60;
+        ellips1.color.b = 1.0;
+        ellips1.color.a = 0.2;
+        ellips1.header.frame_id = controller_config_->tracking_frame_;
+        ellips1.ns = "trajectory";
+        ellips1.action = visualization_msgs::Marker::ADD;
+        ellips1.lifetime = ros::Duration(0.1);
+        ellips1.scale.x = r_discs_*2.0;
+        ellips1.scale.y = r_discs_*2.0;
+        ellips1.scale.z = 0.05;
 
-		// Initialize pregenerated mpc solver
-		acado_initializeSolver( );
+        // Initialize pregenerated mpc solver
+        acado_initializeSolver( );
 
-		// MPCC reference path variables
-		X_road.resize(controller_config_->ref_x_.size());
-		Y_road.resize(controller_config_->ref_y_.size());
-		Theta_road.resize(controller_config_->ref_theta_.size());
+        // MPCC reference path variables
+        X_road.resize(controller_config_->ref_x_.size());
+        Y_road.resize(controller_config_->ref_y_.size());
+        Theta_road.resize(controller_config_->ref_theta_.size());
 
-		// Check if all reference vectors are of the same length
-		if (!( (controller_config_->ref_x_.size() == controller_config_->ref_y_.size()) && ( controller_config_->ref_x_.size() == controller_config_->ref_theta_.size() ) && (controller_config_->ref_y_.size() == controller_config_->ref_theta_.size()) ))
+        // Check if all reference vectors are of the same length
+        if (!( (controller_config_->ref_x_.size() == controller_config_->ref_y_.size()) && ( controller_config_->ref_x_.size() == controller_config_->ref_theta_.size() ) && (controller_config_->ref_y_.size() == controller_config_->ref_theta_.size()) ))
         {
             ROS_ERROR("Reference path inputs should be of equal length");
         }
 
-		traj_i =0;
-		ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
-		return true;
-	}
-	else
-	{
-		ROS_ERROR("MPCC: Failed to initialize as ROS Node is shoutdown");
-		return false;
-	}
+        traj_i =0;
+        ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
+        return true;
+    }
+    else
+    {
+        ROS_ERROR("MPCC: Failed to initialize as ROS Node is shoutdown");
+        return false;
+    }
 }
 
 void MPCC::computeEgoDiscs()
@@ -237,59 +243,59 @@ void MPCC::computeEgoDiscs()
 
 void MPCC::broadcastPathPose(){
 
-	geometry_msgs::TransformStamped transformStamped;
-	transformStamped.header.stamp = ros::Time::now();
-	transformStamped.header.frame_id = controller_config_->tracking_frame_;
-	transformStamped.child_frame_id = "path";
+    geometry_msgs::TransformStamped transformStamped;
+    transformStamped.header.stamp = ros::Time::now();
+    transformStamped.header.frame_id = controller_config_->tracking_frame_;
+    transformStamped.child_frame_id = "path";
 
-	transformStamped.transform.translation.x = ref_path_x(acadoVariables.x[4]);
-	transformStamped.transform.translation.y = ref_path_y(acadoVariables.x[4]);
-	transformStamped.transform.translation.z = 0.0;
-	tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
-	transformStamped.transform.rotation.x = 0;
-	transformStamped.transform.rotation.y = 0;
-	transformStamped.transform.rotation.z = 0;
-	transformStamped.transform.rotation.w = 1;
+    transformStamped.transform.translation.x = ref_path_x(acadoVariables.x[4]);
+    transformStamped.transform.translation.y = ref_path_y(acadoVariables.x[4]);
+    transformStamped.transform.translation.z = 0.0;
+    tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
+    transformStamped.transform.rotation.x = 0;
+    transformStamped.transform.rotation.y = 0;
+    transformStamped.transform.rotation.z = 0;
+    transformStamped.transform.rotation.w = 1;
 
-	path_pose_pub_.sendTransform(transformStamped);
+    path_pose_pub_.sendTransform(transformStamped);
 }
 
 void MPCC::broadcastTF(){
 
-	geometry_msgs::TransformStamped transformStamped;
-	transformStamped.header.stamp = ros::Time::now();
-	transformStamped.header.frame_id = controller_config_->target_frame_;
-	transformStamped.child_frame_id = controller_config_->robot_base_link_;
-	if(!enable_output_){
-		transformStamped.transform.translation.x = current_state_(0);
-		transformStamped.transform.translation.y = current_state_(1);
-		transformStamped.transform.translation.z = 0.0;
-		tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
-		transformStamped.transform.rotation.x = q.x();
-		transformStamped.transform.rotation.y = q.y();
-		transformStamped.transform.rotation.z = q.z();
-		transformStamped.transform.rotation.w = q.w();
-	}
+    geometry_msgs::TransformStamped transformStamped;
+    transformStamped.header.stamp = ros::Time::now();
+    transformStamped.header.frame_id = controller_config_->target_frame_;
+    transformStamped.child_frame_id = controller_config_->robot_base_link_;
+    if(!enable_output_){
+        transformStamped.transform.translation.x = current_state_(0);
+        transformStamped.transform.translation.y = current_state_(1);
+        transformStamped.transform.translation.z = 0.0;
+        tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
+        transformStamped.transform.rotation.x = q.x();
+        transformStamped.transform.rotation.y = q.y();
+        transformStamped.transform.rotation.z = q.z();
+        transformStamped.transform.rotation.w = q.w();
+    }
 
-	else{
-		transformStamped.transform.translation.x = pred_traj_.poses[1].pose.position.x;
-		transformStamped.transform.translation.y = pred_traj_.poses[1].pose.position.y;
-		transformStamped.transform.translation.z = 0.0;
+    else{
+        transformStamped.transform.translation.x = pred_traj_.poses[1].pose.position.x;
+        transformStamped.transform.translation.y = pred_traj_.poses[1].pose.position.y;
+        transformStamped.transform.translation.z = 0.0;
 
-		tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
-		transformStamped.transform.rotation.x = q.x();
-		transformStamped.transform.rotation.y = q.y();
-		transformStamped.transform.rotation.z = q.z();
-		transformStamped.transform.rotation.w = q.w();
-	}
+        tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
+        transformStamped.transform.rotation.x = q.x();
+        transformStamped.transform.rotation.y = q.y();
+        transformStamped.transform.rotation.z = q.z();
+        transformStamped.transform.rotation.w = q.w();
+    }
 
-	state_pub_.sendTransform(transformStamped);
+    state_pub_.sendTransform(transformStamped);
 
-	sensor_msgs::JointState empty;
-	empty.position.resize(7);
-	empty.name ={"rear_right_wheel_joint", "rear_left_wheel_joint", "front_right_wheel_joint", "front_left_wheel_joint","front_right_steer_joint","front_left_steer_joint","steering_joint"};
-	empty.header.stamp = ros::Time::now();
-	joint_state_pub_.publish(empty);
+    sensor_msgs::JointState empty;
+    empty.position.resize(7);
+    empty.name ={"rear_right_wheel_joint", "rear_left_wheel_joint", "front_right_wheel_joint", "front_left_wheel_joint","front_right_steer_joint","front_left_steer_joint","steering_joint"};
+    empty.header.stamp = ros::Time::now();
+    joint_state_pub_.publish(empty);
 }
 
 // update this function 1/clock_frequency
@@ -301,8 +307,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
     acado_initializeSolver( );
 
     int traj_n = traj.multi_dof_joint_trajectory.points.size();
-	if(!simulation_mode_)
-		broadcastTF();
+    if(!simulation_mode_)
+        broadcastTF();
     if (traj_n > 0) {
 
         if (simulation_mode_) {
@@ -385,31 +391,32 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 25] = slack_weight_;                     //slack weight
             acadoVariables.od[(ACADO_NOD * N_iter) + 26] = repulsive_weight_;                     //repulsive weight
             acadoVariables.od[(ACADO_NOD * N_iter) + 39] = velocity_weight_;                     //repulsive weight
-            
+
             acadoVariables.od[(ACADO_NOD * N_iter) + 27] = r_discs_; //radius of the disks
             acadoVariables.od[(ACADO_NOD * N_iter) + 28] = x_discs_[0];                        // position of the car discs
             acadoVariables.od[(ACADO_NOD * N_iter) + 40] = x_discs_[1];                        // position of the car discs
             acadoVariables.od[(ACADO_NOD * N_iter) + 41] = x_discs_[2];                        // position of the car discs
-            
-            acadoVariables.od[(ACADO_NOD * N_iter) + 29] = obstacles_.Obstacles[0].pose.position.x;      // x position of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 30] = obstacles_.Obstacles[0].pose.position.y;      // y position of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 31] = obstacles_.Obstacles[0].pose.orientation.z;   // heading of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 32] = obstacles_.Obstacles[0].major_semiaxis;       // major semiaxis of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 33] = obstacles_.Obstacles[0].minor_semiaxis;       // minor semiaxis of obstacle 1
-           
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 34] = obstacles_.Obstacles[1].pose.position.x;      // x position of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 35] = obstacles_.Obstacles[1].pose.position.y;      // y position of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 36] = obstacles_.Obstacles[1].pose.orientation.z;   // heading of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 37] = obstacles_.Obstacles[1].major_semiaxis;       // major semiaxis of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 38] = obstacles_.Obstacles[1].minor_semiaxis;       // minor semiaxis of obstacle 2
-   
-            
+            acadoVariables.od[(ACADO_NOD * N_iter) + 29] = obstacles_.Obstacles[0].pose[N_iter].position.x;      // x position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 30] = obstacles_.Obstacles[0].pose[N_iter].position.y;      // y position of obstacle 1
+            //ToDo check convertion from quaternion to RPY angle
+            acadoVariables.od[(ACADO_NOD * N_iter) + 31] = obstacles_.Obstacles[0].pose[N_iter].orientation.z;   // heading of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 32] = obstacles_.Obstacles[0].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 33] = obstacles_.Obstacles[0].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
+
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 34] = obstacles_.Obstacles[1].pose[N_iter].position.x;      // x position of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 35] = obstacles_.Obstacles[1].pose[N_iter].position.y;      // y position of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 36] = obstacles_.Obstacles[1].pose[N_iter].orientation.z;   // heading of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 37] = obstacles_.Obstacles[1].major_semiaxis[N_iter];       // major semiaxis of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 38] = obstacles_.Obstacles[1].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 2
+
+
 
 
             if (goal_reached_) {
                 acadoVariables.od[(ACADO_NOD * N_iter) + 23] = 0;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = 0;        
+                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = 0;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 8] =  0;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 9] =  0;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 10] = 0;        // spline coefficients
@@ -419,8 +426,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
                 acadoVariables.od[(ACADO_NOD * N_iter) + 14] = 0;        // spline coefficients
                 acadoVariables.od[(ACADO_NOD * N_iter) + 15] = ref_path_y(ss[traj_i]);
             } else {
-                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reference_velocity_;       
-                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reference_velocity_;     
+                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reference_velocity_;
+                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reference_velocity_;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
                 acadoVariables.od[(ACADO_NOD * N_iter) + 9] = ref_path_x.m_b[traj_i + 1];
                 acadoVariables.od[(ACADO_NOD * N_iter) + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
@@ -471,43 +478,43 @@ void MPCC::runNode(const ros::TimerEvent &event)
         publishFeedback(j,te_);
 
     }
-	// publish zero controlled velocity
+    // publish zero controlled velocity
     if (!tracking_)
     {
         actionSuccess();
     }
 
     if(!enable_output_)
-	    publishZeroJointVelocity();
+        publishZeroJointVelocity();
     else
-	    controlled_velocity_pub_.publish(controlled_velocity_);
-    
+        controlled_velocity_pub_.publish(controlled_velocity_);
+
 }
 
 double MPCC::spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries){
 
-	double lower = std::max(s_min, s_guess-window);
-	double upper = std::min(s_max, s_guess + window);
-	double s_i=lower,spline_pos_x_i,spline_pos_y_i;
-	double dist_i,min_dist,smin=0.0;
+    double lower = std::max(s_min, s_guess-window);
+    double upper = std::min(s_max, s_guess + window);
+    double s_i=lower,spline_pos_x_i,spline_pos_y_i;
+    double dist_i,min_dist,smin=0.0;
 
-	spline_pos_x_i = ref_path_x(s_i);
-	spline_pos_y_i = ref_path_y(s_i);
+    spline_pos_x_i = ref_path_x(s_i);
+    spline_pos_y_i = ref_path_y(s_i);
 
-	min_dist = std::sqrt((spline_pos_x_i-current_state_(0))*(spline_pos_x_i-current_state_(0))+(spline_pos_y_i-current_state_(1))*(spline_pos_y_i-current_state_(1)));
+    min_dist = std::sqrt((spline_pos_x_i-current_state_(0))*(spline_pos_x_i-current_state_(0))+(spline_pos_y_i-current_state_(1))*(spline_pos_y_i-current_state_(1)));
 
-	for(int i=0;i<n_tries;i++){
-		s_i = lower+(upper-lower)/n_tries*i;
-		spline_pos_x_i = ref_path_x(s_i);
-		spline_pos_y_i = ref_path_y(s_i);
-		dist_i = std::sqrt((spline_pos_x_i-current_state_(0))*(spline_pos_x_i-current_state_(0))+(spline_pos_y_i-current_state_(1))*(spline_pos_y_i-current_state_(1)));
+    for(int i=0;i<n_tries;i++){
+        s_i = lower+(upper-lower)/n_tries*i;
+        spline_pos_x_i = ref_path_x(s_i);
+        spline_pos_y_i = ref_path_y(s_i);
+        dist_i = std::sqrt((spline_pos_x_i-current_state_(0))*(spline_pos_x_i-current_state_(0))+(spline_pos_y_i-current_state_(1))*(spline_pos_y_i-current_state_(1)));
 
-		if(dist_i<min_dist){
-			min_dist = dist_i;
-			smin = s_i;
-		}
+        if(dist_i<min_dist){
+            min_dist = dist_i;
+            smin = s_i;
+        }
 
-	}
+    }
     if(smin < lower){
         smin=lower;
     }
@@ -515,7 +522,7 @@ double MPCC::spline_closest_point(double s_min, double s_max, double s_guess, do
         smin=upper;
     }
 
-	return smin;
+    return smin;
 
 }
 
@@ -615,7 +622,7 @@ void MPCC::moveitGoalCB()
         acado_initializeSolver( );
 
         int N_iter;
-	for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+        for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
 
             // Initialize Constant Online Data variables
             acadoVariables.od[(ACADO_NOD * N_iter) + 27] = r_discs_;                                // radius of car discs
@@ -623,50 +630,50 @@ void MPCC::moveitGoalCB()
         }
 
         traj_i = 0;
-		goal_reached_ = false;
-		last_poly_ = false;
+        goal_reached_ = false;
+        last_poly_ = false;
         ConstructRefPath();
 
-		publishSplineTrajectory();
+        publishSplineTrajectory();
     }
 }
 
 
 void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level){
 
-	ROS_INFO("reconfigure callback!");
-	cost_contour_weight_factors_(0) = config.Wcontour;
-	cost_contour_weight_factors_(1) = config.Wlag;
-	cost_control_weight_factors_(0) = config.Ka;
-	cost_control_weight_factors_(1) = config.Kdelta;
-	velocity_weight_ = config.Kv;
+    ROS_INFO("reconfigure callback!");
+    cost_contour_weight_factors_(0) = config.Wcontour;
+    cost_contour_weight_factors_(1) = config.Wlag;
+    cost_control_weight_factors_(0) = config.Ka;
+    cost_control_weight_factors_(1) = config.Kdelta;
+    velocity_weight_ = config.Kv;
 
-	slack_weight_= config.Ws;
-	repulsive_weight_ = config.WR;
+    slack_weight_= config.Ws;
+    repulsive_weight_ = config.WR;
 
-	reference_velocity_ = config.vRef;
-   	slack_weight_= config.Ws;
-	repulsive_weight_ = config.WR;
+    reference_velocity_ = config.vRef;
+    slack_weight_= config.Ws;
+    repulsive_weight_ = config.WR;
 
-	enable_output_ = config.enable_output;
-	n_iterations_ = config.n_iterations;
-	simulation_mode_ = config.simulation_mode;
+    enable_output_ = config.enable_output;
+    n_iterations_ = config.n_iterations;
+    simulation_mode_ = config.simulation_mode;
 
-	//Search window parameters
-	window_size_ = config.window_size;
-	n_search_points_ = config.n_search_points;
+    //Search window parameters
+    window_size_ = config.window_size;
+    n_search_points_ = config.n_search_points;
 
-	reset_world_ = config.reset_world;
-	if(reset_world_) {
-	    reset_simulation_client_.call(reset_msg_);
-	    reset_ekf_client_.call(reset_pose_msg_);
-	    acadoVariables.x[0] = 0;
-	    acadoVariables.x[1] = 0;
-		acadoVariables.x[2] = 0;
+    reset_world_ = config.reset_world;
+    if(reset_world_) {
+        reset_simulation_client_.call(reset_msg_);
+        reset_ekf_client_.call(reset_pose_msg_);
+        acadoVariables.x[0] = 0;
+        acadoVariables.x[1] = 0;
+        acadoVariables.x[2] = 0;
         acadoVariables.x[3] = 0;             //it should be obtained by the wheel speed
         acadoVariables.x0[0] = 0;
         acadoVariables.x0[1] = 0;
-	    acadoVariables.x0[2] = 0;
+        acadoVariables.x0[2] = 0;
         acadoVariables.x0[3] = 0;
         acadoVariables.x[ACADO_NX+4] = 0;
         traj_i=0;
@@ -724,7 +731,37 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
     current_state_(3) =    sqrt(pow(msg->twist.twist.linear.x,2)+pow(msg->twist.twist.linear.y,2));
 
 }
+void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
+{
+    double ysqr, t3, t4;
+    //ROS_INFO_STREAM("N tracks: "<<objects.tracks.size());
+    if(objects.tracks.size()) {
+        //ROS_INFO_STREAM("N track: " << objects.tracks[0].track.size());
+        //ROS_INFO_STREAM("N: " << objects.tracks[0].track[0].pose.size());
+    }
+    for(int i=0;i<objects.tracks.size();i++){
+        cv_msgs::PredictedMoGTrack track = objects.tracks[i];
+        for(int j=0;j<track.track.size();j++){
+            cv_msgs::PredictedMoG mog = track.track[j];
+            for (int k = 0; k < mog.pose.size(); k++) {
+                obstacles_.Obstacles[k].pose[j]=mog.pose[k].pose;
+                //ToDo
+                transformPose(objects.header.frame_id,controller_config_->target_frame_,obstacles_.Obstacles[k].pose[j]);
 
+                // Convert quaternion to RPY
+                ysqr = obstacles_.Obstacles[k].pose[j].orientation.y * obstacles_.Obstacles[k].pose[j].orientation.y;
+                t3 = +2.0 * (obstacles_.Obstacles[k].pose[j].orientation.w * obstacles_.Obstacles[k].pose[j].orientation.z
+                             + obstacles_.Obstacles[k].pose[j].orientation.x * obstacles_.Obstacles[k].pose[j].orientation.y);
+                t4 = +1.0 - 2.0 * (ysqr + obstacles_.Obstacles[k].pose[j].orientation.z * obstacles_.Obstacles[k].pose[j].orientation.z);
+
+                obstacles_.Obstacles[k].pose[j].orientation.z = std::atan2(t3, t4);
+
+                obstacles_.Obstacles[k].major_semiaxis[j] = mog.pose[k].covariance[0]+0.5;
+                obstacles_.Obstacles[k].minor_semiaxis[j] = mog.pose[k].covariance[1]+1.5;
+            }
+        }
+    }
+}
 void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 {
 
@@ -738,13 +775,21 @@ void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 
     if (obstacles.Obstacles.size() < controller_config_->n_obstacles_)
     {
+        int N = controller_config_->end_time_horizon_/controller_config_->sampling_time_;
+
         for (int obst_it = obstacles.Obstacles.size(); obst_it < controller_config_->n_obstacles_; obst_it++)
         {
-            total_obstacles.Obstacles[obst_it].pose.position.x = 1000;
-            total_obstacles.Obstacles[obst_it].pose.position.y = 1000;
-            total_obstacles.Obstacles[obst_it].pose.orientation.z = 0;
-            total_obstacles.Obstacles[obst_it].major_semiaxis = 0.001;
-            total_obstacles.Obstacles[obst_it].minor_semiaxis = 0.001;
+            total_obstacles.Obstacles[obst_it].pose.resize(N);
+            total_obstacles.Obstacles[obst_it].distance.resize(N);
+            total_obstacles.Obstacles[obst_it].major_semiaxis.resize(N);
+            total_obstacles.Obstacles[obst_it].minor_semiaxis.resize(N);
+            for(int t = 0;t<N;t++) {
+                total_obstacles.Obstacles[obst_it].pose[t].position.x = 1000;
+                total_obstacles.Obstacles[obst_it].pose[t].position.y = 1000;
+                total_obstacles.Obstacles[obst_it].pose[t].orientation.z = 0;
+                total_obstacles.Obstacles[obst_it].major_semiaxis[t] = 0.001;
+                total_obstacles.Obstacles[obst_it].minor_semiaxis[t] = 0.001;
+            }
         }
     }
 
@@ -765,9 +810,9 @@ void MPCC::publishZeroJointVelocity()
     {
 //        ROS_INFO("Publishing ZERO joint velocity!!");
     }
-	prius_msgs::Control pub_msg;
-	if(!simulation_mode_)
-		broadcastTF();
+    prius_msgs::Control pub_msg;
+    if(!simulation_mode_)
+        broadcastTF();
     controlled_velocity_ = pub_msg;
     controlled_velocity_.brake = 10.0;
     controlled_velocity_pub_.publish(controlled_velocity_);
@@ -775,16 +820,16 @@ void MPCC::publishZeroJointVelocity()
 
 void MPCC::publishSplineTrajectory(void)
 {
-	spline_traj_.header.stamp = ros::Time::now();
-	spline_traj_.header.frame_id = controller_config_->tracking_frame_;
-	for (int i = 0; i < 50; i++) // 100 points
-	{
-		spline_traj_.poses[i].pose.position.x = ref_path_x(i*(n_pts-1)*dist_spline_pts_/100.0); //x
-		spline_traj_.poses[i].pose.position.y = ref_path_y(i*(n_pts-1)*dist_spline_pts_/100.0); //y
+    spline_traj_.header.stamp = ros::Time::now();
+    spline_traj_.header.frame_id = controller_config_->tracking_frame_;
+    for (int i = 0; i < 50; i++) // 100 points
+    {
+        spline_traj_.poses[i].pose.position.x = ref_path_x(i*(n_pts-1)*dist_spline_pts_/100.0); //x
+        spline_traj_.poses[i].pose.position.y = ref_path_y(i*(n_pts-1)*dist_spline_pts_/100.0); //y
 
-	}
+    }
 
-	spline_traj_pub_.publish(spline_traj_);
+    spline_traj_pub_.publish(spline_traj_);
 }
 
 void MPCC::publishPredictedTrajectory(void)
@@ -793,47 +838,47 @@ void MPCC::publishPredictedTrajectory(void)
     {
         pred_traj_.poses[i].pose.position.x = acadoVariables.x[i * ACADO_NX + 0]; //x
         pred_traj_.poses[i].pose.position.y = acadoVariables.x[i * ACADO_NX + 1]; //y
-		pred_traj_.poses[i].pose.orientation.z = acadoVariables.x[i * ACADO_NX + 2]; //theta
+        pred_traj_.poses[i].pose.orientation.z = acadoVariables.x[i * ACADO_NX + 2]; //theta
     }
 
-	pred_traj_pub_.publish(pred_traj_);
+    pred_traj_pub_.publish(pred_traj_);
 }
 
 void MPCC::publishPredictedOutput(void)
 {
-	for (int i = 0; i < ACADO_N; i++)
-	{
-		pred_cmd_.poses[i].pose.position.x = acadoVariables.u[i + 0]; //x
-		pred_cmd_.poses[i].pose.position.y = acadoVariables.u[i + 1]; //y
-	}
+    for (int i = 0; i < ACADO_N; i++)
+    {
+        pred_cmd_.poses[i].pose.position.x = acadoVariables.u[i + 0]; //x
+        pred_cmd_.poses[i].pose.position.y = acadoVariables.u[i + 1]; //y
+    }
 
-	pred_cmd_pub_.publish(pred_cmd_);
+    pred_cmd_pub_.publish(pred_cmd_);
 }
 
 void MPCC::publishPredictedCollisionSpace(void)
 {
-	visualization_msgs::MarkerArray collision_space;
+    visualization_msgs::MarkerArray collision_space;
 
 
-	for (int i = 0; i < ACADO_N; i++)
-	{
-		ellips1.id = 60+i;
-		ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0];
-		ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1];
-		ellips1.pose.orientation.x = 0;
-		ellips1.pose.orientation.y = 0;
-		ellips1.pose.orientation.z = 0;
-		ellips1.pose.orientation.w = 1;
-		collision_space.markers.push_back(ellips1);
-	}
+    for (int i = 0; i < ACADO_N; i++)
+    {
+        ellips1.id = 60+i;
+        ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0];
+        ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1];
+        ellips1.pose.orientation.x = 0;
+        ellips1.pose.orientation.y = 0;
+        ellips1.pose.orientation.z = 0;
+        ellips1.pose.orientation.w = 1;
+        collision_space.markers.push_back(ellips1);
+    }
 
-	robot_collision_space_pub_.publish(collision_space);
+    robot_collision_space_pub_.publish(collision_space);
 }
 
 void MPCC::publishCost(void){
 
-	cost_pub_.publish(cost_);
-	brake_pub_.publish(brake_);
+    cost_pub_.publish(cost_);
+    brake_pub_.publish(brake_);
 }
 
 void MPCC::publishFeedback(int& it, double& time)
@@ -869,4 +914,51 @@ void MPCC::publishFeedback(int& it, double& time)
     feedback_msg.search_points = n_search_points_;
 
     feedback_pub_.publish(feedback_msg);
+}
+
+// Utils
+
+bool MPCC::transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose)
+{
+    bool transform = false;
+    tf::StampedTransform stamped_tf;
+    //ROS_INFO_STREAM("Transforming from :" << from << " to: " << to);
+    geometry_msgs::PoseStamped stampedPose_in, stampedPose_out;
+
+    stampedPose_in.pose = pose;
+    if(std::sqrt(std::pow(pose.orientation.x,2)+std::pow(pose.orientation.y,2)+std::pow(pose.orientation.z,2)+std::pow(pose.orientation.w,2))<1){
+        stampedPose_in.pose.orientation.x = 0;
+        stampedPose_in.pose.orientation.y = 0;
+        stampedPose_in.pose.orientation.z = 0;
+        stampedPose_in.pose.orientation.w = 1;
+    }
+//    stampedPose_in.header.stamp = ros::Time::now();
+    stampedPose_in.header.frame_id = from;
+
+    // make sure source and target frame exist
+    if (tf_listener_.frameExists(to) && tf_listener_.frameExists(from))
+    {
+        try
+        {
+            // find transforamtion between souce and target frame
+            tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.02));
+            tf_listener_.transformPose(to, stampedPose_in, stampedPose_out);
+
+            transform = true;
+        }
+        catch (tf::TransformException& ex)
+        {
+            ROS_ERROR("MPCC::getTransform: %s", ex.what());
+        }
+    }
+
+    else
+    {
+        ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",from.c_str(), to.c_str());
+    }
+    pose = stampedPose_out.pose;
+    stampedPose_in.pose = stampedPose_out.pose;
+    stampedPose_in.header.frame_id = to;
+
+    return transform;
 }

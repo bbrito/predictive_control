@@ -33,18 +33,18 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     return false;
   }
 
-	if (!nh.getParam ("tracking_frame", target_frame_) )
-	{
-		ROS_WARN(" Parameter 'tracking_frame' not set on %s node " , ros::this_node::getName().c_str());
-		return false;
-	}
+  if (!nh.getParam ("tracking_frame", target_frame_) )
+  {
+    ROS_WARN(" Parameter 'tracking_frame' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
 
   // read and set constraints
   // read and set velocity constrints
   if (!nh_config.getParam ("constraints/velocity_constraints/min", vel_min_limit_) )
   {
     ROS_WARN(" Parameter '/constraints/velocity_constraints/min' not set on %s node" , ros::this_node::getName().c_str());
-	//constraining vx vy and w
+    //constraining vx vy and w
     vel_min_limit_.resize(3, -1.0);
     set_velocity_constraints_ = false;
 
@@ -148,6 +148,12 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   if (!nh.getParam ("robot_state_topic", robot_state_topic_) )
   {
     ROS_WARN(" Parameter 'robot_state_topic' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
+  if (!nh.getParam ("obs_state_topic", obs_state_topic_) )
+  {
+    ROS_WARN(" Parameter 'obs_state_topic' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
@@ -277,36 +283,36 @@ void predictive_configuration::print_configuration_parameter()
   // print joint vel min limit
   std::cout << "Joint vel min limit: [";
   for_each(vel_min_limit_.begin(), vel_min_limit_.end(), [](double& val)
-  {
-    std::cout << val << ", " ;
-  }
+           {
+               std::cout << val << ", " ;
+           }
   );
   std::cout<<"]"<<std::endl;
 
   // print joint vel max limit
   std::cout << "Joint vel max limit: [";
   for_each(vel_max_limit_.begin(), vel_max_limit_.end(), [](double& val)
-  {
-    std::cout << val << ", " ;
-  }
+           {
+               std::cout << val << ", " ;
+           }
   );
   std::cout<<"]"<<std::endl;
 
   // print contour weight factors
   std::cout << "Contour weight factors: [";
   for_each(contour_weight_factors_.begin(), contour_weight_factors_.end(), [](double& val)
-  {
-    std::cout << val << ", " ;
-  }
+           {
+               std::cout << val << ", " ;
+           }
   );
   std::cout<<"]"<<std::endl;
 
   // print control weight factors
   std::cout << "Control weight factors: [";
   for_each(control_weight_factors_.begin(), control_weight_factors_.end(), [](double& val)
-  {
-    std::cout << val << ", " ;
-  }
+           {
+               std::cout << val << ", " ;
+           }
   );
   std::cout<<"]"<<std::endl;
 

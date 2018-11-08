@@ -700,28 +700,18 @@ void MPCC::actionAbort()
 void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 {
 
-    if (activate_debug_output_)
-    {
+   if (activate_debug_output_)
+   {
 //  ROS_INFO("MPCC::StateCallBack");
-    }
-    //Intermidiate variables
-    double ysqr, t3, t4;
+   }
+   ROS_INFO("MPCC::StateCallBack");
+   last_state_ = current_state_;
+   current_state_(0) =    msg->pose.pose.position.x;
+   current_state_(1) =    msg->pose.pose.position.y;
 
-    last_state_ = current_state_;
-    current_state_(0) =    msg->pose.pose.position.x;
-    current_state_(1) =    msg->pose.pose.position.y;
-    //ROS_INFO_STREAM("current_state_(0): " << current_state_(0));
-    // Convert quaternion to angle
+   current_state_(2) = msg->pose.pose.orientation.z;
 
-    ysqr = msg->pose.pose.orientation.y * msg->pose.pose.orientation.y;
-    t3 = +2.0 * (msg->pose.pose.orientation.w * msg->pose.pose.orientation.z
-                 + msg->pose.pose.orientation.x * msg->pose.pose.orientation.y);
-    t4 = +1.0 - 2.0 * (ysqr + msg->pose.pose.orientation.z * msg->pose.pose.orientation.z);
-
-    current_state_(2) = std::atan2(t3, t4);
-
-    current_state_(3) =    sqrt(pow(msg->twist.twist.linear.x,2)+pow(msg->twist.twist.linear.y,2));
-
+   current_state_(3) = msg->twist.twist.linear.x;
 }
 void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 {

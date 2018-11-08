@@ -53,7 +53,6 @@ bool MPCC::initialize()
 
         //DEBUG
         activate_debug_output_ = controller_config_->activate_debug_output_;
-        tracking_ = true;
         move_action_result_.reach = false;
         plotting_result_ = controller_config_->plotting_result_;
 
@@ -478,11 +477,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
         publishFeedback(j,te_);
 
     }
-    // publish zero controlled velocity
-    if (!tracking_)
-    {
-        actionSuccess();
-    }
 
     if(!enable_output_)
         publishZeroJointVelocity();
@@ -532,7 +526,6 @@ void MPCC::moveGoalCB()
     if(move_action_server_->isNewGoalAvailable())
     {
         boost::shared_ptr<const lmpcc::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
-        tracking_ = false;
     }
 }
 
@@ -612,7 +605,6 @@ void MPCC::moveitGoalCB()
     {
         boost::shared_ptr<const lmpcc::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
         traj = moveit_action_goal_ptr->trajectory;
-        tracking_ = false;
 
         int traj_n = traj.multi_dof_joint_trajectory.points.size();
         goal_pose_(0) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.x;
@@ -689,19 +681,19 @@ void MPCC::movePreemptCB()
 {
     move_action_result_.reach = true;
     move_action_server_->setPreempted(move_action_result_, "Action has been preempted");
-    tracking_ = true;
+
 }
 
 void MPCC::actionSuccess()
 {
     move_action_server_->setSucceeded(move_action_result_, "Goal succeeded!");
-    tracking_ = true;
+
 }
 
 void MPCC::actionAbort()
 {
     move_action_server_->setAborted(move_action_result_, "Action has been aborted");
-    tracking_ = true;
+
 }
 
 // read current position and velocity of robot joints

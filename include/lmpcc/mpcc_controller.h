@@ -97,9 +97,7 @@ typedef double real_t;
 class MPCC
 {
     /** Managing execution of all classes of predictive control
-     * - Handle self collsion avoidance
-     * - Extract current position and velocity of manipulator joints
-     * - Publish controlled joint velocity
+     * - Handle static and dynamic collision avoidance
      */
 
 public:
@@ -201,9 +199,6 @@ public:
 
     ros::Publisher  joint_state_pub_;
 
-    // publishes error vector between tracking and target frame
-    ros::Publisher cartesian_error_pub_;
-
     // publish trajectory
     ros::Publisher traj_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_,brake_pub_, spline_traj_pub_, contour_error_pub_, feedback_pub_;
     //Predicted trajectory
@@ -262,8 +257,7 @@ private:
 
     // activate output of this node
     bool activate_debug_output_;
-    // used to set desired position by mannually or using interactive marker node
-    bool tracking_;
+
     std::string target_frame_;
 
 

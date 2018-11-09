@@ -83,7 +83,7 @@
 #include <tkspline/spline.h>
 #include <lmpcc/Clothoid.h>
 
-#include <prius_msgs/Control.h>
+#include <lmpcc/Control.h>
 
 //reset msgs
 #include <std_srvs/Empty.h>
@@ -305,7 +305,7 @@ private:
     Eigen::VectorXd last_velocity_;
 
     // Type of variable used to publish joint velocity
-    prius_msgs::Control controlled_velocity_;
+    lmpcc::Control controlled_velocity_;
 
     // predictive configuration
     boost::shared_ptr<predictive_configuration> controller_config_;

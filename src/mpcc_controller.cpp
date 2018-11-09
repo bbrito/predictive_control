@@ -96,7 +96,7 @@ bool MPCC::initialize()
         cost_pub_ = nh.advertise<std_msgs::Float64>("cost",1);
         brake_pub_ = nh.advertise<std_msgs::Float64>("break",1);
         contour_error_pub_ = nh.advertise<std_msgs::Float64MultiArray>("contour_error",1);
-        controlled_velocity_pub_ = nh.advertise<prius_msgs::Control>(controller_config_->output_cmd,1);
+        controlled_velocity_pub_ = nh.advertise<lmpcc::Control>(controller_config_->output_cmd,1);
         joint_state_pub_ = nh.advertise<sensor_msgs::JointState>("/joint_states",1);
         robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
@@ -792,7 +792,7 @@ void MPCC::publishZeroJointVelocity()
     {
 //        ROS_INFO("Publishing ZERO joint velocity!!");
     }
-    prius_msgs::Control pub_msg;
+    lmpcc::Control pub_msg;
     if(!simulation_mode_)
         broadcastTF();
     controlled_velocity_ = pub_msg;

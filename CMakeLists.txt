@@ -103,6 +103,12 @@ include_directories(include
 
 FIND_LIBRARY(libacado libacado_toolkit_s.so ${ACADO_DIR}/build/lib)
 
+add_library(tkspline_lib
+        src/spline.cpp
+        )
+add_dependencies(tkspline_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(tkspline_lib ${CATKIN_LIBRARIES})
+
 add_library(predictive_configuration src/predictive_configuration.cpp)
 add_dependencies(predictive_configuration ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(predictive_configuration

@@ -27,7 +27,6 @@ find_package(catkin REQUIRED COMPONENTS
     shape_msgs
     moveit_msgs
     obstacle_feed
-    prius_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)

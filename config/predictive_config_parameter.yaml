@@ -16,13 +16,13 @@ control_dim: 2
 
 #Inputs and output topics topic
 output_cmd: '/prius'
-robot_state_topic: '/base_pose_ground_truth'
+robot_state_topic: '/ukf_localization_map/odometry/filtered'
 obs_state_topic: '/future_obj_track'
 
 # Kinematic chain parameter
 robot_base_link: base_link
-target_frame: map
-tracking_frame: map
+target_frame: map # world fixed frame but will be changed according to robot_state_topic
+global_path_frame: local_car
 
 # Weight on the slack variable for collision collision
 slack_weight: 10000
@@ -31,9 +31,9 @@ reference_velocity: 1.0
 
 # Parameters for predefined reference path
 global_path:
-  x: [0,         150, 150,      110]
-  y: [0,         0, 5,      50]
-  theta: [0, 0,  1.5708, 1.5708]
+  x: [0,         100, 150]
+  y: [0,         0, 0]
+  theta: [0, 0,0 ]
   n_points_clothoid: 20
   n_points_spline: 20
 

@@ -65,7 +65,7 @@ public:
 
     // use for finding kinematic chain and urdf model
     std::string robot_base_link_;
-    std::string tracking_frame_;  //  End effector of arm
+    std::string global_path_frame_;  //  End effector of arm
     std::string target_frame_;
     std::string sub_ellipse_topic_;
     std::string obs_state_topic_;

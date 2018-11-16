@@ -22,7 +22,7 @@ Panels:
       - /2D Nav Goal1
       - /Publish Point1
     Name: Tool Properties
-    Splitter Ratio: 0.588679016
+    Splitter Ratio: 0.588679
   - Class: rviz/Views
     Expanded:
       - /Current View1
@@ -42,7 +42,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Line Style:
-        Line Width: 0.0299999993
+        Line Width: 0.03
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -64,11 +64,31 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_link:
+        an_device:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        center_laser_link:
+        back_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        back_left_far_sonar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        back_left_middle_sonar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        back_right_far_sonar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        back_right_middle_sonar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -89,16 +109,60 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        front_center_right_sonar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_left_far_sonar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_left_laser_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_left_middle_sonar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         front_left_wheel:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        front_right_far_sonar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_right_laser_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_right_middle_sonar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         front_right_wheel:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        gps_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         rear_left_wheel:
           Alpha: 1
           Show Axes: false
@@ -109,11 +173,23 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         steering_wheel:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        velodyne:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -121,24 +197,22 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz/Axes
-      Enabled: false
-      Length: 1
+      Enabled: true
+      Length: 3
       Name: Axes
-      Radius: 0.100000001
+      Radius: 0.1
       Reference Frame: base_link
-      Value: false
+      Value: true
     - Class: rviz/Axes
-      Enabled: false
-      Length: 1
+      Enabled: true
+      Length: 5
       Name: Axes
-      Radius: 0.100000001
-      Reference Frame: odom
-      Value: false
+      Radius: 0.5
+      Reference Frame: local_car
+      Value: true
     - Class: moveit_rviz_plugin/MotionPlanning
       Enabled: true
       Move Group Namespace: ""
-      MoveIt_Allow_Approximate_IK: false
-      MoveIt_Allow_External_Program: false
       MoveIt_Goal_Tolerance: 0
       MoveIt_Planning_Attempts: 10
       MoveIt_Planning_Time: 5
@@ -164,11 +238,31 @@ Visualization Manager:
           Expand Link Details: false
           Expand Tree: false
           Link Tree Style: Links in Alphabetic Order
-          base_link:
+          an_device:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          center_laser_link:
+          back_camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          back_left_far_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          back_left_middle_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          back_right_far_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          back_right_middle_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          base_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -189,16 +283,60 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
+          front_center_right_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_left_far_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_left_laser_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_left_middle_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           front_left_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
+          front_right_far_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_right_laser_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_right_middle_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           front_right_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
+          gps_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          imu_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          left:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          left_camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           rear_left_wheel:
             Alpha: 1
             Show Axes: false
@@ -209,11 +347,23 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          right:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          right_camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           steering_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
+          velodyne:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
         Loop Animation: false
         Robot Alpha: 0.5
         Robot Color: 150; 50; 150
@@ -229,7 +379,7 @@ Visualization Manager:
         Show Manipulability: false
         Show Manipulability Index: false
         Show Weight Limit: false
-        TextHeight: 0.0799999982
+        TextHeight: 0.08
       Planning Request:
         Colliding Link Color: 255; 0; 0
         Goal State Alpha: 1
@@ -245,9 +395,9 @@ Visualization Manager:
       Planning Scene Topic: move_group/monitored_planning_scene
       Robot Description: robot_description
       Scene Geometry:
-        Scene Alpha: 0.899999976
+        Scene Alpha: 0.9
         Scene Color: 50; 230; 50
-        Scene Display Time: 0.200000003
+        Scene Display Time: 0.2
         Show Scene Geometry: true
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
@@ -259,11 +409,31 @@ Visualization Manager:
           Expand Link Details: false
           Expand Tree: false
           Link Tree Style: Links in Alphabetic Order
-          base_link:
+          an_device:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          center_laser_link:
+          back_camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          back_left_far_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          back_left_middle_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          back_right_far_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          back_right_middle_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          base_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -284,16 +454,60 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
+          front_center_right_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_left_far_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_left_laser_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_left_middle_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           front_left_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
+          front_right_far_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_right_laser_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          front_right_middle_sonar_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           front_right_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
+          gps_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          imu_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          left:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          left_camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           rear_left_wheel:
             Alpha: 1
             Show Axes: false
@@ -304,11 +518,23 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          right:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          right_camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           steering_wheel:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
+          velodyne:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
         Robot Alpha: 1
         Show Robot Collision: false
         Show Robot Visual: true
@@ -326,11 +552,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 25; 255; 0
       Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
+      Head Diameter: 0.3
+      Head Length: 0.2
+      Length: 0.3
       Line Style: Lines
-      Line Width: 0.0299999993
+      Line Width: 0.03
       Name: Path
       Offset:
         X: 0
@@ -338,9 +564,9 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
+      Radius: 0.03
+      Shaft Diameter: 0.1
+      Shaft Length: 0.1
       Topic: /mpc_horizon
       Unreliable: false
       Value: true
@@ -357,7 +583,7 @@ Visualization Manager:
       Marker Topic: /robot_collision_space
       Name: MarkerArray
       Namespaces:
-        {}
+        trajectory: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -365,11 +591,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 255; 0; 0
       Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
+      Head Diameter: 0.3
+      Head Length: 0.2
+      Length: 0.3
       Line Style: Billboards
-      Line Width: 0.100000001
+      Line Width: 0.1
       Name: Path
       Offset:
         X: 0
@@ -377,9 +603,9 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
+      Radius: 0.03
+      Shaft Diameter: 0.1
+      Shaft Length: 0.1
       Topic: /spline_traj
       Unreliable: false
       Value: true
@@ -388,11 +614,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 25; 255; 0
       Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
+      Head Diameter: 0.3
+      Head Length: 0.2
+      Length: 0.3
       Line Style: Lines
-      Line Width: 0.0299999993
+      Line Width: 0.03
       Name: Path
       Offset:
         X: 0
@@ -400,9 +626,9 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
+      Radius: 0.03
+      Shaft Diameter: 0.1
+      Shaft Length: 0.1
       Topic: /horizon
       Unreliable: false
       Value: true
@@ -411,20 +637,19 @@ Visualization Manager:
       Marker Topic: /robot_collision_space
       Name: MarkerArray
       Namespaces:
-        {}
+        trajectory: true
       Queue Size: 100
       Value: true
     - Class: rviz/Axes
       Enabled: false
       Length: 3
       Name: Axes
-      Radius: 0.300000012
+      Radius: 0.3
       Reference Frame: path
       Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Default Light: true
     Fixed Frame: map
     Frame Rate: 30
   Name: root
@@ -446,25 +671,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 32.1772537
+      Distance: 30.9874
       Enable Stereo Rendering:
-        Stereo Eye Separation: 0.0599999987
+        Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 9.34052563
-        Y: -1.29371536
-        Z: 0.685371935
-      Focal Shape Fixed Size: true
-      Focal Shape Size: 0.0500000007
-      Invert Z Axis: false
+        X: -0.0278677
+        Y: -0.724533
+        Z: 0.955732
       Name: Current View
-      Near Clip Distance: 0.00999999978
-      Pitch: 0.859793901
+      Near Clip Distance: 0.01
+      Pitch: 1.22979
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.47539449
+      Yaw: 5.0654
     Saved: ~
 Window Geometry:
   Displays:
@@ -476,7 +698,7 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000002b800000390fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000001a4000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000120020002d00200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000001d2000001e6000001cc00fffffffb0000002e004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d00200053006c00690064006500720000000000ffffffff0000004a00fffffffb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000000000010000010f00000347fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000004300000347000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f00000044fc0100000002fb0000000800540069006d006501000000000000073f0000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000004810000039000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000002b800000390fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000001a4000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000120020002d00200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000001d2000001e6000001cc00fffffffb0000002e004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d00200053006c00690064006500720000000000ffffffff0000004a00fffffffb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000000000010000010f00000347fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000004300000347000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f00000044fc0100000002fb0000000800540069006d006501000000000000073f000002f600fffffffb0000000800540069006d00650100000000000004500000000000000000000004810000039000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -486,5 +708,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1855
-  X: 1985
+  X: 65
   Y: 24

@@ -226,6 +226,7 @@ public:
     std::vector<double> X_road, Y_road, Theta_road;
     double dist_spline_pts_;
     double total_length_;
+    double path_length_;
     std::vector<double> ss,xx,yy;
     int n_clothoid,n_pts;
     //Search window parameters

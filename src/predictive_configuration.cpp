@@ -27,15 +27,15 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     return false;
   }
 
-  if (!nh.getParam ("tracking_frame", tracking_frame_) )
+  if (!nh.getParam ("global_path_frame", global_path_frame_) )
   {
-    ROS_WARN(" Parameter 'tracking_frame' not set on %s node " , ros::this_node::getName().c_str());
+    ROS_WARN(" Parameter 'global_path_frame' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
-  if (!nh.getParam ("tracking_frame", target_frame_) )
+  if (!nh.getParam ("target_frame", target_frame_) )
   {
-    ROS_WARN(" Parameter 'tracking_frame' not set on %s node " , ros::this_node::getName().c_str());
+    ROS_WARN(" Parameter 'target_frame' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
 
@@ -229,7 +229,7 @@ bool predictive_configuration::updateConfiguration(const predictive_configuratio
 
   robot_base_link_ = new_config.robot_base_link_;
 
-  tracking_frame_ = new_config.tracking_frame_;
+  global_path_frame_ = new_config.global_path_frame_;
 
   vel_min_limit_ = new_config.vel_min_limit_;
   vel_max_limit_ = new_config.vel_max_limit_;

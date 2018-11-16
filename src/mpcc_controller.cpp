@@ -128,10 +128,10 @@ bool MPCC::initialize()
         spline_traj2_.poses.resize(100);
         pred_traj_.poses.resize(ACADO_N);
         pred_cmd_.poses.resize(ACADO_N);
-        pred_traj_.header.frame_id = controller_config_->tracking_frame_;
+        pred_traj_.header.frame_id = controller_config_->target_frame_;
         for(int i=0;i < ACADO_N; i++)
         {
-            pred_traj_.poses[i].header.frame_id = controller_config_->tracking_frame_;
+            pred_traj_.poses[i].header.frame_id = controller_config_->target_frame_;
         }
 
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
@@ -187,7 +187,7 @@ bool MPCC::initialize()
         ellips1.id = 60;
         ellips1.color.b = 1.0;
         ellips1.color.a = 0.2;
-        ellips1.header.frame_id = controller_config_->tracking_frame_;
+        ellips1.header.frame_id = controller_config_->target_frame_;
         ellips1.ns = "trajectory";
         ellips1.action = visualization_msgs::Marker::ADD;
         ellips1.lifetime = ros::Duration(0.1);
@@ -244,7 +244,7 @@ void MPCC::broadcastPathPose(){
 
     geometry_msgs::TransformStamped transformStamped;
     transformStamped.header.stamp = ros::Time::now();
-    transformStamped.header.frame_id = controller_config_->tracking_frame_;
+    transformStamped.header.frame_id = controller_config_->target_frame_;
     transformStamped.child_frame_id = "path";
 
     transformStamped.transform.translation.x = ref_path_x(acadoVariables.x[4]);
@@ -539,7 +539,7 @@ void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<dou
     n_pts = controller_config_->n_points_spline_;
     S_all.push_back(0);
 
-    for (int i = 0; i < x.size()-1; i++){
+    for (int i = 0; i < x.size(); i++){
         Clothoid::buildClothoid(x[i], y[i], theta[i], x[i+1], y[i+1], theta[i+1], k, dk, L);
 
         Clothoid::pointsOnClothoid(x[i], y[i], theta[i], k, dk, L, n_clothoid, X, Y);
@@ -565,7 +565,7 @@ void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<dou
     ref_path_x.set_points(S_all, X_all);
     ref_path_y.set_points(S_all, Y_all);
 
-    dist_spline_pts_ = total_length_ / (n_pts - 1);
+    dist_spline_pts_ = total_length_ / (n_pts );
     //ROS_INFO_STREAM("dist_spline_pts_: " << dist_spline_pts_);
     ss.resize(n_pts);
     xx.resize(n_pts);
@@ -578,6 +578,7 @@ void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<dou
         //ROS_INFO_STREAM("ss: " << ss[i]);
         //ROS_INFO_STREAM("xx: " << xx[i]);
         //ROS_INFO_STREAM("yy: " << yy[i]);
+        path_length_ = ss[i];
     }
 
     ref_path_x.set_points(ss,xx);
@@ -585,12 +586,29 @@ void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<dou
 }
 
 void MPCC::ConstructRefPath(){
-
+    geometry_msgs::Pose pose;
+    double ysqr, t3, t4;
+    tf2::Quaternion myQuaternion;
     for (int ref_point_it = 0; ref_point_it < controller_config_->ref_x_.size(); ref_point_it++)
     {
-        X_road[ref_point_it] = controller_config_->ref_x_.at(ref_point_it);
-        Y_road[ref_point_it] = controller_config_->ref_y_.at(ref_point_it);
-        Theta_road[ref_point_it] = controller_config_->ref_theta_.at(ref_point_it);
+        pose.position.x = controller_config_->ref_x_.at(ref_point_it);
+        pose.position.y = controller_config_->ref_y_.at(ref_point_it);
+        // Convert RPY from path to quaternion
+        myQuaternion.setRPY( 0, 0, controller_config_->ref_theta_.at(ref_point_it) );
+        pose.orientation.x = myQuaternion.x();
+        pose.orientation.y = myQuaternion.y();
+        pose.orientation.z = myQuaternion.z();
+        pose.orientation.w = myQuaternion.w();
+        // Convert from global_frame to planning frame
+        transformPose(controller_config_->global_path_frame_,controller_config_->target_frame_,pose);
+        X_road[ref_point_it] = pose.position.x;
+        Y_road[ref_point_it] = pose.position.y;
+        // Convert from quaternion to RPY
+        ysqr = pose.orientation.y * pose.orientation.y;
+        t3 = +2.0 * (pose.orientation.w * pose.orientation.z
+                             + pose.orientation.x *pose.orientation.y);
+        t4 = +1.0 - 2.0 * (ysqr + pose.orientation.z * pose.orientation.z);
+        Theta_road[ref_point_it] = std::atan2(t3, t4);
     }
 
     Ref_path(X_road, Y_road, Theta_road);
@@ -699,17 +717,22 @@ void MPCC::actionAbort()
 // read current position and velocity of robot joints
 void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 {
-
+   double ysqr, t3, t4;
    if (activate_debug_output_)
    {
 //  ROS_INFO("MPCC::StateCallBack");
    }
-   ROS_INFO("MPCC::StateCallBack");
+   //ROS_INFO("MPCC::StateCallBack");
+   controller_config_->target_frame_ = msg->header.frame_id;
    last_state_ = current_state_;
    current_state_(0) =    msg->pose.pose.position.x;
    current_state_(1) =    msg->pose.pose.position.y;
+   ysqr = msg->pose.pose.orientation.y * msg->pose.pose.orientation.y;
+   t3 = +2.0 * (msg->pose.pose.orientation.w * msg->pose.pose.orientation.z
+                             + msg->pose.pose.orientation.x *msg->pose.pose.orientation.y);
+   t4 = +1.0 - 2.0 * (ysqr + msg->pose.pose.orientation.z * msg->pose.pose.orientation.z);
 
-   current_state_(2) = msg->pose.pose.orientation.z;
+   current_state_(2) = std::atan2(t3, t4);
 
    current_state_(3) = msg->twist.twist.linear.x;
 }
@@ -720,6 +743,17 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
     if(objects.tracks.size()) {
         //ROS_INFO_STREAM("N track: " << objects.tracks[0].track.size());
         //ROS_INFO_STREAM("N: " << objects.tracks[0].track[0].pose.size());
+    }
+    //reset all objects
+    for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
+    {
+        for(int t = 0;t<obstacles_.Obstacles[obst_it].pose.size();t++){
+            obstacles_.Obstacles[obst_it].pose[t].position.x = 1000;
+            obstacles_.Obstacles[obst_it].pose[t].position.y = 1000;
+            obstacles_.Obstacles[obst_it].pose[t].orientation.z = 0;
+            obstacles_.Obstacles[obst_it].major_semiaxis[t] = 0.001;
+            obstacles_.Obstacles[obst_it].minor_semiaxis[t] = 0.001;
+        }
     }
     for(int i=0;i<objects.tracks.size();i++){
         cv_msgs::PredictedMoGTrack track = objects.tracks[i];
@@ -803,11 +837,11 @@ void MPCC::publishZeroJointVelocity()
 void MPCC::publishSplineTrajectory(void)
 {
     spline_traj_.header.stamp = ros::Time::now();
-    spline_traj_.header.frame_id = controller_config_->tracking_frame_;
-    for (int i = 0; i < 50; i++) // 100 points
+    spline_traj_.header.frame_id = controller_config_->target_frame_;
+    for (int i = 0; i < spline_traj_.poses.size(); i++) // 100 points
     {
-        spline_traj_.poses[i].pose.position.x = ref_path_x(i*(n_pts-1)*dist_spline_pts_/100.0); //x
-        spline_traj_.poses[i].pose.position.y = ref_path_y(i*(n_pts-1)*dist_spline_pts_/100.0); //y
+        spline_traj_.poses[i].pose.position.x = ref_path_x(i*(n_pts)*dist_spline_pts_/spline_traj_.poses.size()); //x
+        spline_traj_.poses[i].pose.position.y = ref_path_y(i*(n_pts)*dist_spline_pts_/spline_traj_.poses.size()); //y
 
     }
 
@@ -869,7 +903,7 @@ void MPCC::publishFeedback(int& it, double& time)
     lmpcc::control_feedback feedback_msg;
 
     feedback_msg.header.stamp = ros::Time::now();
-    feedback_msg.header.frame_id = controller_config_->tracking_frame_;
+    feedback_msg.header.frame_id = controller_config_->target_frame_;
 
     feedback_msg.cost = cost_.data;
     feedback_msg.iterations = it;

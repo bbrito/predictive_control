@@ -31,9 +31,9 @@ reference_velocity: 1.0
 
 # Parameters for predefined reference path
 global_path:
-  x: [0,         100, 150]
-  y: [0,         0, 0]
-  theta: [0, 0,0 ]
+  x: [0,         0, 0]
+  y: [0,         100, 150]
+  theta: [1.57, 1.57,1.57 ]
   n_points_clothoid: 20
   n_points_spline: 20
 

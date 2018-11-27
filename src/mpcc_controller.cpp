@@ -458,13 +458,13 @@ void MPCC::runNode(const ros::TimerEvent &event)
             j++;    //        acado_printDifferentialVariables();
         }
         te_ = acado_toc(&t);
-        if (acadoVariables.u[0] < 0) {
-            controlled_velocity_.brake = -1.0 * acadoVariables.u[0];// / (-4.0); // maximum brake
-            controlled_velocity_.throttle = 0.0;
-        } else {
+       // if (acadoVariables.u[0] < 0) {
+         //   controlled_velocity_.brake = -1.0 * acadoVariables.u[0];// / (-4.0); // maximum brake
+         //   controlled_velocity_.throttle = 0.0;
+        //} else {
             controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
             controlled_velocity_.brake = 0.0;
-        }
+        //}
 
         controlled_velocity_.steer = acadoVariables.u[1] / 0.52; // maximum steer
 

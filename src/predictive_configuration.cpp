@@ -188,23 +188,24 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   }
 
   // check requested parameter availble on parameter server if not than set default value
-  nh.param("clock_frequency", clock_frequency_, double(50.0)); // 50 hz
-  nh.param("sampling_time", sampling_time_, double(0.025)); // 0.025 second
+  nh.param("clock_frequency", clock_frequency_, double(25.0)); // 25 hz
+
   nh.param("slack_weight", slack_weight_, double(1000.0)); // 1000 by default
-  nh.param("reference_velocity", reference_velocity_, double(0.5)); // 0.5 by default
+  nh.param("reference_velocity", reference_velocity_, double(2.0)); // 0.5 by default
   nh.param("repulsive_weight", repulsive_weight_, double(0.1)); // 0.1 by default
+  nh.param("initial_speed",ini_vel_x_,double(0.0)); // initial velocity of the car for static demo
   nh.param("activate_debug_output", activate_debug_output_, bool(false));  // debug
   nh.param("activate_controller_node_output", activate_controller_node_output_, bool(false));  // debug
   nh.param("plotting_result", plotting_result_, bool(false));  // plotting
 
   // acado configuration parameter
-  nh_config.param("acado_config/max_num_iteration", max_num_iteration_, int(10));  // maximum number of iteration for slution of OCP
+  nh_config.param("acado_config/max_num_iteration", max_num_iteration_, int(70));  // maximum number of iteration for slution of OCP
   nh_config.param("acado_config/discretization_intervals", discretization_intervals_, int(4));  // discretization_intervals for slution of OCP
-  nh_config.param("acado_config/kkt_tolerance", kkt_tolerance_, double(1e-6));  // kkt condition for optimal solution
-  nh_config.param("acado_config/integrator_tolerance", integrator_tolerance_, double(1e-8));  // intergrator tolerance
+  nh_config.param("acado_config/kkt_tolerance", kkt_tolerance_, double(1e-3));  // kkt condition for optimal solution
+  nh_config.param("acado_config/integrator_tolerance", integrator_tolerance_, double(1e-3));  // intergrator tolerance
   nh_config.param("acado_config/start_time_horizon", start_time_horizon_, double(0.0));  // start time horizon for defining OCP problem
-  nh_config.param("acado_config/end_time_horizon", end_time_horizon_, double(1.0));  // end time horizon for defining OCP problem
-
+  nh_config.param("acado_config/end_time_horizon", end_time_horizon_, double(5.0));  // end time horizon for defining OCP problem
+  nh.param("acado_config/sampling_time", sampling_time_, double(0.04)); // 0.025 second
   initialize_success_ = true;
 
   if (activate_debug_output_)

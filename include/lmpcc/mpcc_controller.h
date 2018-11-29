@@ -208,6 +208,7 @@ public:
     int traj_i;
     //Controller options
     bool enable_output_;
+    bool plan_;
     bool reset_world_;
     int n_iterations_;
     bool simulation_mode_;
@@ -280,7 +281,10 @@ private:
     double slack_weight_;
     double repulsive_weight_;
     double reference_velocity_;
+    double speed_;
     double velocity_weight_;
+    double ini_vel_x_;
+    double waypoints_size_;
 
     //MoveIt TRAJECTORY VARIABLE
     moveit_msgs::RobotTrajectory traj;
@@ -387,6 +391,8 @@ private:
      * @brief clearDataMember: clear vectors means free allocated memory
      */
     void clearDataMember();
+    
+    void  reset_solver();
 
     /**
      * @brief executeTrajectory: changes the goal state of the mpcc to each point of trajectory

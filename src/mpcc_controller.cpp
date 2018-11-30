@@ -3,6 +3,7 @@
 
 #include <lmpcc/mpcc_controller.h>
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/Pose.h>
 
 ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
@@ -150,7 +151,7 @@ bool MPCC::initialize()
         repulsive_weight_ = controller_config_->repulsive_weight_;
         //velocity_weight_ = controller_config_->velocity_weight_;
         reference_velocity_ = controller_config_->reference_velocity_;
-
+		ini_vel_x_ = controller_config_->ini_vel_x_;
         ros::NodeHandle nh_predictive("predictive_controller");
 
         /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
@@ -179,6 +180,7 @@ bool MPCC::initialize()
 
         //Controller options
         enable_output_ = false;
+        plan_ = false;
         n_iterations_ = 100;
         simulation_mode_ = true;
 
@@ -297,6 +299,27 @@ void MPCC::broadcastTF(){
     joint_state_pub_.publish(empty);
 }
 
+void  MPCC::reset_solver(){
+	acadoVariables.dummy = 0;
+	int i, j;
+
+	for (i = 0; i < ACADO_N + 1; ++i)
+	{
+		for (j = 0; j < ACADO_NX; ++j)
+			acadoVariables.x[i * ACADO_NX + j]=0;
+	}
+	for (i = 0; i < ACADO_N; ++i)
+	{
+		for (j = 0; j < ACADO_NU; ++j){
+			acadoVariables.u[i * ACADO_NU + j]=0;
+			acadoVariables.mu[i * ACADO_NX + j]=0;
+		}
+	}
+	
+	for (j = 0; j < ACADO_NX; ++j)
+			acadoVariables.x0[j]=0;
+	}
+
 // update this function 1/clock_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
@@ -305,30 +328,33 @@ void MPCC::runNode(const ros::TimerEvent &event)
     acado_tic( &t );
     acado_initializeSolver( );
 
-    int traj_n = traj.multi_dof_joint_trajectory.points.size();
     if(!simulation_mode_)
         broadcastTF();
-    if (traj_n > 0) {
+    if (plan_) {
 
         if (simulation_mode_) {
             acadoVariables.x[0] = current_state_(0);
             acadoVariables.x[1] = current_state_(1);
             acadoVariables.x[2] = current_state_(2);
-            acadoVariables.x[3] = current_state_(3);             //it should be obtained by the wheel speed
+            acadoVariables.x[3] = current_state_(3)+ini_vel_x_;              //it should be obtained by the wheel speed
+
             acadoVariables.x0[0] = current_state_(0);
             acadoVariables.x0[1] = current_state_(1);
             acadoVariables.x0[2] = current_state_(2);
-            acadoVariables.x0[3] = current_state_(3);             //it should be obtained by the wheel speed
+            acadoVariables.x0[3] = current_state_(3)+ini_vel_x_;             //it should be obtained by the wheel speed
+
         } else {
             if (enable_output_) {
-                acadoVariables.x[0] = acadoVariables.x[0 + ACADO_NX];
-                acadoVariables.x[1] = acadoVariables.x[1 + ACADO_NX];
-                acadoVariables.x[2] = acadoVariables.x[2 + ACADO_NX];
-                acadoVariables.x[3] = acadoVariables.x[3 + ACADO_NX];             //it should be obtained by the wheel speed
-                acadoVariables.x0[0] = acadoVariables.x[0 + ACADO_NX];
-                acadoVariables.x0[1] = acadoVariables.x[1 + ACADO_NX];
-                acadoVariables.x0[2] = acadoVariables.x[2 + ACADO_NX];
-                acadoVariables.x0[3] = acadoVariables.x[3 + ACADO_NX];             //it should be obtained by the wheel speed
+                acadoVariables.x[0] = current_state_(0);
+            acadoVariables.x[1] = current_state_(1);
+            acadoVariables.x[2] = current_state_(2);
+            acadoVariables.x[3] = current_state_(3)+ini_vel_x_;              //it should be obtained by the wheel speed
+
+            acadoVariables.x0[0] = current_state_(0);
+            acadoVariables.x0[1] = current_state_(1);
+            acadoVariables.x0[2] = current_state_(2);
+            acadoVariables.x0[3] = current_state_(3)+ini_vel_x_;                        //it should be obtained by the wheel speed
+
             } else {
                 acadoVariables.x[0] = acadoVariables.x[0];
                 acadoVariables.x[1] = acadoVariables.x[1];
@@ -361,13 +387,12 @@ void MPCC::runNode(const ros::TimerEvent &event)
             ROS_ERROR_STREAM("smin: " << ss[traj_i]);
             ROS_ERROR_STREAM("smin: " << ss[traj_i+1]);
         }
-        else
-            acadoVariables.x[4] = acadoVariables.x[4];
 
-        acadoVariables.u[0] = controlled_velocity_.throttle;
-        acadoVariables.u[1] = controlled_velocity_.steer;
-        //acadoVariables.u[2] = 0.0000001;           //slack variable
-
+        acadoVariables.u[0] = 0.0;
+        acadoVariables.u[1] = 0.0;
+        acadoVariables.u[2] = 0.0;           //slack variable
+        
+       
         for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
 
 
@@ -458,15 +483,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
             j++;    //        acado_printDifferentialVariables();
         }
         te_ = acado_toc(&t);
-       // if (acadoVariables.u[0] < 0) {
-         //   controlled_velocity_.brake = -1.0 * acadoVariables.u[0];// / (-4.0); // maximum brake
-         //   controlled_velocity_.throttle = 0.0;
-        //} else {
-            controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
-            controlled_velocity_.brake = 0.0;
-        //}
+       if (acadoVariables.u[0] < 0)
+		   speed_=0.5+speed_;
+       controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
 
-        controlled_velocity_.steer = acadoVariables.u[1] / 0.52; // maximum steer
+        controlled_velocity_.steer = acadoVariables.u[1] ;// / 0.52; // maximum steer
 
         publishPredictedTrajectory();
         publishPredictedCollisionSpace();
@@ -478,8 +499,12 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
     }
 
-    if(!enable_output_)
-        publishZeroJointVelocity();
+    if(!enable_output_||acado_getKKT() > 1e-3)
+        {
+			publishZeroJointVelocity();
+
+        }
+        
     else
         controlled_velocity_pub_.publish(controlled_velocity_);
 
@@ -657,6 +682,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     cost_control_weight_factors_(0) = config.Ka;
     cost_control_weight_factors_(1) = config.Kdelta;
     velocity_weight_ = config.Kv;
+    ini_vel_x_ = config.ini_v0;
 
     slack_weight_= config.Ws;
     repulsive_weight_ = config.WR;
@@ -672,7 +698,9 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     //Search window parameters
     window_size_ = config.window_size;
     n_search_points_ = config.n_search_points;
-
+    plan_ = config.plan;
+    idx = 1;
+    
     reset_world_ = config.reset_world;
     if(reset_world_) {
         reset_simulation_client_.call(reset_msg_);
@@ -689,6 +717,22 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
         traj_i=0;
         acado_initializeSolver();
     }
+    
+    if(plan_){
+		reset_solver();
+		
+		acado_initializeSolver( );
+		//ROS_INFO("acado_initializeSolver");
+		//ConstructRefPath();
+		//getWayPointsCallBack( );
+		//ROS_INFO("ConstructRefPath");
+		//Ref_path(X_road, Y_road, Theta_road);
+        publishSplineTrajectory();
+        //ROS_INFO("reconfigure callback!");
+        traj_i = 0;
+        goal_reached_ = false;
+        last_poly_ = false;
+	}
 }
 
 void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){
@@ -734,7 +778,7 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 
    current_state_(2) = std::atan2(t3, t4);
 
-   current_state_(3) = 2+ msg->twist.twist.linear.x;
+   current_state_(3) = msg->twist.twist.linear.x;
 }
 void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 {
@@ -864,8 +908,11 @@ void MPCC::publishPredictedOutput(void)
 {
     for (int i = 0; i < ACADO_N; i++)
     {
-        pred_cmd_.poses[i].pose.position.x = acadoVariables.u[i + 0]; //x
-        pred_cmd_.poses[i].pose.position.y = acadoVariables.u[i + 1]; //y
+        pred_cmd_.poses[i].pose.position.x = acadoVariables.u[i*ACADO_NU + 0]; //acc
+       
+		
+        pred_cmd_.poses[i].pose.position.y = acadoVariables.u[i*ACADO_NU + 1]; //delta
+        pred_cmd_.poses[i].pose.position.z = acadoVariables.u[i*ACADO_NU+ 2];  //slack
     }
 
     pred_cmd_pub_.publish(pred_cmd_);

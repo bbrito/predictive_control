@@ -91,7 +91,7 @@ public:
     double slack_weight_;
     double repulsive_weight_;
     double reference_velocity_;
-
+    double ini_vel_x_;
     // predictive control
     double clock_frequency_;  //hz clock Frequency
     double sampling_time_;

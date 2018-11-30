@@ -8,7 +8,7 @@ activate_controller_node_output: true
 plotting_result: true
 
 # Clock frequency //hz
-clock_frequency: 20
+clock_frequency: 25
 
 #Optimal control problem dimensions
 state_dim: 5
@@ -27,13 +27,14 @@ global_path_frame: local_car
 # Weight on the slack variable for collision collision
 slack_weight: 10000
 repulsive_weight: 0.1
-reference_velocity: 1.0
+reference_velocity: 2.0
+initial_speed: 0.0
 
 # Parameters for predefined reference path
 global_path:
-  x: [0,         0, 0]
-  y: [0,         100, 150]
-  theta: [1.57, 1.57,1.57 ]
+  x: [0,         200, 200,      230, 200, 100]
+  y: [0,         0, -5,      -100, 0, 0]
+  theta: [0, 0,  1.5708, 1.5708, 0, 0]
   n_points_clothoid: 20
   n_points_spline: 20
 
@@ -56,16 +57,14 @@ acado_config:
      kkt_tolerance: 1e-3
      integrator_tolerance: 1e-3
      start_time_horizon: 0.0
-     end_time_horizon: 5.0 # 5.0  # control and prediction horizon
+     end_time_horizon: 2.0 # 5.0  # control and prediction horizon
      discretization_intervals: 50
-     sampling_time: 0.1
+     sampling_time: 0.04
      weight_factors:
-           lsq_state_weight_factors:
-                #always 6 component 3 linear/position and 3 angular/Euler angle
-                [1.0, 1.0, 3.0,3.0,3.0]
-           lsq_control_weight_factors:
-                # same as degree of freedom
-                [2.0, 2.0]
-           lsq_state_terminal_weight_factors:
-                #always 6 component 3 linear/position and 3 angular/Euler angle
-                [10.0, 40.0, 3.0,3.0]
+           contour_weight_factors:
+                #Wcontour and Wlag
+                [0.1, 0.1]
+           control_weight_factors:
+                # Wa and Wdelta
+                [1.0, 4.0]
+                

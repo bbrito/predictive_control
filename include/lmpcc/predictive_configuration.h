@@ -69,6 +69,7 @@ public:
     std::string target_frame_;
     std::string sub_ellipse_topic_;
     std::string obs_state_topic_;
+    std::string waypoint_topic_;
 
     // limiting parameter, use to enforce joint to be in limit
     std::vector<std::string> collision_check_obstacles_;

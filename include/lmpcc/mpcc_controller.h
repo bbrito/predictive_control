@@ -189,6 +189,9 @@ public:
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
 
+    // waypoints subscriber
+    ros::Subscriber waypoints_sub_;
+
     // subscriber for obstacle feed
     ros::Subscriber obstacle_feed_sub_;
 
@@ -285,6 +288,7 @@ private:
     double velocity_weight_;
     double ini_vel_x_;
     double waypoints_size_;
+    double last_waypoints_size_;
 
     //MoveIt TRAJECTORY VARIABLE
     moveit_msgs::RobotTrajectory traj;
@@ -327,10 +331,12 @@ private:
     lmpcc::trajActionResult moveit_action_result_;
     void moveGoalCB();
     void movePreemptCB();
-    void moveitGoalCB();
+
     void actionSuccess();
     void actionAbort();
     void resetSimulatio();
+
+    void getWayPointsCallBack(nav_msgs::Path waypoints);
 
     /**
      * @brief spinNode: spin node means ROS is still running
@@ -356,6 +362,8 @@ private:
 
 
     void publishTrajectory(void);
+
+    double quaternionToangle(geometry_msgs::Quaternion q);
     /**
      * @brief publishPredictedTrajectory: publish predicted trajectory
      */

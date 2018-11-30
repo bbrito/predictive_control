@@ -71,6 +71,7 @@ bool MPCC::initialize()
         next_pose_= Eigen::Vector3d(0,0,0);
         prev_pose_.setZero();
         goal_pose_.setZero();
+        waypoints_size_ = 2; // min 2 waypoints
 
         // ros interfaces
         static const std::string MOVE_ACTION_NAME = "move_action";
@@ -82,7 +83,7 @@ bool MPCC::initialize()
         // MOVEIT interfaces
         static const std::string MOVEIT_ACTION_NAME = "fake_base_controller";
         moveit_action_server_.reset(new actionlib::SimpleActionServer<lmpcc::trajAction>(nh, MOVEIT_ACTION_NAME, false));
-        moveit_action_server_->registerGoalCallback(boost::bind(&MPCC::moveitGoalCB, this));
+        //moveit_action_server_->registerGoalCallback(boost::bind(&MPCC::moveitGoalCB, this));
         moveit_action_server_->start();
 
         robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
@@ -90,6 +91,8 @@ bool MPCC::initialize()
         obstacle_feed_sub_ = nh.subscribe(controller_config_->sub_ellipse_topic_, 1, &MPCC::ObstacleCallBack, this);
 
         obstacles_state_sub_ = nh.subscribe(controller_config_->obs_state_topic_, 1, &MPCC::ObstacleStateCallback, this);
+
+        waypoints_sub_ = nh.subscribe(controller_config_->waypoint_topic_,1, &MPCC::getWayPointsCallBack, this);
 
         //Publishers
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
@@ -201,9 +204,9 @@ bool MPCC::initialize()
         acado_initializeSolver( );
 
         // MPCC reference path variables
-        X_road.resize(controller_config_->ref_x_.size());
-        Y_road.resize(controller_config_->ref_y_.size());
-        Theta_road.resize(controller_config_->ref_theta_.size());
+        X_road.resize(waypoints_size_);
+        Y_road.resize(waypoints_size_);
+        Theta_road.resize(waypoints_size_);
 
         // Check if all reference vectors are of the same length
         if (!( (controller_config_->ref_x_.size() == controller_config_->ref_y_.size()) && ( controller_config_->ref_x_.size() == controller_config_->ref_theta_.size() ) && (controller_config_->ref_y_.size() == controller_config_->ref_theta_.size()) ))
@@ -639,40 +642,53 @@ void MPCC::ConstructRefPath(){
     Ref_path(X_road, Y_road, Theta_road);
 }
 
-void MPCC::moveitGoalCB()
-{
-    ROS_INFO_STREAM("Got new MoveIt goal!!!");
-    //Reset trajectory index
-    idx = 1;
-    if(moveit_action_server_->isNewGoalAvailable())
+void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
+	//
+	last_waypoints_size_ = waypoints_size_;
+	if (waypoints.poses.size()==0){
+		
+		
+		ROS_WARN("Waypoint message is empty");
+		X_road[0] = 0.0;
+		Y_road[0] = 0.0;
+		Theta_road[0] = 0.0; //to do conversion quaternion
+			
+		X_road[1] = 300.0;
+		Y_road[1] = 0.0;
+		Theta_road[1] = 0.0; //to do conversion quaternion
+			
+    waypoints_size_ = 2.0;
+           
+	}
+  else
+	{
+	  ROS_INFO("Getting waypoints from SOMEWHERE...");
+ 		waypoints_size_ = waypoints.poses.size();
+ 		for (int ref_point_it = 0; ref_point_it<waypoints_size_; ref_point_it++)
     {
-        boost::shared_ptr<const lmpcc::trajGoal> moveit_action_goal_ptr = moveit_action_server_->acceptNewGoal();
-        traj = moveit_action_goal_ptr->trajectory;
-
-        int traj_n = traj.multi_dof_joint_trajectory.points.size();
-        goal_pose_(0) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.x;
-        goal_pose_(1) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].translation.y;
-        goal_pose_(2) = traj.multi_dof_joint_trajectory.points[traj_n - 1].transforms[0].rotation.z;
-
-        acado_initializeSolver( );
-
-        int N_iter;
-        for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-
-            // Initialize Constant Online Data variables
-            acadoVariables.od[(ACADO_NOD * N_iter) + 27] = r_discs_;                                // radius of car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 28] = 0; //x_discs_[1];                        // position of the car discs
-        }
-
-        traj_i = 0;
-        goal_reached_ = false;
-        last_poly_ = false;
-        ConstructRefPath();
-
-        publishSplineTrajectory();
+			X_road[ref_point_it] = waypoints.poses.at(ref_point_it).pose.position.x;
+			Y_road[ref_point_it] = waypoints.poses.at(ref_point_it).pose.position.y;
+			Theta_road[ref_point_it] = quaternionToangle(waypoints.poses.at(ref_point_it).pose.orientation); //to do conversion quaternion
     }
+	}
+	  
+  //ConstructRefPath();
+  Ref_path(X_road, Y_road, Theta_road);
+	//ROS_INFO("ConstructRefPath");
+  publishSplineTrajectory();
+     
 }
 
+double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
+
+  double ysqr, t3, t4;
+  
+  // Convert from quaternion to RPY
+  ysqr = q.y * q.y;
+  t3 = +2.0 * (q.w *q.z + q.x *q.y);
+  t4 = +1.0 - 2.0 * (ysqr + q.z * q.z);
+  return std::atan2(t3, t4);
+}
 
 void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level){
 
@@ -874,7 +890,7 @@ void MPCC::publishZeroJointVelocity()
     if(!simulation_mode_)
         broadcastTF();
     controlled_velocity_ = pub_msg;
-    controlled_velocity_.brake = 10.0;
+    controlled_velocity_.throttle= 0.0;
     controlled_velocity_pub_.publish(controlled_velocity_);
 }
 

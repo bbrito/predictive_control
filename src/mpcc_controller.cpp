@@ -71,7 +71,7 @@ bool MPCC::initialize()
         next_pose_= Eigen::Vector3d(0,0,0);
         prev_pose_.setZero();
         goal_pose_.setZero();
-        waypoints_size_ = 2; // min 2 waypoints
+        waypoints_size_ = 0; // min 2 waypoints
 
         // ros interfaces
         static const std::string MOVE_ACTION_NAME = "move_action";
@@ -204,9 +204,9 @@ bool MPCC::initialize()
         acado_initializeSolver( );
 
         // MPCC reference path variables
-        X_road.resize(waypoints_size_);
-        Y_road.resize(waypoints_size_);
-        Theta_road.resize(waypoints_size_);
+        X_road.resize(2);
+        Y_road.resize(2);
+        Theta_road.resize(2);
 
         // Check if all reference vectors are of the same length
         if (!( (controller_config_->ref_x_.size() == controller_config_->ref_y_.size()) && ( controller_config_->ref_x_.size() == controller_config_->ref_theta_.size() ) && (controller_config_->ref_y_.size() == controller_config_->ref_theta_.size()) ))
@@ -333,7 +333,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
     if(!simulation_mode_)
         broadcastTF();
-    if (plan_) {
+    if (plan_ && (waypoints_size_ > 0)) {
 
         if (simulation_mode_) {
             acadoVariables.x[0] = current_state_(0);
@@ -707,14 +707,22 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     slack_weight_= config.Ws;
     repulsive_weight_ = config.WR;
 
-    enable_output_ = config.enable_output;
     n_iterations_ = config.n_iterations;
     simulation_mode_ = config.simulation_mode;
 
     //Search window parameters
     window_size_ = config.window_size;
     n_search_points_ = config.n_search_points;
-    plan_ = config.plan;
+    if (waypoints_size_ !=0) {
+        plan_ = config.plan;
+        enable_output_ = config.enable_output;
+    } else {
+        config.plan = false;
+        config.enable_output = false;
+        plan_ = false;        
+        enable_output_ = false;
+    }
+    
     idx = 1;
     
     reset_world_ = config.reset_world;

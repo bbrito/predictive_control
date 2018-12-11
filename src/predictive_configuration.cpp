@@ -187,6 +187,12 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     return false;
   }
 
+  if (!nh.getParam ("waypoint_topic", waypoint_topic_) )
+  {
+    ROS_WARN(" Parameter 'waypoint_topic' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
   // check requested parameter availble on parameter server if not than set default value
   nh.param("clock_frequency", clock_frequency_, double(25.0)); // 25 hz
 

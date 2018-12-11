@@ -182,9 +182,6 @@ public:
         return eigen_vector;
     }
 
-    //Service clients
-    ros::ServiceClient reset_simulation_client_, reset_ekf_client_;
-
     /** public data member */
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
@@ -212,7 +209,7 @@ public:
     //Controller options
     bool enable_output_;
     bool plan_;
-    bool reset_world_;
+    bool debug_;
     int n_iterations_;
     bool simulation_mode_;
     real_t te_;
@@ -239,9 +236,6 @@ public:
     bool goal_reached_;
     bool last_poly_;
 
-    //reset simulation msg
-    std_srvs::Empty reset_msg_;
-    robot_localization::SetPose reset_pose_msg_;
 private:
 
     ros::NodeHandle nh;
@@ -334,7 +328,6 @@ private:
 
     void actionSuccess();
     void actionAbort();
-    void resetSimulatio();
 
     void getWayPointsCallBack(nav_msgs::Path waypoints);
 

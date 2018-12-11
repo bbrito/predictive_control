@@ -3,6 +3,8 @@ project(lmpcc)
 
 add_compile_options(-std=c++11)
 add_compile_options(-fstack-protector)
+set(CMAKE_CXX_FLAGS "-O2 -Wall -DCMAKE_BUILD_TYPE=RELEASE")
+
 find_package(catkin REQUIRED COMPONENTS
     actionlib
     actionlib_msgs

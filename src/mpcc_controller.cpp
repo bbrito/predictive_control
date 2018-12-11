@@ -140,10 +140,6 @@ bool MPCC::initialize()
 
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
-        //service clients
-        reset_simulation_client_ = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_world");
-        reset_ekf_client_ = nh.serviceClient<robot_localization::SetPose>("/set_pose");
-
         // Initialize pregenerated mpc solver
         acado_initializeSolver( );
 
@@ -184,6 +180,7 @@ bool MPCC::initialize()
         //Controller options
         enable_output_ = false;
         plan_ = false;
+        debug_ = false;
         n_iterations_ = 100;
         simulation_mode_ = true;
 
@@ -328,7 +325,9 @@ void MPCC::runNode(const ros::TimerEvent &event)
 {
     int N_iter;
     acado_timer t;
-    acado_tic( &t );
+    if(debug_){
+        acado_tic( &t );
+    }
     acado_initializeSolver( );
 
     if(!simulation_mode_)
@@ -369,15 +368,15 @@ void MPCC::runNode(const ros::TimerEvent &event)
                 acadoVariables.x0[3] = acadoVariables.x[3];             //it should be obtained by the wheel speed
             }
         }
-        ROS_WARN_STREAM("ss.size():" << ss.size() << " traj_i: " << traj_i);
+        //ROS_WARN_STREAM("ss.size():" << ss.size() << " traj_i: " << traj_i);
         if (acadoVariables.x[4] > ss[traj_i + 1]) {
 
             if (traj_i + 2 == ss.size()) {
                 goal_reached_ = true;
-                ROS_ERROR_STREAM("GOAL REACHED");
+                //ROS_ERROR_STREAM("GOAL REACHED");
             } else {
                 traj_i++;
-                ROS_ERROR_STREAM("SWITCH SPLINE " << acadoVariables.x[4]);
+                //ROS_ERROR_STREAM("SWITCH SPLINE " << acadoVariables.x[4]);
             }
         }
 
@@ -386,9 +385,9 @@ void MPCC::runNode(const ros::TimerEvent &event)
             smin = spline_closest_point(ss[traj_i], 1000, acadoVariables.x[ACADO_NX+4], window_size_, n_search_points_);
             acadoVariables.x[4] = smin;
             acadoVariables.x0[4] = smin;
-            ROS_ERROR_STREAM("smin: " << smin);
-            ROS_ERROR_STREAM("smin: " << ss[traj_i]);
-            ROS_ERROR_STREAM("smin: " << ss[traj_i+1]);
+            //ROS_ERROR_STREAM("smin: " << smin);
+            //ROS_ERROR_STREAM("smin: " << ss[traj_i]);
+            //ROS_ERROR_STREAM("smin: " << ss[traj_i+1]);
         }
 
         acadoVariables.u[0] = 0.0;
@@ -439,8 +438,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 38] = obstacles_.Obstacles[1].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 2
 
 
-
-
             if (goal_reached_) {
                 acadoVariables.od[(ACADO_NOD * N_iter) + 23] = 0;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 24] = 0;
@@ -485,21 +482,23 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
             j++;    //        acado_printDifferentialVariables();
         }
-        te_ = acado_toc(&t);
-       if (acadoVariables.u[0] < 0)
-		   speed_=0.5+speed_;
-       controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
+
+        if (acadoVariables.u[0] < 0)
+		    speed_=0.5+speed_;
+        controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
 
         controlled_velocity_.steer = acadoVariables.u[1] ;// / 0.52; // maximum steer
 
-        publishPredictedTrajectory();
+        if(debug_){
+            te_ = acado_toc(&t);
+            publishPredictedTrajectory();
+            publishPredictedOutput();
+            broadcastPathPose();
+            publishFeedback(j,te_);
+        }
         publishPredictedCollisionSpace();
-        publishPredictedOutput();
-        broadcastPathPose();
         brake_.data = controlled_velocity_.brake;
         cost_.data = acado_getObjective();
-        publishFeedback(j,te_);
-
     }
 
     if(!enable_output_||acado_getKKT() > 1e-3)
@@ -560,14 +559,14 @@ void MPCC::moveGoalCB()
 void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<double> theta) {
 
     double k, dk, L;
-    std::vector<double> X(10), Y(10);
+    std::vector<double> X(n_clothoid), Y(n_clothoid);
     std::vector<double> X_all, Y_all, S_all;
     total_length_= 0;
     n_clothoid = controller_config_->n_points_clothoid_;
     n_pts = controller_config_->n_points_spline_;
     S_all.push_back(0);
 
-    for (int i = 0; i < x.size(); i++){
+    for (int i = 0; i < x.size()-1; i++){
         Clothoid::buildClothoid(x[i], y[i], theta[i], x[i+1], y[i+1], theta[i+1], k, dk, L);
 
         Clothoid::pointsOnClothoid(x[i], y[i], theta[i], k, dk, L, n_clothoid, X, Y);
@@ -660,16 +659,16 @@ void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
     waypoints_size_ = 2.0;
            
 	}
-  else
+    else
 	{
-	  ROS_INFO("Getting waypoints from SOMEWHERE...");
- 		waypoints_size_ = waypoints.poses.size();
+	    ROS_INFO("Getting waypoints from SOMEWHERE...");
+        waypoints_size_ = waypoints.poses.size();
  		for (int ref_point_it = 0; ref_point_it<waypoints_size_; ref_point_it++)
-    {
-			X_road[ref_point_it] = waypoints.poses.at(ref_point_it).pose.position.x;
-			Y_road[ref_point_it] = waypoints.poses.at(ref_point_it).pose.position.y;
-			Theta_road[ref_point_it] = quaternionToangle(waypoints.poses.at(ref_point_it).pose.orientation); //to do conversion quaternion
-    }
+        {
+		    X_road[ref_point_it] = waypoints.poses.at(ref_point_it).pose.position.x;
+		    Y_road[ref_point_it] = waypoints.poses.at(ref_point_it).pose.position.y;
+		    Theta_road[ref_point_it] = quaternionToangle(waypoints.poses.at(ref_point_it).pose.orientation); //to do conversion quaternion
+        }
 	}
 	  
   //ConstructRefPath();
@@ -713,6 +712,8 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     //Search window parameters
     window_size_ = config.window_size;
     n_search_points_ = config.n_search_points;
+
+    debug_ = config.debug;
     if (waypoints_size_ !=0) {
         plan_ = config.plan;
         enable_output_ = config.enable_output;
@@ -724,23 +725,6 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     }
     
     idx = 1;
-    
-    reset_world_ = config.reset_world;
-    if(reset_world_) {
-        reset_simulation_client_.call(reset_msg_);
-        reset_ekf_client_.call(reset_pose_msg_);
-        acadoVariables.x[0] = 0;
-        acadoVariables.x[1] = 0;
-        acadoVariables.x[2] = 0;
-        acadoVariables.x[3] = 0;             //it should be obtained by the wheel speed
-        acadoVariables.x0[0] = 0;
-        acadoVariables.x0[1] = 0;
-        acadoVariables.x0[2] = 0;
-        acadoVariables.x0[3] = 0;
-        acadoVariables.x[ACADO_NX+4] = 0;
-        traj_i=0;
-        acado_initializeSolver();
-    }
     
     if(plan_){
 		reset_solver();

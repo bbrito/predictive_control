@@ -17,7 +17,7 @@
 
 
     # load Cartesian controller config
-    <rosparam command="load" file="$(find lmpcc)/config/predictive_config_parameter.yaml"/>
+    <rosparam command="load" file="$(find lmpcc)/config/predictive_config_parameter_simulation.yaml"/>
 
     <node pkg="lmpcc" type="lmpcc_node" name="lmpcc_node" cwd="node" respawn="false" output="screen"/>
 

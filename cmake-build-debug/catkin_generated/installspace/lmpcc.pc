@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: lmpcc
+Description: Description of lmpcc
+Version: 0.6.14
+Cflags: -I/usr/local/include -I/usr/local/include/acado -I/usr/include
+Libs: -L/usr/local/lib -lpredictive_configuration -lpredictive_controller /usr/lib/x86_64-linux-gnu/libboost_thread.so -l-lpthread /usr/lib/x86_64-linux-gnu/libboost_chrono.so /usr/lib/x86_64-linux-gnu/libboost_system.so /usr/lib/x86_64-linux-gnu/libboost_date_time.so /usr/lib/x86_64-linux-gnu/libboost_atomic.so
+Requires: actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core obstacle_feed

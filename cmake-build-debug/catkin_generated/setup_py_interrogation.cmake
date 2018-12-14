@@ -1,0 +1,6 @@
+set(lmpcc_SETUP_PY_VERSION "0.6.14")
+set(lmpcc_SETUP_PY_SCRIPTS "scripts/predictions_3d.py")
+set(lmpcc_SETUP_PY_PACKAGES "predictive_control")
+set(lmpcc_SETUP_PY_PACKAGE_DIRS "scripts/predictive_control")
+set(lmpcc_SETUP_PY_MODULES "")
+set(lmpcc_SETUP_PY_MODULE_DIRS "")

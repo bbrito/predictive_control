@@ -158,7 +158,7 @@ bool MPCC::initialize()
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
 
         // Initialize obstacles
-        int N = std::max(16,ACADO_N); // hack.. needs to be beter computed
+        int N = ACADO_N; // hack.. needs to be beter computed
         obstacles_.Obstacles.resize(controller_config_->n_obstacles_);
         for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
         {
@@ -167,8 +167,8 @@ bool MPCC::initialize()
             obstacles_.Obstacles[obst_it].major_semiaxis.resize(N);
             obstacles_.Obstacles[obst_it].minor_semiaxis.resize(N);
             for(int t = 0;t<N;t++){
-                obstacles_.Obstacles[obst_it].pose[t].position.x = 1000;
-                obstacles_.Obstacles[obst_it].pose[t].position.y = 1000;
+                obstacles_.Obstacles[obst_it].pose[t].position.x = 10000;
+                obstacles_.Obstacles[obst_it].pose[t].position.y = 10000;
                 obstacles_.Obstacles[obst_it].pose[t].orientation.z = 0;
                 obstacles_.Obstacles[obst_it].major_semiaxis[t] = 0.001;
                 obstacles_.Obstacles[obst_it].minor_semiaxis[t] = 0.001;
@@ -234,11 +234,11 @@ void MPCC::computeEgoDiscs()
 
     // Loop over discs and assign positions
     for ( int discs_it = 0; discs_it < n_discs; discs_it++){
-        x_discs_[discs_it] = -length/2 + (discs_it + 1)*(length/(n_discs + 1));
+        x_discs_[discs_it] = -length/2*0 + (discs_it )*(length/(n_discs-1));
     }
 
     // Compute radius of the discs
-    r_discs_ = sqrt(pow(x_discs_[n_discs - 1] - length/2,2) + pow(width/2,2));
+    r_discs_ = width/2;
     ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_ );
 }
 
@@ -422,6 +422,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 28] = x_discs_[0];                        // position of the car discs
             acadoVariables.od[(ACADO_NOD * N_iter) + 40] = x_discs_[1];                        // position of the car discs
             acadoVariables.od[(ACADO_NOD * N_iter) + 41] = x_discs_[2];                        // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 42] = x_discs_[3];                        // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 43] = x_discs_[4];
 
             acadoVariables.od[(ACADO_NOD * N_iter) + 29] = obstacles_.Obstacles[0].pose[N_iter].position.x;      // x position of obstacle 1
             acadoVariables.od[(ACADO_NOD * N_iter) + 30] = obstacles_.Obstacles[0].pose[N_iter].position.y;      // y position of obstacle 1
@@ -469,7 +471,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
         acado_feedbackStep();
 
-        printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
+        //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
 
         int j = 1;
         while (acado_getKKT() > 1e-3 && j < n_iterations_) {
@@ -478,7 +480,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
             acado_feedbackStep();
 
-            printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
+            //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
 
             j++;    //        acado_printDifferentialVariables();
         }
@@ -627,7 +629,7 @@ void MPCC::ConstructRefPath(){
         pose.orientation.z = myQuaternion.z();
         pose.orientation.w = myQuaternion.w();
         // Convert from global_frame to planning frame
-        transformPose(controller_config_->global_path_frame_,controller_config_->target_frame_,pose);
+        //transformPose(controller_config_->global_path_frame_,controller_config_->target_frame_,pose);
         X_road[ref_point_it] = pose.position.x;
         Y_road[ref_point_it] = pose.position.y;
         // Convert from quaternion to RPY
@@ -786,7 +788,7 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 
    current_state_(2) = std::atan2(t3, t4);
 
-   current_state_(3) = std::sqrt(msg->twist.twist.linear.x;
+   current_state_(3) = std::sqrt(std::pow(msg->twist.twist.linear.x,2)+std::pow(msg->twist.twist.linear.y,2));
 }
 void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 {
@@ -800,8 +802,8 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
     for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
     {
         for(int t = 0;t<obstacles_.Obstacles[obst_it].pose.size();t++){
-            obstacles_.Obstacles[obst_it].pose[t].position.x = 1000;
-            obstacles_.Obstacles[obst_it].pose[t].position.y = 1000;
+            obstacles_.Obstacles[obst_it].pose[t].position.x = 10000;
+            obstacles_.Obstacles[obst_it].pose[t].position.y = 10000;
             obstacles_.Obstacles[obst_it].pose[t].orientation.z = 0;
             obstacles_.Obstacles[obst_it].major_semiaxis[t] = 0.001;
             obstacles_.Obstacles[obst_it].minor_semiaxis[t] = 0.001;
@@ -824,11 +826,33 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 
                 obstacles_.Obstacles[k].pose[j].orientation.z = std::atan2(t3, t4);
 
-                obstacles_.Obstacles[k].major_semiaxis[j] = mog.pose[k].covariance[0]+0.5;
-                obstacles_.Obstacles[k].minor_semiaxis[j] = mog.pose[k].covariance[1]+1.5;
+                obstacles_.Obstacles[k].major_semiaxis[j] = 1.5;
+                obstacles_.Obstacles[k].minor_semiaxis[j] = 1.5;
             }
         }
     }
+  for(int i=0;i<objects.tracks.size();i++){
+    cv_msgs::PredictedMoGTrack track = objects.tracks[i];
+    for(int j=track.track.size();j<ACADO_N;j++){
+      cv_msgs::PredictedMoG mog = track.track[track.track.size()-1];
+      for (int k = 0; k < mog.pose.size(); k++) {
+        obstacles_.Obstacles[k].pose[j]=mog.pose[k].pose;
+        //ToDo
+        transformPose(objects.header.frame_id,controller_config_->target_frame_,obstacles_.Obstacles[k].pose[j]);
+
+        // Convert quaternion to RPY
+        ysqr = obstacles_.Obstacles[k].pose[j].orientation.y * obstacles_.Obstacles[k].pose[j].orientation.y;
+        t3 = +2.0 * (obstacles_.Obstacles[k].pose[j].orientation.w * obstacles_.Obstacles[k].pose[j].orientation.z
+                     + obstacles_.Obstacles[k].pose[j].orientation.x * obstacles_.Obstacles[k].pose[j].orientation.y);
+        t4 = +1.0 - 2.0 * (ysqr + obstacles_.Obstacles[k].pose[j].orientation.z * obstacles_.Obstacles[k].pose[j].orientation.z);
+
+        obstacles_.Obstacles[k].pose[j].orientation.z = std::atan2(t3, t4);
+
+        obstacles_.Obstacles[k].major_semiaxis[j] = 1.5;
+        obstacles_.Obstacles[k].minor_semiaxis[j] = 1.5;
+      }
+    }
+  }
 }
 void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
 {
@@ -852,8 +876,8 @@ void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
             total_obstacles.Obstacles[obst_it].major_semiaxis.resize(N);
             total_obstacles.Obstacles[obst_it].minor_semiaxis.resize(N);
             for(int t = 0;t<N;t++) {
-                total_obstacles.Obstacles[obst_it].pose[t].position.x = 1000;
-                total_obstacles.Obstacles[obst_it].pose[t].position.y = 1000;
+                total_obstacles.Obstacles[obst_it].pose[t].position.x = 10000;
+                total_obstacles.Obstacles[obst_it].pose[t].position.y = 10000;
                 total_obstacles.Obstacles[obst_it].pose[t].orientation.z = 0;
                 total_obstacles.Obstacles[obst_it].major_semiaxis[t] = 0.001;
                 total_obstacles.Obstacles[obst_it].minor_semiaxis[t] = 0.001;
@@ -930,17 +954,19 @@ void MPCC::publishPredictedCollisionSpace(void)
 {
     visualization_msgs::MarkerArray collision_space;
 
+    for (int k = 0; k< controller_config_->n_discs_; k++){
 
-    for (int i = 0; i < ACADO_N; i++)
-    {
-        ellips1.id = 60+i;
-        ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0];
-        ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1];
-        ellips1.pose.orientation.x = 0;
-        ellips1.pose.orientation.y = 0;
-        ellips1.pose.orientation.z = 0;
-        ellips1.pose.orientation.w = 1;
-        collision_space.markers.push_back(ellips1);
+        for (int i = 0; i < ACADO_N; i++)
+        {
+            ellips1.id = 60+i+k*ACADO_N;
+            ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0]+x_discs_[k]*cos(acadoVariables.x[i * ACADO_NX + 2]);
+            ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1]+x_discs_[k]*sin(acadoVariables.x[i * ACADO_NX + 2]);
+            ellips1.pose.orientation.x = 0;
+            ellips1.pose.orientation.y = 0;
+            ellips1.pose.orientation.z = 0;
+            ellips1.pose.orientation.w = 1;
+            collision_space.markers.push_back(ellips1);
+        }
     }
 
     robot_collision_space_pub_.publish(collision_space);

@@ -8,7 +8,7 @@ activate_controller_node_output: true
 plotting_result: true
 
 # Clock frequency //hz
-clock_frequency: 25
+clock_frequency: 20
 
 #Optimal control problem dimensions
 state_dim: 5
@@ -58,9 +58,9 @@ acado_config:
      kkt_tolerance: 1e-3
      integrator_tolerance: 1e-3
      start_time_horizon: 0.0
-     end_time_horizon: 2.0 # 5.0  # control and prediction horizon
+     end_time_horizon: 5.0 # 5.0  # control and prediction horizon
      discretization_intervals: 50
-     sampling_time: 0.04
+     sampling_time: 0.05
      weight_factors:
            contour_weight_factors:
                 #Wcontour and Wlag

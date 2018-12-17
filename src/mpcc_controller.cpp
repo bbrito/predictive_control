@@ -234,7 +234,7 @@ void MPCC::computeEgoDiscs()
 
     // Loop over discs and assign positions
     for ( int discs_it = 0; discs_it < n_discs; discs_it++){
-        x_discs_[discs_it] = -length/2*0 + (discs_it )*(length/(n_discs-1));
+        x_discs_[discs_it] = -length/2*0 + (discs_it + 1)*(length/(n_discs));
     }
 
     // Compute radius of the discs
@@ -390,11 +390,10 @@ void MPCC::runNode(const ros::TimerEvent &event)
             //ROS_ERROR_STREAM("smin: " << ss[traj_i+1]);
         }
 
-        acadoVariables.u[0] = 0.0;
-        acadoVariables.u[1] = 0.0;
-        acadoVariables.u[2] = 0.0;           //slack variable
-        
-       
+        acadoVariables.u[0] = controlled_velocity_.throttle;
+        acadoVariables.u[1] = controlled_velocity_.steer;
+        //acadoVariables.u[2] = 0.0000001;           //slack variable
+
         for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
 
 
@@ -480,13 +479,14 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
             acado_feedbackStep();
 
-            //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
+            acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reference_velocity_/j;
+            acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reference_velocity_/j;
+
+            printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
 
             j++;    //        acado_printDifferentialVariables();
         }
 
-        if (acadoVariables.u[0] < 0)
-		    speed_=0.5+speed_;
         controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
 
         controlled_velocity_.steer = acadoVariables.u[1] ;// / 0.52; // maximum steer
@@ -826,8 +826,8 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 
                 obstacles_.Obstacles[k].pose[j].orientation.z = std::atan2(t3, t4);
 
-                obstacles_.Obstacles[k].major_semiaxis[j] = 1.5;
-                obstacles_.Obstacles[k].minor_semiaxis[j] = 1.5;
+                obstacles_.Obstacles[k].major_semiaxis[j] = 1;
+                obstacles_.Obstacles[k].minor_semiaxis[j] = 1;
             }
         }
     }
@@ -848,8 +848,8 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 
         obstacles_.Obstacles[k].pose[j].orientation.z = std::atan2(t3, t4);
 
-        obstacles_.Obstacles[k].major_semiaxis[j] = 1.5;
-        obstacles_.Obstacles[k].minor_semiaxis[j] = 1.5;
+        obstacles_.Obstacles[k].major_semiaxis[j] = 1;
+        obstacles_.Obstacles[k].minor_semiaxis[j] = 1;
       }
     }
   }

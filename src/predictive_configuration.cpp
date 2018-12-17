@@ -194,7 +194,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   }
 
   // check requested parameter availble on parameter server if not than set default value
-  nh.param("clock_frequency", clock_frequency_, double(25.0)); // 25 hz
+  nh.param("clock_frequency", clock_frequency_, double(20.0)); // 25 hz
 
   nh.param("slack_weight", slack_weight_, double(1000.0)); // 1000 by default
   nh.param("reference_velocity", reference_velocity_, double(2.0)); // 0.5 by default

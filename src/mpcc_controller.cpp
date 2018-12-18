@@ -150,7 +150,7 @@ bool MPCC::initialize()
         repulsive_weight_ = controller_config_->repulsive_weight_;
         //velocity_weight_ = controller_config_->velocity_weight_;
         reference_velocity_ = controller_config_->reference_velocity_;
-		ini_vel_x_ = controller_config_->ini_vel_x_;
+		    ini_vel_x_ = controller_config_->ini_vel_x_;
         ros::NodeHandle nh_predictive("predictive_controller");
 
         /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
@@ -234,7 +234,9 @@ void MPCC::computeEgoDiscs()
 
     // Loop over discs and assign positions
     for ( int discs_it = 0; discs_it < n_discs; discs_it++){
-        x_discs_[discs_it] = -length/2*0 + (discs_it )*(length/(n_discs-1));
+
+        x_discs_[discs_it] = -length/n_discs+(discs_it + 1)*(length/(n_discs));
+
     }
 
     // Compute radius of the discs
@@ -390,11 +392,10 @@ void MPCC::runNode(const ros::TimerEvent &event)
             //ROS_ERROR_STREAM("smin: " << ss[traj_i+1]);
         }
 
-        acadoVariables.u[0] = 0.0;
-        acadoVariables.u[1] = 0.0;
-        acadoVariables.u[2] = 0.0;           //slack variable
-        
-       
+        acadoVariables.u[0] = controlled_velocity_.throttle;
+        acadoVariables.u[1] = controlled_velocity_.steer;
+        //acadoVariables.u[2] = 0.0000001;           //slack variable
+
         for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
 
 
@@ -422,8 +423,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 28] = x_discs_[0];                        // position of the car discs
             acadoVariables.od[(ACADO_NOD * N_iter) + 40] = x_discs_[1];                        // position of the car discs
             acadoVariables.od[(ACADO_NOD * N_iter) + 41] = x_discs_[2];                        // position of the car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 42] = x_discs_[3];                        // position of the car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 43] = x_discs_[4];
+            //acadoVariables.od[(ACADO_NOD * N_iter) + 42] = x_discs_[3];                        // position of the car discs
+            //acadoVariables.od[(ACADO_NOD * N_iter) + 43] = x_discs_[4];
 
             acadoVariables.od[(ACADO_NOD * N_iter) + 29] = obstacles_.Obstacles[0].pose[N_iter].position.x;      // x position of obstacle 1
             acadoVariables.od[(ACADO_NOD * N_iter) + 30] = obstacles_.Obstacles[0].pose[N_iter].position.y;      // y position of obstacle 1
@@ -473,8 +474,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
         //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
 
-        int j = 1;
-        while (acado_getKKT() > 1e-3 && j < n_iterations_) {
+        int j = 0;
+        while (acado_getKKT() > 1e-4 && j < n_iterations_) {
 
             acado_preparationStep();
 
@@ -483,10 +484,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
             //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
 
             j++;    //        acado_printDifferentialVariables();
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reference_velocity_/j;
+            acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reference_velocity_/j;
         }
 
-        if (acadoVariables.u[0] < 0)
-		    speed_=0.5+speed_;
         controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
 
         controlled_velocity_.steer = acadoVariables.u[1] ;// / 0.52; // maximum steer
@@ -499,16 +501,16 @@ void MPCC::runNode(const ros::TimerEvent &event)
             publishFeedback(j,te_);
         }
         publishPredictedCollisionSpace();
+        broadcastPathPose();
         brake_.data = controlled_velocity_.brake;
         cost_.data = acado_getObjective();
     }
 
-    if(!enable_output_||acado_getKKT() > 1e-3)
-        {
-			publishZeroJointVelocity();
+    if(!enable_output_||acado_getKKT() > 1e-4)
+    {
+        publishZeroJointVelocity();
 
-        }
-        
+    }
     else
         controlled_velocity_pub_.publish(controlled_velocity_);
 
@@ -788,7 +790,7 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 
    current_state_(2) = std::atan2(t3, t4);
 
-   current_state_(3) = msg->twist.twist.linear.x;
+   current_state_(3) = std::sqrt(std::pow(msg->twist.twist.linear.x,2)+std::pow(msg->twist.twist.linear.y,2));
 }
 void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 {
@@ -826,8 +828,9 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 
                 obstacles_.Obstacles[k].pose[j].orientation.z = std::atan2(t3, t4);
 
-                obstacles_.Obstacles[k].major_semiaxis[j] = 1.5;
-                obstacles_.Obstacles[k].minor_semiaxis[j] = 1.5;
+                obstacles_.Obstacles[k].major_semiaxis[j] = 1;
+                obstacles_.Obstacles[k].minor_semiaxis[j] = 1;
+
             }
         }
     }
@@ -848,8 +851,9 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 
         obstacles_.Obstacles[k].pose[j].orientation.z = std::atan2(t3, t4);
 
-        obstacles_.Obstacles[k].major_semiaxis[j] = 1.5;
-        obstacles_.Obstacles[k].minor_semiaxis[j] = 1.5;
+        obstacles_.Obstacles[k].major_semiaxis[j] = 1;
+        obstacles_.Obstacles[k].minor_semiaxis[j] = 1;
+
       }
     }
   }
@@ -906,7 +910,8 @@ void MPCC::publishZeroJointVelocity()
     if(!simulation_mode_)
         broadcastTF();
     controlled_velocity_ = pub_msg;
-    controlled_velocity_.throttle= 0.0;
+    controlled_velocity_.throttle = -0.3;
+    controlled_velocity_.steer = 0.0;
     controlled_velocity_pub_.publish(controlled_velocity_);
 }
 

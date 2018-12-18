@@ -2,19 +2,18 @@
 <project version="4">
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
     <generated>
-      <config projectName="lmpcc" targetName="lmpcc_node" />
       <config projectName="lmpcc" targetName="lmpcc_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="dynamic_reconfigure_generate_messages_lisp" />
-      <config projectName="lmpcc" targetName="sensor_msgs_generate_messages_cpp" />
+      <config projectName="lmpcc" targetName="object_recognition_msgs_generate_messages_nodejs" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_moveAction" />
       <config projectName="lmpcc" targetName="nav_msgs_generate_messages_py" />
-      <config projectName="lmpcc" targetName="visualization_msgs_generate_messages_eus" />
-      <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_trajActionFeedback" />
+      <config projectName="lmpcc" targetName="actionlib_msgs_generate_messages_nodejs" />
+      <config projectName="lmpcc" targetName="rosgraph_msgs_generate_messages_py" />
       <config projectName="lmpcc" targetName="obstacle_feed_generate_messages_lisp" />
       <config projectName="lmpcc" targetName="roscpp_generate_messages_py" />
       <config projectName="lmpcc" targetName="object_recognition_msgs_generate_messages_py" />
-      <config projectName="lmpcc" targetName="trajectory_msgs_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="roscpp_generate_messages_eus" />
+      <config projectName="lmpcc" targetName="actionlib_generate_messages_eus" />
       <config projectName="lmpcc" targetName="obstacle_feed_gencfg" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_trajGoal" />
       <config projectName="lmpcc" targetName="rosgraph_msgs_generate_messages_eus" />
@@ -33,10 +32,11 @@
       <config projectName="lmpcc" targetName="octomap_msgs_generate_messages_eus" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_control_feedback" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_trajFeedback" />
-      <config projectName="lmpcc" targetName="roscpp_generate_messages_lisp" />
+      <config projectName="lmpcc" targetName="trajectory_msgs_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="trajectory_msgs_generate_messages_lisp" />
+      <config projectName="lmpcc" targetName="lmpcc_generate_messages_eus" />
       <config projectName="lmpcc" targetName="object_recognition_msgs_generate_messages_eus" />
-      <config projectName="lmpcc" targetName="rosgraph_msgs_generate_messages_cpp" />
+      <config projectName="lmpcc" targetName="moveit_msgs_generate_messages_nodejs" />
       <config projectName="lmpcc" targetName="roscpp_generate_messages_nodejs" />
       <config projectName="lmpcc" targetName="tf_generate_messages_py" />
       <config projectName="lmpcc" targetName="lmpcc_generate_messages" />
@@ -46,20 +46,19 @@
       <config projectName="lmpcc" targetName="trajectory_msgs_generate_messages_py" />
       <config projectName="lmpcc" targetName="nav_msgs_generate_messages_nodejs" />
       <config projectName="lmpcc" targetName="tf2_msgs_generate_messages_py" />
-      <config projectName="lmpcc" targetName="shape_msgs_generate_messages_nodejs" />
-      <config projectName="lmpcc" targetName="actionlib_msgs_generate_messages_nodejs" />
+      <config projectName="lmpcc" targetName="geometry_msgs_generate_messages_cpp" />
+      <config projectName="lmpcc" targetName="object_recognition_msgs_generate_messages_lisp" />
+      <config projectName="lmpcc" targetName="sensor_msgs_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="std_msgs_generate_messages_nodejs" />
+      <config projectName="lmpcc" targetName="shape_msgs_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="lmpcc_generate_messages_lisp" />
-      <config projectName="lmpcc" targetName="geometry_msgs_generate_messages_eus" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_moveActionFeedback" />
       <config projectName="lmpcc" targetName="dynamic_reconfigure_generate_messages_eus" />
-      <config projectName="lmpcc" targetName="sensor_msgs_generate_messages_eus" />
-      <config projectName="lmpcc" targetName="lmpcc_generate_messages_eus" />
-      <config projectName="lmpcc" targetName="geometry_msgs_generate_messages_cpp" />
+      <config projectName="lmpcc" targetName="visualization_msgs_generate_messages_eus" />
       <config projectName="lmpcc" targetName="tf2_msgs_generate_messages_lisp" />
       <config projectName="lmpcc" targetName="gmock" />
       <config projectName="lmpcc" targetName="roscpp_generate_messages_cpp" />
-      <config projectName="lmpcc" targetName="actionlib_generate_messages_eus" />
+      <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_moveActionResult" />
       <config projectName="lmpcc" targetName="gtest_main" />
       <config projectName="lmpcc" targetName="actionlib_msgs_generate_messages_py" />
       <config projectName="lmpcc" targetName="nav_msgs_generate_messages_eus" />
@@ -74,11 +73,10 @@
       <config projectName="lmpcc" targetName="doxygen" />
       <config projectName="lmpcc" targetName="dynamic_reconfigure_generate_messages_py" />
       <config projectName="lmpcc" targetName="tkspline_lib" />
-      <config projectName="lmpcc" targetName="object_recognition_msgs_generate_messages_lisp" />
       <config projectName="lmpcc" targetName="dynamic_reconfigure_generate_messages_nodejs" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_trajResult" />
       <config projectName="lmpcc" targetName="geometry_msgs_generate_messages_nodejs" />
-      <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_moveActionResult" />
+      <config projectName="lmpcc" targetName="control_msgs_generate_messages_py" />
       <config projectName="lmpcc" targetName="lmpcc_genlisp" />
       <config projectName="lmpcc" targetName="object_recognition_msgs_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="clean_test_results" />
@@ -92,33 +90,35 @@
       <config projectName="lmpcc" targetName="tf_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="actionlib_generate_messages_py" />
       <config projectName="lmpcc" targetName="visualization_msgs_generate_messages_nodejs" />
-      <config projectName="lmpcc" targetName="rosgraph_msgs_generate_messages_py" />
+      <config projectName="lmpcc" targetName="tf_generate_messages_lisp" />
       <config projectName="lmpcc" targetName="dynamic_reconfigure_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="actionlib_msgs_generate_messages_eus" />
       <config projectName="lmpcc" targetName="visualization_msgs_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_moveActionGoal" />
-      <config projectName="lmpcc" targetName="predictive_controller" />
       <config projectName="lmpcc" targetName="lmpcc_geneus" />
       <config projectName="lmpcc" targetName="actionlib_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="sensor_msgs_generate_messages_nodejs" />
       <config projectName="lmpcc" targetName="shape_msgs_generate_messages_eus" />
+      <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_trajActionFeedback" />
       <config projectName="lmpcc" targetName="nav_msgs_generate_messages_cpp" />
-      <config projectName="lmpcc" targetName="object_recognition_msgs_generate_messages_nodejs" />
+      <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_trajActionGoal" />
+      <config projectName="lmpcc" targetName="moveit_msgs_generate_messages_eus" />
       <config projectName="lmpcc" targetName="shape_msgs_generate_messages_py" />
       <config projectName="lmpcc" targetName="obstacle_feed_generate_messages_py" />
       <config projectName="lmpcc" targetName="moveit_msgs_generate_messages_py" />
-      <config projectName="lmpcc" targetName="predictive_configuration" />
+      <config projectName="lmpcc" targetName="roscpp_generate_messages_lisp" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_moveGoal" />
       <config projectName="lmpcc" targetName="octomap_msgs_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="lmpcc_gennodejs" />
-      <config projectName="lmpcc" targetName="control_msgs_generate_messages_py" />
+      <config projectName="lmpcc" targetName="sensor_msgs_generate_messages_eus" />
       <config projectName="lmpcc" targetName="_catkin_empty_exported_target" />
       <config projectName="lmpcc" targetName="run_tests" />
-      <config projectName="lmpcc" targetName="tf_generate_messages_lisp" />
+      <config projectName="lmpcc" targetName="predictive_configuration" />
       <config projectName="lmpcc" targetName="actionlib_generate_messages_lisp" />
+      <config projectName="lmpcc" targetName="lmpcc_gencpp" />
       <config projectName="lmpcc" targetName="lmpcc_generate_messages_nodejs" />
       <config projectName="lmpcc" targetName="tf2_msgs_generate_messages_nodejs" />
-      <config projectName="lmpcc" targetName="moveit_msgs_generate_messages_nodejs" />
+      <config projectName="lmpcc" targetName="shape_msgs_generate_messages_nodejs" />
       <config projectName="lmpcc" targetName="std_msgs_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="gtest" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_moveFeedback" />
@@ -126,17 +126,17 @@
       <config projectName="lmpcc" targetName="tf2_msgs_generate_messages_eus" />
       <config projectName="lmpcc" targetName="gmock_main" />
       <config projectName="lmpcc" targetName="actionlib_msgs_generate_messages_lisp" />
-      <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_trajActionGoal" />
+      <config projectName="lmpcc" targetName="lmpcc_node" />
       <config projectName="lmpcc" targetName="lmpcc_gencfg" />
-      <config projectName="lmpcc" targetName="moveit_msgs_generate_messages_eus" />
+      <config projectName="lmpcc" targetName="predictive_controller" />
       <config projectName="lmpcc" targetName="actionlib_msgs_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="trajectory_msgs_generate_messages_eus" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_moveResult" />
-      <config projectName="lmpcc" targetName="lmpcc_gencpp" />
+      <config projectName="lmpcc" targetName="rosgraph_msgs_generate_messages_cpp" />
       <config projectName="lmpcc" targetName="_lmpcc_generate_messages_check_deps_trajAction" />
       <config projectName="lmpcc" targetName="tests" />
       <config projectName="lmpcc" targetName="tf_generate_messages_eus" />
-      <config projectName="lmpcc" targetName="shape_msgs_generate_messages_cpp" />
+      <config projectName="lmpcc" targetName="geometry_msgs_generate_messages_eus" />
       <config projectName="lmpcc" targetName="lmpcc_generate_messages_py" />
       <config projectName="lmpcc" targetName="tf_generate_messages_nodejs" />
       <config projectName="lmpcc" targetName="nav_msgs_generate_messages_lisp" />
@@ -163,8 +163,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/mpcc_controller.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-67">
-              <caret line="829" column="60" selection-start-line="829" selection-start-column="60" selection-end-line="829" selection-end-column="60" />
+            <state relative-caret-position="338">
+              <caret line="912" column="40" selection-start-line="912" selection-start-column="40" selection-end-line="912" selection-end-column="40" />
             </state>
           </provider>
         </entry>
@@ -172,8 +172,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/config/predictive_config_parameter.yaml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="375">
-              <caret line="25" column="28" selection-start-line="25" selection-start-column="19" selection-end-line="25" selection-end-column="28" />
+            <state relative-caret-position="675">
+              <caret line="45" column="16" selection-start-line="45" selection-start-column="16" selection-end-line="45" selection-end-column="16" />
             </state>
           </provider>
         </entry>
@@ -192,11 +192,15 @@
       <find>transformPose</find>
       <find>1000</find>
       <find>obstacles_</find>
+      <find>statecal</find>
+      <find>obsta</find>
+      <find>publishZeroJointVelocity</find>
     </findStrings>
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
+        <option value="$PROJECT_DIR$/config/predictive_config_parameter.yaml" />
         <option value="$PROJECT_DIR$/src/mpcc_controller.cpp" />
       </list>
     </option>
@@ -245,7 +249,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../obstacle_feed" />
+    <property name="last_opened_file_path" value="$USER_HOME$/Code/ACADOtoolkit" />
     <property name="settings.editor.selected.configurable" value="configurable.group.editor" />
   </component>
   <component name="RunDashboard">
@@ -1108,16 +1112,20 @@
       <workItem from="1544696232969" duration="3836000" />
       <workItem from="1544707727843" duration="246000" />
       <workItem from="1544713864742" duration="251000" />
+      <workItem from="1545122183987" duration="670000" />
+      <workItem from="1545124005873" duration="268000" />
+      <workItem from="1545124622543" duration="4861000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="4333000" />
+    <option name="totallyTimeSpent" value="10132000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1213" height="775" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25792632" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2707798" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -1146,17 +1154,17 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/mpcc_controller.cpp">
+    <entry file="file://$PROJECT_DIR$/config/predictive_config_parameter.yaml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-67">
-          <caret line="829" column="60" selection-start-line="829" selection-start-column="60" selection-end-line="829" selection-end-column="60" />
+        <state relative-caret-position="675">
+          <caret line="45" column="16" selection-start-line="45" selection-start-column="16" selection-end-line="45" selection-end-column="16" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/config/predictive_config_parameter.yaml">
+    <entry file="file://$PROJECT_DIR$/src/mpcc_controller.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="375">
-          <caret line="25" column="28" selection-start-line="25" selection-start-column="19" selection-end-line="25" selection-end-column="28" />
+        <state relative-caret-position="338">
+          <caret line="912" column="40" selection-start-line="912" selection-start-column="40" selection-end-line="912" selection-end-column="40" />
         </state>
       </provider>
     </entry>

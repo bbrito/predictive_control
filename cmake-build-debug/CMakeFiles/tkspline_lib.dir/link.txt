@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC -O3 -Wall -DCMAKE_BUILD_TYPE=RELEASE -g  -shared -Wl,-soname,libtkspline_lib.so -o devel/lib/libtkspline_lib.so CMakeFiles/tkspline_lib.dir/src/spline.cpp.o 

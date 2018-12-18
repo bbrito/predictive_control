@@ -106,6 +106,8 @@ bool MPCC::initialize()
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
         spline_traj_pub_ = nh.advertise<nav_msgs::Path>("spline_traj",1);
         feedback_pub_ = nh.advertise<lmpcc::control_feedback>("controller_feedback",1);
+        //Road publisher
+        marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("road", 10);
         ros::Duration(1).sleep();
 
         timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
@@ -180,6 +182,10 @@ bool MPCC::initialize()
         //Controller options
         enable_output_ = false;
         plan_ = false;
+        replan_ = false;
+        x_offset_= 0;
+        y_offset_= 0;
+        theta_offset_ = 0;
         debug_ = false;
         n_iterations_ = 100;
         simulation_mode_ = true;
@@ -717,6 +723,58 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     window_size_ = config.window_size;
     n_search_points_ = config.n_search_points;
 
+    if(x_offset_!=config.x_offset) {
+        x_offset_ = config.x_offset;
+        replan_ = true;
+    }
+    if(y_offset_!=config.y_offset) {
+        y_offset_ = config.y_offset;
+        replan_ = true;
+    }
+    if(theta_offset_!=config.theta_offset) {
+        theta_offset_ = config.theta_offset;
+        replan_ = true;
+    }
+    if(replan_){
+        for (int ref_point_it = 0; ref_point_it<waypoints_size_; ref_point_it++)
+        {
+            X_road[ref_point_it] += x_offset_;
+            Y_road[ref_point_it] += y_offset_;
+            Theta_road[ref_point_it] += theta_offset_; //to do conversion quaternion
+        }
+
+        Ref_path(X_road, Y_road, Theta_road);
+        //ROS_INFO("ConstructRefPath");
+        publishSplineTrajectory();
+        plotRoad();
+        replan_ = false;
+    }
+    /*if(replan_){
+        geometry_msgs::Pose pose;
+
+        pose.position.x = x_offset_;
+        pose.position.y = 0;
+        // Convert RPY from path to quaternion
+
+        pose.orientation.x = 0;
+        pose.orientation.y = 0;
+        pose.orientation.z = 0;
+        pose.orientation.w = 1;
+            // Convert from global_frame to planning frame
+        transformPose(controller_config_->robot_base_link_,controller_config_->target_frame_,pose);
+
+        for (int ref_point_it = 0; ref_point_it<waypoints_size_; ref_point_it++)
+        {
+            X_road[ref_point_it] = pose.position.x;
+            Y_road[ref_point_it] = pose.position.y;
+            Theta_road[ref_point_it] = quaternionToangle(pose.orientation); //to do conversion quaternion
+        }
+
+        Ref_path(X_road, Y_road, Theta_road);
+        //ROS_INFO("ConstructRefPath");
+        publishSplineTrajectory();
+    }
+    */
     debug_ = config.debug;
     if (waypoints_size_ !=0) {
         plan_ = config.plan;
@@ -913,6 +971,81 @@ void MPCC::publishZeroJointVelocity()
     controlled_velocity_.throttle = -0.3;
     controlled_velocity_.steer = 0.0;
     controlled_velocity_pub_.publish(controlled_velocity_);
+}
+
+void MPCC::plotRoad(void)
+{
+    visualization_msgs::Marker line_strip;
+    visualization_msgs::MarkerArray line_list;
+    line_strip.header.frame_id = controller_config_->target_frame_;
+    line_strip.id = 1;
+
+    line_strip.type = visualization_msgs::Marker::LINE_STRIP;
+
+    // LINE_STRIP/LINE_LIST markers use only the x component of scale, for the line width
+    line_strip.scale.x = 0.5;
+    line_strip.scale.y = 0.5;
+
+    // Line strip is blue
+    line_strip.color.b = 1.0;
+    line_strip.color.a = 1.0;
+
+    geometry_msgs::Pose pose;
+
+    pose.position.x = 0;
+    pose.position.y = controller_config_->road_width_left_+line_strip.scale.x/2.0;
+    // Convert RPY from path to quaternion
+
+    pose.orientation.x = 0;
+    pose.orientation.y = 0;
+    pose.orientation.z = 0;
+    pose.orientation.w = 1;
+    // Convert from global_frame to planning frame
+    transformPose(controller_config_->robot_base_link_,controller_config_->target_frame_,pose);
+
+    geometry_msgs::Point p;
+    p.x = spline_traj_.poses[0].pose.position.x + pose.position.x;
+    p.y = spline_traj_.poses[0].pose.position.y + pose.position.y;
+    p.z = 0;
+
+    line_strip.points.push_back(p);
+
+    p.x = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.x+ pose.position.x;
+    p.y = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.y+ pose.position.y;
+    p.z = 0;
+
+    line_strip.points.push_back(p);
+
+    line_list.markers.push_back(line_strip);
+
+    line_strip.points.pop_back();
+    line_strip.points.pop_back();
+
+    line_strip.color.b = 1.0;
+    line_strip.color.a = 1.0;
+    line_strip.id = 2;
+
+    pose.position.y = controller_config_->road_width_right_+line_strip.scale.x/2.0;
+
+    // Convert from global_frame to planning frame
+    transformPose(controller_config_->robot_base_link_,controller_config_->target_frame_,pose);
+
+    p.x = spline_traj_.poses[0].pose.position.x-pose.position.x;
+    p.y = spline_traj_.poses[0].pose.position.y-pose.position.y;
+    p.z = 0;
+
+    line_strip.points.push_back(p);
+
+    p.x = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.x-pose.position.x;
+    p.y = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.y-pose.position.y;
+    p.z = 0;
+
+    line_strip.points.push_back(p);
+
+    line_list.markers.push_back(line_strip);
+
+    marker_pub_.publish(line_list);
+
 }
 
 void MPCC::publishSplineTrajectory(void)

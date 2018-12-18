@@ -182,6 +182,7 @@ public:
         return eigen_vector;
     }
 
+    void plotRoad(void);
     /** public data member */
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
@@ -194,7 +195,7 @@ public:
 
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
-
+    ros::Publisher marker_pub_;
     ros::Subscriber  obstacles_state_sub_;
 
     ros::Publisher  joint_state_pub_;
@@ -209,6 +210,8 @@ public:
     //Controller options
     bool enable_output_;
     bool plan_;
+    bool replan_;
+    double x_offset_, y_offset_, theta_offset_;
     bool debug_;
     int n_iterations_;
     bool simulation_mode_;

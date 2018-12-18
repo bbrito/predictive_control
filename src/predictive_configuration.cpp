@@ -193,6 +193,18 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     return false;
   }
 
+  // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
+  if (!nh.getParam ("road_width_right", road_width_right_) )
+  {
+    ROS_WARN(" Parameter 'road_width' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+  if (!nh.getParam ("road_width_left", road_width_left_) )
+  {
+    ROS_WARN(" Parameter 'road_width' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
   // check requested parameter availble on parameter server if not than set default value
   nh.param("clock_frequency", clock_frequency_, double(20.0)); // 25 hz
 

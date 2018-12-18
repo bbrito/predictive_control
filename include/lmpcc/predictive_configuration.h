@@ -98,6 +98,7 @@ public:
     double sampling_time_;
     int state_dim_;
     int control_dim_;
+    double road_width_right_,road_width_left_;
 
     // self collision distance
     double collision_weight_factor_;

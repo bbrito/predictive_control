@@ -39,6 +39,10 @@ global_path:
   n_points_clothoid: 20
   n_points_spline: 20
 
+#Road parameters
+road_width_right: 1.88
+road_width_left: 4.24
+
 # Parameters for collision constraints
 obstacles:
       n_obstacles: 2

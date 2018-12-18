@@ -577,9 +577,8 @@ void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<dou
     S_all.push_back(0);
 
     for (int i = 0; i < x.size()-1; i++){
-        Clothoid::buildClothoid(x[i], y[i], theta[i], x[i+1], y[i+1], theta[i+1], k, dk, L);
-
-        Clothoid::pointsOnClothoid(x[i], y[i], theta[i], k, dk, L, n_clothoid, X, Y);
+        Clothoid::buildClothoid(x[i]+x_offset_, y[i]+y_offset_, theta[i]+theta_offset_, x[i+1]+x_offset_, y[i+1]+y_offset_, theta[i+1]+theta_offset_, k, dk, L);
+        Clothoid::pointsOnClothoid(x[i]+x_offset_, y[i]+y_offset_, theta[i]+theta_offset_, k, dk, L, n_clothoid, X, Y);
         if (i==0){
             X_all.insert(X_all.end(), X.begin(), X.end());
             Y_all.insert(Y_all.end(), Y.begin(), Y.end());
@@ -735,13 +734,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
         theta_offset_ = config.theta_offset;
         replan_ = true;
     }
-    if(replan_){
-        for (int ref_point_it = 0; ref_point_it<waypoints_size_; ref_point_it++)
-        {
-            X_road[ref_point_it] += x_offset_;
-            Y_road[ref_point_it] += y_offset_;
-            Theta_road[ref_point_it] += theta_offset_; //to do conversion quaternion
-        }
+    if(replan_ && waypoints_size_>0){
 
         Ref_path(X_road, Y_road, Theta_road);
         //ROS_INFO("ConstructRefPath");
@@ -992,16 +985,8 @@ void MPCC::plotRoad(void)
 
     geometry_msgs::Pose pose;
 
-    pose.position.x = 0;
-    pose.position.y = controller_config_->road_width_left_+line_strip.scale.x/2.0;
-    // Convert RPY from path to quaternion
-
-    pose.orientation.x = 0;
-    pose.orientation.y = 0;
-    pose.orientation.z = 0;
-    pose.orientation.w = 1;
-    // Convert from global_frame to planning frame
-    transformPose(controller_config_->robot_base_link_,controller_config_->target_frame_,pose);
+    pose.position.x = (controller_config_->road_width_left_+line_strip.scale.x/2.0)*-sin(current_state_(2));
+    pose.position.y = (controller_config_->road_width_left_+line_strip.scale.x/2.0)*cos(current_state_(2));
 
     geometry_msgs::Point p;
     p.x = spline_traj_.poses[0].pose.position.x + pose.position.x;
@@ -1024,20 +1009,17 @@ void MPCC::plotRoad(void)
     line_strip.color.b = 1.0;
     line_strip.color.a = 1.0;
     line_strip.id = 2;
+    pose.position.x = (-controller_config_->road_width_right_-line_strip.scale.x/2.0)*-sin(current_state_(2));
+    pose.position.y = (-controller_config_->road_width_right_-line_strip.scale.x/2.0)*cos(current_state_(2));
 
-    pose.position.y = controller_config_->road_width_right_+line_strip.scale.x/2.0;
-
-    // Convert from global_frame to planning frame
-    transformPose(controller_config_->robot_base_link_,controller_config_->target_frame_,pose);
-
-    p.x = spline_traj_.poses[0].pose.position.x-pose.position.x;
-    p.y = spline_traj_.poses[0].pose.position.y-pose.position.y;
+    p.x = spline_traj_.poses[0].pose.position.x+pose.position.x;
+    p.y = spline_traj_.poses[0].pose.position.y+pose.position.y;
     p.z = 0;
 
     line_strip.points.push_back(p);
 
-    p.x = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.x-pose.position.x;
-    p.y = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.y-pose.position.y;
+    p.x = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.x+pose.position.x;
+    p.y = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.y+pose.position.y;
     p.z = 0;
 
     line_strip.points.push_back(p);

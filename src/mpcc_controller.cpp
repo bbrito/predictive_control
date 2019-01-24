@@ -496,14 +496,14 @@ void MPCC::runNode(const ros::TimerEvent &event)
         }
 
         controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
-
+        controlled_velocity_.brake = acado_getKKT();
         controlled_velocity_.steer = acadoVariables.u[1] ;// / 0.52; // maximum steer
 
         if(debug_){
             te_ = acado_toc(&t);
-            publishPredictedTrajectory();
-            publishPredictedOutput();
-            broadcastPathPose();
+            //publishPredictedTrajectory();
+            //publishPredictedOutput();
+            //broadcastPathPose();
             publishFeedback(j,te_);
         }
         publishPredictedCollisionSpace();
@@ -684,7 +684,7 @@ void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
   Ref_path(X_road, Y_road, Theta_road);
 	//ROS_INFO("ConstructRefPath");
   publishSplineTrajectory();
-     
+  plotRoad();
 }
 
 double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
@@ -866,21 +866,27 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
         cv_msgs::PredictedMoGTrack track = objects.tracks[i];
         for(int j=0;j<track.track.size();j++){
             cv_msgs::PredictedMoG mog = track.track[j];
-            for (int k = 0; k < mog.pose.size(); k++) {
-                obstacles_.Obstacles[k].pose[j]=mog.pose[k].pose;
+            int mogs_to_consider = 1; //mog.pose.size(); //FIXME only use the first item in the MOG, to allow for multi-object tracking.
+            for (int k = 0; k < mogs_to_consider; k++) {
+                int current_obstacle = i*mogs_to_consider + k;
+                if (j == 0) {
+                  std::cout << "current obstacle: " << current_obstacle << std::endl;
+                  std::cout << "current i: " << i << std::endl;
+                }
+                obstacles_.Obstacles[current_obstacle].pose[j]=mog.pose[k].pose;
                 //ToDo
-                transformPose(objects.header.frame_id,controller_config_->target_frame_,obstacles_.Obstacles[k].pose[j]);
+                transformPose(objects.header.frame_id,controller_config_->target_frame_,obstacles_.Obstacles[current_obstacle].pose[j]);
 
                 // Convert quaternion to RPY
-                ysqr = obstacles_.Obstacles[k].pose[j].orientation.y * obstacles_.Obstacles[k].pose[j].orientation.y;
-                t3 = +2.0 * (obstacles_.Obstacles[k].pose[j].orientation.w * obstacles_.Obstacles[k].pose[j].orientation.z
-                             + obstacles_.Obstacles[k].pose[j].orientation.x * obstacles_.Obstacles[k].pose[j].orientation.y);
-                t4 = +1.0 - 2.0 * (ysqr + obstacles_.Obstacles[k].pose[j].orientation.z * obstacles_.Obstacles[k].pose[j].orientation.z);
+                ysqr = obstacles_.Obstacles[current_obstacle].pose[j].orientation.y * obstacles_.Obstacles[current_obstacle].pose[j].orientation.y;
+                t3 = +2.0 * (obstacles_.Obstacles[current_obstacle].pose[j].orientation.w * obstacles_.Obstacles[current_obstacle].pose[j].orientation.z
+                             + obstacles_.Obstacles[current_obstacle].pose[j].orientation.x * obstacles_.Obstacles[current_obstacle].pose[j].orientation.y);
+                t4 = +1.0 - 2.0 * (ysqr + obstacles_.Obstacles[current_obstacle].pose[j].orientation.z * obstacles_.Obstacles[current_obstacle].pose[j].orientation.z);
 
-                obstacles_.Obstacles[k].pose[j].orientation.z = std::atan2(t3, t4);
+                obstacles_.Obstacles[current_obstacle].pose[j].orientation.z = std::atan2(t3, t4);
 
-                obstacles_.Obstacles[k].major_semiaxis[j] = 1;
-                obstacles_.Obstacles[k].minor_semiaxis[j] = 1;
+                obstacles_.Obstacles[current_obstacle].major_semiaxis[j] = 1;
+                obstacles_.Obstacles[current_obstacle].minor_semiaxis[j] = 1;
 
             }
         }
@@ -991,13 +997,13 @@ void MPCC::plotRoad(void)
     geometry_msgs::Point p;
     p.x = spline_traj_.poses[0].pose.position.x + pose.position.x;
     p.y = spline_traj_.poses[0].pose.position.y + pose.position.y;
-    p.z = 0;
+    p.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
 
     line_strip.points.push_back(p);
 
     p.x = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.x+ pose.position.x;
     p.y = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.y+ pose.position.y;
-    p.z = 0;
+    p.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
 
     line_strip.points.push_back(p);
 
@@ -1014,13 +1020,13 @@ void MPCC::plotRoad(void)
 
     p.x = spline_traj_.poses[0].pose.position.x+pose.position.x;
     p.y = spline_traj_.poses[0].pose.position.y+pose.position.y;
-    p.z = 0;
+    p.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
 
     line_strip.points.push_back(p);
 
     p.x = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.x+pose.position.x;
     p.y = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.y+pose.position.y;
-    p.z = 0;
+    p.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
 
     line_strip.points.push_back(p);
 
@@ -1038,7 +1044,7 @@ void MPCC::publishSplineTrajectory(void)
     {
         spline_traj_.poses[i].pose.position.x = ref_path_x(i*(n_pts)*dist_spline_pts_/spline_traj_.poses.size()); //x
         spline_traj_.poses[i].pose.position.y = ref_path_y(i*(n_pts)*dist_spline_pts_/spline_traj_.poses.size()); //y
-
+        spline_traj_.poses[i].pose.position.z = 0.2; //z a little bit above ground to draw it above the pointcloud.
     }
 
     spline_traj_pub_.publish(spline_traj_);
@@ -1081,6 +1087,7 @@ void MPCC::publishPredictedCollisionSpace(void)
             ellips1.id = 60+i+k*ACADO_N;
             ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0]+x_discs_[k]*cos(acadoVariables.x[i * ACADO_NX + 2]);
             ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1]+x_discs_[k]*sin(acadoVariables.x[i * ACADO_NX + 2]);
+            ellips1.pose.position.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
             ellips1.pose.orientation.x = 0;
             ellips1.pose.orientation.y = 0;
             ellips1.pose.orientation.z = 0;

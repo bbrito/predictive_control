@@ -41,6 +41,7 @@
   <depend>shape_msgs</depend>	
   <depend>moveit_msgs</depend>
   <depend>obstacle_feed</depend>
+  <depend>cv_msgs</depend>
 
 
   <exec_depend>robot_state_publisher</exec_depend>

@@ -29,6 +29,7 @@ find_package(catkin REQUIRED COMPONENTS
     shape_msgs
     moveit_msgs
     obstacle_feed
+    cv_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -138,6 +139,7 @@ add_library(predictive_controller
         src/generated_mpc/acado_integrator.c
         src/generated_mpc/acado_solver.c
         src/generated_mpc/acado_auxiliary_functions.c)
+add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_include_directories(predictive_controller PUBLIC
         qpoases

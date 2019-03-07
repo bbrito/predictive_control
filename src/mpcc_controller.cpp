@@ -885,8 +885,8 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 
                 obstacles_.Obstacles[current_obstacle].pose[j].orientation.z = std::atan2(t3, t4);
 
-                obstacles_.Obstacles[current_obstacle].major_semiaxis[j] = 1;
-                obstacles_.Obstacles[current_obstacle].minor_semiaxis[j] = 1;
+                obstacles_.Obstacles[current_obstacle].major_semiaxis[j] = 0.5;
+                obstacles_.Obstacles[current_obstacle].minor_semiaxis[j] = 0.5;
 
             }
         }
@@ -908,8 +908,8 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 
         obstacles_.Obstacles[k].pose[j].orientation.z = std::atan2(t3, t4);
 
-        obstacles_.Obstacles[k].major_semiaxis[j] = 1;
-        obstacles_.Obstacles[k].minor_semiaxis[j] = 1;
+        obstacles_.Obstacles[k].major_semiaxis[j] = 0.5;
+        obstacles_.Obstacles[k].minor_semiaxis[j] = 0.5;
 
       }
     }

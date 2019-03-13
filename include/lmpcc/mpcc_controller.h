@@ -56,17 +56,14 @@
 #include <lmpcc/moveAction.h>
 #include <lmpcc/moveActionGoal.h>
 
-// joint trajectory interface
-#include <control_msgs/FollowJointTrajectoryAction.h>
-#include <lmpcc/trajAction.h>
-#include <lmpcc/trajActionGoal.h>
 
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
 
-// Add obstacle messages
-#include <obstacle_feed/Obstacle.h>
-#include <obstacle_feed/Obstacles.h>
+// lmpcc messages
+#include <lmpcc_msgs/lmpcc_feedback.h>
+#include <lmpcc_msgs/lmpcc_obstacle.h>
+#include <lmpcc_msgs/lmpcc_obstacle_array.h>
 
 //Dynamic Reconfigure server
 #include <boost/thread/mutex.hpp>

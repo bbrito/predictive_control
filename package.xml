@@ -40,7 +40,7 @@
   <depend>visualization_msgs</depend>
   <depend>shape_msgs</depend>	
   <depend>moveit_msgs</depend>
-  <depend>obstacle_feed</depend>
+  <depend>lmpcc_msgs</depend>
   <depend>cv_msgs</depend>
 
 

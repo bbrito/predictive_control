@@ -10,21 +10,12 @@ ACADOworkspace acadoWorkspace;
 
 MPCC::~MPCC()
 {
-    clearDataMember();
 }
 
 void MPCC::spinNode()
 {
     ROS_INFO(" Predictive control node is running, now it's 'Spinning Node'");
     ros::spin();
-}
-
-// disallocated memory
-void MPCC::clearDataMember()
-{
-    last_position_ = Eigen::VectorXd(3);
-    last_velocity_ = Eigen::VectorXd(3);
-
 }
 
 // initialize all helper class of predictive control and subscibe joint state and publish controlled joint velocity
@@ -54,7 +45,6 @@ bool MPCC::initialize()
 
         //DEBUG
         activate_debug_output_ = controller_config_->activate_debug_output_;
-        move_action_result_.reach = false;
         plotting_result_ = controller_config_->plotting_result_;
 
         // DEBUG
@@ -66,25 +56,8 @@ bool MPCC::initialize()
         // resize position and velocity velocity vectors
         current_state_ = Eigen::Vector4d(0,0,0,0);
         last_state_ = Eigen::Vector4d(0,0,0,0);
-        prev_pose_ = Eigen::Vector3d(0,0,0);
-        goal_pose_ = Eigen::Vector3d(0,0,0);
-        next_pose_= Eigen::Vector3d(0,0,0);
-        prev_pose_.setZero();
-        goal_pose_.setZero();
+
         waypoints_size_ = 0; // min 2 waypoints
-
-        // ros interfaces
-        static const std::string MOVE_ACTION_NAME = "move_action";
-        move_action_server_.reset(new actionlib::SimpleActionServer<lmpcc::moveAction>(nh, MOVE_ACTION_NAME, false));
-        move_action_server_->registerGoalCallback(boost::bind(&MPCC::moveGoalCB, this));
-        move_action_server_->registerPreemptCallback(boost::bind(&MPCC::movePreemptCB, this));
-        move_action_server_->start();
-
-        // MOVEIT interfaces
-        static const std::string MOVEIT_ACTION_NAME = "fake_base_controller";
-        moveit_action_server_.reset(new actionlib::SimpleActionServer<lmpcc::trajAction>(nh, MOVEIT_ACTION_NAME, false));
-        //moveit_action_server_->registerGoalCallback(boost::bind(&MPCC::moveitGoalCB, this));
-        moveit_action_server_->start();
 
         robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
 
@@ -111,20 +84,16 @@ bool MPCC::initialize()
         ros::Duration(1).sleep();
 
         timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
-        timer_.start();
 
         //Initialize trajectory variables
         next_point_dist = 0;
         goal_dist = 0;
         prev_point_dist = 0;
-        idx = 1;
-        idy = 1;
-        epsilon_ = 0.01;
+
         goal_reached_ = false;
         controlled_velocity_.steer = 0;
         controlled_velocity_.throttle = 0;
         controlled_velocity_.brake = 0;
-        last_poly_ = false;
 
         moveit_msgs::RobotTrajectory j;
         traj = j;
@@ -150,9 +119,8 @@ bool MPCC::initialize()
         cost_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->control_weight_factors_);
         slack_weight_ = controller_config_->slack_weight_;
         repulsive_weight_ = controller_config_->repulsive_weight_;
-        //velocity_weight_ = controller_config_->velocity_weight_;
         reference_velocity_ = controller_config_->reference_velocity_;
-		    ini_vel_x_ = controller_config_->ini_vel_x_;
+        ini_vel_x_ = controller_config_->ini_vel_x_;
         ros::NodeHandle nh_predictive("predictive_controller");
 
         /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
@@ -270,7 +238,7 @@ void MPCC::broadcastPathPose(){
 }
 
 void MPCC::broadcastTF(){
-
+    // Only used for perfect state simulation
     geometry_msgs::TransformStamped transformStamped;
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = controller_config_->target_frame_;
@@ -332,11 +300,8 @@ void  MPCC::reset_solver(){
 void MPCC::runNode(const ros::TimerEvent &event)
 {
     int N_iter;
-    acado_timer t;
-    if(debug_){
-        acado_tic( &t );
-    }
-    acado_initializeSolver( );
+
+    ROS_ERROR_STREAM("Real-time constraint not satisfied... Cycle time: " << event.profile.last_duration);
 
     if(!simulation_mode_)
         broadcastTF();
@@ -356,14 +321,14 @@ void MPCC::runNode(const ros::TimerEvent &event)
         } else {
             if (enable_output_) {
                 acadoVariables.x[0] = current_state_(0);
-            acadoVariables.x[1] = current_state_(1);
-            acadoVariables.x[2] = current_state_(2);
-            acadoVariables.x[3] = current_state_(3)+ini_vel_x_;              //it should be obtained by the wheel speed
+                acadoVariables.x[1] = current_state_(1);
+                acadoVariables.x[2] = current_state_(2);
+                acadoVariables.x[3] = current_state_(3);              //it should be obtained by the wheel speed
 
-            acadoVariables.x0[0] = current_state_(0);
-            acadoVariables.x0[1] = current_state_(1);
-            acadoVariables.x0[2] = current_state_(2);
-            acadoVariables.x0[3] = current_state_(3)+ini_vel_x_;                        //it should be obtained by the wheel speed
+                acadoVariables.x0[0] = current_state_(0);
+                acadoVariables.x0[1] = current_state_(1);
+                acadoVariables.x0[2] = current_state_(2);
+                acadoVariables.x0[3] = current_state_(3);                        //it should be obtained by the wheel speed
 
             } else {
                 acadoVariables.x[0] = acadoVariables.x[0];
@@ -381,14 +346,14 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
             if (traj_i + 2 == ss.size()) {
                 goal_reached_ = true;
-                //ROS_ERROR_STREAM("GOAL REACHED");
+                ROS_ERROR_STREAM("GOAL REACHED");
             } else {
                 traj_i++;
                 //ROS_ERROR_STREAM("SWITCH SPLINE " << acadoVariables.x[4]);
             }
         }
 
-        if(idx ==1) {
+        if(enable_output_) {
             double smin;
             smin = spline_closest_point(ss[traj_i], 1000, acadoVariables.x[ACADO_NX+4], window_size_, n_search_points_);
             acadoVariables.x[4] = smin;
@@ -448,16 +413,12 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
 
             if (goal_reached_) {
-                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = 0;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = 0;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 8] =  0;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 9] =  0;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 10] = 0;        // spline coefficients
-                acadoVariables.od[(ACADO_NOD * N_iter) + 11] = ref_path_x(ss[traj_i]);
-                acadoVariables.od[(ACADO_NOD * N_iter) + 12] = 0;        // spline coefficients
-                acadoVariables.od[(ACADO_NOD * N_iter) + 13] = 0;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 14] = 0;        // spline coefficients
-                acadoVariables.od[(ACADO_NOD * N_iter) + 15] = ref_path_y(ss[traj_i]);
+                reduced_reference_velocity_ = current_state_(3)-4*0.25*N_iter;
+                if(reduced_reference_velocity_ < 0)
+                    reduced_reference_velocity_=0;
+
+                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
             } else {
                 acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reference_velocity_;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reference_velocity_;
@@ -473,7 +434,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
             //acadoVariables.od[(ACADO_NOD * N_iter) + 23] = ss[traj_i + 1] + 0.02;
         }
-
+        acado_initializeSolver();
         acado_preparationStep();
 
         acado_feedbackStep();
@@ -491,8 +452,25 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
             j++;    //        acado_printDifferentialVariables();
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reference_velocity_/j;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reference_velocity_/j;
+            if(j >6){
+                for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+                    reduced_reference_velocity_ = current_state_(3) - 2 * 0.25 * N_iter;
+                    if(reduced_reference_velocity_ < 0)
+                        reduced_reference_velocity_=0;
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
+                }
+            }
+            if(reduced_reference_velocity_< reference_velocity_){
+                for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+                    reduced_reference_velocity_ = current_state_(3) + 2 * 0.25 * N_iter;
+                    if(reduced_reference_velocity_ >reference_velocity_)
+                        reduced_reference_velocity_ = reference_velocity_;
+
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
+                }
+            }
         }
 
         controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
@@ -557,14 +535,6 @@ double MPCC::spline_closest_point(double s_min, double s_max, double s_guess, do
 
 }
 
-void MPCC::moveGoalCB()
-{
-//    ROS_INFO("MOVEGOALCB");
-    if(move_action_server_->isNewGoalAvailable())
-    {
-        boost::shared_ptr<const lmpcc::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
-    }
-}
 
 void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<double> theta) {
 
@@ -665,7 +635,7 @@ void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
 		Y_road[1] = 0.0;
 		Theta_road[1] = 0.0; //to do conversion quaternion
 			
-    waypoints_size_ = 2.0;
+        waypoints_size_ = 2.0;
            
 	}
     else
@@ -680,11 +650,11 @@ void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
         }
 	}
 	  
-  //ConstructRefPath();
-  Ref_path(X_road, Y_road, Theta_road);
-	//ROS_INFO("ConstructRefPath");
-  publishSplineTrajectory();
-  plotRoad();
+    //ConstructRefPath();
+    Ref_path(X_road, Y_road, Theta_road);
+    //ROS_INFO("ConstructRefPath");
+    publishSplineTrajectory();
+    plotRoad();
 }
 
 double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
@@ -778,9 +748,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
         plan_ = false;        
         enable_output_ = false;
     }
-    
-    idx = 1;
-    
+
     if(plan_){
 		reset_solver();
 		
@@ -794,30 +762,14 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
         //ROS_INFO("reconfigure callback!");
         traj_i = 0;
         goal_reached_ = false;
-        last_poly_ = false;
+        timer_.start();
 	}
+    else{
+        timer_.stop();
+    }
 }
 
 void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){
-
-}
-
-void MPCC::movePreemptCB()
-{
-    move_action_result_.reach = true;
-    move_action_server_->setPreempted(move_action_result_, "Action has been preempted");
-
-}
-
-void MPCC::actionSuccess()
-{
-    move_action_server_->setSucceeded(move_action_result_, "Goal succeeded!");
-
-}
-
-void MPCC::actionAbort()
-{
-    move_action_server_->setAborted(move_action_result_, "Action has been aborted");
 
 }
 

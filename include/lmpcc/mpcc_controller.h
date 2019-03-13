@@ -237,7 +237,6 @@ public:
     double window_size_;
     int n_search_points_;
     bool goal_reached_;
-    bool last_poly_;
 
 private:
 
@@ -269,8 +268,6 @@ private:
 
     // Distance between traget frame and tracking frame relative to base link
     Eigen::Vector4d current_state_, last_state_;
-    Eigen::Vector3d goal_pose_, prev_pose_,next_pose_;
-    Eigen::VectorXd tf_traget_from_tracking_vector_;
 
     Eigen::VectorXd min_velocity_limit_;
     Eigen::VectorXd max_velocity_limit_;
@@ -280,7 +277,7 @@ private:
 
     double slack_weight_;
     double repulsive_weight_;
-    double reference_velocity_;
+    double reference_velocity_,reduced_reference_velocity_;
     double speed_;
     double velocity_weight_;
     double ini_vel_x_;
@@ -292,8 +289,6 @@ private:
 
     //TRajectory execution variables
     double next_point_dist, goal_dist, prev_point_dist;
-    int idx, idy;
-    double epsilon_;
 
     visualization_msgs::Marker ellips1;
 
@@ -315,22 +310,6 @@ private:
 
     // predictive configuration
     boost::shared_ptr<predictive_configuration> controller_config_;
-
-    // move to goal position action
-    boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::moveAction> > move_action_server_;
-
-    boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::trajAction> > moveit_action_server_;
-
-    /// Action interface
-    lmpcc::moveResult move_action_result_;
-    lmpcc::moveFeedback move_action_feedback_;
-    lmpcc::trajActionFeedback moveit_action_feedback_;
-    lmpcc::trajActionResult moveit_action_result_;
-    void moveGoalCB();
-    void movePreemptCB();
-
-    void actionSuccess();
-    void actionAbort();
 
     void getWayPointsCallBack(nav_msgs::Path waypoints);
 
@@ -390,11 +369,6 @@ private:
     void publishFeedback(int& it, double& time);
 
     void ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects);
-
-    /**
-     * @brief clearDataMember: clear vectors means free allocated memory
-     */
-    void clearDataMember();
     
     void  reset_solver();
 

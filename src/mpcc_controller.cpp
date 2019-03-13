@@ -28,8 +28,6 @@ bool MPCC::initialize()
         controller_config_.reset(new predictive_configuration());
         bool controller_config_success = controller_config_->initialize();
 
-        bool kinematic_success = true;
-
         if (controller_config_success == false)
         {
             ROS_ERROR("MPCC: FAILED TO INITILIZED!!");
@@ -95,9 +93,6 @@ bool MPCC::initialize()
         controlled_velocity_.throttle = 0;
         controlled_velocity_.brake = 0;
 
-        moveit_msgs::RobotTrajectory j;
-        traj = j;
-
         //initialize trajectory variable to plot prediction trajectory
         spline_traj_.poses.resize(100);
         spline_traj2_.poses.resize(100);
@@ -129,19 +124,18 @@ bool MPCC::initialize()
 
         // Initialize obstacles
         int N = ACADO_N; // hack.. needs to be beter computed
-        obstacles_.Obstacles.resize(controller_config_->n_obstacles_);
+        obstacles_.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
         for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
         {
-            obstacles_.Obstacles[obst_it].pose.resize(N);
-            obstacles_.Obstacles[obst_it].distance.resize(N);
-            obstacles_.Obstacles[obst_it].major_semiaxis.resize(N);
-            obstacles_.Obstacles[obst_it].minor_semiaxis.resize(N);
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses.resize(N);
+            obstacles_.lmpcc_obstacles[obst_it].major_semiaxis.resize(N);
+            obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis.resize(N);
             for(int t = 0;t<N;t++){
-                obstacles_.Obstacles[obst_it].pose[t].position.x = 10000;
-                obstacles_.Obstacles[obst_it].pose[t].position.y = 10000;
-                obstacles_.Obstacles[obst_it].pose[t].orientation.z = 0;
-                obstacles_.Obstacles[obst_it].major_semiaxis[t] = 0.001;
-                obstacles_.Obstacles[obst_it].minor_semiaxis[t] = 0.001;
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.x = 10000;
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.y = 10000;
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.orientation.z = 0;
+                obstacles_.lmpcc_obstacles[obst_it].major_semiaxis[t] = 0.001;
+                obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis[t] = 0.001;
             }
         }
 
@@ -397,19 +391,19 @@ void MPCC::runNode(const ros::TimerEvent &event)
             //acadoVariables.od[(ACADO_NOD * N_iter) + 42] = x_discs_[3];                        // position of the car discs
             //acadoVariables.od[(ACADO_NOD * N_iter) + 43] = x_discs_[4];
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 29] = obstacles_.Obstacles[0].pose[N_iter].position.x;      // x position of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 30] = obstacles_.Obstacles[0].pose[N_iter].position.y;      // y position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 29] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 30] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
             //ToDo check convertion from quaternion to RPY angle
-            acadoVariables.od[(ACADO_NOD * N_iter) + 31] = obstacles_.Obstacles[0].pose[N_iter].orientation.z;   // heading of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 32] = obstacles_.Obstacles[0].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 33] = obstacles_.Obstacles[0].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 31] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 32] = obstacles_.lmpcc_obstacles[0].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 33] = obstacles_.lmpcc_obstacles[0].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
 
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 34] = obstacles_.Obstacles[1].pose[N_iter].position.x;      // x position of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 35] = obstacles_.Obstacles[1].pose[N_iter].position.y;      // y position of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 36] = obstacles_.Obstacles[1].pose[N_iter].orientation.z;   // heading of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 37] = obstacles_.Obstacles[1].major_semiaxis[N_iter];       // major semiaxis of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 38] = obstacles_.Obstacles[1].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 34] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 35] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 36] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 37] = obstacles_.lmpcc_obstacles[1].major_semiaxis[N_iter];       // major semiaxis of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 38] = obstacles_.lmpcc_obstacles[1].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 2
 
 
             if (goal_reached_) {
@@ -478,11 +472,10 @@ void MPCC::runNode(const ros::TimerEvent &event)
         controlled_velocity_.steer = acadoVariables.u[1] ;// / 0.52; // maximum steer
 
         if(debug_){
-            te_ = acado_toc(&t);
             //publishPredictedTrajectory();
             //publishPredictedOutput();
             //broadcastPathPose();
-            publishFeedback(j,te_);
+            //publishFeedback(j,te_);
         }
         publishPredictedCollisionSpace();
         broadcastPathPose();
@@ -769,10 +762,6 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     }
 }
 
-void MPCC::executeTrajectory(const moveit_msgs::RobotTrajectory & traj){
-
-}
-
 // read current position and velocity of robot joints
 void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 {
@@ -806,12 +795,12 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
     //reset all objects
     for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
     {
-        for(int t = 0;t<obstacles_.Obstacles[obst_it].pose.size();t++){
-            obstacles_.Obstacles[obst_it].pose[t].position.x = 10000;
-            obstacles_.Obstacles[obst_it].pose[t].position.y = 10000;
-            obstacles_.Obstacles[obst_it].pose[t].orientation.z = 0;
-            obstacles_.Obstacles[obst_it].major_semiaxis[t] = 0.001;
-            obstacles_.Obstacles[obst_it].minor_semiaxis[t] = 0.001;
+        for(int t = 0;t<obstacles_.lmpcc_obstacles[obst_it].trajectory.poses.size();t++){
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.x = 10000;
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.y = 10000;
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.orientation.z = 0;
+            obstacles_.lmpcc_obstacles[obst_it].major_semiaxis[t] = 0.001;
+            obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis[t] = 0.001;
         }
     }
     for(int i=0;i<objects.tracks.size();i++){
@@ -825,20 +814,20 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
                   std::cout << "current obstacle: " << current_obstacle << std::endl;
                   std::cout << "current i: " << i << std::endl;
                 }
-                obstacles_.Obstacles[current_obstacle].pose[j]=mog.pose[k].pose;
+                obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose=mog.pose[k].pose;
                 //ToDo
-                transformPose(objects.header.frame_id,controller_config_->target_frame_,obstacles_.Obstacles[current_obstacle].pose[j]);
+                transformPose(objects.header.frame_id,controller_config_->target_frame_,obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose);
 
                 // Convert quaternion to RPY
-                ysqr = obstacles_.Obstacles[current_obstacle].pose[j].orientation.y * obstacles_.Obstacles[current_obstacle].pose[j].orientation.y;
-                t3 = +2.0 * (obstacles_.Obstacles[current_obstacle].pose[j].orientation.w * obstacles_.Obstacles[current_obstacle].pose[j].orientation.z
-                             + obstacles_.Obstacles[current_obstacle].pose[j].orientation.x * obstacles_.Obstacles[current_obstacle].pose[j].orientation.y);
-                t4 = +1.0 - 2.0 * (ysqr + obstacles_.Obstacles[current_obstacle].pose[j].orientation.z * obstacles_.Obstacles[current_obstacle].pose[j].orientation.z);
+                ysqr = obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.y * obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.y;
+                t3 = +2.0 * (obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.w * obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.z
+                             + obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.x * obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.y);
+                t4 = +1.0 - 2.0 * (ysqr + obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.z * obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.z);
 
-                obstacles_.Obstacles[current_obstacle].pose[j].orientation.z = std::atan2(t3, t4);
+                obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.z = std::atan2(t3, t4);
 
-                obstacles_.Obstacles[current_obstacle].major_semiaxis[j] = 0.5;
-                obstacles_.Obstacles[current_obstacle].minor_semiaxis[j] = 0.5;
+                obstacles_.lmpcc_obstacles[current_obstacle].major_semiaxis[j] = 0.5;
+                obstacles_.lmpcc_obstacles[current_obstacle].minor_semiaxis[j] = 0.5;
 
             }
         }
@@ -848,65 +837,63 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
     for(int j=track.track.size();j<ACADO_N;j++){
       cv_msgs::PredictedMoG mog = track.track[track.track.size()-1];
       for (int k = 0; k < mog.pose.size(); k++) {
-        obstacles_.Obstacles[k].pose[j]=mog.pose[k].pose;
+        obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose=mog.pose[k].pose;
         //ToDo
-        transformPose(objects.header.frame_id,controller_config_->target_frame_,obstacles_.Obstacles[k].pose[j]);
+        transformPose(objects.header.frame_id,controller_config_->target_frame_,obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose);
 
         // Convert quaternion to RPY
-        ysqr = obstacles_.Obstacles[k].pose[j].orientation.y * obstacles_.Obstacles[k].pose[j].orientation.y;
-        t3 = +2.0 * (obstacles_.Obstacles[k].pose[j].orientation.w * obstacles_.Obstacles[k].pose[j].orientation.z
-                     + obstacles_.Obstacles[k].pose[j].orientation.x * obstacles_.Obstacles[k].pose[j].orientation.y);
-        t4 = +1.0 - 2.0 * (ysqr + obstacles_.Obstacles[k].pose[j].orientation.z * obstacles_.Obstacles[k].pose[j].orientation.z);
+        ysqr = obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.y * obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.y;
+        t3 = +2.0 * (obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.w * obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.z
+                     + obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.x * obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.y);
+        t4 = +1.0 - 2.0 * (ysqr + obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.z * obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.z);
 
-        obstacles_.Obstacles[k].pose[j].orientation.z = std::atan2(t3, t4);
+        obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.z = std::atan2(t3, t4);
 
-        obstacles_.Obstacles[k].major_semiaxis[j] = 0.5;
-        obstacles_.Obstacles[k].minor_semiaxis[j] = 0.5;
+        obstacles_.lmpcc_obstacles[k].major_semiaxis[j] = 0.5;
+        obstacles_.lmpcc_obstacles[k].minor_semiaxis[j] = 0.5;
 
       }
     }
   }
 }
-void MPCC::ObstacleCallBack(const obstacle_feed::Obstacles& obstacles)
+void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
 {
+    ROS_INFO("LMPCC::ObstacleCallBack");
+    lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
+    total_obstacles.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
 
-    obstacle_feed::Obstacles total_obstacles;
-    total_obstacles.Obstacles.resize(controller_config_->n_obstacles_);
+    total_obstacles.lmpcc_obstacles = received_obstacles.lmpcc_obstacles;
 
-    total_obstacles.Obstacles = obstacles.Obstacles;
+//    //ROS_INFO_STREAM("-- Received # obstacles: " << obstacles.Obstacles.size());
+//    //ROS_INFO_STREAM("-- Expected # obstacles: " << controller_config_->n_obstacles_);
 
-//    ROS_INFO_STREAM("-- Received # obstacles: " << obstacles.Obstacles.size());
-//    ROS_INFO_STREAM("-- Expected # obstacles: " << controller_config_->n_obstacles_);
-
-    if (obstacles.Obstacles.size() < controller_config_->n_obstacles_)
+    if (received_obstacles.lmpcc_obstacles.size() < controller_config_->n_obstacles_)
     {
-        int N = controller_config_->end_time_horizon_/controller_config_->sampling_time_;
-
-        for (int obst_it = obstacles.Obstacles.size(); obst_it < controller_config_->n_obstacles_; obst_it++)
+        for (int obst_it = received_obstacles.lmpcc_obstacles.size(); obst_it < controller_config_->n_obstacles_; obst_it++)
         {
-            total_obstacles.Obstacles[obst_it].pose.resize(N);
-            total_obstacles.Obstacles[obst_it].distance.resize(N);
-            total_obstacles.Obstacles[obst_it].major_semiaxis.resize(N);
-            total_obstacles.Obstacles[obst_it].minor_semiaxis.resize(N);
-            for(int t = 0;t<N;t++) {
-                total_obstacles.Obstacles[obst_it].pose[t].position.x = 10000;
-                total_obstacles.Obstacles[obst_it].pose[t].position.y = 10000;
-                total_obstacles.Obstacles[obst_it].pose[t].orientation.z = 0;
-                total_obstacles.Obstacles[obst_it].major_semiaxis[t] = 0.001;
-                total_obstacles.Obstacles[obst_it].minor_semiaxis[t] = 0.001;
+            total_obstacles.lmpcc_obstacles[obst_it].pose.position.x = current_state_(0) - 100;
+            total_obstacles.lmpcc_obstacles[obst_it].pose.position.y = 0;
+            total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = 0;
+            total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis.resize(ACADO_N);
+            total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis.resize(ACADO_N);
+            total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses.resize(ACADO_N);
+            for (int traj_it = 0; traj_it < ACADO_N; traj_it++)
+            {
+                total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = current_state_(0) - 100;
+                total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = 0;
+                total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = 0;
+                total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis[traj_it] = 0.001;
+                total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis[traj_it] = 0.001;
             }
         }
     }
 
-    obstacles_.Obstacles.resize(controller_config_->n_obstacles_);
+    //obstacles_.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
 
     for (int total_obst_it = 0; total_obst_it < controller_config_->n_obstacles_; total_obst_it++)
     {
-        obstacles_.Obstacles[total_obst_it] = total_obstacles.Obstacles[total_obst_it];
+        obstacles_.lmpcc_obstacles[total_obst_it] = total_obstacles.lmpcc_obstacles[total_obst_it];
     }
-
-//    ROS_INFO_STREAM("-- total_Obst1: [" << total_obstacles.Obstacles[0].pose.position.x << ",  " << total_obstacles.Obstacles[0].pose.position.y << "], Obst2 [" << total_obstacles.Obstacles[1].pose.position.x << ",  " << total_obstacles.Obstacles[1].pose.position.y << "]");
-//    ROS_INFO_STREAM("-- Obst1_: [" << obstacles_.Obstacles[0].pose.position.x << ",  " << obstacles_.Obstacles[0].pose.position.y << "], Obst2 [" << obstacles_.Obstacles[1].pose.position.x << ",  " << obstacles_.Obstacles[1].pose.position.y << "]");
 }
 
 void MPCC::publishZeroJointVelocity()

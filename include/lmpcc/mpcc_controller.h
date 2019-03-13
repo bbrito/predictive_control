@@ -129,7 +129,7 @@ public:
      */
     void StateCallBack(const nav_msgs::Odometry::ConstPtr& msg);
 
-    void ObstacleCallBack(const obstacle_feed::Obstacles& obstacles);
+    void ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles);
 
     /**
      * @brief controlSquence: Known as main control of all classes
@@ -281,9 +281,6 @@ private:
     double waypoints_size_;
     double last_waypoints_size_;
 
-    //MoveIt TRAJECTORY VARIABLE
-    moveit_msgs::RobotTrajectory traj;
-
     //TRajectory execution variables
     double next_point_dist, goal_dist, prev_point_dist;
 
@@ -293,8 +290,8 @@ private:
     //To be done kinematic model car
 
     // Obstacles
-    obstacle_feed::Obstacles obstacles_;
-    obstacle_feed::Obstacles obstacles_init_;
+    lmpcc_msgs::lmpcc_obstacle_array obstacles_;
+    lmpcc_msgs::lmpcc_obstacle_array obstacles_init_;
 
     // Current and last position and velocity from joint state callback
     //Eigen::VectorXd current_position_;
@@ -351,8 +348,6 @@ private:
 
     void publishContourError(void);
 
-    void publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj);
-
     void broadcastTF();
 
     void broadcastPathPose();
@@ -368,11 +363,6 @@ private:
     void ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects);
     
     void  reset_solver();
-
-    /**
-     * @brief executeTrajectory: changes the goal state of the mpcc to each point of trajectory
-     */
-    void executeTrajectory(const moveit_msgs::RobotTrajectory & traj);
 
     bool transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose);
 };

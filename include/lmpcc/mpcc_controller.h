@@ -53,9 +53,6 @@
 // actions, srvs, msgs
 #include <actionlib/server/simple_action_server.h>
 #include <actionlib/client/simple_action_client.h>
-#include <lmpcc/moveAction.h>
-#include <lmpcc/moveActionGoal.h>
-
 
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>

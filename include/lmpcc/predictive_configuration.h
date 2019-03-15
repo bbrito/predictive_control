@@ -58,9 +58,10 @@ public:
     bool activate_controller_node_output_;
     bool initialize_success_;
     bool set_velocity_constraints_;
+    bool gazebo_simulation_,simulation_mode_;
 
     /** inputs and output topic definition **/
-    std::string output_cmd;
+    std::string cmd_, cmd_sim_;
     std::string robot_state_topic_;
 
     // use for finding kinematic chain and urdf model

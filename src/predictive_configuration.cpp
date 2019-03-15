@@ -20,6 +20,18 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   ros::NodeHandle nh_config;//("predictive_config");
   ros::NodeHandle nh;
 
+  if (!nh.getParam ("simulation_mode", simulation_mode_) )
+  {
+    ROS_WARN(" Parameter 'simulation_mode' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
+  if (!nh.getParam ("gazebo_simulation", gazebo_simulation_) )
+  {
+    ROS_WARN(" Parameter 'gazebo_simulation' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
   // read paramter from parameter server if not set than terminate code, as this parameter is essential parameter
   if (!nh.getParam ("robot_base_link", robot_base_link_) )
   {
@@ -110,7 +122,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     }
   }
 
-  ROS_WARN("Set optimal control problem dimensions");
+  //ROS_WARN("Set optimal control problem dimensions");
   if (!nh.getParam("state_dim", state_dim_) )
   {
     ROS_WARN(" Parameter 'state_dim' not set on %s node " , ros::this_node::getName().c_str());
@@ -137,14 +149,16 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     }
   }
 
-
-
-  if (!nh.getParam ("output_cmd", output_cmd) )
+  if (!nh.getParam ("publish/cmd", cmd_) )
   {
-    ROS_WARN(" Parameter 'output_cmd' not set on %s node " , ros::this_node::getName().c_str());
+    ROS_WARN(" Parameter 'publish/cmd' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
-
+  if (!nh.getParam ("publish/cmd_sim", cmd_sim_) )
+  {
+    ROS_WARN(" Parameter 'publish/cmd_sim' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
   if (!nh.getParam ("robot_state_topic", robot_state_topic_) )
   {
     ROS_WARN(" Parameter 'robot_state_topic' not set on %s node " , ros::this_node::getName().c_str());
@@ -204,7 +218,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     ROS_WARN(" Parameter 'road_width' not set on %s node " , ros::this_node::getName().c_str());
     return false;
   }
-
+    ROS_INFO("acado configuration parameter");
   // check requested parameter availble on parameter server if not than set default value
   nh.param("clock_frequency", clock_frequency_, double(20.0)); // 25 hz
 
@@ -216,7 +230,7 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
   nh.param("activate_controller_node_output", activate_controller_node_output_, bool(false));  // debug
   nh.param("plotting_result", plotting_result_, bool(false));  // plotting
 
-  // acado configuration parameter
+  ROS_INFO("acado configuration parameter");
   nh_config.param("acado_config/max_num_iteration", max_num_iteration_, int(70));  // maximum number of iteration for slution of OCP
   nh_config.param("acado_config/discretization_intervals", discretization_intervals_, int(4));  // discretization_intervals for slution of OCP
   nh_config.param("acado_config/kkt_tolerance", kkt_tolerance_, double(1e-3));  // kkt condition for optimal solution
@@ -285,7 +299,7 @@ void predictive_configuration::print_configuration_parameter()
   ROS_INFO_STREAM("Activate_controller_node_output: " << std::boolalpha << activate_controller_node_output_);
   ROS_INFO_STREAM("Initialize_success: " << std::boolalpha << initialize_success_);
 
-  ROS_INFO_STREAM("Set velocity constrints: " << std::boolalpha << set_velocity_constraints_);
+  ROS_INFO_STREAM("Set velocity constraints: " << std::boolalpha << set_velocity_constraints_);
 
   ROS_INFO_STREAM("Plotting results: " << std::boolalpha << plotting_result_);
   ROS_INFO_STREAM("robot_base_link: " << robot_base_link_);

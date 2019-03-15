@@ -38,7 +38,7 @@ bool MPCC::initialize()
             return false;
         }
 
-        // initialize data member of class
+        //ROS_INFO("initialize data member of class");
         clock_frequency_ = controller_config_->clock_frequency_;
 
         //DEBUG
@@ -71,7 +71,10 @@ bool MPCC::initialize()
         cost_pub_ = nh.advertise<std_msgs::Float64>("cost",1);
         brake_pub_ = nh.advertise<std_msgs::Float64>("break",1);
         contour_error_pub_ = nh.advertise<std_msgs::Float64MultiArray>("contour_error",1);
-        controlled_velocity_pub_ = nh.advertise<lmpcc::Control>(controller_config_->output_cmd,1);
+        if(controller_config_->gazebo_simulation_)
+            controlled_velocity_pub_ = nh.advertise<lmpcc::Control>(controller_config_->cmd_sim_,1);
+        else
+            controlled_velocity_pub_ = nh.advertise<lmpcc::Control>(controller_config_->cmd_,1);
         joint_state_pub_ = nh.advertise<sensor_msgs::JointState>("/joint_states",1);
         robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
@@ -93,7 +96,7 @@ bool MPCC::initialize()
         controlled_velocity_.throttle = 0;
         controlled_velocity_.brake = 0;
 
-        //initialize trajectory variable to plot prediction trajectory
+        //ROS_INFO("initialize trajectory variable to plot prediction trajectory");
         spline_traj_.poses.resize(100);
         spline_traj2_.poses.resize(100);
         pred_traj_.poses.resize(ACADO_N);
@@ -106,10 +109,7 @@ bool MPCC::initialize()
 
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
-        // Initialize pregenerated mpc solver
-        acado_initializeSolver( );
-
-        // initialize state and control weight factors
+        //ROS_INFO("initialize state and control weight factors");
         cost_contour_weight_factors_ = transformStdVectorToEigenVector(controller_config_->contour_weight_factors_);
         cost_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->control_weight_factors_);
         slack_weight_ = controller_config_->slack_weight_;
@@ -118,10 +118,9 @@ bool MPCC::initialize()
         ini_vel_x_ = controller_config_->ini_vel_x_;
         ros::NodeHandle nh_predictive("predictive_controller");
 
-        /// Setting up dynamic_reconfigure server for the TwistControlerConfig parameters
+        //ROS_INFO("Setting up dynamic_reconfigure server for the TwistControlerConfig parameters");
         reconfigure_server_.reset(new dynamic_reconfigure::Server<lmpcc::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
-
         // Initialize obstacles
         int N = ACADO_N; // hack.. needs to be beter computed
         obstacles_.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
@@ -138,7 +137,6 @@ bool MPCC::initialize()
                 obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis[t] = 0.001;
             }
         }
-
         computeEgoDiscs();
 
         //Controller options
@@ -168,17 +166,27 @@ bool MPCC::initialize()
         // Initialize pregenerated mpc solver
         acado_initializeSolver( );
 
-        // MPCC reference path variables
-        X_road.resize(2);
-        Y_road.resize(2);
-        Theta_road.resize(2);
-
         // Check if all reference vectors are of the same length
         if (!( (controller_config_->ref_x_.size() == controller_config_->ref_y_.size()) && ( controller_config_->ref_x_.size() == controller_config_->ref_theta_.size() ) && (controller_config_->ref_y_.size() == controller_config_->ref_theta_.size()) ))
         {
             ROS_ERROR("Reference path inputs should be of equal length");
+            return false;
         }
 
+        // MPCC path variables
+        X_road.resize(controller_config_->ref_x_.size());
+        Y_road.resize(controller_config_->ref_y_.size());
+        Theta_road.resize(controller_config_->ref_theta_.size());
+
+        ROS_WARN_STREAM("Getting waypoints from config file..."<<controller_config_->ref_x_.size());
+        waypoints_size_ = controller_config_->ref_x_.size();
+        for (int ref_point_it = 0; ref_point_it<waypoints_size_; ref_point_it++)
+        {
+            X_road[ref_point_it] = controller_config_->ref_x_[ref_point_it];
+            Y_road[ref_point_it] = controller_config_->ref_y_[ref_point_it];
+            Theta_road[ref_point_it] = controller_config_->ref_theta_[ref_point_it];
+        }
+        Ref_path(X_road, Y_road, Theta_road);
         traj_i =0;
         ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
         return true;
@@ -295,7 +303,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
 {
     int N_iter;
 
-    ROS_ERROR_STREAM("Real-time constraint not satisfied... Cycle time: " << event.profile.last_duration);
+    if(event.profile.last_duration.nsec > 1/clock_frequency_*1e9)
+        ROS_ERROR_STREAM("Real-time constraint not satisfied... Cycle time: " << event.profile.last_duration);
 
     if(!simulation_mode_)
         broadcastTF();
@@ -532,13 +541,14 @@ double MPCC::spline_closest_point(double s_min, double s_max, double s_guess, do
 void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<double> theta) {
 
     double k, dk, L;
+    n_clothoid = controller_config_->n_points_clothoid_;
+    n_pts = controller_config_->n_points_spline_;
     std::vector<double> X(n_clothoid), Y(n_clothoid);
     std::vector<double> X_all, Y_all, S_all;
     total_length_= 0;
-    n_clothoid = controller_config_->n_points_clothoid_;
-    n_pts = controller_config_->n_points_spline_;
-    S_all.push_back(0);
 
+    S_all.push_back(0);
+    ROS_INFO("Generating path...");
     for (int i = 0; i < x.size()-1; i++){
         Clothoid::buildClothoid(x[i]+x_offset_, y[i]+y_offset_, theta[i]+theta_offset_, x[i+1]+x_offset_, y[i+1]+y_offset_, theta[i+1]+theta_offset_, k, dk, L);
         Clothoid::pointsOnClothoid(x[i]+x_offset_, y[i]+y_offset_, theta[i]+theta_offset_, k, dk, L, n_clothoid, X, Y);
@@ -582,6 +592,8 @@ void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<dou
 
     ref_path_x.set_points(ss,xx);
     ref_path_y.set_points(ss,yy);
+
+    ROS_INFO("Path generated");
 }
 
 void MPCC::ConstructRefPath(){
@@ -599,7 +611,7 @@ void MPCC::ConstructRefPath(){
         pose.orientation.z = myQuaternion.z();
         pose.orientation.w = myQuaternion.w();
         // Convert from global_frame to planning frame
-        //transformPose(controller_config_->global_path_frame_,controller_config_->target_frame_,pose);
+        transformPose(controller_config_->global_path_frame_,controller_config_->target_frame_,pose);
         X_road[ref_point_it] = pose.position.x;
         Y_road[ref_point_it] = pose.position.y;
         // Convert from quaternion to RPY
@@ -618,7 +630,7 @@ void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
 	last_waypoints_size_ = waypoints_size_;
 	if (waypoints.poses.size()==0){
 		
-		
+
 		ROS_WARN("Waypoint message is empty");
 		X_road[0] = 0.0;
 		Y_road[0] = 0.0;
@@ -705,37 +717,14 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
         plotRoad();
         replan_ = false;
     }
-    /*if(replan_){
-        geometry_msgs::Pose pose;
 
-        pose.position.x = x_offset_;
-        pose.position.y = 0;
-        // Convert RPY from path to quaternion
-
-        pose.orientation.x = 0;
-        pose.orientation.y = 0;
-        pose.orientation.z = 0;
-        pose.orientation.w = 1;
-            // Convert from global_frame to planning frame
-        transformPose(controller_config_->robot_base_link_,controller_config_->target_frame_,pose);
-
-        for (int ref_point_it = 0; ref_point_it<waypoints_size_; ref_point_it++)
-        {
-            X_road[ref_point_it] = pose.position.x;
-            Y_road[ref_point_it] = pose.position.y;
-            Theta_road[ref_point_it] = quaternionToangle(pose.orientation); //to do conversion quaternion
-        }
-
-        Ref_path(X_road, Y_road, Theta_road);
-        //ROS_INFO("ConstructRefPath");
-        publishSplineTrajectory();
-    }
-    */
     debug_ = config.debug;
-    if (waypoints_size_ !=0) {
+    if (waypoints_size_ >1) {
+        ROS_WARN("Planning...");
         plan_ = config.plan;
         enable_output_ = config.enable_output;
     } else {
+        ROS_WARN("No waypoints were provided...");
         config.plan = false;
         config.enable_output = false;
         plan_ = false;        
@@ -744,13 +733,12 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
 
     if(plan_){
 		reset_solver();
-		
 		acado_initializeSolver( );
-		//ROS_INFO("acado_initializeSolver");
+		ROS_INFO("acado_initializeSolver");
 		//ConstructRefPath();
 		//getWayPointsCallBack( );
 		//ROS_INFO("ConstructRefPath");
-		//Ref_path(X_road, Y_road, Theta_road);
+
         publishSplineTrajectory();
         //ROS_INFO("reconfigure callback!");
         traj_i = 0;

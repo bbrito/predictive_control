@@ -1,3 +1,6 @@
+# Simulation mode
+simulation_mode: false             # Is set in launch file!
+gazebo_simulation: true
 
 ### Kinematic configuration parameter
 
@@ -14,8 +17,10 @@ clock_frequency: 20
 state_dim: 5
 control_dim: 2
 
-#Inputs and output topics topic
-output_cmd: '/lmpcc'
+# Input and output topics
+publish:
+    cmd:          '/lmpcc'
+    cmd_sim:      '/prius'
 robot_state_topic: '/ukf_localization_map/odometry/filtered'
 obs_state_topic: '/future_obj_track'
 waypoint_topic: '/path_publisher/path' 

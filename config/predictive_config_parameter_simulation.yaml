@@ -21,7 +21,7 @@ publish:
     cmd:          '/lmpcc'
     cmd_sim:      '/prius'
 robot_state_topic: '/base_pose_ground_truth'
-obs_state_topic: '/future_obj_track'
+obs_state_topic: '/future'
 waypoint_topic: '/path_publisher/path' 
 
 # Kinematic chain parameter
@@ -37,9 +37,9 @@ initial_speed: 0.0
 
 # Parameters for predefined reference path
 global_path:
-  x: [0,         50, 100,      230, 200, 100]
-  y: [0,         0, -25,      -100, 0, 0]
-  theta: [0, 0,  1.5708, 1.5708, 0, 0]
+  x: [0,         50, 100]
+  y: [0,         0, 0]
+  theta: [0, 0,  0]
   n_points_clothoid: 20
   n_points_spline: 20
 

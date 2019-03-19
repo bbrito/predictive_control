@@ -109,7 +109,11 @@ bool MPCC::initialize()
 
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
-        //ROS_INFO("initialize state and control weight factors");
+        //service clients
+        reset_simulation_client_ = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_world");
+        reset_ekf_client_ = nh.serviceClient<robot_localization::SetPose>("/set_pose");
+
+        ROS_INFO("initialize state and control weight factors");
         cost_contour_weight_factors_ = transformStdVectorToEigenVector(controller_config_->contour_weight_factors_);
         cost_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->control_weight_factors_);
         slack_weight_ = controller_config_->slack_weight_;
@@ -692,6 +696,15 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
 
     n_iterations_ = config.n_iterations;
     simulation_mode_ = config.simulation_mode;
+    // reset world
+    reset_world_ = config.reset_world;
+    if(reset_world_) {
+        reset_simulation_client_.call(reset_msg_);
+        reset_ekf_client_.call(reset_pose_msg_);
+        reset_solver();
+        traj_i = 0;
+        goal_reached_ = false;
+    }
 
     //Search window parameters
     window_size_ = config.window_size;
@@ -738,7 +751,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
 		//ConstructRefPath();
 		//getWayPointsCallBack( );
 		//ROS_INFO("ConstructRefPath");
-
+        plotRoad();
         publishSplineTrajectory();
         //ROS_INFO("reconfigure callback!");
         traj_i = 0;

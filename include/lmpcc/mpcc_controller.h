@@ -178,6 +178,9 @@ public:
 
     void plotRoad(void);
     /** public data member */
+    //Service clients
+    ros::ServiceClient reset_simulation_client_, reset_ekf_client_;
+
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
 
@@ -203,6 +206,7 @@ public:
     int traj_i;
     //Controller options
     bool enable_output_;
+    bool reset_world_;
     bool plan_;
     bool replan_;
     double x_offset_, y_offset_, theta_offset_;
@@ -232,6 +236,11 @@ public:
     int n_search_points_;
     bool goal_reached_;
 
+    //reset simulation msg
+    std_srvs::Empty reset_msg_;
+    robot_localization::SetPose reset_pose_msg_;
+
+    
 private:
 
     ros::NodeHandle nh;

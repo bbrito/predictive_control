@@ -240,7 +240,7 @@ public:
     std_srvs::Empty reset_msg_;
     robot_localization::SetPose reset_pose_msg_;
 
-    
+
 private:
 
     ros::NodeHandle nh;

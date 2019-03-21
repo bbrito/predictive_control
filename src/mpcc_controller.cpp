@@ -58,7 +58,6 @@ bool MPCC::initialize()
         waypoints_size_ = 0; // min 2 waypoints
 
         robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
-
         obstacle_feed_sub_ = nh.subscribe(controller_config_->sub_ellipse_topic_, 1, &MPCC::ObstacleCallBack, this);
 
         obstacles_state_sub_ = nh.subscribe(controller_config_->obs_state_topic_, 1, &MPCC::ObstacleStateCallback, this);
@@ -215,7 +214,7 @@ void MPCC::computeEgoDiscs()
     // Loop over discs and assign positions
     for ( int discs_it = 0; discs_it < n_discs; discs_it++){
 
-        x_discs_[discs_it] = -length/n_discs+(discs_it + 1)*(length/(n_discs));
+        x_discs_[discs_it] = -(discs_it )*(length/(n_discs));
 
     }
 
@@ -455,10 +454,10 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
             acado_feedbackStep();
 
-            //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
+            printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
 
             j++;    //        acado_printDifferentialVariables();
-
+            /*
             if(j >6){
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
                     reduced_reference_velocity_ = current_state_(3) - 2 * 0.25 * N_iter;
@@ -468,6 +467,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
                     acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
                 }
             }
+
+
             if(reduced_reference_velocity_< reference_velocity_){
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
                     reduced_reference_velocity_ = current_state_(3) + 2 * 0.25 * N_iter;
@@ -478,10 +479,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
                     acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
                 }
             }
+            */
         }
 
         controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
-        controlled_velocity_.brake = acado_getKKT();
+        controlled_velocity_.brake = acado_getKKT(); // TODO: WHUUUT, any reasoning behind this?
         controlled_velocity_.steer = acadoVariables.u[1] ;// / 0.52; // maximum steer
 
         if(debug_){
@@ -496,10 +498,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
         cost_.data = acado_getObjective();
     }
 
-    if(!enable_output_||acado_getKKT() > 1e-4)
-    {
-        publishZeroJointVelocity();
+    if (acado_getKKT() > 1e-4)
+        ROS_ERROR("KKT Too high");
 
+    if(!enable_output_ || acado_getKKT() > 1e-4) {
+        publishZeroJointVelocity();
     }
     else
         controlled_velocity_pub_.publish(controlled_velocity_);
@@ -774,14 +777,16 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
    //ROS_INFO("MPCC::StateCallBack");
    controller_config_->target_frame_ = msg->header.frame_id;
    last_state_ = current_state_;
-   current_state_(0) =    msg->pose.pose.position.x;
-   current_state_(1) =    msg->pose.pose.position.y;
+
    ysqr = msg->pose.pose.orientation.y * msg->pose.pose.orientation.y;
    t3 = +2.0 * (msg->pose.pose.orientation.w * msg->pose.pose.orientation.z
                              + msg->pose.pose.orientation.x *msg->pose.pose.orientation.y);
    t4 = +1.0 - 2.0 * (ysqr + msg->pose.pose.orientation.z * msg->pose.pose.orientation.z);
 
    current_state_(2) = std::atan2(t3, t4);
+
+   current_state_(0) =    msg->pose.pose.position.x + 2.7*cos(current_state_(2));
+   current_state_(1) =    msg->pose.pose.position.y + 2.7*sin(current_state_(2));
 
    current_state_(3) = std::sqrt(std::pow(msg->twist.twist.linear.x,2)+std::pow(msg->twist.twist.linear.y,2));
 }
@@ -859,14 +864,14 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 }
 void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
 {
-    ROS_INFO("LMPCC::ObstacleCallBack");
+    //ROS_INFO("LMPCC::ObstacleCallBack");
     lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
     total_obstacles.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
 
     total_obstacles.lmpcc_obstacles = received_obstacles.lmpcc_obstacles;
 
-//    //ROS_INFO_STREAM("-- Received # obstacles: " << obstacles.Obstacles.size());
-//    //ROS_INFO_STREAM("-- Expected # obstacles: " << controller_config_->n_obstacles_);
+    //ROS_INFO_STREAM("-- Received # obstacles: " << received_obstacles.lmpcc_obstacles.size());
+    //ROS_INFO_STREAM("-- Expected # obstacles: " << controller_config_->n_obstacles_);
 
     if (received_obstacles.lmpcc_obstacles.size() < controller_config_->n_obstacles_)
     {
@@ -901,13 +906,14 @@ void MPCC::publishZeroJointVelocity()
 {
     if (activate_debug_output_)
     {
-//        ROS_INFO("Publishing ZERO joint velocity!!");
+       ROS_INFO("Publishing ZERO joint velocity!!");
     }
     lmpcc::Control pub_msg;
     if(!simulation_mode_)
         broadcastTF();
     controlled_velocity_ = pub_msg;
-    controlled_velocity_.throttle = -0.3;
+    controlled_velocity_.throttle = -2;
+    controlled_velocity_.brake = 2;
     controlled_velocity_.steer = 0.0;
     controlled_velocity_pub_.publish(controlled_velocity_);
 }
@@ -1025,6 +1031,7 @@ void MPCC::publishPredictedCollisionSpace(void)
         for (int i = 0; i < ACADO_N; i++)
         {
             ellips1.id = 60+i+k*ACADO_N;
+
             ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0]+x_discs_[k]*cos(acadoVariables.x[i * ACADO_NX + 2]);
             ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1]+x_discs_[k]*sin(acadoVariables.x[i * ACADO_NX + 2]);
             ellips1.pose.position.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.

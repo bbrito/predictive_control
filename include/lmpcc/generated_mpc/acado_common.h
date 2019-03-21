@@ -168,8 +168,8 @@ real_t mu[ 150 ];
  */
 typedef struct ACADOworkspace_
 {
-/** Column vector of size: 244 */
-real_t rhs_aux[ 244 ];
+/** Column vector of size: 260 */
+real_t rhs_aux[ 260 ];
 
 real_t rk_ttt;
 
@@ -200,8 +200,8 @@ real_t evGu[ 450 ];
 /** Matrix of size: 225 x 9 (row major format) */
 real_t EH[ 2025 ];
 
-/** Column vector of size: 2711 */
-real_t objAuxVar[ 2711 ];
+/** Column vector of size: 2116 */
+real_t objAuxVar[ 2116 ];
 
 /** Row vector of size: 53 */
 real_t objValueIn[ 53 ];

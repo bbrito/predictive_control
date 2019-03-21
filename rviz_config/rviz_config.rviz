@@ -11,6 +11,7 @@ Panels:
         - /MarkerArray2
         - /Path2
         - /Path3
+        - /Axes3
       Splitter Ratio: 0.5
     Tree Height: 816
   - Class: rviz/Selection
@@ -181,7 +182,7 @@ Visualization Manager:
       Marker Topic: /robot_collision_space
       Name: MarkerArray
       Namespaces:
-        {}
+        trajectory: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -235,7 +236,7 @@ Visualization Manager:
       Marker Topic: /robot_collision_space
       Name: MarkerArray
       Namespaces:
-        {}
+        trajectory: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -243,8 +244,15 @@ Visualization Manager:
       Marker Topic: /road
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
+      Value: true
+    - Class: rviz/Axes
+      Enabled: true
+      Length: 3
+      Name: Axes
+      Radius: 0.300000012
+      Reference Frame: front_base_link
       Value: true
   Enabled: true
   Global Options:
@@ -271,16 +279,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 48.7592735
+      Distance: 17.5355206
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.0278677009
-        Y: -0.724533021
-        Z: 0.955731988
+        X: 1.05679619
+        Y: 1.21599209
+        Z: 1.33032608
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false

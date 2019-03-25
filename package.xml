@@ -15,6 +15,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roslint</build_depend>
 
+  <depend>acado</depend>
   <depend>actionlib</depend>
   <depend>actionlib_msgs</depend>
   <depend>boost</depend>

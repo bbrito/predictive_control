@@ -207,20 +207,37 @@ void MPCC::computeEgoDiscs()
     int n_discs = controller_config_->n_discs_;
     double length = controller_config_->ego_l_;
     double width = controller_config_->ego_w_;
+    double com_to_back = 2.4; // distance center of mass to back of the car
 
     // Initialize positions of discs
     x_discs_.resize(n_discs);
 
-    // Loop over discs and assign positions
-    for ( int discs_it = 0; discs_it < n_discs; discs_it++){
-
-        x_discs_[discs_it] = -(discs_it )*(length/(n_discs));
-
-    }
 
     // Compute radius of the discs
     r_discs_ = width/2;
+    // Loop over discs and assign positions, with respect to center of mass
+    for ( int discs_it = 0; discs_it < n_discs; discs_it++){
+
+        if (n_discs == 1) { // if only 1 disc, position in center;
+            x_discs_[discs_it] = -com_to_back+length/2;
+        }
+        else if(discs_it == 0){ // position first disc so it touches the back of the car
+            x_discs_[discs_it] = -com_to_back+r_discs_;
+        }
+        else if(discs_it == n_discs-1){
+            x_discs_[discs_it] = -com_to_back+length-r_discs_;
+        }
+        else {
+            x_discs_[discs_it] = -com_to_back + r_discs_ + discs_it*(length-2*r_discs_)/(n_discs-1) ;
+        }
+
+        // x_discs_[discs_it] = -(discs_it )*(length/(n_discs)); //old distribution (was still starting at front frame)
+
+    }
+
+
     ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_ );
+    ROS_INFO_STREAM(x_discs_);
 }
 
 void MPCC::broadcastPathPose(){
@@ -785,8 +802,8 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 
    current_state_(2) = std::atan2(t3, t4);
 
-   current_state_(0) =    msg->pose.pose.position.x + 2.7*cos(current_state_(2));
-   current_state_(1) =    msg->pose.pose.position.y + 2.7*sin(current_state_(2));
+   current_state_(0) =    msg->pose.pose.position.x + 1.577*cos(current_state_(2)); // for shifting the current coordinates to the center of mass
+   current_state_(1) =    msg->pose.pose.position.y + 1.577*sin(current_state_(2));
 
    current_state_(3) = std::sqrt(std::pow(msg->twist.twist.linear.x,2)+std::pow(msg->twist.twist.linear.y,2));
 }
@@ -1032,8 +1049,9 @@ void MPCC::publishPredictedCollisionSpace(void)
         {
             ellips1.id = 60+i+k*ACADO_N;
 
-            ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0]+x_discs_[k]*cos(acadoVariables.x[i * ACADO_NX + 2]);
-            ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1]+x_discs_[k]*sin(acadoVariables.x[i * ACADO_NX + 2]);
+            //-1.577
+            ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0]+(x_discs_[k])*cos(acadoVariables.x[i * ACADO_NX + 2]);
+            ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1]+(x_discs_[k])*sin(acadoVariables.x[i * ACADO_NX + 2]);
             ellips1.pose.position.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
             ellips1.pose.orientation.x = 0;
             ellips1.pose.orientation.y = 0;

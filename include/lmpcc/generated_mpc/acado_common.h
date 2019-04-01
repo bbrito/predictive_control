@@ -168,8 +168,8 @@ real_t mu[ 150 ];
  */
 typedef struct ACADOworkspace_
 {
-/** Column vector of size: 260 */
-real_t rhs_aux[ 260 ];
+/** Column vector of size: 263 */
+real_t rhs_aux[ 263 ];
 
 real_t rk_ttt;
 

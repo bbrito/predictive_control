@@ -472,8 +472,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acado_feedbackStep();
 
             printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
-
-            j++;    //        acado_printDifferentialVariables();
+            //ROS_INFO_STREAM(acado_getObjective());
+            j++;    //acado_printDifferentialVariables();
             /*
             if(j >6){
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
@@ -497,6 +497,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
                 }
             }
             */
+
         }
 
         controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s

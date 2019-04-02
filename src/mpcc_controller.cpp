@@ -508,7 +508,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
             //publishPredictedTrajectory();
             //publishPredictedOutput();
             //broadcastPathPose();
-            //publishFeedback(j,te_);
+            publishFeedback(j,te_);
         }
         publishPredictedCollisionSpace();
         broadcastPathPose();
@@ -1101,6 +1101,24 @@ void MPCC::publishFeedback(int& it, double& time)
     //Search window parameters
     feedback_msg.window = window_size_;
     feedback_msg.search_points = n_search_points_;
+
+    // obstacles
+    double obstacle1_x = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.x;
+    double obstacle1_y = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.y;
+    double obstacle2_x = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.x;
+    double obstacle2_y = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.y;
+    feedback_msg.obstacle_distance1 = sqrt(pow((current_state_(0)-obstacle1_x),2)+pow((current_state_(1)-obstacle1_y),2));
+    feedback_msg.obstacle_distance2 = sqrt(pow((current_state_(0)-obstacle2_x),2)+pow((current_state_(1)-obstacle2_y),2));
+
+    // control input
+    feedback_msg.computed_control.linear.x = controlled_velocity_.steer;
+    feedback_msg.computed_control.linear.y = controlled_velocity_.throttle;
+    feedback_msg.computed_control.linear.z = controlled_velocity_.brake;
+
+    // state information
+    feedback_msg.computed_control.angular.x =  current_state_(0);
+    feedback_msg.computed_control.angular.y =  current_state_(1);
+    feedback_msg.computed_control.angular.z =  current_state_(2);
 
     feedback_pub_.publish(feedback_msg);
 }

@@ -207,20 +207,37 @@ void MPCC::computeEgoDiscs()
     int n_discs = controller_config_->n_discs_;
     double length = controller_config_->ego_l_;
     double width = controller_config_->ego_w_;
+    double com_to_back = 2.4; // distance center of mass to back of the car
 
     // Initialize positions of discs
     x_discs_.resize(n_discs);
 
-    // Loop over discs and assign positions
-    for ( int discs_it = 0; discs_it < n_discs; discs_it++){
-
-        x_discs_[discs_it] = -(discs_it )*(length/(n_discs));
-
-    }
 
     // Compute radius of the discs
     r_discs_ = width/2;
+    // Loop over discs and assign positions, with respect to center of mass
+    for ( int discs_it = 0; discs_it < n_discs; discs_it++){
+
+        if (n_discs == 1) { // if only 1 disc, position in center;
+            x_discs_[discs_it] = -com_to_back+length/2;
+        }
+        else if(discs_it == 0){ // position first disc so it touches the back of the car
+            x_discs_[discs_it] = -com_to_back+r_discs_;
+        }
+        else if(discs_it == n_discs-1){
+            x_discs_[discs_it] = -com_to_back+length-r_discs_;
+        }
+        else {
+            x_discs_[discs_it] = -com_to_back + r_discs_ + discs_it*(length-2*r_discs_)/(n_discs-1) ;
+        }
+
+        // x_discs_[discs_it] = -(discs_it )*(length/(n_discs)); //old distribution (was still starting at front frame)
+
+    }
+
+
     ROS_WARN_STREAM("Generated " << n_discs <<  " ego-vehicle discs with radius " << r_discs_ );
+    ROS_INFO_STREAM(x_discs_);
 }
 
 void MPCC::broadcastPathPose(){
@@ -455,8 +472,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acado_feedbackStep();
 
             printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
-
-            j++;    //        acado_printDifferentialVariables();
+            //ROS_INFO_STREAM(acado_getObjective());
+            j++;    //acado_printDifferentialVariables();
             /*
             if(j >6){
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
@@ -480,6 +497,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
                 }
             }
             */
+
         }
 
         controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
@@ -490,7 +508,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
             //publishPredictedTrajectory();
             //publishPredictedOutput();
             //broadcastPathPose();
-            //publishFeedback(j,te_);
+            publishFeedback(j,te_);
         }
         publishPredictedCollisionSpace();
         broadcastPathPose();
@@ -785,8 +803,8 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 
    current_state_(2) = std::atan2(t3, t4);
 
-   current_state_(0) =    msg->pose.pose.position.x + 2.7*cos(current_state_(2));
-   current_state_(1) =    msg->pose.pose.position.y + 2.7*sin(current_state_(2));
+   current_state_(0) =    msg->pose.pose.position.x + 1.577*cos(current_state_(2)); // for shifting the current coordinates to the center of mass
+   current_state_(1) =    msg->pose.pose.position.y + 1.577*sin(current_state_(2));
 
    current_state_(3) = std::sqrt(std::pow(msg->twist.twist.linear.x,2)+std::pow(msg->twist.twist.linear.y,2));
 }
@@ -1032,8 +1050,9 @@ void MPCC::publishPredictedCollisionSpace(void)
         {
             ellips1.id = 60+i+k*ACADO_N;
 
-            ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0]+x_discs_[k]*cos(acadoVariables.x[i * ACADO_NX + 2]);
-            ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1]+x_discs_[k]*sin(acadoVariables.x[i * ACADO_NX + 2]);
+            //-1.577
+            ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0]+(x_discs_[k])*cos(acadoVariables.x[i * ACADO_NX + 2]);
+            ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1]+(x_discs_[k])*sin(acadoVariables.x[i * ACADO_NX + 2]);
             ellips1.pose.position.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
             ellips1.pose.orientation.x = 0;
             ellips1.pose.orientation.y = 0;
@@ -1082,6 +1101,24 @@ void MPCC::publishFeedback(int& it, double& time)
     //Search window parameters
     feedback_msg.window = window_size_;
     feedback_msg.search_points = n_search_points_;
+
+    // obstacles
+    double obstacle1_x = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.x;
+    double obstacle1_y = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.y;
+    double obstacle2_x = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.x;
+    double obstacle2_y = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.y;
+    feedback_msg.obstacle_distance1 = sqrt(pow((current_state_(0)-obstacle1_x),2)+pow((current_state_(1)-obstacle1_y),2));
+    feedback_msg.obstacle_distance2 = sqrt(pow((current_state_(0)-obstacle2_x),2)+pow((current_state_(1)-obstacle2_y),2));
+
+    // control input
+    feedback_msg.computed_control.linear.x = controlled_velocity_.steer;
+    feedback_msg.computed_control.linear.y = controlled_velocity_.throttle;
+    feedback_msg.computed_control.linear.z = controlled_velocity_.brake;
+
+    // state information
+    feedback_msg.computed_control.angular.x =  current_state_(0);
+    feedback_msg.computed_control.angular.y =  current_state_(1);
+    feedback_msg.computed_control.angular.z =  current_state_(2);
 
     feedback_pub_.publish(feedback_msg);
 }

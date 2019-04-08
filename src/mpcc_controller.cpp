@@ -118,6 +118,7 @@ bool MPCC::initialize()
         slack_weight_ = controller_config_->slack_weight_;
         repulsive_weight_ = controller_config_->repulsive_weight_;
         reference_velocity_ = controller_config_->reference_velocity_;
+        reduced_reference_velocity_ = reference_velocity_;
         ini_vel_x_ = controller_config_->ini_vel_x_;
         ros::NodeHandle nh_predictive("predictive_controller");
 
@@ -443,8 +444,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
                 acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
             } else {
-                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reference_velocity_;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reference_velocity_;
+                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
                 acadoVariables.od[(ACADO_NOD * N_iter) + 9] = ref_path_x.m_b[traj_i + 1];
                 acadoVariables.od[(ACADO_NOD * N_iter) + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
@@ -474,10 +475,13 @@ void MPCC::runNode(const ros::TimerEvent &event)
             printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
             //ROS_INFO_STREAM(acado_getObjective());
             j++;    //acado_printDifferentialVariables();
-            /*
+
+
+
             if(j >6){
+                ROS_INFO("Getting stuck, decrease reference velocity");
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-                    reduced_reference_velocity_ = current_state_(3) - 2 * 0.25 * N_iter;
+                    reduced_reference_velocity_ = current_state_(3) - 0.5 * 0.25 * N_iter;
                     if(reduced_reference_velocity_ < 0)
                         reduced_reference_velocity_=0;
                     acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
@@ -485,23 +489,22 @@ void MPCC::runNode(const ros::TimerEvent &event)
                 }
             }
 
-
-            if(reduced_reference_velocity_< reference_velocity_){
+            if (current_state_(3) < reference_velocity_) {
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-                    reduced_reference_velocity_ = current_state_(3) + 2 * 0.25 * N_iter;
-                    if(reduced_reference_velocity_ >reference_velocity_)
+                    reduced_reference_velocity_ = current_state_(3) + 0.5 * 0.25 * N_iter;
+                    if (reduced_reference_velocity_ > reference_velocity_)
                         reduced_reference_velocity_ = reference_velocity_;
 
                     acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                     acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
                 }
             }
-            */
+
 
         }
 
         controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
-        controlled_velocity_.brake = acado_getKKT(); // TODO: WHUUUT, any reasoning behind this?
+        controlled_velocity_.brake = 0;
         controlled_velocity_.steer = acadoVariables.u[1] ;// / 0.52; // maximum steer
 
         if(debug_){

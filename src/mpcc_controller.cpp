@@ -111,6 +111,8 @@ bool MPCC::initialize()
         //service clients
         reset_simulation_client_ = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_world");
         reset_ekf_client_ = nh.serviceClient<robot_localization::SetPose>("/set_pose");
+        update_trigger = nh.serviceClient<lmpcc_msgs::IntTrigger>("update_trigger_int");
+        obstacle_trigger.request.value = (int) clock_frequency_;
 
         ROS_INFO("initialize state and control weight factors");
         cost_contour_weight_factors_ = transformStdVectorToEigenVector(controller_config_->contour_weight_factors_);
@@ -466,7 +468,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
         //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
 
         int j = 0;
-        while (acado_getKKT() > 1e-4 && j < n_iterations_) {
+        while (acado_getKKT() > 1e-3 && j < n_iterations_) {
 
             acado_preparationStep();
 
@@ -478,10 +480,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
 
 
+
             if(j >6){
                 ROS_INFO("Getting stuck, decrease reference velocity");
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-                    reduced_reference_velocity_ = current_state_(3) - 0.5 * 0.25 * N_iter;
+                    reduced_reference_velocity_ = current_state_(3) - 2 * 0.25 * N_iter;
                     if(reduced_reference_velocity_ < 0)
                         reduced_reference_velocity_=0;
                     acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
@@ -491,7 +494,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
             if (current_state_(3) < reference_velocity_) {
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-                    reduced_reference_velocity_ = current_state_(3) + 0.5 * 0.25 * N_iter;
+                    reduced_reference_velocity_ = current_state_(3) + 2 * 0.25 * N_iter;
                     if (reduced_reference_velocity_ > reference_velocity_)
                         reduced_reference_velocity_ = reference_velocity_;
 
@@ -499,7 +502,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
                     acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
                 }
             }
-
 
         }
 
@@ -519,15 +521,19 @@ void MPCC::runNode(const ros::TimerEvent &event)
         cost_.data = acado_getObjective();
     }
 
-    if (acado_getKKT() > 1e-4)
+    if (acado_getKKT() > 1e-3)
         ROS_ERROR("KKT Too high");
 
-    if(!enable_output_ || acado_getKKT() > 1e-4) {
+    if(!enable_output_ || acado_getKKT() > 1e-3) {
         publishZeroJointVelocity();
     }
-    else
+    else {
         controlled_velocity_pub_.publish(controlled_velocity_);
+    }
 
+    if(enable_output_){
+        update_trigger.call(obstacle_trigger);
+    }
 }
 
 double MPCC::spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries){
@@ -1106,12 +1112,12 @@ void MPCC::publishFeedback(int& it, double& time)
     feedback_msg.search_points = n_search_points_;
 
     // obstacles
-    double obstacle1_x = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.x;
-    double obstacle1_y = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.y;
-    double obstacle2_x = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.x;
-    double obstacle2_y = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.y;
-    feedback_msg.obstacle_distance1 = sqrt(pow((current_state_(0)-obstacle1_x),2)+pow((current_state_(1)-obstacle1_y),2));
-    feedback_msg.obstacle_distance2 = sqrt(pow((current_state_(0)-obstacle2_x),2)+pow((current_state_(1)-obstacle2_y),2));
+    feedback_msg.obstx_0 = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.x;
+    feedback_msg.obsty_0 = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.y;
+    feedback_msg.obstx_1 = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.x;
+    feedback_msg.obsty_1 = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.y;
+    feedback_msg.obstacle_distance1 = sqrt(pow((current_state_(0)-feedback_msg.obstx_0),2)+pow((current_state_(1)-feedback_msg.obsty_0),2));
+    feedback_msg.obstacle_distance2 = sqrt(pow((current_state_(0)-feedback_msg.obstx_1),2)+pow((current_state_(1)-feedback_msg.obsty_1),2));
 
     // control input
     feedback_msg.computed_control.linear.x = controlled_velocity_.steer;

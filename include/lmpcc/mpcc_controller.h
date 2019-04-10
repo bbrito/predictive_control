@@ -61,6 +61,7 @@
 #include <lmpcc_msgs/lmpcc_feedback.h>
 #include <lmpcc_msgs/lmpcc_obstacle.h>
 #include <lmpcc_msgs/lmpcc_obstacle_array.h>
+#include <lmpcc_msgs/IntTrigger.h>
 
 //Dynamic Reconfigure server
 #include <boost/thread/mutex.hpp>
@@ -179,7 +180,7 @@ public:
     void plotRoad(void);
     /** public data member */
     //Service clients
-    ros::ServiceClient reset_simulation_client_, reset_ekf_client_;
+    ros::ServiceClient reset_simulation_client_, reset_ekf_client_, update_trigger;
 
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
@@ -298,6 +299,7 @@ private:
     // Obstacles
     lmpcc_msgs::lmpcc_obstacle_array obstacles_;
     lmpcc_msgs::lmpcc_obstacle_array obstacles_init_;
+    lmpcc_msgs::IntTrigger obstacle_trigger;
 
     // Current and last position and velocity from joint state callback
     //Eigen::VectorXd current_position_;

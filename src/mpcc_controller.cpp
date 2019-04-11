@@ -819,6 +819,7 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 }
 void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 {
+    /*
     double ysqr, t3, t4;
     //ROS_INFO_STREAM("N tracks: "<<objects.tracks.size());
     if(objects.tracks.size()) {
@@ -887,7 +888,7 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
 
       }
     }
-  }
+  }*/
 }
 void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
 {

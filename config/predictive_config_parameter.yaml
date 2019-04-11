@@ -1,6 +1,6 @@
 # Simulation mode
 simulation_mode: false             # Is set in launch file!
-gazebo_simulation: true
+gazebo_simulation: false
 
 ### Kinematic configuration parameter
 

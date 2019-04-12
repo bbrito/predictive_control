@@ -18,6 +18,7 @@
   <depend>acado</depend>
   <depend>actionlib</depend>
   <depend>actionlib_msgs</depend>
+  <depend>robot_localization</depend>
   <depend>boost</depend>
   <depend>cmake_modules</depend>
   <depend>control_msgs</depend>

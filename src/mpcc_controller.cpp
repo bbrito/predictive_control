@@ -516,7 +516,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
             publishFeedback(j,te_);
         }
         publishPredictedCollisionSpace();
-        broadcastPathPose();
+        //broadcastPathPose();
         brake_.data = controlled_velocity_.brake;
         cost_.data = acado_getObjective();
     }
@@ -529,10 +529,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
     }
     else {
         controlled_velocity_pub_.publish(controlled_velocity_);
-    }
-
-    if(enable_output_){
-        update_trigger.call(obstacle_trigger);
     }
 }
 

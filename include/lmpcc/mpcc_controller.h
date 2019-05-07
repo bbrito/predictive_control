@@ -89,6 +89,9 @@
 
 typedef double real_t;
 
+//Whens earching for the closest point on the path, this variable indicates the distance that the algorithm searches behind the current spline point.
+#define MAX_STEP_BACK_TOLERANCE 0.1f
+
 class MPCC
 {
     /** Managing execution of all classes of predictive control

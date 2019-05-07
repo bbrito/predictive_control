@@ -381,7 +381,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
         if(enable_output_) {
             double smin;
-            smin = spline_closest_point(ss[traj_i], 1000, acadoVariables.x[ACADO_NX+4], window_size_, n_search_points_);
+            smin = spline_closest_point(ss[traj_i]-MAX_STEP_BACK_TOLERANCE, 1000, acadoVariables.x[ACADO_NX+4], window_size_, n_search_points_);
+            if(smin == ss[traj_i] - MAX_STEP_BACK_TOLERANCE)
+            {
+                traj_i--;
+            }
             acadoVariables.x[4] = smin;
             acadoVariables.x0[4] = smin;
             //ROS_ERROR_STREAM("smin: " << smin);

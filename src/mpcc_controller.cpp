@@ -381,8 +381,10 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
         if(enable_output_) {
             double smin;
-            smin = spline_closest_point(ss[traj_i]-MAX_STEP_BACK_TOLERANCE, 1000, acadoVariables.x[ACADO_NX+4], window_size_, n_search_points_);
-            if(smin == ss[traj_i] - MAX_STEP_BACK_TOLERANCE)
+            double minimum_point = ss[traj_i]-MAX_STEP_BACK_TOLERANCE;
+            smin = spline_closest_point(minimum_point, 1000, acadoVariables.x[ACADO_NX+4], window_size_, n_search_points_);
+            //If the returned point is on the minimum of the allowed search region, do a step back on the trajectory.
+            if(smin == minimum_point)
             {
                 traj_i--;
             }

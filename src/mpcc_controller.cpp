@@ -452,8 +452,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
                 acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
             } else {
-                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
+                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reference_velocity_;
+                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reference_velocity_;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
                 acadoVariables.od[(ACADO_NOD * N_iter) + 9] = ref_path_x.m_b[traj_i + 1];
                 acadoVariables.od[(ACADO_NOD * N_iter) + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients

@@ -363,7 +363,7 @@ private:
 
     void broadcastPathPose();
 
-    double spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries);
+    int spline_closest_point(int cur_traj_i, std::vector<double> ss_vec, double &s_guess, double window, int n_tries);
 
     inline void Ref_path(std::vector<double> x, std::vector<double> y, std::vector<double> theta);
 

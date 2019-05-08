@@ -379,15 +379,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
             }
         }
 
-        if(enable_output_) {
-            double smin;
-            double minimum_point = ss[traj_i]-MAX_STEP_BACK_TOLERANCE;
-            smin = spline_closest_point(minimum_point, 1000, acadoVariables.x[ACADO_NX+4], window_size_, n_search_points_);
-            //If the returned point is on the minimum of the allowed search region, do a step back on the trajectory.
-            if(smin == minimum_point && traj_i > 0)
-            {
-                traj_i--;
-            }
+        if(plan_) {
+            double smin = acadoVariables.x[ACADO_NX + 4];
+
+            traj_i = spline_closest_point(traj_i, ss, smin, window_size_,
+                                        n_search_points_);
             acadoVariables.x[4] = smin;
             acadoVariables.x0[4] = smin;
             //ROS_ERROR_STREAM("smin: " << smin);
@@ -486,7 +482,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
 
 
-
+            /*
             if(j >6){
                 ROS_INFO("Getting stuck, decrease reference velocity");
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
@@ -507,7 +503,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
                     acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                     acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
                 }
-            }
+            }*/
+
 
         }
 
@@ -538,39 +535,52 @@ void MPCC::runNode(const ros::TimerEvent &event)
     }
 }
 
-double MPCC::spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries){
-
+int MPCC::spline_closest_point(int cur_traj_i, std::vector<double> ss_vec, double &s_guess, double window, int n_tries){
+    double s_min = ss_vec[cur_traj_i] - MAX_STEP_BACK_TOLERANCE;
+    double s_max = ss_vec[cur_traj_i+1] + MAX_STEP_BACK_TOLERANCE;
     double lower = std::max(s_min, s_guess-window);
     double upper = std::min(s_max, s_guess + window);
-    double s_i=lower,spline_pos_x_i,spline_pos_y_i;
-    double dist_i,min_dist,smin=0.0;
+    double s_i=upper,spline_pos_x_i,spline_pos_y_i;
+    double dist_i,min_dist;
 
+    //First, try the furthest point in our search window. This is the reference that must be beat.
     spline_pos_x_i = ref_path_x(s_i);
     spline_pos_y_i = ref_path_y(s_i);
-
+    double s_best = s_i;
     min_dist = std::sqrt((spline_pos_x_i-current_state_(0))*(spline_pos_x_i-current_state_(0))+(spline_pos_y_i-current_state_(1))*(spline_pos_y_i-current_state_(1)));
 
-    for(int i=0;i<n_tries;i++){
-        s_i = lower+(upper-lower)/n_tries*i;
+    //Compute the step size.
+    //Divide by minus one. If you want to go from 1 to 3 (distance two) with three steps, step size must be (3-1)/2=1 to go 1,2,3.
+    double step_size = (upper-lower)/(n_tries-1);
+    for(s_i=lower; s_i < upper; s_i+=step_size) {
         spline_pos_x_i = ref_path_x(s_i);
         spline_pos_y_i = ref_path_y(s_i);
         dist_i = std::sqrt((spline_pos_x_i-current_state_(0))*(spline_pos_x_i-current_state_(0))+(spline_pos_y_i-current_state_(1))*(spline_pos_y_i-current_state_(1)));
 
         if(dist_i<min_dist){
             min_dist = dist_i;
-            smin = s_i;
+            s_best = s_i;
         }
-
     }
-    if(smin < lower){
-        smin=lower;
-    }
-    if(smin > upper){
-        smin=upper;
+    s_guess = s_best;
+
+    int next_traj = cur_traj_i;
+    if(s_best == lower){
+        //If we hit the low point of the window, and that low point was the end of this spline segment, try one segment higher!
+        if(lower == s_min && cur_traj_i > 0) {
+            next_traj--;
+        }
+        return spline_closest_point(next_traj, ss_vec, s_guess, window, n_tries);
     }
 
-    return smin;
-
+    if(s_best == upper){
+        //If we hit the high point of the window, and that high point was the end of this spline segment, try one segment higher!
+        if(upper == s_max && cur_traj_i < ss_vec.size()-2) {
+            next_traj++;
+        }
+        return spline_closest_point(next_traj, ss_vec, s_guess, window, n_tries);
+    }
+    return cur_traj_i;
 }
 
 

@@ -302,24 +302,18 @@ void MPCC::broadcastTF(){
 
 void  MPCC::reset_solver(){
 	acadoVariables.dummy = 0;
-	int i, j;
 
-	for (i = 0; i < ACADO_N + 1; ++i)
-	{
-		for (j = 0; j < ACADO_NX; ++j)
-			acadoVariables.x[i * ACADO_NX + j]=0;
-	}
-	for (i = 0; i < ACADO_N; ++i)
-	{
-		for (j = 0; j < ACADO_NU; ++j){
-			acadoVariables.u[i * ACADO_NU + j]=0;
-			acadoVariables.mu[i * ACADO_NX + j]=0;
-		}
-	}
-	
-	for (j = 0; j < ACADO_NX; ++j)
-			acadoVariables.x0[j]=0;
-	}
+    std::fill(acadoVariables.od,acadoVariables.od + sizeof(acadoVariables.od), 0 );
+    std::fill(acadoVariables.u,acadoVariables.u + sizeof(acadoVariables.u), 0 );
+    std::fill(acadoVariables.mu,acadoVariables.mu + sizeof(acadoVariables.mu), 0 );
+    std::fill(acadoVariables.x0,acadoVariables.x0 + sizeof(acadoVariables.x0), 0 );
+    std::fill(acadoVariables.x,acadoVariables.x + sizeof(acadoVariables.x), 0 );
+    std::fill(acadoVariables.lbAValues,acadoVariables.lbAValues + sizeof(acadoVariables.lbAValues), 0 );
+    std::fill(acadoVariables.ubAValues,acadoVariables.ubAValues + sizeof(acadoVariables.ubAValues), 0 );
+    std::fill(acadoVariables.lbValues,acadoVariables.lbValues + sizeof(acadoVariables.lbValues), 0 );
+    std::fill(acadoVariables.ubValues,acadoVariables.ubValues + sizeof(acadoVariables.ubValues), 0 );
+
+}
 
 // update this function 1/clock_frequency
 void MPCC::runNode(const ros::TimerEvent &event)

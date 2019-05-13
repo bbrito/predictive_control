@@ -476,7 +476,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
 
 
-            /*
+
             if(j >6){
                 ROS_INFO("Getting stuck, decrease reference velocity");
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
@@ -497,7 +497,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
                     acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                     acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
                 }
-            }*/
+            }
 
 
         }

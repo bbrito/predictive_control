@@ -556,10 +556,11 @@ int MPCC::spline_closest_point(int cur_traj_i, std::vector<double> ss_vec, doubl
             s_best = s_i;
         }
     }
+    double previous_guess = s_guess;
     s_guess = s_best;
 
     int next_traj = cur_traj_i;
-    if(s_best == lower){
+    if(s_best == lower && lower != previous_guess){
         //If we hit the low point of the window, and that low point was the end of this spline segment, try one segment higher!
         if(lower == s_min && cur_traj_i > 0) {
             next_traj--;
@@ -567,7 +568,7 @@ int MPCC::spline_closest_point(int cur_traj_i, std::vector<double> ss_vec, doubl
         return spline_closest_point(next_traj, ss_vec, s_guess, window, n_tries);
     }
 
-    if(s_best == upper){
+    if(s_best == upper && upper != previous_guess){
         //If we hit the high point of the window, and that high point was the end of this spline segment, try one segment higher!
         if(upper == s_max && cur_traj_i < ss_vec.size()-2) {
             next_traj++;

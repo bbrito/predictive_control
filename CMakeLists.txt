@@ -36,6 +36,7 @@ find_package(Boost REQUIRED COMPONENTS thread)
 find_package(Eigen3 REQUIRED)
 
 find_package(ACADO REQUIRED)
+find_package(OpenCV 3)
 
 add_definitions(${EIGEN_DEFINITIONS})
 
@@ -150,6 +151,7 @@ add_executable(lmpcc_node src/predictive_control_node.cpp)
 target_link_libraries(lmpcc_node
         predictive_controller
         predictive_configuration
+        ${OpenCV_LIBS}
         ${catkin_LIBRARIES}
         tkspline_lib)
 

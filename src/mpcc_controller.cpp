@@ -5,6 +5,9 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Pose.h>
 
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+
 ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
@@ -1057,10 +1060,20 @@ void MPCC::publishPredictedOutput(void)
     pred_cmd_pub_.publish(pred_cmd_);
 }
 
+cv::Mat make_colormap(int length){
+    cv::Mat img_in(length,1, CV_8UC1);
+    for(int k = 0; k < length; k++){
+        img_in.row(k).setTo((k*256)/(length-1));
+    }
+    cv::Mat img_color;
+    cv::applyColorMap(img_in, img_color, cv::COLORMAP_PARULA);
+    return img_color;
+}
+
 void MPCC::publishPredictedCollisionSpace(void)
 {
     visualization_msgs::MarkerArray collision_space;
-
+    cv::Mat colormap = make_colormap(ACADO_N);
     for (int k = 0; k< controller_config_->n_discs_; k++){
 
         for (int i = 0; i < ACADO_N; i++)
@@ -1075,6 +1088,9 @@ void MPCC::publishPredictedCollisionSpace(void)
             ellips1.pose.orientation.y = 0;
             ellips1.pose.orientation.z = 0;
             ellips1.pose.orientation.w = 1;
+            ellips1.color.b = colormap.at<unsigned char>(i,0)/255.0;
+            ellips1.color.g = colormap.at<unsigned char>(i,1)/255.0;
+            ellips1.color.r = colormap.at<unsigned char>(i,2)/255.0;
             collision_space.markers.push_back(ellips1);
         }
     }

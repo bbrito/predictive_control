@@ -597,6 +597,8 @@ acadoWorkspace.rk_xxx[49] = rk_eta[154];
 acadoWorkspace.rk_xxx[50] = rk_eta[155];
 acadoWorkspace.rk_xxx[51] = rk_eta[156];
 acadoWorkspace.rk_xxx[52] = rk_eta[157];
+acadoWorkspace.rk_xxx[53] = rk_eta[158];
+acadoWorkspace.rk_xxx[54] = rk_eta[159];
 
 for (run1 = 0; run1 < 1; ++run1)
 {
@@ -707,6 +709,8 @@ acadoWorkspace.rk_xxx[55] = rk_eta[154];
 acadoWorkspace.rk_xxx[56] = rk_eta[155];
 acadoWorkspace.rk_xxx[57] = rk_eta[156];
 acadoWorkspace.rk_xxx[58] = rk_eta[157];
+acadoWorkspace.rk_xxx[59] = rk_eta[158];
+acadoWorkspace.rk_xxx[60] = rk_eta[159];
 for (run1 = 0; run1 < 1; ++run1)
 {
 acadoWorkspace.rk_xxx[0] = acadoWorkspace.rk_sweep1[run1 * -24 + 18];
@@ -840,6 +844,8 @@ acadoWorkspace.rk_xxx[154] = rk_eta[154];
 acadoWorkspace.rk_xxx[155] = rk_eta[155];
 acadoWorkspace.rk_xxx[156] = rk_eta[156];
 acadoWorkspace.rk_xxx[157] = rk_eta[157];
+acadoWorkspace.rk_xxx[158] = rk_eta[158];
+acadoWorkspace.rk_xxx[159] = rk_eta[159];
 for (run1 = 0; run1 < 1; ++run1)
 {
 acadoWorkspace.rk_xxx[0] = acadoWorkspace.rk_sweep1[run1 * 24];

@@ -7,6 +7,8 @@
 
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
+//#include <opencv2/contrib/contrib.hpp>
+//#include <opencv2/highgui/highgui.hpp>
 
 ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
@@ -152,9 +154,8 @@ bool MPCC::initialize()
         enable_output_ = false;
         plan_ = false;
         replan_ = false;
-        x_offset_= 0;
-        y_offset_= 0;
-        theta_offset_ = 0;
+        left_offset_= 0;
+        right_offset_= 0;
         debug_ = false;
         n_iterations_ = 100;
         simulation_mode_ = true;
@@ -435,10 +436,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 36] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 2
             acadoVariables.od[(ACADO_NOD * N_iter) + 37] = obstacles_.lmpcc_obstacles[1].major_semiaxis[N_iter];       // major semiaxis of obstacle 2
             acadoVariables.od[(ACADO_NOD * N_iter) + 38] = obstacles_.lmpcc_obstacles[1].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 2
-
+            acadoVariables.od[(ACADO_NOD * N_iter) + 39] = right_offset_;
+            acadoVariables.od[(ACADO_NOD * N_iter) + 40] = left_offset_;
 
             if (goal_reached_) {
-                reduced_reference_velocity_ = current_state_(3)-4*0.25*N_iter;
+                reduced_reference_velocity_ = current_state_(3)-4*0.25*(N_iter+1);
                 if(reduced_reference_velocity_ < 0)
                     reduced_reference_velocity_=0;
 
@@ -483,7 +485,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
             if(j >6){
                 ROS_INFO("Getting stuck, decrease reference velocity");
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-                    reduced_reference_velocity_ = current_state_(3) - 2 * 0.25 * N_iter;
+                    reduced_reference_velocity_ = current_state_(3) - 2 * 0.25 * (N_iter+1);
                     if(reduced_reference_velocity_ < 0)
                         reduced_reference_velocity_=0;
                     acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
@@ -493,9 +495,9 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
             if (current_state_(3) < reference_velocity_) {
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-                    reduced_reference_velocity_ = current_state_(3) + 2 * 0.25 * N_iter;
-                    if (reduced_reference_velocity_ > reference_velocity_)
-                        reduced_reference_velocity_ = reference_velocity_;
+                    reduced_reference_velocity_ = current_state_(3) + 2 * 0.25 * (N_iter+1);
+                    if (reduced_reference_velocity_ > reduced_reference_velocity_)
+                        reduced_reference_velocity_ = reduced_reference_velocity_;
 
                     acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                     acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
@@ -594,8 +596,8 @@ void MPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<dou
     S_all.push_back(0);
     ROS_INFO("Generating path...");
     for (int i = 0; i < x.size()-1; i++){
-        Clothoid::buildClothoid(x[i]+x_offset_, y[i]+y_offset_, theta[i]+theta_offset_, x[i+1]+x_offset_, y[i+1]+y_offset_, theta[i+1]+theta_offset_, k, dk, L);
-        Clothoid::pointsOnClothoid(x[i]+x_offset_, y[i]+y_offset_, theta[i]+theta_offset_, k, dk, L, n_clothoid, X, Y);
+        Clothoid::buildClothoid(x[i], y[i], theta[i], x[i+1], y[i+1], theta[i+1], k, dk, L);
+        Clothoid::pointsOnClothoid(x[i], y[i], theta[i], k, dk, L, n_clothoid, X, Y);
         if (i==0){
             X_all.insert(X_all.end(), X.begin(), X.end());
             Y_all.insert(Y_all.end(), Y.begin(), Y.end());
@@ -750,18 +752,15 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     window_size_ = config.window_size;
     n_search_points_ = config.n_search_points;
 
-    if(x_offset_!=config.x_offset) {
-        x_offset_ = config.x_offset;
+    if(right_offset_!=config.right_offset) {
+        right_offset_ = config.right_offset;
         replan_ = true;
     }
-    if(y_offset_!=config.y_offset) {
-        y_offset_ = config.y_offset;
+    if(left_offset_!=config.left_offset) {
+        left_offset_ = config.left_offset;
         replan_ = true;
     }
-    if(theta_offset_!=config.theta_offset) {
-        theta_offset_ = config.theta_offset;
-        replan_ = true;
-    }
+
     if(replan_ && waypoints_size_>0){
 
         Ref_path(X_road, Y_road, Theta_road);
@@ -975,8 +974,8 @@ void MPCC::plotRoad(void)
 
     geometry_msgs::Pose pose;
 
-    pose.position.x = (controller_config_->road_width_left_+line_strip.scale.x/2.0)*-sin(current_state_(2));
-    pose.position.y = (controller_config_->road_width_left_+line_strip.scale.x/2.0)*cos(current_state_(2));
+    pose.position.x = (controller_config_->road_width_left_+left_offset_+line_strip.scale.x/2.0)*-sin(current_state_(2));
+    pose.position.y = (controller_config_->road_width_left_+left_offset_+line_strip.scale.x/2.0)*cos(current_state_(2));
 
     geometry_msgs::Point p;
     p.x = spline_traj_.poses[0].pose.position.x + pose.position.x;
@@ -999,8 +998,8 @@ void MPCC::plotRoad(void)
     line_strip.color.b = 1.0;
     line_strip.color.a = 1.0;
     line_strip.id = 2;
-    pose.position.x = (-controller_config_->road_width_right_-line_strip.scale.x/2.0)*-sin(current_state_(2));
-    pose.position.y = (-controller_config_->road_width_right_-line_strip.scale.x/2.0)*cos(current_state_(2));
+    pose.position.x = (-controller_config_->road_width_right_-right_offset_-line_strip.scale.x/2.0)*-sin(current_state_(2));
+    pose.position.y = (-controller_config_->road_width_right_-right_offset_-line_strip.scale.x/2.0)*cos(current_state_(2));
 
     p.x = spline_traj_.poses[0].pose.position.x+pose.position.x;
     p.y = spline_traj_.poses[0].pose.position.y+pose.position.y;

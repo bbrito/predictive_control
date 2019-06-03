@@ -213,7 +213,7 @@ public:
     bool reset_world_;
     bool plan_;
     bool replan_;
-    double x_offset_, y_offset_, theta_offset_;
+    double left_offset_, right_offset_;
     bool debug_;
     int n_iterations_;
     bool simulation_mode_;

@@ -66,7 +66,7 @@ bool MPCC::initialize()
         obstacle_feed_sub_ = nh.subscribe(controller_config_->sub_ellipse_topic_, 1, &MPCC::ObstacleCallBack, this);
 
         obstacles_state_sub_ = nh.subscribe(controller_config_->obs_state_topic_, 1, &MPCC::ObstacleStateCallback, this);
-
+        ped_stop_sub_ = nh.subscribe("/MultiPedestrianDBN_node/probabilities",1, &MPCC::pedStopCallBack, this);
         waypoints_sub_ = nh.subscribe(controller_config_->waypoint_topic_,1, &MPCC::getWayPointsCallBack, this);
 
         //Publishers
@@ -159,7 +159,8 @@ bool MPCC::initialize()
         debug_ = false;
         n_iterations_ = 100;
         simulation_mode_ = true;
-
+        bb_hack_ =0;
+        stop_likelihood_=1;
         //Plot variables
         ellips1.type = visualization_msgs::Marker::CYLINDER;
         ellips1.id = 60;
@@ -207,6 +208,11 @@ bool MPCC::initialize()
         return false;
     }
 }
+
+MPCC::pedStopCallBack(const ros_intent_slds::FloatArrayStamped& msg){
+    stop_likelihood_ = msg.data[4];
+    ROS_INFO_STREAM("stop_likelihood_: " << stop_likelihood_);
+};
 
 void MPCC::computeEgoDiscs()
 {
@@ -408,7 +414,10 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 16] = ss[traj_i];       // s1
             acadoVariables.od[(ACADO_NOD * N_iter) + 17] = ss[traj_i + 1];       //s2
             acadoVariables.od[(ACADO_NOD * N_iter) + 18] = ss[traj_i + 1] + 0.02;       // d
-            acadoVariables.od[(ACADO_NOD * N_iter) + 19] = cost_contour_weight_factors_(0);     // weight contour error
+            if(stop_likelihood_<0.5)
+                acadoVariables.od[(ACADO_NOD * N_iter) + 19] = cost_contour_weight_factors_(0)+bb_hack_;     // weight contour error
+            else
+                acadoVariables.od[(ACADO_NOD * N_iter) + 19] = cost_contour_weight_factors_(0);
             acadoVariables.od[(ACADO_NOD * N_iter) + 20] = cost_contour_weight_factors_(1);     // weight lag error
             acadoVariables.od[(ACADO_NOD * N_iter) + 21] = cost_control_weight_factors_(0);    // weight acceleration
             acadoVariables.od[(ACADO_NOD * N_iter) + 22] = cost_control_weight_factors_(1);   // weight delta
@@ -724,7 +733,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     cost_control_weight_factors_(1) = config.Kdelta;
     velocity_weight_ = config.Kv;
     ini_vel_x_ = config.ini_v0;
-
+    bb_hack_ = config.bb_hack;
     slack_weight_= config.Ws;
     repulsive_weight_ = config.WR;
 
@@ -1068,7 +1077,7 @@ cv::Mat make_colormap(int length){
 void MPCC::publishPredictedCollisionSpace(void)
 {
     visualization_msgs::MarkerArray collision_space;
-    cv::Mat colormap = make_colormap(ACADO_N);
+    //cv::Mat colormap = make_colormap(ACADO_N);
     for (int k = 0; k< controller_config_->n_discs_; k++){
 
         for (int i = 0; i < ACADO_N; i++)

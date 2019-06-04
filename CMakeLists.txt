@@ -30,6 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
     moveit_msgs
     lmpcc_msgs
     cv_msgs
+        ros_intent_slds
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -87,7 +88,7 @@ generate_messages(
 )
 
 catkin_package(
-  CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core lmpcc_msgs
+  CATKIN_DEPENDS ros_intent_slds actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core lmpcc_msgs
   DEPENDS Boost ACADO
   INCLUDE_DIRS include ${ACADO_INCLUDE_DIRS} include/${PROJECT_NAME}
   LIBRARIES  predictive_configuration predictive_controller

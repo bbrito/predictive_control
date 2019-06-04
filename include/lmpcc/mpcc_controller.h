@@ -86,6 +86,7 @@
 
 #include <cv_msgs/PredictedMoGTracks.h>
 #include <geometry_msgs/PoseWithCovariance.h>
+#include <ros_intent_slds/FloatArrayStamped.h>
 
 typedef double real_t;
 
@@ -189,7 +190,7 @@ public:
     ros::Subscriber robot_state_sub_;
 
     // waypoints subscriber
-    ros::Subscriber waypoints_sub_;
+    ros::Subscriber waypoints_sub_,ped_stop_sub_;
 
     // subscriber for obstacle feed
     ros::Subscriber obstacle_feed_sub_;
@@ -239,6 +240,8 @@ public:
     double window_size_;
     int n_search_points_;
     bool goal_reached_;
+
+    float stop_likelihood_,bb_hack_;
 
     //reset simulation msg
     std_srvs::Empty reset_msg_;
@@ -372,6 +375,8 @@ private:
     void publishFeedback(int& it, double& time);
 
     void ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects);
+
+    void pedStopCallBack(const ros_intent_slds::FloatArrayStamped& msg);
     
     void  reset_solver();
 

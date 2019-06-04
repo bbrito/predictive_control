@@ -412,32 +412,32 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 20] = cost_contour_weight_factors_(1);     // weight lag error
             acadoVariables.od[(ACADO_NOD * N_iter) + 21] = cost_control_weight_factors_(0);    // weight acceleration
             acadoVariables.od[(ACADO_NOD * N_iter) + 22] = cost_control_weight_factors_(1);   // weight delta
-            acadoVariables.od[(ACADO_NOD * N_iter) + 25] = slack_weight_;                     //slack weight
-            acadoVariables.od[(ACADO_NOD * N_iter) + 26] = repulsive_weight_;                     //repulsive weight
-            acadoVariables.od[(ACADO_NOD * N_iter) + 39] = velocity_weight_;                     //repulsive weight
+            acadoVariables.od[(ACADO_NOD * N_iter) + 24] = slack_weight_;                     //slack weight
+            acadoVariables.od[(ACADO_NOD * N_iter) + 25] = repulsive_weight_;                     //repulsive weight
+            acadoVariables.od[(ACADO_NOD * N_iter) + 38] = velocity_weight_;                     //repulsive weight
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 27] = r_discs_; //radius of the disks
-            acadoVariables.od[(ACADO_NOD * N_iter) + 28] = x_discs_[0];                        // position of the car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 40] = x_discs_[1];                        // position of the car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 41] = x_discs_[2];                        // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 26] = r_discs_; //radius of the disks
+            acadoVariables.od[(ACADO_NOD * N_iter) + 27] = x_discs_[0];                        // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 39] = x_discs_[1];                        // position of the car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 40] = x_discs_[2];                        // position of the car discs
             //acadoVariables.od[(ACADO_NOD * N_iter) + 42] = x_discs_[3];                        // position of the car discs
             //acadoVariables.od[(ACADO_NOD * N_iter) + 43] = x_discs_[4];
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 29] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 30] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 28] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 29] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
             //ToDo check convertion from quaternion to RPY angle
-            acadoVariables.od[(ACADO_NOD * N_iter) + 31] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 32] = obstacles_.lmpcc_obstacles[0].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 33] = obstacles_.lmpcc_obstacles[0].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 30] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 31] = obstacles_.lmpcc_obstacles[0].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
+            acadoVariables.od[(ACADO_NOD * N_iter) + 32] = obstacles_.lmpcc_obstacles[0].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
 
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 34] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 35] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 36] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 37] = obstacles_.lmpcc_obstacles[1].major_semiaxis[N_iter];       // major semiaxis of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 38] = obstacles_.lmpcc_obstacles[1].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 39] = right_offset_;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 40] = left_offset_;
+            acadoVariables.od[(ACADO_NOD * N_iter) + 33] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 34] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 35] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 36] = obstacles_.lmpcc_obstacles[1].major_semiaxis[N_iter];       // major semiaxis of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 37] = obstacles_.lmpcc_obstacles[1].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 2
+            acadoVariables.od[(ACADO_NOD * N_iter) + 41] = right_offset_;
+            acadoVariables.od[(ACADO_NOD * N_iter) + 42] = left_offset_;
 
             if (goal_reached_) {
                 reduced_reference_velocity_ = current_state_(3)-4*0.25*(N_iter+1);
@@ -445,10 +445,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
                     reduced_reference_velocity_=0;
 
                 acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
             } else {
                 acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reference_velocity_;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reference_velocity_;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
                 acadoVariables.od[(ACADO_NOD * N_iter) + 9] = ref_path_x.m_b[traj_i + 1];
                 acadoVariables.od[(ACADO_NOD * N_iter) + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
@@ -489,7 +487,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
                     if(reduced_reference_velocity_ < 0)
                         reduced_reference_velocity_=0;
                     acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
-                    acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
                 }
             }
 
@@ -500,7 +497,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
                         reduced_reference_velocity_ = reduced_reference_velocity_;
 
                     acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
-                    acadoVariables.od[(ACADO_NOD * N_iter) + 24] = reduced_reference_velocity_;
                 }
             }
 

@@ -1074,7 +1074,7 @@ void MPCC::publishPredictedOutput(void)
 
     pred_cmd_pub_.publish(pred_cmd_);
 }
-/*
+
 cv::Mat make_colormap(int length){
     cv::Mat img_in(length,1, CV_8UC1);
     for(int k = 0; k < length; k++){
@@ -1084,7 +1084,7 @@ cv::Mat make_colormap(int length){
     cv::applyColorMap(img_in, img_color, cv::COLORMAP_PARULA);
     return img_color;
 }
-*/
+
 void MPCC::publishPredictedCollisionSpace(void)
 {
     visualization_msgs::MarkerArray collision_space;
@@ -1103,9 +1103,9 @@ void MPCC::publishPredictedCollisionSpace(void)
             ellips1.pose.orientation.y = 0;
             ellips1.pose.orientation.z = 0;
             ellips1.pose.orientation.w = 1;
-            ellips1.color.b = 1;//colormap.at<unsigned char>(i,0)/255.0;
-            ellips1.color.g = 1;//colormap.at<unsigned char>(i,1)/255.0;
-            ellips1.color.r = 1;//colormap.at<unsigned char>(i,2)/255.0;
+            ellips1.color.b = colormap.at<unsigned char>(i,0)/255.0;
+            ellips1.color.g = colormap.at<unsigned char>(i,1)/255.0;
+            ellips1.color.r = colormap.at<unsigned char>(i,2)/255.0;
             collision_space.markers.push_back(ellips1);
         }
     }

@@ -506,21 +506,20 @@ void MPCC::runNode(const ros::TimerEvent &event)
                         acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                 }
             }
+            else{
+                if (current_state_(3) < reference_velocity_) {
+                    for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+                        reduced_reference_velocity_ = current_state_(3) + 1.5 * 0.25 * (N_iter+1);
+                        if (reduced_reference_velocity_ > reference_velocity_)
+                            reduced_reference_velocity_ = reference_velocity_;
 
-            if (current_state_(3) < reference_velocity_) {
-                for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-                    reduced_reference_velocity_ = current_state_(3) + 2 * 0.25 * (N_iter+1);
-                    if (reduced_reference_velocity_ > reference_velocity_)
-                        reduced_reference_velocity_ = reference_velocity_;
-
-                    if(stop_likelihood_<0.9 && ((obstacle_distance1<15) || (obstacle_distance2<15)))
-                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
-                    else
-                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                        if(stop_likelihood_<0.9 && ((obstacle_distance1<15) || (obstacle_distance2<15)))
+                            acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
+                        else
+                            acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                    }
                 }
             }
-
-
         }
 
         controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s

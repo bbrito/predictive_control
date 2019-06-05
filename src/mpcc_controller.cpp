@@ -209,7 +209,7 @@ bool MPCC::initialize()
     }
 }
 
-MPCC::pedStopCallBack(const ros_intent_slds::FloatArrayStamped& msg){
+void MPCC::pedStopCallBack(const ros_intent_slds::FloatArrayStamped& msg){
     stop_likelihood_ = msg.data[4];
     ROS_INFO_STREAM("stop_likelihood_: " << stop_likelihood_);
 };
@@ -329,7 +329,7 @@ void  MPCC::reset_solver(){
 void MPCC::runNode(const ros::TimerEvent &event)
 {
     int N_iter;
-
+    float obstacle_distance1, obstacle_distance2;
     if(event.profile.last_duration.nsec > 1/clock_frequency_*1e9)
         ROS_ERROR_STREAM("Real-time constraint not satisfied... Cycle time: " << event.profile.last_duration);
 
@@ -414,10 +414,10 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 16] = ss[traj_i];       // s1
             acadoVariables.od[(ACADO_NOD * N_iter) + 17] = ss[traj_i + 1];       //s2
             acadoVariables.od[(ACADO_NOD * N_iter) + 18] = ss[traj_i + 1] + 0.02;       // d
-            if(stop_likelihood_<0.5)
-                acadoVariables.od[(ACADO_NOD * N_iter) + 19] = cost_contour_weight_factors_(0)+bb_hack_;     // weight contour error
-            else
-                acadoVariables.od[(ACADO_NOD * N_iter) + 19] = cost_contour_weight_factors_(0);
+            obstacle_distance1 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
+            obstacle_distance2 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
+
+            acadoVariables.od[(ACADO_NOD * N_iter) + 19] = cost_contour_weight_factors_(0);
             acadoVariables.od[(ACADO_NOD * N_iter) + 20] = cost_contour_weight_factors_(1);     // weight lag error
             acadoVariables.od[(ACADO_NOD * N_iter) + 21] = cost_control_weight_factors_(0);    // weight acceleration
             acadoVariables.od[(ACADO_NOD * N_iter) + 22] = cost_control_weight_factors_(1);   // weight delta
@@ -455,7 +455,12 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
                 acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
             } else {
-                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reference_velocity_;
+                    if(stop_likelihood_<0.9 && ((obstacle_distance1<10) || (obstacle_distance2<10))){
+                        ROS_ERROR_STREAM("NEW VELOCITY REF: " << reduced_reference_velocity_-bb_hack_);
+                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
+                    }
+                    else
+                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                 acadoVariables.od[(ACADO_NOD * N_iter) + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
                 acadoVariables.od[(ACADO_NOD * N_iter) + 9] = ref_path_x.m_b[traj_i + 1];
                 acadoVariables.od[(ACADO_NOD * N_iter) + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
@@ -495,17 +500,23 @@ void MPCC::runNode(const ros::TimerEvent &event)
                     reduced_reference_velocity_ = current_state_(3) - 2 * 0.25 * (N_iter+1);
                     if(reduced_reference_velocity_ < 0)
                         reduced_reference_velocity_=0;
-                    acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                    if(stop_likelihood_<0.9 && ((obstacle_distance1<10) || (obstacle_distance2<10)))
+                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
+                    else
+                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                 }
             }
 
             if (current_state_(3) < reference_velocity_) {
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
                     reduced_reference_velocity_ = current_state_(3) + 2 * 0.25 * (N_iter+1);
-                    if (reduced_reference_velocity_ > reduced_reference_velocity_)
-                        reduced_reference_velocity_ = reduced_reference_velocity_;
+                    if (reduced_reference_velocity_ > reference_velocity_)
+                        reduced_reference_velocity_ = reference_velocity_;
 
-                    acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                    if(stop_likelihood_<0.9 && ((obstacle_distance1<10) || (obstacle_distance2<10)))
+                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
+                    else
+                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                 }
             }
 
@@ -1077,7 +1088,7 @@ cv::Mat make_colormap(int length){
 void MPCC::publishPredictedCollisionSpace(void)
 {
     visualization_msgs::MarkerArray collision_space;
-    //cv::Mat colormap = make_colormap(ACADO_N);
+    cv::Mat colormap = make_colormap(ACADO_N);
     for (int k = 0; k< controller_config_->n_discs_; k++){
 
         for (int i = 0; i < ACADO_N; i++)

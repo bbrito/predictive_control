@@ -455,7 +455,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
                 acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
             } else {
-                    if(stop_likelihood_<0.9 && ((obstacle_distance1<10) || (obstacle_distance2<10))){
+                    if(stop_likelihood_<0.9 && ((obstacle_distance1<15) || (obstacle_distance2<1))){
                         ROS_ERROR_STREAM("NEW VELOCITY REF: " << reduced_reference_velocity_-bb_hack_);
                         acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
                     }
@@ -500,7 +500,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
                     reduced_reference_velocity_ = current_state_(3) - 2 * 0.25 * (N_iter+1);
                     if(reduced_reference_velocity_ < 0)
                         reduced_reference_velocity_=0;
-                    if(stop_likelihood_<0.9 && ((obstacle_distance1<10) || (obstacle_distance2<10)))
+                    if(stop_likelihood_<0.9 && ((obstacle_distance1<15) || (obstacle_distance2<15)))
                         acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
                     else
                         acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
@@ -513,7 +513,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
                     if (reduced_reference_velocity_ > reference_velocity_)
                         reduced_reference_velocity_ = reference_velocity_;
 
-                    if(stop_likelihood_<0.9 && ((obstacle_distance1<10) || (obstacle_distance2<10)))
+                    if(stop_likelihood_<0.9 && ((obstacle_distance1<15) || (obstacle_distance2<15)))
                         acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
                     else
                         acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;

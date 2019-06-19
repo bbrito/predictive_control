@@ -375,9 +375,9 @@ void MPCC::runNode(const ros::TimerEvent &event)
         //ROS_WARN_STREAM("ss.size():" << ss.size() << " traj_i: " << traj_i);
         if (acadoVariables.x[4] > ss[traj_i + 1]) {
 
-            if (traj_i + 2 == ss.size()) {
+            if (traj_i + 1 == ss.size()) {
                 goal_reached_ = true;
-                ROS_ERROR_STREAM("GOAL REACHED");
+                ROS_ERROR_STREAM("GOAL REACHED: "<< ss.size());
             } else {
                 traj_i++;
                 //ROS_ERROR_STREAM("SWITCH SPLINE " << acadoVariables.x[4]);

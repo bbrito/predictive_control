@@ -505,7 +505,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
             if(j >6){
                 ROS_INFO("Getting stuck, decrease reference velocity");
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-                    reduced_reference_velocity_ = current_state_(3) - 2 * 0.25 * (N_iter+1);
+                    reduced_reference_velocity_ = current_state_(3) - 0.5 * 0.25 * (N_iter+1);
                     if(reduced_reference_velocity_ < 0)
                         reduced_reference_velocity_=0;
                     if(stop_likelihood_<0.9 && ((obstacle_distance1<15) || (obstacle_distance2<15)))

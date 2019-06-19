@@ -489,7 +489,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
         //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
 
         int j = 0;
-        while (acado_getKKT() > 1e-3 && j < n_iterations_) {
+        while (acado_getKKT() > 1e-3 && j < (n_iterations_-1)) {
 
             acado_preparationStep();
 

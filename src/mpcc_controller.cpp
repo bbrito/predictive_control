@@ -716,12 +716,12 @@ void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
 	{
 	    ROS_INFO("Getting waypoints from SOMEWHERE...");
         waypoints_size_ = waypoints.poses.size();
- 		for (int ref_point_it = 0; ref_point_it<waypoints_size_; ref_point_it++)
+ 		/*for (int ref_point_it = 0; ref_point_it<waypoints_size_; ref_point_it++)
         {
 		    X_road[ref_point_it] = waypoints.poses.at(ref_point_it).pose.position.x;
 		    Y_road[ref_point_it] = waypoints.poses.at(ref_point_it).pose.position.y;
 		    Theta_road[ref_point_it] = quaternionToangle(waypoints.poses.at(ref_point_it).pose.orientation); //to do conversion quaternion
-        }
+        }*/
 	}
 	  
     //ConstructRefPath();

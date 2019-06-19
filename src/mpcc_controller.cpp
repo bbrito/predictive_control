@@ -350,7 +350,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
             acadoVariables.x0[3] = current_state_(3)+ini_vel_x_;             //it should be obtained by the wheel speed
 
         } else {
-            if (enable_output_) {
+            if (enable_output_ && acado_getKKT() == acado_getKKT()) {
                 acadoVariables.x[0] = current_state_(0);
                 acadoVariables.x[1] = current_state_(1);
                 acadoVariables.x[2] = current_state_(2);
@@ -554,6 +554,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
     }
     else {
         controlled_velocity_pub_.publish(controlled_velocity_);
+    }
+    if (acado_getKKT() != acado_getKKT())
+    {
+        //reset_solver();
+        ROS_INFO_STREAM("is nan: resetting");
     }
 }
 

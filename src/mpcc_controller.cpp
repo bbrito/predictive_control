@@ -456,19 +456,12 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
                 acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
             } else {
-                    if(stop_likelihood_<0.9 && ((obstacle_distance1<15) || (obstacle_distance2<1))){
-                        reduced_reference_velocity_ = current_state_(3) + 1.5 * 0.25 * (N_iter+1);
-                        if (reduced_reference_velocity_ > reference_velocity_)
-                            reduced_reference_velocity_ = reference_velocity_;
-                        ROS_ERROR_STREAM("NEW VELOCITY REF: " << reduced_reference_velocity_-bb_hack_);
-                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
-                    }
-                    else{
-                        reduced_reference_velocity_ = current_state_(3) + 1.5 * 0.25 * (N_iter+1);
-                        if (reduced_reference_velocity_ > reference_velocity_)
-                            reduced_reference_velocity_ = reference_velocity_;
-                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
-                    }
+
+                reduced_reference_velocity_ = current_state_(3) + 1.5 * 0.25 * (N_iter+1);
+                if (reduced_reference_velocity_ > reference_velocity_)
+                    reduced_reference_velocity_ = reference_velocity_;
+                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+
                 acadoVariables.od[(ACADO_NOD * N_iter) + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
                 acadoVariables.od[(ACADO_NOD * N_iter) + 9] = ref_path_x.m_b[traj_i + 1];
                 acadoVariables.od[(ACADO_NOD * N_iter) + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
@@ -500,18 +493,14 @@ void MPCC::runNode(const ros::TimerEvent &event)
             j++;    //acado_printDifferentialVariables();
 
 
-
-
             if(j >6){
                 ROS_INFO("Getting stuck, decrease reference velocity");
                 for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
                     reduced_reference_velocity_ = current_state_(3) - 0.5 * 0.25 * (N_iter+1);
                     if(reduced_reference_velocity_ < 0)
                         reduced_reference_velocity_=0;
-                    if(stop_likelihood_<0.9 && ((obstacle_distance1<15) || (obstacle_distance2<15)))
-                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
-                    else
-                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                 }
             }
             else{
@@ -521,10 +510,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
                         if (reduced_reference_velocity_ > reference_velocity_)
                             reduced_reference_velocity_ = reference_velocity_;
 
-                        if(stop_likelihood_<0.9 && ((obstacle_distance1<15) || (obstacle_distance2<15)))
-                            acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_-bb_hack_;
-                        else
-                            acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
                     }
                 }
             }
@@ -1086,7 +1072,7 @@ void MPCC::publishPredictedOutput(void)
 
     pred_cmd_pub_.publish(pred_cmd_);
 }
-
+/*
 cv::Mat make_colormap(int length){
     cv::Mat img_in(length,1, CV_8UC1);
     for(int k = 0; k < length; k++){
@@ -1096,11 +1082,11 @@ cv::Mat make_colormap(int length){
     cv::applyColorMap(img_in, img_color, cv::COLORMAP_PARULA);
     return img_color;
 }
-
+*/
 void MPCC::publishPredictedCollisionSpace(void)
 {
     visualization_msgs::MarkerArray collision_space;
-    cv::Mat colormap = make_colormap(ACADO_N);
+    //cv::Mat colormap = make_colormap(ACADO_N);
     for (int k = 0; k< controller_config_->n_discs_; k++){
 
         for (int i = 0; i < ACADO_N; i++)
@@ -1115,9 +1101,9 @@ void MPCC::publishPredictedCollisionSpace(void)
             ellips1.pose.orientation.y = 0;
             ellips1.pose.orientation.z = 0;
             ellips1.pose.orientation.w = 1;
-            ellips1.color.b = colormap.at<unsigned char>(i,0)/255.0;
-            ellips1.color.g = colormap.at<unsigned char>(i,1)/255.0;
-            ellips1.color.r = colormap.at<unsigned char>(i,2)/255.0;
+            ellips1.color.b = 1.0;//colormap.at<unsigned char>(i,0)/255.0;
+            ellips1.color.g = 0.0;//colormap.at<unsigned char>(i,1)/255.0;
+            ellips1.color.r = 0.0;//colormap.at<unsigned char>(i,2)/255.0;
             collision_space.markers.push_back(ellips1);
         }
     }

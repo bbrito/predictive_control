@@ -22,7 +22,7 @@ publish:
     cmd:          '/lmpcc'
     cmd_sim:      '/prius'
 robot_state_topic: '/ukf_localization_map/odometry/filtered'
-obs_state_topic: '/future_obj_track'
+obs_state_topic: '/ellipse_objects_feed'
 waypoint_topic: '/path_publisher/path' 
 
 # Kinematic chain parameter

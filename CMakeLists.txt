@@ -30,13 +30,12 @@ find_package(catkin REQUIRED COMPONENTS
     moveit_msgs
     lmpcc_msgs
     cv_msgs
-        ros_intent_slds
+    ros_intent_slds
+    carla_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
 find_package(Eigen3 REQUIRED)
-
-find_package(ACADO REQUIRED)
 find_package(OpenCV 3)
 
 add_definitions(${EIGEN_DEFINITIONS})
@@ -149,12 +148,16 @@ target_include_directories(predictive_controller PUBLIC
         qpoases/SRC)
 
 add_executable(lmpcc_node src/predictive_control_node.cpp)
+add_executable(waypoint_node src/carla_interface.cpp)
+
 target_link_libraries(lmpcc_node
         predictive_controller
         predictive_configuration
         ${OpenCV_LIBS}
         ${catkin_LIBRARIES}
         tkspline_lib)
+
+target_link_libraries(waypoint_node ${catkin_LIBRARIES})
 
 add_dependencies(lmpcc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

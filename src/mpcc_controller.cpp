@@ -10,6 +10,7 @@
 //#include <opencv2/contrib/contrib.hpp>
 //#include <opencv2/highgui/highgui.hpp>
 
+
 ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
@@ -75,10 +76,8 @@ bool MPCC::initialize()
         cost_pub_ = nh.advertise<std_msgs::Float64>("cost",1);
         brake_pub_ = nh.advertise<std_msgs::Float64>("break",1);
         contour_error_pub_ = nh.advertise<std_msgs::Float64MultiArray>("contour_error",1);
-        if(controller_config_->gazebo_simulation_)
-            controlled_velocity_pub_ = nh.advertise<lmpcc::Control>(controller_config_->cmd_sim_,1);
-        else
-            controlled_velocity_pub_ = nh.advertise<lmpcc::Control>(controller_config_->cmd_,1);
+
+        controlled_velocity_pub_ = nh.advertise<carla_msgs::CarlaEgoVehicleControl>(controller_config_->cmd_,1);
         joint_state_pub_ = nh.advertise<sensor_msgs::JointState>("/joint_states",1);
         robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
@@ -87,8 +86,8 @@ bool MPCC::initialize()
         //Road publisher
         marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("road", 10);
         ros::Duration(1).sleep();
-
         timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
+       
 
         //Initialize trajectory variables
         next_point_dist = 0;
@@ -114,8 +113,8 @@ bool MPCC::initialize()
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
         //service clients
-        reset_simulation_client_ = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_world");
-        reset_ekf_client_ = nh.serviceClient<robot_localization::SetPose>("/set_pose");
+        //reset_simulation_client_ = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_world");
+        //reset_ekf_client_ = nh.serviceClient<robot_localization::SetPose>("/set_pose");
         update_trigger = nh.serviceClient<lmpcc_msgs::IntTrigger>("update_trigger_int");
         obstacle_trigger.request.value = (int) clock_frequency_;
 
@@ -129,9 +128,10 @@ bool MPCC::initialize()
         ini_vel_x_ = controller_config_->ini_vel_x_;
         ros::NodeHandle nh_predictive("predictive_controller");
 
-        //ROS_INFO("Setting up dynamic_reconfigure server for the TwistControlerConfig parameters");
+        ROS_INFO("Setting up dynamic_reconfigure server for the TwistControlerConfig parameters");
         reconfigure_server_.reset(new dynamic_reconfigure::Server<lmpcc::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
+        
         // Initialize obstacles
         int N = ACADO_N; // hack.. needs to be beter computed
         obstacles_.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
@@ -173,7 +173,6 @@ bool MPCC::initialize()
         ellips1.scale.x = r_discs_*2.0;
         ellips1.scale.y = r_discs_*2.0;
         ellips1.scale.z = 0.05;
-
         // Initialize pregenerated mpc solver
         acado_initializeSolver( );
 
@@ -518,7 +517,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 
         controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
         controlled_velocity_.brake = 0;
-        controlled_velocity_.steer = acadoVariables.u[1] ;// / 0.52; // maximum steer
+        controlled_velocity_.steer = -acadoVariables.u[1]*2.0 ;// / 0.52; // maximum steer
 
         if(debug_){
             //publishPredictedTrajectory();
@@ -535,7 +534,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
     if (acado_getKKT() > 1e-3)
         ROS_ERROR("KKT Too high");
 
-    if(!enable_output_ || acado_getKKT() > 1e-3) {
+    if(acado_getKKT() > 1e-3) {
         publishZeroJointVelocity();
     }
     else {
@@ -959,12 +958,12 @@ void MPCC::publishZeroJointVelocity()
     {
        ROS_INFO("Publishing ZERO joint velocity!!");
     }
-    lmpcc::Control pub_msg;
+    carla_msgs::CarlaEgoVehicleControl pub_msg;
     if(!simulation_mode_)
         broadcastTF();
     controlled_velocity_ = pub_msg;
-    controlled_velocity_.throttle = -2;
-    controlled_velocity_.brake = 2;
+    controlled_velocity_.throttle = 0;
+    controlled_velocity_.brake = 1;
     controlled_velocity_.steer = 0.0;
     controlled_velocity_pub_.publish(controlled_velocity_);
 }

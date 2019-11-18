@@ -88,6 +88,8 @@
 #include <geometry_msgs/PoseWithCovariance.h>
 #include <ros_intent_slds/FloatArrayStamped.h>
 
+#include <carla_msgs/CarlaEgoVehicleControl.h>
+
 typedef double real_t;
 
 //Whens earching for the closest point on the path, this variable indicates the distance that the algorithm searches behind the current spline point.
@@ -314,7 +316,7 @@ private:
     Eigen::VectorXd last_velocity_;
 
     // Type of variable used to publish joint velocity
-    lmpcc::Control controlled_velocity_;
+    carla_msgs::CarlaEgoVehicleControl controlled_velocity_;
 
     // predictive configuration
     boost::shared_ptr<predictive_configuration> controller_config_;

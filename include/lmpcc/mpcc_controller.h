@@ -20,10 +20,6 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 
-// Include pre-generated MPC
-#include <acado_common.h>
-#include <acado_auxiliary_functions.h>
-
 // std includes
 #include <iostream>
 #include <string>
@@ -279,7 +275,7 @@ private:
     visualization_msgs::MarkerArray traj_marker_array_;
 
     // Distance between traget frame and tracking frame relative to base link
-    Eigen::Vector4d current_state_, last_state_;
+    Eigen::VectorXd current_state_, last_state_;
 
     Eigen::VectorXd min_velocity_limit_;
     Eigen::VectorXd max_velocity_limit_;

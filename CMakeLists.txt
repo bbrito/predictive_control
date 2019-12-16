@@ -88,24 +88,21 @@ generate_messages(
 
 catkin_package(
   CATKIN_DEPENDS ros_intent_slds actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core lmpcc_msgs
-  DEPENDS Boost ACADO
-  INCLUDE_DIRS include ${ACADO_INCLUDE_DIRS} include/${PROJECT_NAME}
+  DEPENDS Boost
+  INCLUDE_DIRS include include/${PROJECT_NAME}
   LIBRARIES  predictive_configuration predictive_controller
 )
+
+include_directories(include ${CMAKE_SOURCE_DIR}/FORCESNLPsolver/include)
 
 ### BUILD ###
 include_directories(include
     ${catkin_INCLUDE_DIRS}
     ${EIGEN_INCLUDE_DIRS}
     ${orocos_kdl_INCLUDE_DIRS}
-    ${ACADO_INCLUDE_DIRS}
     include/${PROJECT_NAME}
-    include/${PROJECT_NAME}/generated_mpc
-    qpoases/include
-    qpoases/src
     )
 
-FIND_LIBRARY(libacado libacado_toolkit_s.so ${ACADO_DIR}/build/lib)
 
 add_library(tkspline_lib
         src/spline.cpp
@@ -125,39 +122,22 @@ add_library(predictive_controller
         src/mpcc_controller.cpp
         src/predictive_configuration.cpp
         src/Clothoid.cpp
-        qpoases/SRC/Bounds.cpp
-        qpoases/SRC/Constraints.cpp
-        qpoases/SRC/CyclingManager.cpp
-        qpoases/SRC/Indexlist.cpp
-        qpoases/SRC/MessageHandling.cpp
-        qpoases/SRC/QProblem.cpp
-        qpoases/SRC/QProblemB.cpp
-        qpoases/SRC/SubjectTo.cpp
-        qpoases/SRC/Utils.cpp
-        qpoases/SRC/EXTRAS/SolutionAnalysis.cpp
-        src/generated_mpc/acado_qpoases_interface.cpp
-        src/generated_mpc/acado_hessian_regularization.c
-        src/generated_mpc/acado_integrator.c
-        src/generated_mpc/acado_solver.c
-        src/generated_mpc/acado_auxiliary_functions.c)
+        src/predictive_control_node.cpp
+        )
 add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_include_directories(predictive_controller PUBLIC
-        qpoases
-        qpoases/INCLUDE
-        qpoases/SRC)
-
-add_executable(lmpcc_node src/predictive_control_node.cpp)
-add_executable(waypoint_node src/carla_interface.cpp)
+add_executable(lmpcc_node src/predictive_control_node.cpp FORCESNLPsolver/FORCESNLPsolver_model_1.c
+        FORCESNLPsolver/FORCESNLPsolver_model_20.c
+        FORCESNLPsolver/FORCESNLPsolver_casadi2forces.c)
 
 target_link_libraries(lmpcc_node
         predictive_controller
         predictive_configuration
         ${OpenCV_LIBS}
         ${catkin_LIBRARIES}
-        tkspline_lib)
-
-target_link_libraries(waypoint_node ${catkin_LIBRARIES})
+        tkspline_lib
+        ${CMAKE_SOURCE_DIR}/FORCESNLPsolver/lib/libFORCESNLPsolver.so
+        )
 
 add_dependencies(lmpcc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

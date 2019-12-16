@@ -4,15 +4,44 @@
 #include <lmpcc/mpcc_controller.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Pose.h>
-
+#include <FORCESNLPsolver.h>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 //#include <opencv2/contrib/contrib.hpp>
 //#include <opencv2/highgui/highgui.hpp>
 
 
-ACADOvariables acadoVariables;
-ACADOworkspace acadoWorkspace;
+#define FORCES_N 20 // model.N, horizon length
+#define FORCES_NU 3 //number of control variables
+#define FORCES_NX 6 // differentiable variables
+#define FORCES_TOTAL_V 9 //Total control and differentiable
+#define FORCES_NPAR 340 //Total number of parameters for one horizon step
+
+
+FORCESNLPsolver_params forces_params; // 50 X 9   [acc   delta  sv     x      y       psi   v    s dummy X 50]
+FORCESNLPsolver_output forces_output;
+FORCESNLPsolver_info forces_info;
+
+//This is different from the exammple given in high level interface
+// as this requires calling a function from C which has been compiled as a library
+
+extern "C" {
+extern void FORCESNLPsolver_casadi2forces( FORCESNLPsolver_float *x,        /* primal vars                                         */
+                                                 FORCESNLPsolver_float *y,        /* eq. constraint multiplers                           */
+                                                 FORCESNLPsolver_float *l,        /* ineq. constraint multipliers                        */
+                                                 FORCESNLPsolver_float *p,        /* parameters                                          */
+                                                 FORCESNLPsolver_float *f,        /* objective function (scalar)                         */
+                                                 FORCESNLPsolver_float *nabla_f,  /* gradient of objective function                      */
+                                                 FORCESNLPsolver_float *c,        /* dynamics                                            */
+                                                 FORCESNLPsolver_float *nabla_c,  /* Jacobian of the dynamics (column major)             */
+                                                 FORCESNLPsolver_float *h,        /* inequality constraints                              */
+                                                 FORCESNLPsolver_float *nabla_h,  /* Jacobian of inequality constraints (column major)   */
+                                                 FORCESNLPsolver_float *hess,     /* Hessian (column major)                              */
+                                                 solver_int32_default stage,     /* stage number (0 indexed)                            */
+                                                 solver_int32_default iteration /* iteration number of solver                          */);
+FORCESNLPsolver_extfunc extfunc_eval = &FORCESNLPsolver_casadi2forces;
+}
+
 
 MPCC::~MPCC()
 {
@@ -102,10 +131,10 @@ bool MPCC::initialize()
         //ROS_INFO("initialize trajectory variable to plot prediction trajectory");
         spline_traj_.poses.resize(100);
         spline_traj2_.poses.resize(100);
-        pred_traj_.poses.resize(ACADO_N);
-        pred_cmd_.poses.resize(ACADO_N);
+        pred_traj_.poses.resize(FORCES_N);
+        pred_cmd_.poses.resize(FORCES_N);
         pred_traj_.header.frame_id = controller_config_->target_frame_;
-        for(int i=0;i < ACADO_N; i++)
+        for(int i=0;i < FORCES_N; i++)
         {
             pred_traj_.poses[i].header.frame_id = controller_config_->target_frame_;
         }
@@ -133,7 +162,7 @@ bool MPCC::initialize()
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
         
         // Initialize obstacles
-        int N = ACADO_N; // hack.. needs to be beter computed
+        int N = FORCES_N; // hack.. needs to be beter computed
         obstacles_.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
         for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
         {
@@ -173,8 +202,6 @@ bool MPCC::initialize()
         ellips1.scale.x = r_discs_*2.0;
         ellips1.scale.y = r_discs_*2.0;
         ellips1.scale.z = 0.05;
-        // Initialize pregenerated mpc solver
-        acado_initializeSolver( );
 
         // Check if all reference vectors are of the same length
         if (!( (controller_config_->ref_x_.size() == controller_config_->ref_y_.size()) && ( controller_config_->ref_x_.size() == controller_config_->ref_theta_.size() ) && (controller_config_->ref_y_.size() == controller_config_->ref_theta_.size()) ))
@@ -260,8 +287,8 @@ void MPCC::broadcastPathPose(){
     transformStamped.header.frame_id = controller_config_->target_frame_;
     transformStamped.child_frame_id = "path";
 
-    transformStamped.transform.translation.x = ref_path_x(acadoVariables.x[4]);
-    transformStamped.transform.translation.y = ref_path_y(acadoVariables.x[4]);
+    transformStamped.transform.translation.x = ref_path_x(forces_params.x0[7]);
+    transformStamped.transform.translation.y = ref_path_y(forces_params.x0[7]);
     transformStamped.transform.translation.z = 0.0;
     tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
     transformStamped.transform.rotation.x = 0;
@@ -311,24 +338,29 @@ void MPCC::broadcastTF(){
 }
 
 void  MPCC::reset_solver(){
-	acadoVariables.dummy = 0;
 
-    std::fill(acadoVariables.od,acadoVariables.od + sizeof(acadoVariables.od), 0 );
-    std::fill(acadoVariables.u,acadoVariables.u + sizeof(acadoVariables.u), 0 );
-    std::fill(acadoVariables.mu,acadoVariables.mu + sizeof(acadoVariables.mu), 0 );
-    std::fill(acadoVariables.x0,acadoVariables.x0 + sizeof(acadoVariables.x0), 0 );
-    std::fill(acadoVariables.x,acadoVariables.x + sizeof(acadoVariables.x), 0 );
-    std::fill(acadoVariables.lbAValues,acadoVariables.lbAValues + sizeof(acadoVariables.lbAValues), 0 );
-    std::fill(acadoVariables.ubAValues,acadoVariables.ubAValues + sizeof(acadoVariables.ubAValues), 0 );
-    std::fill(acadoVariables.lbValues,acadoVariables.lbValues + sizeof(acadoVariables.lbValues), 0 );
-    std::fill(acadoVariables.ubValues,acadoVariables.ubValues + sizeof(acadoVariables.ubValues), 0 );
+    for (int i = 0; i < *(&forces_params.all_parameters + 1) - forces_params.all_parameters; i++){
+        forces_params.all_parameters[i] = 0.0;
+    }
 
+    for (int i = 0; i < *(&forces_params.xinit + 1) - forces_params.xinit; i++){
+        forces_params.xinit[i] = 0.0;
+    }
+    int k = 0;
+    for (int i = 0; i < FORCES_N*FORCES_TOTAL_V; i++){
+        forces_params.x0[k] = 0.0;
+        k++;
+    }
 }
+
+
 
 // update this function 1/clock_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
+    ROS_INFO("Start of runNode");
     int N_iter;
+    int exit_code = 0;
     float obstacle_distance1, obstacle_distance2;
     if(event.profile.last_duration.nsec > 1/clock_frequency_*1e9)
         ROS_ERROR_STREAM("Real-time constraint not satisfied... Cycle time: " << event.profile.last_duration);
@@ -337,42 +369,15 @@ void MPCC::runNode(const ros::TimerEvent &event)
         broadcastTF();
     if (plan_ && (waypoints_size_ > 0)) {
 
-        if (simulation_mode_) {
-            acadoVariables.x[0] = current_state_(0);
-            acadoVariables.x[1] = current_state_(1);
-            acadoVariables.x[2] = current_state_(2);
-            acadoVariables.x[3] = current_state_(3)+ini_vel_x_;              //it should be obtained by the wheel speed
+        forces_params.xinit[0] = current_state_(0);
+        forces_params.xinit[1] = current_state_(1);
+        forces_params.xinit[2] = current_state_(2);
+        forces_params.xinit[3] = current_state_(3);
+        forces_params.xinit[4] = 0.0;
+        forces_params.xinit[5] = 0.0;
 
-            acadoVariables.x0[0] = current_state_(0);
-            acadoVariables.x0[1] = current_state_(1);
-            acadoVariables.x0[2] = current_state_(2);
-            acadoVariables.x0[3] = current_state_(3)+ini_vel_x_;             //it should be obtained by the wheel speed
-
-        } else {
-            if (enable_output_ && acado_getKKT() == acado_getKKT()) {
-                acadoVariables.x[0] = current_state_(0);
-                acadoVariables.x[1] = current_state_(1);
-                acadoVariables.x[2] = current_state_(2);
-                acadoVariables.x[3] = current_state_(3);              //it should be obtained by the wheel speed
-
-                acadoVariables.x0[0] = current_state_(0);
-                acadoVariables.x0[1] = current_state_(1);
-                acadoVariables.x0[2] = current_state_(2);
-                acadoVariables.x0[3] = current_state_(3);                        //it should be obtained by the wheel speed
-
-            } else {
-                acadoVariables.x[0] = acadoVariables.x[0];
-                acadoVariables.x[1] = acadoVariables.x[1];
-                acadoVariables.x[2] = acadoVariables.x[2];
-                acadoVariables.x[3] = acadoVariables.x[3];             //it should be obtained by the wheel speed
-                acadoVariables.x0[0] = acadoVariables.x[0];
-                acadoVariables.x0[1] = acadoVariables.x[1];
-                acadoVariables.x0[2] = acadoVariables.x[2];
-                acadoVariables.x0[3] = acadoVariables.x[3];             //it should be obtained by the wheel speed
-            }
-        }
         //ROS_WARN_STREAM("ss.size():" << ss.size() << " traj_i: " << traj_i);
-        if (acadoVariables.x[4] > ss[traj_i + 1]) {
+        if (forces_params.xinit[4] > ss[traj_i + 1]) {
 
             if (traj_i + 1 == ss.size()) {
                 goal_reached_ = true;
@@ -384,166 +389,181 @@ void MPCC::runNode(const ros::TimerEvent &event)
         }
 
         if(plan_) {
-            double smin = acadoVariables.x[ACADO_NX + 4];
+            double smin = forces_params.x0[FORCES_TOTAL_V + 4];
 
             traj_i = spline_closest_point(traj_i, ss, smin, window_size_,
                                         n_search_points_);
-            acadoVariables.x[4] = smin;
-            acadoVariables.x0[4] = smin;
+            forces_params.xinit[4] = smin;
             //ROS_ERROR_STREAM("smin: " << smin);
             //ROS_ERROR_STREAM("smin: " << ss[traj_i]);
             //ROS_ERROR_STREAM("smin: " << ss[traj_i+1]);
         }
 
-        acadoVariables.u[0] = controlled_velocity_.throttle;
-        acadoVariables.u[1] = controlled_velocity_.steer;
-        //acadoVariables.u[2] = 0.0000001;           //slack variable
+        for (N_iter = 0; N_iter < FORCES_N; N_iter++) {
+            int k = N_iter*FORCES_NPAR;
 
-        for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+            forces_params.all_parameters[k + 0] = ref_path_x.m_a[traj_i];        // spline coefficients
+            forces_params.all_parameters[k + 1] = ref_path_x.m_b[traj_i];
+            forces_params.all_parameters[k + 2] = ref_path_x.m_c[traj_i];        // spline coefficients
+            forces_params.all_parameters[k + 3] = ref_path_x.m_d[traj_i];
+            forces_params.all_parameters[k + 4] = ref_path_y.m_a[traj_i];        // spline coefficients
+            forces_params.all_parameters[k + 5] = ref_path_y.m_b[traj_i];
+            forces_params.all_parameters[k + 6] = ref_path_y.m_c[traj_i];        // spline coefficients
+            forces_params.all_parameters[k + 7] = ref_path_y.m_d[traj_i];
 
-
-            acadoVariables.od[(ACADO_NOD * N_iter) + 0] = ref_path_x.m_a[traj_i];        // spline coefficients
-            acadoVariables.od[(ACADO_NOD * N_iter) + 1] = ref_path_x.m_b[traj_i];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 2] = ref_path_x.m_c[traj_i];        // spline coefficients
-            acadoVariables.od[(ACADO_NOD * N_iter) + 3] = ref_path_x.m_d[traj_i];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 4] = ref_path_y.m_a[traj_i];        // spline coefficients
-            acadoVariables.od[(ACADO_NOD * N_iter) + 5] = ref_path_y.m_b[traj_i];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 6] = ref_path_y.m_c[traj_i];        // spline coefficients
-            acadoVariables.od[(ACADO_NOD * N_iter) + 7] = ref_path_y.m_d[traj_i];
-
-            acadoVariables.od[(ACADO_NOD * N_iter) + 16] = ss[traj_i];       // s1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 17] = ss[traj_i + 1];       //s2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 18] = ss[traj_i + 1] + 0.02;       // d
+            forces_params.all_parameters[k + 16] = ss[traj_i];       // s1
+            forces_params.all_parameters[k + 17] = ss[traj_i + 1];       //s2
+            forces_params.all_parameters[k + 18] = ss[traj_i + 1] + 0.02;       // d
             obstacle_distance1 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
             obstacle_distance2 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 19] = cost_contour_weight_factors_(0);
-            acadoVariables.od[(ACADO_NOD * N_iter) + 20] = cost_contour_weight_factors_(1);     // weight lag error
-            acadoVariables.od[(ACADO_NOD * N_iter) + 21] = cost_control_weight_factors_(0);    // weight acceleration
-            acadoVariables.od[(ACADO_NOD * N_iter) + 22] = cost_control_weight_factors_(1);   // weight delta
-            acadoVariables.od[(ACADO_NOD * N_iter) + 24] = slack_weight_;                     //slack weight
-            acadoVariables.od[(ACADO_NOD * N_iter) + 25] = repulsive_weight_;                     //repulsive weight
-            acadoVariables.od[(ACADO_NOD * N_iter) + 38] = velocity_weight_;                     //repulsive weight
+            forces_params.all_parameters[k + 19] = cost_contour_weight_factors_(0);
+            forces_params.all_parameters[k + 20] = cost_contour_weight_factors_(1);     // weight lag error
+            forces_params.all_parameters[k + 21] = cost_control_weight_factors_(0);    // weight acceleration
+            forces_params.all_parameters[k + 22] = cost_control_weight_factors_(1);   // weight delta
+            forces_params.all_parameters[k + 24] = slack_weight_;                     //slack weight
+            forces_params.all_parameters[k + 25] = repulsive_weight_;                     //repulsive weight
+            forces_params.all_parameters[k + 38] = velocity_weight_;                     //repulsive weight
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 26] = r_discs_; //radius of the disks
-            acadoVariables.od[(ACADO_NOD * N_iter) + 27] = x_discs_[0];                        // position of the car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 39] = x_discs_[1];                        // position of the car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 40] = x_discs_[2];                        // position of the car discs
-            //acadoVariables.od[(ACADO_NOD * N_iter) + 42] = x_discs_[3];                        // position of the car discs
-            //acadoVariables.od[(ACADO_NOD * N_iter) + 43] = x_discs_[4];
+            forces_params.all_parameters[k + 26] = r_discs_; //radius of the disks
+            forces_params.all_parameters[k + 27] = x_discs_[0];                        // position of the car discs
+            forces_params.all_parameters[k + 39] = x_discs_[1];                        // position of the car discs
+            forces_params.all_parameters[k + 40] = x_discs_[2];                        // position of the car discs
+            //forces_params.all_parameters[k + 42] = x_discs_[3];                        // position of the car discs
+            //forces_params.all_parameters[k + 43] = x_discs_[4];
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 28] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 29] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
+            //forces_params.all_parameters[k + 28] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
+            //forces_params.all_parameters[k + 19] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
             //ToDo check convertion from quaternion to RPY angle
-            acadoVariables.od[(ACADO_NOD * N_iter) + 30] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 31] = obstacles_.lmpcc_obstacles[0].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 32] = obstacles_.lmpcc_obstacles[0].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
+            /*forces_params.all_parameters[k + 30] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
+            forces_params.all_parameters[k + 31] = obstacles_.lmpcc_obstacles[0].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
+            forces_params.all_parameters[k + 32] = obstacles_.lmpcc_obstacles[0].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
 
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 33] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 34] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 35] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 36] = obstacles_.lmpcc_obstacles[1].major_semiaxis[N_iter];       // major semiaxis of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 37] = obstacles_.lmpcc_obstacles[1].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 41] = right_offset_;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 42] = left_offset_;
+            forces_params.all_parameters[k + 33] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 2
+            forces_params.all_parameters[k + 34] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 2
+            forces_params.all_parameters[k + 35] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 2
+            forces_params.all_parameters[k + 36] = obstacles_.lmpcc_obstacles[1].major_semiaxis[N_iter];       // major semiaxis of obstacle 2
+            forces_params.all_parameters[k + 37] = obstacles_.lmpcc_obstacles[1].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 2
+            forces_params.all_parameters[k + 41] = right_offset_;
+            forces_params.all_parameters[k + 42] = left_offset_;*/
 
             if (goal_reached_) {
                 reduced_reference_velocity_ = current_state_(3)-4*0.25*(N_iter+1);
                 if(reduced_reference_velocity_ < 0)
                     reduced_reference_velocity_=0;
 
-                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                forces_params.all_parameters[k + 23] = reduced_reference_velocity_;
             } else {
 
                 reduced_reference_velocity_ = current_state_(3) + 1.5 * 0.25 * (N_iter+1);
                 if (reduced_reference_velocity_ > reference_velocity_)
                     reduced_reference_velocity_ = reference_velocity_;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
+                forces_params.all_parameters[k + 23] = reduced_reference_velocity_;
 
-                acadoVariables.od[(ACADO_NOD * N_iter) + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
-                acadoVariables.od[(ACADO_NOD * N_iter) + 9] = ref_path_x.m_b[traj_i + 1];
-                acadoVariables.od[(ACADO_NOD * N_iter) + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
-                acadoVariables.od[(ACADO_NOD * N_iter) + 11] = ref_path_x.m_d[traj_i + 1];
-                acadoVariables.od[(ACADO_NOD * N_iter) + 12] = ref_path_y.m_a[traj_i + 1];        // spline coefficients
-                acadoVariables.od[(ACADO_NOD * N_iter) + 13] = ref_path_y.m_b[traj_i + 1];
-                acadoVariables.od[(ACADO_NOD * N_iter) + 14] = ref_path_y.m_c[traj_i + 1];        // spline coefficients
-                acadoVariables.od[(ACADO_NOD * N_iter) + 15] = ref_path_y.m_d[traj_i + 1];
+                forces_params.all_parameters[k + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
+                forces_params.all_parameters[k + 9] = ref_path_x.m_b[traj_i + 1];
+                forces_params.all_parameters[k + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
+                forces_params.all_parameters[k + 11] = ref_path_x.m_d[traj_i + 1];
+                forces_params.all_parameters[k + 12] = ref_path_y.m_a[traj_i + 1];        // spline coefficients
+                forces_params.all_parameters[k + 13] = ref_path_y.m_b[traj_i + 1];
+                forces_params.all_parameters[k + 14] = ref_path_y.m_c[traj_i + 1];        // spline coefficients
+                forces_params.all_parameters[k + 15] = ref_path_y.m_d[traj_i + 1];
             }
 
-            //acadoVariables.od[(ACADO_NOD * N_iter) + 23] = ss[traj_i + 1] + 0.02;
+            //forces_params.all_parameters[k + 23] = ss[traj_i + 1] + 0.02;
         }
-        acado_initializeSolver();
-        acado_preparationStep();
 
-        acado_feedbackStep();
+        /*ROS_INFO_STREAM("x0[0] " << forces_params.x0[0]);
+        ROS_INFO_STREAM("x0[1] " << forces_params.x0[1]);
+        ROS_INFO_STREAM("x0[2] " << forces_params.x0[2]);
+        ROS_INFO_STREAM("x0[3] " << forces_params.x0[3]);
+        ROS_INFO_STREAM("x0[4] " << forces_params.x0[4]);
+        ROS_INFO_STREAM("x0[5] " << forces_params.x0[5]);
+        ROS_INFO_STREAM("x0[6] " << forces_params.x0[6]);
+        ROS_INFO_STREAM("x0[7] " << forces_params.x0[7]);
+        ROS_INFO_STREAM("x0[8] " << forces_params.x0[8]);
+        ROS_INFO_STREAM("xinit[0] " << forces_params.xinit[0]);
+        ROS_INFO_STREAM("xinit[1] " << forces_params.xinit[1]);
+        ROS_INFO_STREAM("xinit[2] " << forces_params.xinit[2]);
+        ROS_INFO_STREAM("xinit[3] " << forces_params.xinit[3]);
+        ROS_INFO_STREAM("xinit[4] " << forces_params.xinit[4]);
+        ROS_INFO_STREAM("xinit[5] " << forces_params.xinit[5]);*/
 
-        //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
 
-        int j = 0;
-        while (acado_getKKT() > 1e-3 && j < (n_iterations_-1)) {
+        exit_code = FORCESNLPsolver_solve(&forces_params, &forces_output, &forces_info, stdout, extfunc_eval);
+        ROS_INFO_STREAM("exit_code before iter " << exit_code);
+        ROS_INFO_STREAM("primal objective " << forces_info.pobj);
+        ROS_INFO_STREAM("number of iterations for optimality " << forces_info.it2opt);
 
-            acado_preparationStep();
+        /*int j = 0;
+        while (exit_code !=1 && j < (n_iterations_-1)) {
 
-            acado_feedbackStep();
+            exit_code = FORCESNLPsolver_solve(&forces_params, &forces_output, &forces_info, NULL, extfunc_eval);
+            ROS_INFO_STREAM("exit_code" << exit_code);
 
-            printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
+            //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
             //ROS_INFO_STREAM(acado_getObjective());
             j++;    //acado_printDifferentialVariables();
 
+        }*/
 
-            if(j >6){
-                ROS_INFO("Getting stuck, decrease reference velocity");
-                for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-                    reduced_reference_velocity_ = current_state_(3) - 0.5 * 0.25 * (N_iter+1);
-                    if(reduced_reference_velocity_ < 0)
-                        reduced_reference_velocity_=0;
-
-                    acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
-                }
-            }
-            else{
-                if (current_state_(3) < reference_velocity_) {
-                    for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-                        reduced_reference_velocity_ = current_state_(3) + 1.5 * 0.25 * (N_iter+1);
-                        if (reduced_reference_velocity_ > reference_velocity_)
-                            reduced_reference_velocity_ = reference_velocity_;
-
-                        acadoVariables.od[(ACADO_NOD * N_iter) + 23] = reduced_reference_velocity_;
-                    }
-                }
-            }
-        }
-
-        controlled_velocity_.throttle = acadoVariables.u[0];// / 1.5; // maximum acceleration 1.5m/s
-        controlled_velocity_.brake = 0;
-        controlled_velocity_.steer = -acadoVariables.u[1]*2.0 ;// / 0.52; // maximum steer
+        controlled_velocity_.throttle = forces_output.x01[0]/10.0;// / 1.5; // maximum acceleration 1.5m/s
+        ROS_INFO_STREAM("accel_output " << controlled_velocity_.throttle);
+        if (controlled_velocity_.throttle < 0.0)
+            controlled_velocity_.brake = abs(controlled_velocity_.throttle);
+        else
+            controlled_velocity_.brake = 0.0;
+        //controlled_velocity_.steer = -acadoVariables.u[1]*2.0 ;// / 0.52; // maximum steer
+        controlled_velocity_.steer = -forces_output.x01[1] * 2.0; 
+        ROS_INFO_STREAM("steer_output " << controlled_velocity_.steer);
 
         if(debug_){
             //publishPredictedTrajectory();
             //publishPredictedOutput();
             //broadcastPathPose();
-            publishFeedback(j,te_);
+            //publishFeedback(j,te_);
         }
+   
         publishPredictedCollisionSpace();
         //broadcastPathPose();
         brake_.data = controlled_velocity_.brake;
-        cost_.data = acado_getObjective();
+        //cost_.data = acado_getObjective();
     }
 
-    if (acado_getKKT() > 1e-3)
-        ROS_ERROR("KKT Too high");
-
-    if(acado_getKKT() > 1e-3) {
+    if(exit_code!=1) {
         publishZeroJointVelocity();
     }
     else {
         controlled_velocity_pub_.publish(controlled_velocity_);
     }
-    if (acado_getKKT() != acado_getKKT())
+    /*if (acado_getKKT() != acado_getKKT())
     {
         //reset_solver();
         ROS_INFO_STREAM("is nan: resetting");
+    }*/
+
+    for(int i = 0; i < FORCES_TOTAL_V; i++){
+        forces_params.x0[i] = forces_output.x01[i]; 
+        forces_params.x0[i+FORCES_TOTAL_V] = forces_output.x02[i];
+        forces_params.x0[i+2*FORCES_TOTAL_V] = forces_output.x03[i];
+        forces_params.x0[i+3*FORCES_TOTAL_V] = forces_output.x04[i];
+        forces_params.x0[i+4*FORCES_TOTAL_V] = forces_output.x05[i];
+        forces_params.x0[i+5*FORCES_TOTAL_V] = forces_output.x06[i];
+        forces_params.x0[i+6*FORCES_TOTAL_V] = forces_output.x07[i];
+        forces_params.x0[i+7*FORCES_TOTAL_V] = forces_output.x08[i];
+        forces_params.x0[i+8*FORCES_TOTAL_V] = forces_output.x09[i];
+        forces_params.x0[i+9*FORCES_TOTAL_V] = forces_output.x10[i];
+        forces_params.x0[i+10*FORCES_TOTAL_V] = forces_output.x11[i];
+        forces_params.x0[i+11*FORCES_TOTAL_V] = forces_output.x12[i];
+        forces_params.x0[i+12*FORCES_TOTAL_V] = forces_output.x13[i];
+        forces_params.x0[i+13*FORCES_TOTAL_V] = forces_output.x14[i];
+        forces_params.x0[i+14*FORCES_TOTAL_V] = forces_output.x15[i];
+        forces_params.x0[i+15*FORCES_TOTAL_V] = forces_output.x16[i];
+        forces_params.x0[i+16*FORCES_TOTAL_V] = forces_output.x17[i];
+        forces_params.x0[i+17*FORCES_TOTAL_V] = forces_output.x18[i];
+        forces_params.x0[i+18*FORCES_TOTAL_V] = forces_output.x19[i];
+        forces_params.x0[i+19*FORCES_TOTAL_V] = forces_output.x20[i];
     }
 }
 
@@ -797,9 +817,11 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     }
 
     if(plan_){
+        ROS_INFO("Before reset_solver");
 		reset_solver();
-		acado_initializeSolver( );
-		ROS_INFO("acado_initializeSolver");
+        ROS_INFO("After reset_solver");
+		//acado_initializeSolver( );
+		//ROS_INFO("acado_initializeSolver");
 		//ConstructRefPath();
 		//getWayPointsCallBack( );
 		//ROS_INFO("ConstructRefPath");
@@ -834,8 +856,8 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 
    current_state_(2) = std::atan2(t3, t4);
 
-   current_state_(0) =    msg->pose.pose.position.x + 1.577*cos(current_state_(2)); // for shifting the current coordinates to the center of mass
-   current_state_(1) =    msg->pose.pose.position.y + 1.577*sin(current_state_(2));
+   current_state_(0) =    msg->pose.pose.position.x ; // for shifting the current coordinates to the center of mass
+   current_state_(1) =    msg->pose.pose.position.y ;
 
    current_state_(3) = std::sqrt(std::pow(msg->twist.twist.linear.x,2)+std::pow(msg->twist.twist.linear.y,2));
 }
@@ -890,7 +912,7 @@ void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
     }
   for(int i=0;i<objects.tracks.size();i++){
     cv_msgs::PredictedMoGTrack track = objects.tracks[i];
-    for(int j=track.track.size();j<ACADO_N;j++){
+    for(int j=track.track.size();j<FORCES_N;j++){
       cv_msgs::PredictedMoG mog = track.track[track.track.size()-1];
       for (int k = 0; k < mog.pose.size(); k++) {
         obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose=mog.pose[k].pose;
@@ -930,10 +952,10 @@ void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obs
             total_obstacles.lmpcc_obstacles[obst_it].pose.position.x = current_state_(0) - 100;
             total_obstacles.lmpcc_obstacles[obst_it].pose.position.y = 0;
             total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = 0;
-            total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis.resize(ACADO_N);
-            total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis.resize(ACADO_N);
-            total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses.resize(ACADO_N);
-            for (int traj_it = 0; traj_it < ACADO_N; traj_it++)
+            total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis.resize(FORCES_N);
+            total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis.resize(FORCES_N);
+            total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses.resize(FORCES_N);
+            for (int traj_it = 0; traj_it < FORCES_N; traj_it++)
             {
                 total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = current_state_(0) - 100;
                 total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = 0;
@@ -1048,11 +1070,11 @@ void MPCC::publishSplineTrajectory(void)
 
 void MPCC::publishPredictedTrajectory(void)
 {
-    for (int i = 0; i < ACADO_N; i++)
+    for (int i = 0; i < FORCES_N; i++)
     {
-        pred_traj_.poses[i].pose.position.x = acadoVariables.x[i * ACADO_NX + 0]; //x
-        pred_traj_.poses[i].pose.position.y = acadoVariables.x[i * ACADO_NX + 1]; //y
-        pred_traj_.poses[i].pose.orientation.z = acadoVariables.x[i * ACADO_NX + 2]; //theta
+        pred_traj_.poses[i].pose.position.x = forces_params.x0[i * FORCES_TOTAL_V + 3]; //x
+        pred_traj_.poses[i].pose.position.y = forces_params.x0[i * FORCES_TOTAL_V + 4]; //y
+        pred_traj_.poses[i].pose.orientation.z = forces_params.x0[i * FORCES_TOTAL_V + 5]; //theta
     }
 
     pred_traj_pub_.publish(pred_traj_);
@@ -1060,13 +1082,13 @@ void MPCC::publishPredictedTrajectory(void)
 
 void MPCC::publishPredictedOutput(void)
 {
-    for (int i = 0; i < ACADO_N; i++)
+    for (int i = 0; i < FORCES_N; i++)
     {
-        pred_cmd_.poses[i].pose.position.x = acadoVariables.u[i*ACADO_NU + 0]; //acc
+        pred_cmd_.poses[i].pose.position.x = forces_params.x0[i*FORCES_TOTAL_V + 0]; //acc
        
 		
-        pred_cmd_.poses[i].pose.position.y = acadoVariables.u[i*ACADO_NU + 1]; //delta
-        pred_cmd_.poses[i].pose.position.z = acadoVariables.u[i*ACADO_NU+ 2];  //slack
+        pred_cmd_.poses[i].pose.position.y = forces_params.x0[i*FORCES_TOTAL_V + 1]; //delta
+        pred_cmd_.poses[i].pose.position.z = forces_params.x0[i*FORCES_TOTAL_V+ 2];  //slack
     }
 
     pred_cmd_pub_.publish(pred_cmd_);
@@ -1085,16 +1107,16 @@ cv::Mat make_colormap(int length){
 void MPCC::publishPredictedCollisionSpace(void)
 {
     visualization_msgs::MarkerArray collision_space;
-    //cv::Mat colormap = make_colormap(ACADO_N);
+    //cv::Mat colormap = make_colormap(FORCES_N);
     for (int k = 0; k< controller_config_->n_discs_; k++){
 
-        for (int i = 0; i < ACADO_N; i++)
+        for (int i = 0; i < FORCES_N; i++)
         {
-            ellips1.id = 60+i+k*ACADO_N;
+            ellips1.id = 60+i+k*FORCES_N;
 
             //-1.577
-            ellips1.pose.position.x = acadoVariables.x[i * ACADO_NX + 0]+(x_discs_[k])*cos(acadoVariables.x[i * ACADO_NX + 2]);
-            ellips1.pose.position.y = acadoVariables.x[i * ACADO_NX + 1]+(x_discs_[k])*sin(acadoVariables.x[i * ACADO_NX + 2]);
+            ellips1.pose.position.x = forces_params.x0[i * FORCES_TOTAL_V + 3]+(x_discs_[k])*cos(forces_params.x0[i * FORCES_TOTAL_V + 5]);
+            ellips1.pose.position.y = forces_params.x0[i * FORCES_TOTAL_V + 4]+(x_discs_[k])*sin(forces_params.x0[i * FORCES_TOTAL_V + 5]);
             ellips1.pose.position.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
             ellips1.pose.orientation.x = 0;
             ellips1.pose.orientation.y = 0;
@@ -1109,13 +1131,13 @@ void MPCC::publishPredictedCollisionSpace(void)
     robot_collision_space_pub_.publish(collision_space);
 }
 
-void MPCC::publishCost(void){
+/*void MPCC::publishCost(void){
 
     cost_pub_.publish(cost_);
     brake_pub_.publish(brake_);
-}
+}*/
 
-void MPCC::publishFeedback(int& it, double& time)
+/*void MPCC::publishFeedback(int& it, double& time)
 {
 
     lmpcc::control_feedback feedback_msg;
@@ -1166,7 +1188,7 @@ void MPCC::publishFeedback(int& it, double& time)
     feedback_msg.computed_control.angular.z =  current_state_(2);
 
     feedback_pub_.publish(feedback_msg);
-}
+}*/
 
 // Utils
 

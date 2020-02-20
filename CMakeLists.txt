@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
     kdl_conversions
     kdl_parser
-    moveit_core
     nav_msgs
     roscpp
     roslint
@@ -27,10 +26,7 @@ find_package(catkin REQUIRED COMPONENTS
     urdf
     visualization_msgs
     shape_msgs
-    moveit_msgs
     lmpcc_msgs
-    cv_msgs
-    ros_intent_slds
     carla_msgs
 )
 
@@ -46,15 +42,6 @@ catkin_python_setup()
 
 generate_dynamic_reconfigure_options(
         cfg/PredictiveController.cfg
-)
-
-## Generate messages in the 'action' folder
-add_action_files(
-  DIRECTORY
-    action
-  FILES
-    traj.action
-    move.action
 )
 
 
@@ -82,12 +69,11 @@ generate_messages(
     nav_msgs
     shape_msgs
     visualization_msgs
-    moveit_msgs
     lmpcc_msgs
 )
 
 catkin_package(
-  CATKIN_DEPENDS ros_intent_slds actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core lmpcc_msgs
+  CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs lmpcc_msgs
   DEPENDS Boost
   INCLUDE_DIRS include include/${PROJECT_NAME}
   LIBRARIES  predictive_configuration predictive_controller

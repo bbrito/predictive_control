@@ -60,13 +60,13 @@ Model {
       }
     }
   }
-  Created		  "12/16/2019 11:06:59 PM"
+  Created		  "2/21/2020 2:34:49 PM"
   Creator		  "embotech AG"
   UpdateHistory		  "UpdateHistoryNever"
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "embotech AG"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "12/16/2019 11:06:59 PM"
+  LastModifiedDate	  "2/21/2020 2:34:49 PM"
   RTWModifiedTimeStamp	  315310195
   ModelVersionFormat	  "1.%<AutoIncrement:2>"
   ConfigurationManager	  "None"
@@ -767,8 +767,8 @@ Model {
       BlockType		      S-Function
       Name		      "FORCESNLPsolver"
       SID		      "1"
-      Ports		      [3, 20]
-      Position		      [170, 99, 650, 340]
+      Ports		      [3, 15]
+      Position		      [170, 99, 650, 255]
       ZOrder		      1
       FunctionName	      "FORCESNLPsolver_simulinkBlock"
 	  SFunctionModules	      "FORCESNLPsolver FORCESNLPsolver_simulinkBlock"
@@ -804,9 +804,9 @@ Model {
 	Help			"FORCESNLPsolver_simulinkBlock provides an easy Simulink interface for simulating your customized solver.  \n"
 	"\nOUTPUTS = FORCESNLPsolver(INPUTS) solves an optimization problem where:\n\n"
 	"INPUTS:\n"
-	" - x0 - column vector of length 180\n "
+	" - x0 - column vector of length 135\n "
 " - xinit - column vector of length 6\n "
-" - all_parameters - column vector of length 6800\n "
+" - all_parameters - column vector of length 9225\n "
 
 	"\nOUTPUTS:\n"
 	" - x01 - column vector of length 9\n "
@@ -824,11 +824,6 @@ Model {
 " - x13 - column vector of length 9\n "
 " - x14 - column vector of length 9\n "
 " - x15 - column vector of length 9\n "
-" - x16 - column vector of length 9\n "
-" - x17 - column vector of length 9\n "
-" - x18 - column vector of length 9\n "
-" - x19 - column vector of length 9\n "
-" - x20 - column vector of length 9\n "
 
 	"\n For more information, see https://www.embotech.com/FORCES-Pro/How-to-use/Simulink-Interface/Simulink-Block \n "
 
@@ -850,11 +845,6 @@ Model {
 "port_label('output', 13, 'x13') \n "
 "port_label('output', 14, 'x14') \n "
 "port_label('output', 15, 'x15') \n "
-"port_label('output', 16, 'x16') \n "
-"port_label('output', 17, 'x17') \n "
-"port_label('output', 18, 'x18') \n "
-"port_label('output', 19, 'x19') \n "
-"port_label('output', 20, 'x20') \n "
 "if( exist('forcesprologo.jpg','file') ), image(imread('forcesprologo.jpg'),'center','on'); elseif( exist(['interface',filesep,'forcesprologo.jpg'],'file') ), image(imread(['interface',filesep,'forcesprologo.jpg']),'center','on'); elseif( exist(['FORCESNLPsolver',filesep,'interface',filesep,'forcesprologo.jpg'],'file') ), image(imread(['FORCESNLPsolver',filesep,'interface',filesep,'forcesprologo.jpg']),'center','on'); end \n "
 
       }

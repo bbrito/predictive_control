@@ -77,7 +77,7 @@ static void mdlInitializeSizes(SimStruct *S)
     if (!ssSetNumInputPorts(S, 3)) return;
     	
 	/* Input Port 0 */
-    ssSetInputPortMatrixDimensions(S,  0, 180, 1);
+    ssSetInputPortMatrixDimensions(S,  0, 135, 1);
     ssSetInputPortDataType(S, 0, SS_DOUBLE);
     ssSetInputPortComplexSignal(S, 0, COMPLEX_NO); /* no complex signals suppported */
     ssSetInputPortDirectFeedThrough(S, 0, 1); /* Feedthrough enabled */
@@ -89,15 +89,15 @@ static void mdlInitializeSizes(SimStruct *S)
     ssSetInputPortDirectFeedThrough(S, 1, 1); /* Feedthrough enabled */
     ssSetInputPortRequiredContiguous(S, 1, 1); /*direct input signal access*/	
 	/* Input Port 2 */
-    ssSetInputPortMatrixDimensions(S,  2, 6800, 1);
+    ssSetInputPortMatrixDimensions(S,  2, 9225, 1);
     ssSetInputPortDataType(S, 2, SS_DOUBLE);
     ssSetInputPortComplexSignal(S, 2, COMPLEX_NO); /* no complex signals suppported */
     ssSetInputPortDirectFeedThrough(S, 2, 1); /* Feedthrough enabled */
     ssSetInputPortRequiredContiguous(S, 2, 1); /*direct input signal access*/ 
 
 
-	/* initialize output ports - there are 20 in total */
-    if (!ssSetNumOutputPorts(S, 20)) return;    
+	/* initialize output ports - there are 15 in total */
+    if (!ssSetNumOutputPorts(S, 15)) return;    
 		
 	/* Output Port 0 */
     ssSetOutputPortMatrixDimensions(S,  0, 9, 1);
@@ -173,31 +173,6 @@ static void mdlInitializeSizes(SimStruct *S)
     ssSetOutputPortMatrixDimensions(S,  14, 9, 1);
     ssSetOutputPortDataType(S, 14, SS_DOUBLE);
     ssSetOutputPortComplexSignal(S, 14, COMPLEX_NO); /* no complex signals suppported */
-	
-	/* Output Port 15 */
-    ssSetOutputPortMatrixDimensions(S,  15, 9, 1);
-    ssSetOutputPortDataType(S, 15, SS_DOUBLE);
-    ssSetOutputPortComplexSignal(S, 15, COMPLEX_NO); /* no complex signals suppported */
-	
-	/* Output Port 16 */
-    ssSetOutputPortMatrixDimensions(S,  16, 9, 1);
-    ssSetOutputPortDataType(S, 16, SS_DOUBLE);
-    ssSetOutputPortComplexSignal(S, 16, COMPLEX_NO); /* no complex signals suppported */
-	
-	/* Output Port 17 */
-    ssSetOutputPortMatrixDimensions(S,  17, 9, 1);
-    ssSetOutputPortDataType(S, 17, SS_DOUBLE);
-    ssSetOutputPortComplexSignal(S, 17, COMPLEX_NO); /* no complex signals suppported */
-	
-	/* Output Port 18 */
-    ssSetOutputPortMatrixDimensions(S,  18, 9, 1);
-    ssSetOutputPortDataType(S, 18, SS_DOUBLE);
-    ssSetOutputPortComplexSignal(S, 18, COMPLEX_NO); /* no complex signals suppported */
-	
-	/* Output Port 19 */
-    ssSetOutputPortMatrixDimensions(S,  19, 9, 1);
-    ssSetOutputPortDataType(S, 19, SS_DOUBLE);
-    ssSetOutputPortComplexSignal(S, 19, COMPLEX_NO); /* no complex signals suppported */
 
 
 	/* set sampling time */
@@ -308,11 +283,6 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 	real_T *x13 = (real_T*) ssGetOutputPortSignal(S,12);
 	real_T *x14 = (real_T*) ssGetOutputPortSignal(S,13);
 	real_T *x15 = (real_T*) ssGetOutputPortSignal(S,14);
-	real_T *x16 = (real_T*) ssGetOutputPortSignal(S,15);
-	real_T *x17 = (real_T*) ssGetOutputPortSignal(S,16);
-	real_T *x18 = (real_T*) ssGetOutputPortSignal(S,17);
-	real_T *x19 = (real_T*) ssGetOutputPortSignal(S,18);
-	real_T *x20 = (real_T*) ssGetOutputPortSignal(S,19);
 	
 	
 
@@ -326,7 +296,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 	
 
 	/* Copy inputs */
-	for( i=0; i<180; i++)
+	for( i=0; i<135; i++)
 	{ 
 		params.x0[i] = (double) x0[i]; 
 	}
@@ -336,7 +306,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 		params.xinit[i] = (double) xinit[i]; 
 	}
 
-	for( i=0; i<6800; i++)
+	for( i=0; i<9225; i++)
 	{ 
 		params.all_parameters[i] = (double) all_parameters[i]; 
 	}
@@ -444,31 +414,6 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 	for( i=0; i<9; i++)
 	{ 
 		x15[i] = (real_T) output.x15[i]; 
-	}
-
-	for( i=0; i<9; i++)
-	{ 
-		x16[i] = (real_T) output.x16[i]; 
-	}
-
-	for( i=0; i<9; i++)
-	{ 
-		x17[i] = (real_T) output.x17[i]; 
-	}
-
-	for( i=0; i<9; i++)
-	{ 
-		x18[i] = (real_T) output.x18[i]; 
-	}
-
-	for( i=0; i<9; i++)
-	{ 
-		x19[i] = (real_T) output.x19[i]; 
-	}
-
-	for( i=0; i<9; i++)
-	{ 
-		x20[i] = (real_T) output.x20[i]; 
 	}
 
 	

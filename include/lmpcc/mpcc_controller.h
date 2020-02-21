@@ -80,7 +80,6 @@
 #include <std_srvs/Empty.h>
 #include <robot_localization/SetPose.h>
 
-#include <cv_msgs/PredictedMoGTracks.h>
 #include <geometry_msgs/PoseWithCovariance.h>
 #include <ros_intent_slds/FloatArrayStamped.h>
 
@@ -371,8 +370,6 @@ private:
     void ConstructRefPath();
 
     void publishFeedback(int& it, double& time);
-
-    void ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects);
 
     void pedStopCallBack(const ros_intent_slds::FloatArrayStamped& msg);
     

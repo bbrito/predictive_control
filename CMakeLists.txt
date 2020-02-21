@@ -130,6 +130,8 @@ add_executable(lmpcc_node src/predictive_control_node.cpp FORCESNLPsolver/FORCES
         FORCESNLPsolver/FORCESNLPsolver_model_20.c
         FORCESNLPsolver/FORCESNLPsolver_casadi2forces.c)
 
+add_executable(waypoint_for_lmpcc src/carla_interface.cpp)
+
 target_link_libraries(lmpcc_node
         predictive_controller
         predictive_configuration
@@ -138,6 +140,7 @@ target_link_libraries(lmpcc_node
         tkspline_lib
         ${CMAKE_SOURCE_DIR}/FORCESNLPsolver/lib/libFORCESNLPsolver.so
         )
+target_link_libraries(waypoint_for_lmpcc ${catkin_LIBRARIES})
 
 add_dependencies(lmpcc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

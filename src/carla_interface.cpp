@@ -9,7 +9,7 @@ void waypointCallback(nav_msgs::Path msg)
   double ysqr, t3, t4;
   std::vector<double> x, y, theta;
   int j = 0;
-  for(int i = 0; i < msg.poses.size(); i+=5)
+  for(int i = 0; i < msg.poses.size(); i+=2)
   {
     ysqr = msg.poses[i].pose.orientation.y * msg.poses[i].pose.orientation.y;
     t3 = +2.0 * (msg.poses[i].pose.orientation.w * msg.poses[i].pose.orientation.z

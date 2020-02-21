@@ -235,12 +235,6 @@ bool MPCC::initialize()
     }
 }
 
-void MPCC::pedStopCallBack(const ros_intent_slds::FloatArrayStamped& msg){
-    stop_likelihood_ = msg.data[4];
-    stop_likelihood_ = 1.0;
-    ROS_INFO_STREAM("stop_likelihood_: " << stop_likelihood_);
-};
-
 void MPCC::computeEgoDiscs()
 {
     // Collect parameters for disc representation
@@ -515,7 +509,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
         else
             controlled_velocity_.brake = 0.0;
         //controlled_velocity_.steer = -acadoVariables.u[1]*2.0 ;// / 0.52; // maximum steer
-        controlled_velocity_.steer = -forces_output.x01[1] * 2.0; 
+        controlled_velocity_.steer = forces_output.x01[1] * 2.0;
         ROS_INFO_STREAM("steer_output " << controlled_velocity_.steer);
 
         if(debug_){
@@ -861,79 +855,7 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 
    current_state_(3) = std::sqrt(std::pow(msg->twist.twist.linear.x,2)+std::pow(msg->twist.twist.linear.y,2));
 }
-void MPCC::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
-{
-    /*
-    double ysqr, t3, t4;
-    //ROS_INFO_STREAM("N tracks: "<<objects.tracks.size());
-    if(objects.tracks.size()) {
-        //ROS_INFO_STREAM("N track: " << objects.tracks[0].track.size());
-        //ROS_INFO_STREAM("N: " << objects.tracks[0].track[0].pose.size());
-    }
-    //reset all objects
-    for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
-    {
-        for(int t = 0;t<obstacles_.lmpcc_obstacles[obst_it].trajectory.poses.size();t++){
-            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.x = 10000;
-            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.y = 10000;
-            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.orientation.z = 0;
-            obstacles_.lmpcc_obstacles[obst_it].major_semiaxis[t] = 0.001;
-            obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis[t] = 0.001;
-        }
-    }
-    for(int i=0;i<objects.tracks.size();i++){
-        cv_msgs::PredictedMoGTrack track = objects.tracks[i];
-        for(int j=0;j<track.track.size();j++){
-            cv_msgs::PredictedMoG mog = track.track[j];
-            int mogs_to_consider = 1; //mog.pose.size(); //FIXME only use the first item in the MOG, to allow for multi-object tracking.
-            for (int k = 0; k < mogs_to_consider; k++) {
-                int current_obstacle = i*mogs_to_consider + k;
-                if (j == 0) {
-                  std::cout << "current obstacle: " << current_obstacle << std::endl;
-                  std::cout << "current i: " << i << std::endl;
-                }
-                obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose=mog.pose[k].pose;
-                //ToDo
-                transformPose(objects.header.frame_id,controller_config_->target_frame_,obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose);
 
-                // Convert quaternion to RPY
-                ysqr = obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.y * obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.y;
-                t3 = +2.0 * (obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.w * obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.z
-                             + obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.x * obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.y);
-                t4 = +1.0 - 2.0 * (ysqr + obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.z * obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.z);
-
-                obstacles_.lmpcc_obstacles[current_obstacle].trajectory.poses[j].pose.orientation.z = std::atan2(t3, t4);
-
-                obstacles_.lmpcc_obstacles[current_obstacle].major_semiaxis[j] = 0.5;
-                obstacles_.lmpcc_obstacles[current_obstacle].minor_semiaxis[j] = 0.5;
-
-            }
-        }
-    }
-  for(int i=0;i<objects.tracks.size();i++){
-    cv_msgs::PredictedMoGTrack track = objects.tracks[i];
-    for(int j=track.track.size();j<FORCES_N;j++){
-      cv_msgs::PredictedMoG mog = track.track[track.track.size()-1];
-      for (int k = 0; k < mog.pose.size(); k++) {
-        obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose=mog.pose[k].pose;
-        //ToDo
-        transformPose(objects.header.frame_id,controller_config_->target_frame_,obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose);
-
-        // Convert quaternion to RPY
-        ysqr = obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.y * obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.y;
-        t3 = +2.0 * (obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.w * obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.z
-                     + obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.x * obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.y);
-        t4 = +1.0 - 2.0 * (ysqr + obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.z * obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.z);
-
-        obstacles_.lmpcc_obstacles[k].trajectory.poses[j].pose.orientation.z = std::atan2(t3, t4);
-
-        obstacles_.lmpcc_obstacles[k].major_semiaxis[j] = 0.5;
-        obstacles_.lmpcc_obstacles[k].minor_semiaxis[j] = 0.5;
-
-      }
-    }
-  }*/
-}
 void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
 {
     //ROS_INFO("LMPCC::ObstacleCallBack");

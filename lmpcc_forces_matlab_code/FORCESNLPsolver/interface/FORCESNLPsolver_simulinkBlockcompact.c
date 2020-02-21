@@ -77,7 +77,7 @@ static void mdlInitializeSizes(SimStruct *S)
     if (!ssSetNumInputPorts(S, 3)) return;
     	
 	/* Input Port 0 */
-    ssSetInputPortMatrixDimensions(S,  0, 135, 1);
+    ssSetInputPortMatrixDimensions(S,  0, 180, 1);
     ssSetInputPortDataType(S, 0, SS_DOUBLE);
     ssSetInputPortComplexSignal(S, 0, COMPLEX_NO); /* no complex signals suppported */
     ssSetInputPortDirectFeedThrough(S, 0, 1); /* Feedthrough enabled */
@@ -89,7 +89,7 @@ static void mdlInitializeSizes(SimStruct *S)
     ssSetInputPortDirectFeedThrough(S, 1, 1); /* Feedthrough enabled */
     ssSetInputPortRequiredContiguous(S, 1, 1); /*direct input signal access*/	
 	/* Input Port 2 */
-    ssSetInputPortMatrixDimensions(S,  2, 9225, 1);
+    ssSetInputPortMatrixDimensions(S,  2, 6800, 1);
     ssSetInputPortDataType(S, 2, SS_DOUBLE);
     ssSetInputPortComplexSignal(S, 2, COMPLEX_NO); /* no complex signals suppported */
     ssSetInputPortDirectFeedThrough(S, 2, 1); /* Feedthrough enabled */
@@ -100,7 +100,7 @@ static void mdlInitializeSizes(SimStruct *S)
     if (!ssSetNumOutputPorts(S, 1)) return;    
 		
 	/* Output Port 0 */
-    ssSetOutputPortMatrixDimensions(S,  0, 135, 1);
+    ssSetOutputPortMatrixDimensions(S,  0, 180, 1);
     ssSetOutputPortDataType(S, 0, SS_DOUBLE);
     ssSetOutputPortComplexSignal(S, 0, COMPLEX_NO); /* no complex signals suppported */
 
@@ -212,7 +212,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 	
 
 	/* Copy inputs */
-	for( i=0; i<135; i++)
+	for( i=0; i<180; i++)
 	{ 
 		params.x0[i] = (double) x0[i]; 
 	}
@@ -222,7 +222,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 		params.xinit[i] = (double) xinit[i]; 
 	}
 
-	for( i=0; i<9225; i++)
+	for( i=0; i<6800; i++)
 	{ 
 		params.all_parameters[i] = (double) all_parameters[i]; 
 	}
@@ -344,6 +344,36 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 	for( i=0; i<9; i++)
 	{ 
 		outputs[k++] = (real_T) output.x15[i]; 
+	}
+
+	k=135; 
+	for( i=0; i<9; i++)
+	{ 
+		outputs[k++] = (real_T) output.x16[i]; 
+	}
+
+	k=144; 
+	for( i=0; i<9; i++)
+	{ 
+		outputs[k++] = (real_T) output.x17[i]; 
+	}
+
+	k=153; 
+	for( i=0; i<9; i++)
+	{ 
+		outputs[k++] = (real_T) output.x18[i]; 
+	}
+
+	k=162; 
+	for( i=0; i<9; i++)
+	{ 
+		outputs[k++] = (real_T) output.x19[i]; 
+	}
+
+	k=171; 
+	for( i=0; i<9; i++)
+	{ 
+		outputs[k++] = (real_T) output.x20[i]; 
 	}
 
 	

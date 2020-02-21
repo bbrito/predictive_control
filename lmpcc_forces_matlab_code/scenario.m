@@ -23,12 +23,13 @@ deg2rad = @(deg) deg/180*pi; % convert degrees into radians
 rad2deg = @(rad) rad/pi*180; % convert radians into degrees
 
 %% Problem dimensions
-model.N = 15;            % horizon length
+model.N = 20;            % horizon length
 model.nvar = 9;          % number of variables
 model.neq= 6;            % number of equality constraints
-model.nh = 6;            % number of inequality constraint functions
-
-model.npar =  615;          % number of parameters
+model.nh = 2;            % number of inequality constraint functions
+n_other_param = 40;
+n_spline_param = 300;
+model.npar =  n_other_param + n_spline_param;          % number of parameters
 
 %% Inequality constraints
 % upper/lower variable bounds lb <= x <= ub
@@ -49,13 +50,13 @@ model.ub =ub_R;
 %%
 for i=1:model.N
     %% Objective function
-    model.objective{i} = @(z, p) objective_scenario(z, p,i); 
+    model.objective{i} = @(z, p) objective_scenario(z, p); 
 
     model.ineq{i} = @(z,p) inequality_constr_scenario(z, p, i);
 
     %% Upper/lower bounds For road boundaries
-    model.hu{i} = [+inf, +inf,+inf,+inf,+inf,+inf];   
-    model.hl{i} = [1, 1, 1, 1, 1, 1];
+    model.hu{i} = [6, 6];   
+    model.hl{i} = [-inf, -inf];
 end
 %% Dynamics, i.e. equality constraints 
 %model.objective = @(z, p) objective_scenario_try(z, p);

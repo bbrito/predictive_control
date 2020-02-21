@@ -508,7 +508,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
         else
             controlled_velocity_.brake = 0.0;
         //controlled_velocity_.steer = -acadoVariables.u[1]*2.0 ;// / 0.52; // maximum steer
-        controlled_velocity_.steer = forces_output.x01[1] * 2.0;
+        controlled_velocity_.steer = -forces_output.x01[1] * 2.0; 
         ROS_INFO_STREAM("steer_output " << controlled_velocity_.steer);
 
         if(debug_){

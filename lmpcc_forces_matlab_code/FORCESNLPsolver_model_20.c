@@ -13,7 +13,7 @@ extern "C" {
 
 #include <math.h>
 
-#include "FORCESNLPsolver.h"
+#include "FORCESNLPsolver/include/FORCESNLPsolver.h"
 
 #define PRINTF printf
 FORCESNLPsolver_float CASADI_PREFIX(sq)(FORCESNLPsolver_float x) { return x*x;}

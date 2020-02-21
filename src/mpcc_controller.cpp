@@ -235,12 +235,6 @@ bool MPCC::initialize()
     }
 }
 
-void MPCC::pedStopCallBack(const ros_intent_slds::FloatArrayStamped& msg){
-    stop_likelihood_ = msg.data[4];
-    stop_likelihood_ = 1.0;
-    ROS_INFO_STREAM("stop_likelihood_: " << stop_likelihood_);
-};
-
 void MPCC::computeEgoDiscs()
 {
     // Collect parameters for disc representation

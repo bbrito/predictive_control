@@ -58,6 +58,7 @@
 #include <lmpcc_msgs/lmpcc_obstacle.h>
 #include <lmpcc_msgs/lmpcc_obstacle_array.h>
 #include <lmpcc_msgs/IntTrigger.h>
+#include <lmpcc/Plan.h>
 
 //Dynamic Reconfigure server
 #include <boost/thread/mutex.hpp>
@@ -127,6 +128,8 @@ public:
      */
     void StateCallBack(const nav_msgs::Odometry::ConstPtr& msg);
 
+    void VReCallBack(const std_msgs::Float64::ConstPtr& msg);
+
     void ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles);
 
     /**
@@ -186,10 +189,12 @@ public:
     ros::Subscriber robot_state_sub_;
 
     // waypoints subscriber
-    ros::Subscriber waypoints_sub_,ped_stop_sub_;
+    ros::Subscriber waypoints_sub_,ped_stop_sub_,v_ref_sub_;
 
     // subscriber for obstacle feed
     ros::Subscriber obstacle_feed_sub_;
+
+    ros::Subscriber plan_subs_;
 
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
@@ -317,6 +322,8 @@ private:
 
     void getWayPointsCallBack(nav_msgs::Path waypoints);
 
+    void Plan(geometry_msgs::PoseWithCovarianceStamped msg);
+
     /**
      * @brief spinNode: spin node means ROS is still running
      */
@@ -373,6 +380,8 @@ private:
     void  reset_solver();
 
     bool transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose);
+
+    void ResetCallBack(const geometry_msgs::PoseWithCovarianceStamped& msg);
 };
 
 #endif

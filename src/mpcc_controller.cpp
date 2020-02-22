@@ -94,9 +94,11 @@ bool MPCC::initialize()
 
         robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
         obstacle_feed_sub_ = nh.subscribe(controller_config_->sub_ellipse_topic_, 1, &MPCC::ObstacleCallBack, this);
+        v_ref_sub_ = nh.subscribe(controller_config_->vref_topic_, 1, &MPCC::VReCallBack, this);
 
         //obstacles_state_sub_ = nh.subscribe(controller_config_->obs_state_topic_, 1, &MPCC::ObstacleStateCallback, this);
         waypoints_sub_ = nh.subscribe(controller_config_->waypoint_topic_,1, &MPCC::getWayPointsCallBack, this);
+        plan_subs_ = nh.subscribe("/carla/ego_vehicle/initialpose",1, &MPCC::Plan, this);
 
         //Publishers
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
@@ -140,9 +142,6 @@ bool MPCC::initialize()
 
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
-        //service clients
-        //reset_simulation_client_ = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_world");
-        //reset_ekf_client_ = nh.serviceClient<robot_localization::SetPose>("/set_pose");
         update_trigger = nh.serviceClient<lmpcc_msgs::IntTrigger>("update_trigger_int");
         obstacle_trigger.request.value = (int) clock_frequency_;
 
@@ -346,20 +345,17 @@ void  MPCC::reset_solver(){
     }
 }
 
-
-
 // update this function 1/clock_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
     ROS_INFO("Start of runNode");
     int N_iter;
     int exit_code = 0;
-    float obstacle_distance1, obstacle_distance2;
+    //float obstacle_distance1, obstacle_distance2;
     if(event.profile.last_duration.nsec > 1/clock_frequency_*1e9)
         ROS_ERROR_STREAM("Real-time constraint not satisfied... Cycle time: " << event.profile.last_duration);
 
-    if(!simulation_mode_)
-        broadcastTF();
+
     if (plan_ && (waypoints_size_ > 0)) {
 
         forces_params.xinit[0] = current_state_(0);
@@ -381,16 +377,11 @@ void MPCC::runNode(const ros::TimerEvent &event)
             }
         }
 
-        if(plan_) {
-            double smin = forces_params.x0[FORCES_TOTAL_V + 4];
+        double smin = forces_params.x0[FORCES_TOTAL_V + 4];
 
-            traj_i = spline_closest_point(traj_i, ss, smin, window_size_,
+        traj_i = spline_closest_point(traj_i, ss, smin, window_size_,
                                         n_search_points_);
-            forces_params.xinit[4] = smin;
-            //ROS_ERROR_STREAM("smin: " << smin);
-            //ROS_ERROR_STREAM("smin: " << ss[traj_i]);
-            //ROS_ERROR_STREAM("smin: " << ss[traj_i+1]);
-        }
+        forces_params.xinit[4] = smin;
 
         for (N_iter = 0; N_iter < FORCES_N; N_iter++) {
             int k = N_iter*FORCES_NPAR;
@@ -407,13 +398,14 @@ void MPCC::runNode(const ros::TimerEvent &event)
             forces_params.all_parameters[k + 16] = ss[traj_i];       // s1
             forces_params.all_parameters[k + 17] = ss[traj_i + 1];       //s2
             forces_params.all_parameters[k + 18] = ss[traj_i + 1] + 0.02;       // d
-            obstacle_distance1 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
-            obstacle_distance2 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
+            //obstacle_distance1 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
+            //obstacle_distance2 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
 
             forces_params.all_parameters[k + 19] = cost_contour_weight_factors_(0);
             forces_params.all_parameters[k + 20] = cost_contour_weight_factors_(1);     // weight lag error
             forces_params.all_parameters[k + 21] = cost_control_weight_factors_(0);    // weight acceleration
             forces_params.all_parameters[k + 22] = cost_control_weight_factors_(1);   // weight delta
+            forces_params.all_parameters[k + 23] = reference_velocity_;
             forces_params.all_parameters[k + 24] = slack_weight_;                     //slack weight
             forces_params.all_parameters[k + 25] = repulsive_weight_;                     //repulsive weight
             forces_params.all_parameters[k + 38] = velocity_weight_;                     //repulsive weight
@@ -428,7 +420,8 @@ void MPCC::runNode(const ros::TimerEvent &event)
             //forces_params.all_parameters[k + 28] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
             //forces_params.all_parameters[k + 19] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
             //ToDo check convertion from quaternion to RPY angle
-            /*forces_params.all_parameters[k + 30] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
+            /*
+	        forces_params.all_parameters[k + 30] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
             forces_params.all_parameters[k + 31] = obstacles_.lmpcc_obstacles[0].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
             forces_params.all_parameters[k + 32] = obstacles_.lmpcc_obstacles[0].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
 
@@ -441,30 +434,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
             forces_params.all_parameters[k + 41] = right_offset_;
             forces_params.all_parameters[k + 42] = left_offset_;*/
 
-            if (goal_reached_) {
-                reduced_reference_velocity_ = current_state_(3)-4*0.25*(N_iter+1);
-                if(reduced_reference_velocity_ < 0)
-                    reduced_reference_velocity_=0;
-
-                forces_params.all_parameters[k + 23] = reduced_reference_velocity_;
-            } else {
-
-                reduced_reference_velocity_ = current_state_(3) + 1.5 * 0.25 * (N_iter+1);
-                if (reduced_reference_velocity_ > reference_velocity_)
-                    reduced_reference_velocity_ = reference_velocity_;
-                forces_params.all_parameters[k + 23] = reduced_reference_velocity_;
-
-                forces_params.all_parameters[k + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
-                forces_params.all_parameters[k + 9] = ref_path_x.m_b[traj_i + 1];
-                forces_params.all_parameters[k + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
-                forces_params.all_parameters[k + 11] = ref_path_x.m_d[traj_i + 1];
-                forces_params.all_parameters[k + 12] = ref_path_y.m_a[traj_i + 1];        // spline coefficients
-                forces_params.all_parameters[k + 13] = ref_path_y.m_b[traj_i + 1];
-                forces_params.all_parameters[k + 14] = ref_path_y.m_c[traj_i + 1];        // spline coefficients
-                forces_params.all_parameters[k + 15] = ref_path_y.m_d[traj_i + 1];
-            }
-
-            //forces_params.all_parameters[k + 23] = ss[traj_i + 1] + 0.02;
         }
 
         /*ROS_INFO_STREAM("x0[0] " << forces_params.x0[0]);
@@ -489,17 +458,6 @@ void MPCC::runNode(const ros::TimerEvent &event)
         ROS_INFO_STREAM("primal objective " << forces_info.pobj);
         ROS_INFO_STREAM("number of iterations for optimality " << forces_info.it2opt);
 
-        /*int j = 0;
-        while (exit_code !=1 && j < (n_iterations_-1)) {
-
-            exit_code = FORCESNLPsolver_solve(&forces_params, &forces_output, &forces_info, NULL, extfunc_eval);
-            ROS_INFO_STREAM("exit_code" << exit_code);
-
-            //printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
-            //ROS_INFO_STREAM(acado_getObjective());
-            j++;    //acado_printDifferentialVariables();
-
-        }*/
 
         controlled_velocity_.throttle = forces_output.x01[0]/10.0;// / 1.5; // maximum acceleration 1.5m/s
         ROS_INFO_STREAM("accel_output " << controlled_velocity_.throttle);
@@ -522,42 +480,40 @@ void MPCC::runNode(const ros::TimerEvent &event)
         //broadcastPathPose();
         brake_.data = controlled_velocity_.brake;
         //cost_.data = acado_getObjective();
-    }
 
-    if(exit_code!=1) {
+        if(exit_code!=1) {
+            publishZeroJointVelocity();
+        }
+        else {
+            controlled_velocity_pub_.publish(controlled_velocity_);
+            // Initialize initial state with next predicted state
+            for(int i = 0; i < FORCES_TOTAL_V; i++){
+                forces_params.x0[i] = forces_output.x01[i];
+                forces_params.x0[i+FORCES_TOTAL_V] = forces_output.x02[i];
+                forces_params.x0[i+2*FORCES_TOTAL_V] = forces_output.x03[i];
+                forces_params.x0[i+3*FORCES_TOTAL_V] = forces_output.x04[i];
+                forces_params.x0[i+4*FORCES_TOTAL_V] = forces_output.x05[i];
+                forces_params.x0[i+5*FORCES_TOTAL_V] = forces_output.x06[i];
+                forces_params.x0[i+6*FORCES_TOTAL_V] = forces_output.x07[i];
+                forces_params.x0[i+7*FORCES_TOTAL_V] = forces_output.x08[i];
+                forces_params.x0[i+8*FORCES_TOTAL_V] = forces_output.x09[i];
+                forces_params.x0[i+9*FORCES_TOTAL_V] = forces_output.x10[i];
+                forces_params.x0[i+10*FORCES_TOTAL_V] = forces_output.x11[i];
+                forces_params.x0[i+11*FORCES_TOTAL_V] = forces_output.x12[i];
+                forces_params.x0[i+12*FORCES_TOTAL_V] = forces_output.x13[i];
+                forces_params.x0[i+13*FORCES_TOTAL_V] = forces_output.x14[i];
+                forces_params.x0[i+14*FORCES_TOTAL_V] = forces_output.x15[i];
+                forces_params.x0[i+15*FORCES_TOTAL_V] = forces_output.x16[i];
+                forces_params.x0[i+16*FORCES_TOTAL_V] = forces_output.x17[i];
+                forces_params.x0[i+17*FORCES_TOTAL_V] = forces_output.x18[i];
+                forces_params.x0[i+18*FORCES_TOTAL_V] = forces_output.x19[i];
+                forces_params.x0[i+19*FORCES_TOTAL_V] = forces_output.x20[i];
+            }
+        }
+    }
+    else
         publishZeroJointVelocity();
-    }
-    else {
-        controlled_velocity_pub_.publish(controlled_velocity_);
-    }
-    /*if (acado_getKKT() != acado_getKKT())
-    {
-        //reset_solver();
-        ROS_INFO_STREAM("is nan: resetting");
-    }*/
 
-    for(int i = 0; i < FORCES_TOTAL_V; i++){
-        forces_params.x0[i] = forces_output.x01[i]; 
-        forces_params.x0[i+FORCES_TOTAL_V] = forces_output.x02[i];
-        forces_params.x0[i+2*FORCES_TOTAL_V] = forces_output.x03[i];
-        forces_params.x0[i+3*FORCES_TOTAL_V] = forces_output.x04[i];
-        forces_params.x0[i+4*FORCES_TOTAL_V] = forces_output.x05[i];
-        forces_params.x0[i+5*FORCES_TOTAL_V] = forces_output.x06[i];
-        forces_params.x0[i+6*FORCES_TOTAL_V] = forces_output.x07[i];
-        forces_params.x0[i+7*FORCES_TOTAL_V] = forces_output.x08[i];
-        forces_params.x0[i+8*FORCES_TOTAL_V] = forces_output.x09[i];
-        forces_params.x0[i+9*FORCES_TOTAL_V] = forces_output.x10[i];
-        forces_params.x0[i+10*FORCES_TOTAL_V] = forces_output.x11[i];
-        forces_params.x0[i+11*FORCES_TOTAL_V] = forces_output.x12[i];
-        forces_params.x0[i+12*FORCES_TOTAL_V] = forces_output.x13[i];
-        forces_params.x0[i+13*FORCES_TOTAL_V] = forces_output.x14[i];
-        forces_params.x0[i+14*FORCES_TOTAL_V] = forces_output.x15[i];
-        forces_params.x0[i+15*FORCES_TOTAL_V] = forces_output.x16[i];
-        forces_params.x0[i+16*FORCES_TOTAL_V] = forces_output.x17[i];
-        forces_params.x0[i+17*FORCES_TOTAL_V] = forces_output.x18[i];
-        forces_params.x0[i+18*FORCES_TOTAL_V] = forces_output.x19[i];
-        forces_params.x0[i+19*FORCES_TOTAL_V] = forces_output.x20[i];
-    }
 }
 
 int MPCC::spline_closest_point(int cur_traj_i, std::vector<double> ss_vec, double &s_guess, double window, int n_tries){
@@ -745,6 +701,25 @@ double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
   return std::atan2(t3, t4);
 }
 
+void MPCC::Plan(geometry_msgs::PoseWithCovarianceStamped msg){
+
+    plan_=false;
+
+    if(plan_){
+        reset_solver();
+        ros::Duration(2.0).sleep();
+        plotRoad();
+        publishSplineTrajectory();
+        traj_i = 0;
+        goal_reached_ = false;
+        timer_.start();
+        enable_output_ = true;
+    }
+    else{
+        timer_.stop();
+    }
+}
+
 void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level){
 
     ROS_INFO("reconfigure callback!");
@@ -767,11 +742,12 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     // reset world
     reset_world_ = config.reset_world;
     if(reset_world_) {
-        reset_simulation_client_.call(reset_msg_);
-        reset_ekf_client_.call(reset_pose_msg_);
         reset_solver();
         traj_i = 0;
         goal_reached_ = false;
+        reset_world_ = false;
+        config.plan = false;
+        config.enable_output = false;
     }
 
     //Search window parameters
@@ -828,6 +804,11 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     else{
         timer_.stop();
     }
+}
+
+void MPCC::VReCallBack(const std_msgs::Float64::ConstPtr& msg){
+    reference_velocity_ = msg->data;
+    plan_=true;
 }
 
 // read current position and velocity of robot joints

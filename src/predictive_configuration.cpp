@@ -171,6 +171,12 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
     return false;
   }
 
+  if (!nh.getParam ("vref_topic", vref_topic_) )
+  {
+    ROS_WARN(" Parameter 'vref_topic' not set on %s node " , ros::this_node::getName().c_str());
+    return false;
+  }
+
   if (!nh.getParam ("obstacles/n_obstacles", n_obstacles_) )
   {
     ROS_WARN(" Parameter 'n_obstacles' not set on %s node " , ros::this_node::getName().c_str());

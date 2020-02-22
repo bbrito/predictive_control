@@ -23,7 +23,8 @@ publish:
     cmd_sim:      '/prius'
 robot_state_topic: '/carla/ego_vehicle/odometry'
 obs_state_topic: '/ellipse_objects_feed'
-waypoint_topic: '/path_publisher/path' 
+waypoint_topic: '/path_publisher/path'
+vref_topic: 'rodrigo'
 
 # Kinematic chain parameter
 robot_base_link: ego_vehicle

@@ -808,7 +808,12 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
 
 void MPCC::VReCallBack(const std_msgs::Float64::ConstPtr& msg){
     reference_velocity_ = msg->data;
+    ROS_INFO_STREAM("New velocity ref: " << reference_velocity_);
+
+    reference_velocity_ = std::min(std::max(reference_velocity_,0.0),10.0);
+
     plan_=true;
+    enable_output_ = true;
 }
 
 // read current position and velocity of robot joints

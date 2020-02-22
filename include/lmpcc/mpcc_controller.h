@@ -58,7 +58,6 @@
 #include <lmpcc_msgs/lmpcc_obstacle.h>
 #include <lmpcc_msgs/lmpcc_obstacle_array.h>
 #include <lmpcc_msgs/IntTrigger.h>
-#include <lmpcc/Plan.h>
 
 //Dynamic Reconfigure server
 #include <boost/thread/mutex.hpp>

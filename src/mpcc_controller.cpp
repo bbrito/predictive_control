@@ -712,12 +712,12 @@ double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
 
 void MPCC::Plan(geometry_msgs::PoseWithCovarianceStamped msg){
 
-    plan_=false;
+    plan_=true;
 
     if(plan_){
         reset_solver();
-        ros::Duration(2.0).sleep();
-        plotRoad();
+        ros::Duration(3.0).sleep();
+        Ref_path(X_road, Y_road, Theta_road);
         publishSplineTrajectory();
         traj_i = 0;
         goal_reached_ = false;

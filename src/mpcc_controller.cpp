@@ -340,10 +340,9 @@ void  MPCC::reset_solver(){
     for (int i = 0; i < *(&forces_params.xinit + 1) - forces_params.xinit; i++){
         forces_params.xinit[i] = 0.0;
     }
-    int k = 0;
+
     for (int i = 0; i < FORCES_N*FORCES_TOTAL_V; i++){
-        forces_params.x0[k] = 0.0;
-        k++;
+        forces_params.x0[i] = 0.0;
     }
 }
 
@@ -724,6 +723,10 @@ void MPCC::Plan(geometry_msgs::PoseWithCovarianceStamped msg){
             ros::Duration(0.1).sleep();
         }
         reset_carla_pub_.publish(msg);
+        current_state_(0)=0;
+        current_state_(1)=0;
+        current_state_(2)=0;
+        current_state_(3)=0;
         ros::Duration(1.0).sleep();
         Ref_path(X_road, Y_road, Theta_road);
         publishSplineTrajectory();

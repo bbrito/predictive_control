@@ -715,7 +715,7 @@ double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
 void MPCC::Plan(geometry_msgs::PoseWithCovarianceStamped msg){
 
     plan_=true;
-    geometry_msgs::PoseWithCovarianceStamped reset_msg;
+    //geometry_msgs::PoseWithCovarianceStamped reset_msg;
     if(plan_){
         reset_solver();
 
@@ -723,7 +723,7 @@ void MPCC::Plan(geometry_msgs::PoseWithCovarianceStamped msg){
             publishZeroJointVelocity();
             ros::Duration(0.1).sleep();
         }
-        reset_carla_pub_.publish(reset_msg);
+        reset_carla_pub_.publish(msg);
         ros::Duration(1.0).sleep();
         Ref_path(X_road, Y_road, Theta_road);
         publishSplineTrajectory();

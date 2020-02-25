@@ -98,9 +98,11 @@ bool MPCC::initialize()
 
         //obstacles_state_sub_ = nh.subscribe(controller_config_->obs_state_topic_, 1, &MPCC::ObstacleStateCallback, this);
         waypoints_sub_ = nh.subscribe(controller_config_->waypoint_topic_,1, &MPCC::getWayPointsCallBack, this);
-        plan_subs_ = nh.subscribe("/carla/ego_vehicle/initialpose",1, &MPCC::Plan, this);
+        plan_subs_ = nh.subscribe("/carla/ego_vehicle/initialpose2",1, &MPCC::Plan, this);
 
         //Publishers
+        reset_carla_pub_ = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/carla/ego_vehicle/initialpose",1);
+
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
         pred_cmd_pub_ = nh.advertise<nav_msgs::Path>("predicted_cmd",1);
         cost_pub_ = nh.advertise<std_msgs::Float64>("cost",1);
@@ -713,10 +715,16 @@ double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
 void MPCC::Plan(geometry_msgs::PoseWithCovarianceStamped msg){
 
     plan_=true;
-
+    geometry_msgs::PoseWithCovarianceStamped reset_msg;
     if(plan_){
         reset_solver();
-        ros::Duration(3.0).sleep();
+
+        for(int j=0;j<10;j++){
+            publishZeroJointVelocity();
+            ros::Duration(0.1).sleep();
+        }
+        reset_carla_pub_.publish(reset_msg);
+        ros::Duration(1.0).sleep();
         Ref_path(X_road, Y_road, Theta_road);
         publishSplineTrajectory();
         traj_i = 0;

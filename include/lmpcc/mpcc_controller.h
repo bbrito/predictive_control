@@ -198,7 +198,7 @@ public:
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
     ros::Publisher marker_pub_;
-    ros::Subscriber  obstacles_state_sub_;
+    ros::Subscriber  obstacles_state_sub_,reset_carla_pub_;
 
     ros::Publisher  joint_state_pub_;
 

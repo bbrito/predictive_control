@@ -1,24 +1,28 @@
 - git:
-    local-name: predictive_control
-    uri: https://github.com/bbrito/predictive_control.git
+    local-name: jackal_simulator
+    uri: https://github.com/bbrito/jackal_simulator.git
     version: master
 - git:
-    local-name: base_moveit_controller_manager
-    uri: https://github.com/bbrito/base_moveit_controller_manager.git
-    version: master
+    local-name: jackal
+    uri: https://github.com/bbrito/jackal-1.git
+    version: kinetic-devel
+- git:
+    local-name: lmpcc
+    uri: https://github.com/bbrito/lmpcc.git
+    version: carla_forces
 - git:
     local-name: mobile_robot_state_publisher
     uri: https://github.com/bbrito/mobile_robot_state_publisher.git
+    version: cadrl
+- git:
+    local-name: lmpcc_msgs
+    uri: https://github.com/bbrito/lmpcc_msgs.git
     version: master
 - git:
-    local-name: jackal_moveit_description
-    uri: https://github.com/bbrito/jackal_moveit_description.git
+    local-name: lmpcc_obstacle_feed
+    uri: https://github.com/bbrito/lmpcc_obstacle_feed.git
     version: master
 - git:
-    local-name: obstacle_feed
-    uri: https://github.com/bbrito/obstacle_feed.git
-    version: master
-- git:
-    local-name: autoware_msgs
-    uri: https://github.com/bbrito/autoware_msgs
+    local-name: static_collision_avoidance
+    uri: https://github.com/tud-cor/static_collision_avoidance
     version: master

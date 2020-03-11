@@ -97,17 +97,12 @@ class MPCC
 
 public:
 
-    //DYnamic reconfigure server
-    boost::shared_ptr<dynamic_reconfigure::Server<lmpcc::PredictiveControllerConfig> > reconfigure_server_;
-    boost::recursive_mutex reconfig_mutex_;
-    void reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level);
-
     /**
      * @brief MPCC: Default constructor, allocate memory
      */
     MPCC()
     {
-        this->reconfigure_server_.reset();
+
     };
 
     /**
@@ -117,7 +112,7 @@ public:
 
     /**
      * @brief initialize: Initialize all helper class of predictive control and subscibe joint state and publish controlled joint velocity
-     * @return: True with successuflly initialize all classes else false
+     * @return: True with successfully initialize all classes else false
      */
     bool initialize();
 
@@ -127,14 +122,9 @@ public:
      */
     void StateCallBack(const nav_msgs::Odometry::ConstPtr& msg);
 
-    void VReCallBack(const std_msgs::Float64::ConstPtr& msg);
+    void VRefCallBack(const std_msgs::Float64::ConstPtr& msg);
 
     void ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles);
-
-    /**
-     * @brief controlSquence: Known as main control of all classes
-     */
-    void controlSquence(void);
 
     /**
      * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
@@ -182,7 +172,7 @@ public:
     void plotRoad(void);
     /** public data member */
     //Service clients
-    ros::ServiceClient reset_simulation_client_, reset_ekf_client_, update_trigger;
+    ros::ServiceClient reset_simulation_client_, reset_ekf_client_;
 
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
@@ -194,6 +184,8 @@ public:
     ros::Subscriber obstacle_feed_sub_;
 
     ros::Subscriber plan_subs_;
+
+    ros::ServiceServer reset_server_;
 
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
@@ -214,7 +206,6 @@ public:
     bool reset_world_;
     bool plan_;
     bool replan_;
-    double left_offset_, right_offset_;
     bool debug_;
     int n_iterations_;
     bool simulation_mode_;
@@ -241,8 +232,6 @@ public:
     int n_search_points_;
     bool goal_reached_;
 
-    float stop_likelihood_,bb_hack_;
-
     //reset simulation msg
     std_srvs::Empty reset_msg_;
     robot_localization::SetPose reset_pose_msg_;
@@ -251,9 +240,6 @@ public:
 private:
 
     ros::NodeHandle nh;
-
-    // DEBUG
-    bool plotting_result_;
 
     tf::TransformListener tf_listener_;
 
@@ -266,11 +252,7 @@ private:
     // Timmer
     ros::Timer timer_;
 
-    // activate output of this node
-    bool activate_debug_output_;
-
     std::string target_frame_;
-
 
     // store pose value for visualize trajectory
     //geometry_msgs::PoseArray traj_pose_array_;
@@ -279,18 +261,11 @@ private:
     // Distance between traget frame and tracking frame relative to base link
     Eigen::VectorXd current_state_, last_state_;
 
-    Eigen::VectorXd min_velocity_limit_;
-    Eigen::VectorXd max_velocity_limit_;
-
-    Eigen::VectorXd cost_contour_weight_factors_;
-    Eigen::VectorXd cost_control_weight_factors_;
-
     double slack_weight_;
     double repulsive_weight_;
-    double reference_velocity_,reduced_reference_velocity_;
+    double reference_velocity_;
     double speed_;
     double velocity_weight_;
-    double ini_vel_x_;
     double waypoints_size_;
     double last_waypoints_size_;
 
@@ -334,6 +309,8 @@ private:
      * @param event: Used for computation of duration of first and last event
      */
     void runNode(const ros::TimerEvent& event);
+
+    void ControlLoop();
 
     /**
      * @brief publishZeroJointVelocity: published zero joint velocity is statisfied cartesian distance

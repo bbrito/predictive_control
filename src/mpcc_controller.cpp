@@ -73,34 +73,34 @@ bool MPCC::initialize()
             return false;
         }
 
-        //ROS_INFO("initialize data member of class");
         clock_frequency_ = controller_config_->clock_frequency_;
 
-        //DEBUG
-        activate_debug_output_ = controller_config_->activate_debug_output_;
-        plotting_result_ = controller_config_->plotting_result_;
 
-        // DEBUG
-        if (controller_config_->activate_controller_node_output_)
+        if (controller_config_->activate_debug_output_)
         {
             ROS_WARN("===== DEBUG INFO ACTIVATED =====");
         }
 
-        // resize position and velocity velocity vectors
         current_state_ = Eigen::Vector4d(0,0,0,0);
         last_state_ = Eigen::Vector4d(0,0,0,0);
 
         waypoints_size_ = 0; // min 2 waypoints
 
+        /******************************** Subscriber **********************************************************/
+        // Subscriber providing information about vehicle state
         robot_state_sub_ = nh.subscribe(controller_config_->robot_state_topic_, 1, &MPCC::StateCallBack, this);
+        // Subscriber providing information about dynamic obstacles
         obstacle_feed_sub_ = nh.subscribe(controller_config_->sub_ellipse_topic_, 1, &MPCC::ObstacleCallBack, this);
+        // Subscriber providing information about velocity ref
         v_ref_sub_ = nh.subscribe(controller_config_->vref_topic_, 1, &MPCC::VReCallBack, this);
-
-        //obstacles_state_sub_ = nh.subscribe(controller_config_->obs_state_topic_, 1, &MPCC::ObstacleStateCallback, this);
+        // Subscriber providing information about reference path
         waypoints_sub_ = nh.subscribe(controller_config_->waypoint_topic_,1, &MPCC::getWayPointsCallBack, this);
-        plan_subs_ = nh.subscribe("/carla/ego_vehicle/initialpose",1, &MPCC::Plan, this);
 
-        //Publishers
+
+        /******************************** Service Servers **********************************************************/
+        reset_server_ = nh.advertiseService(controller_config_->reset_topic_, &MPCC::Reset);
+
+        /******************************** Publishers **********************************************************/
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
         pred_cmd_pub_ = nh.advertise<nav_msgs::Path>("predicted_cmd",1);
         cost_pub_ = nh.advertise<std_msgs::Float64>("cost",1);
@@ -115,19 +115,21 @@ bool MPCC::initialize()
         feedback_pub_ = nh.advertise<lmpcc::control_feedback>("controller_feedback",1);
         //Road publisher
         marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("road", 10);
-        ros::Duration(1).sleep();
+
+
+        // Timer used for unsynchronous mode
         timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
-       
+
+        // Control variables
+        controlled_velocity_.steer = 0;
+        controlled_velocity_.throttle = 0;
+        controlled_velocity_.brake = 0;
 
         //Initialize trajectory variables
         next_point_dist = 0;
         goal_dist = 0;
         prev_point_dist = 0;
-
         goal_reached_ = false;
-        controlled_velocity_.steer = 0;
-        controlled_velocity_.throttle = 0;
-        controlled_velocity_.brake = 0;
 
         //ROS_INFO("initialize trajectory variable to plot prediction trajectory");
         spline_traj_.poses.resize(100);
@@ -142,24 +144,19 @@ bool MPCC::initialize()
 
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
 
-        update_trigger = nh.serviceClient<lmpcc_msgs::IntTrigger>("update_trigger_int");
-        obstacle_trigger.request.value = (int) clock_frequency_;
 
         ROS_INFO("initialize state and control weight factors");
-        cost_contour_weight_factors_ = transformStdVectorToEigenVector(controller_config_->contour_weight_factors_);
-        cost_control_weight_factors_ = transformStdVectorToEigenVector(controller_config_->control_weight_factors_);
         slack_weight_ = controller_config_->slack_weight_;
         repulsive_weight_ = controller_config_->repulsive_weight_;
         reference_velocity_ = controller_config_->reference_velocity_;
-        reduced_reference_velocity_ = reference_velocity_;
-        ini_vel_x_ = controller_config_->ini_vel_x_;
+
         ros::NodeHandle nh_predictive("predictive_controller");
 
         ROS_INFO("Setting up dynamic_reconfigure server for the TwistControlerConfig parameters");
         reconfigure_server_.reset(new dynamic_reconfigure::Server<lmpcc::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
         
-        // Initialize obstacles
+        // Initialize obstacles variables
         int N = FORCES_N; // hack.. needs to be beter computed
         obstacles_.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
         for (int obst_it = 0; obst_it < controller_config_->n_obstacles_; obst_it++)
@@ -175,6 +172,7 @@ bool MPCC::initialize()
                 obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis[t] = 0.001;
             }
         }
+
         computeEgoDiscs();
 
         //Controller options
@@ -186,8 +184,7 @@ bool MPCC::initialize()
         debug_ = false;
         n_iterations_ = 100;
         simulation_mode_ = true;
-        bb_hack_ =0;
-        stop_likelihood_=1;
+
         //Plot variables
         ellips1.type = visualization_msgs::Marker::CYLINDER;
         ellips1.id = 60;
@@ -273,7 +270,7 @@ void MPCC::computeEgoDiscs()
 }
 
 void MPCC::broadcastPathPose(){
-
+    // Plots a Axis to display the path variable location
     geometry_msgs::TransformStamped transformStamped;
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = controller_config_->target_frame_;
@@ -348,7 +345,10 @@ void  MPCC::reset_solver(){
 // update this function 1/clock_frequency
 void MPCC::runNode(const ros::TimerEvent &event)
 {
-    ROS_INFO("Start of runNode");
+    ControlLoop();
+}
+void MPCC::ControlLoop()
+{
     int N_iter;
     int exit_code = 0;
     //float obstacle_distance1, obstacle_distance2;
@@ -701,22 +701,24 @@ double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
   return std::atan2(t3, t4);
 }
 
-void MPCC::Plan(geometry_msgs::PoseWithCovarianceStamped msg){
+void MPCC::Reset(geometry_msgs::PoseWithCovarianceStamped::Request  &req, geometry_msgs::PoseWithCovarianceStamped::Response &res){
 
     plan_=false;
 
     if(plan_){
         reset_solver();
-        ros::Duration(2.0).sleep();
+        ros::Duration(1.0).sleep();
         plotRoad();
         publishSplineTrajectory();
         traj_i = 0;
         goal_reached_ = false;
-        timer_.start();
+        if (controller_config_->sync_mode_)
+            timer_.start();
         enable_output_ = true;
     }
     else{
-        timer_.stop();
+        if (controller_config_->sync_mode_)
+            timer_.stop();
     }
 }
 
@@ -728,7 +730,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     cost_control_weight_factors_(0) = config.Ka;
     cost_control_weight_factors_(1) = config.Kdelta;
     velocity_weight_ = config.Kv;
-    ini_vel_x_ = config.ini_v0;
+
     bb_hack_ = config.bb_hack;
     slack_weight_= config.Ws;
     repulsive_weight_ = config.WR;
@@ -816,11 +818,11 @@ void MPCC::VReCallBack(const std_msgs::Float64::ConstPtr& msg){
     enable_output_ = true;
 }
 
-// read current position and velocity of robot joints
+// read current position and velocity of the robot
 void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 {
    double ysqr, t3, t4;
-   if (activate_debug_output_)
+   if (controller_config_->activate_debug_output_)
    {
 //  ROS_INFO("MPCC::StateCallBack");
    }
@@ -843,47 +845,20 @@ void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
 
 void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
 {
-    //ROS_INFO("LMPCC::ObstacleCallBack");
-    lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
-    total_obstacles.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
-
-    total_obstacles.lmpcc_obstacles = received_obstacles.lmpcc_obstacles;
-
     //ROS_INFO_STREAM("-- Received # obstacles: " << received_obstacles.lmpcc_obstacles.size());
     //ROS_INFO_STREAM("-- Expected # obstacles: " << controller_config_->n_obstacles_);
 
-    if (received_obstacles.lmpcc_obstacles.size() < controller_config_->n_obstacles_)
+    if (received_obstacles.lmpcc_obstacles.size() != controller_config_->n_obstacles_)
     {
-        for (int obst_it = received_obstacles.lmpcc_obstacles.size(); obst_it < controller_config_->n_obstacles_; obst_it++)
-        {
-            total_obstacles.lmpcc_obstacles[obst_it].pose.position.x = current_state_(0) - 100;
-            total_obstacles.lmpcc_obstacles[obst_it].pose.position.y = 0;
-            total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = 0;
-            total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis.resize(FORCES_N);
-            total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis.resize(FORCES_N);
-            total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses.resize(FORCES_N);
-            for (int traj_it = 0; traj_it < FORCES_N; traj_it++)
-            {
-                total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = current_state_(0) - 100;
-                total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = 0;
-                total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = 0;
-                total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis[traj_it] = 0.001;
-                total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis[traj_it] = 0.001;
-            }
-        }
+        ROS_ERROR_STREAM("Number of obstacles in ObstacleFeed and LMPCC do not match!!!");
     }
 
-    //obstacles_.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
-
-    for (int total_obst_it = 0; total_obst_it < controller_config_->n_obstacles_; total_obst_it++)
-    {
-        obstacles_.lmpcc_obstacles[total_obst_it] = total_obstacles.lmpcc_obstacles[total_obst_it];
-    }
+    obstacles_ = received_obstacles;
 }
 
 void MPCC::publishZeroJointVelocity()
 {
-    if (activate_debug_output_)
+    if (controller_config_->activate_debug_output_)
     {
        ROS_INFO("Publishing ZERO joint velocity!!");
     }

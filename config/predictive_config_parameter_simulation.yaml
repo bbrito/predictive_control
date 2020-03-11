@@ -1,20 +1,16 @@
 # Simulation mode
 simulation_mode: false             # Is set in launch file!
 gazebo_simulation: true
+sync_mode: true
 ### Kinematic configuration parameter
 
 # Debug mode
 activate_output: true
 activate_debug_output: true
 activate_controller_node_output: true
-plotting_result: true
 
 # Clock frequency //hz
 clock_frequency: 25
-
-#Optimal control problem dimensions
-state_dim: 5
-control_dim: 2
 
 # Input and output topics
 publish:
@@ -28,12 +24,6 @@ waypoint_topic: '/path_publisher/path'
 robot_base_link: base_link
 target_frame: map # world fixed frame but will be changed according to robot_state_topic
 global_path_frame: local_car
-
-# Weight on the slack variable for collision collision
-slack_weight: 10000
-repulsive_weight: 0.1
-reference_velocity: 2.0
-initial_speed: 0.0
 
 # Parameters for predefined reference path
 global_path:
@@ -54,26 +44,4 @@ obstacles:
       n_discs: 3
       ego_l: 4.540
       ego_w: 1.760
-
-constraints:
-     velocity_constraints:
-           min: [0]
-           max: [13.8]
-     #orientation_constraints:
-
-acado_config:
-     max_num_iteration: 70
-     kkt_tolerance: 1e-3
-     integrator_tolerance: 1e-3
-     start_time_horizon: 0.0
-     end_time_horizon: 2.0 # 5.0  # control and prediction horizon
-     discretization_intervals: 50
-     sampling_time: 0.04
-     weight_factors:
-           contour_weight_factors:
-                #Wcontour and Wlag
-                [0.1, 0.1]
-           control_weight_factors:
-                # Wa and Wdelta
-                [1.0, 4.0]
                 

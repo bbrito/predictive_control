@@ -1,4 +1,3 @@
-
 #ifndef PREDICTIVE_CONFIGURATION_H
 #define PREDICTIVE_CONFIGURATION_H
 
@@ -54,15 +53,14 @@ public:
     /** data member of class **/
     // DEBUG
     bool activate_debug_output_;
-    bool plotting_result_;
     bool activate_controller_node_output_;
     bool initialize_success_;
-    bool set_velocity_constraints_;
+    bool sync_mode_;
     bool gazebo_simulation_,simulation_mode_;
 
     /** inputs and output topic definition **/
     std::string cmd_, cmd_sim_;
-    std::string robot_state_topic_;
+    std::string robot_state_topic_, reset_topic_;
 
     // use for finding kinematic chain and urdf model
     std::string robot_base_link_;
@@ -75,12 +73,6 @@ public:
 
     // limiting parameter, use to enforce joint to be in limit
     std::vector<std::string> collision_check_obstacles_;
-    std::vector<double> vel_min_limit_;
-    std::vector<double> vel_max_limit_;
-
-    // Initialize vectors for contour error weights
-    std::vector<double> contour_weight_factors_;
-    std::vector<double> control_weight_factors_;
 
     // Initialize vectors for reference path points
     std::vector<double> ref_x_;
@@ -97,21 +89,8 @@ public:
     double ini_vel_x_;
     // predictive control
     double clock_frequency_;  //hz clock Frequency
-    double sampling_time_;
-    int state_dim_;
-    int control_dim_;
-    double road_width_right_,road_width_left_;
 
-    // self collision distance
-    double collision_weight_factor_;
-
-    // ACADO configuration
     int max_num_iteration_;
-    int discretization_intervals_;
-    double kkt_tolerance_;
-    double integrator_tolerance_;
-    double start_time_horizon_;
-    double end_time_horizon_;
 
     int n_obstacles_;
     int n_discs_;
@@ -125,10 +104,6 @@ private:
      */
     void free_allocated_memory();
 
-    /**
-     * @brief print_configuration_parameter: debug purpose print set data member of this class
-     */
-    void print_configuration_parameter();
 
 };
 

@@ -337,8 +337,7 @@ void  MPCC::reset_solver(){
     }
     int k = 0;
     for (int i = 0; i < FORCES_N*FORCES_TOTAL_V; i++){
-        forces_params.x0[k] = 0.0;
-        k++;
+        forces_params.x0[i] = 0.0;
     }
 }
 
@@ -394,6 +393,15 @@ void MPCC::ControlLoop()
             forces_params.all_parameters[k + 5] = ref_path_y.m_b[traj_i];
             forces_params.all_parameters[k + 6] = ref_path_y.m_c[traj_i];        // spline coefficients
             forces_params.all_parameters[k + 7] = ref_path_y.m_d[traj_i];
+
+            forces_params.all_parameters[k + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
+            forces_params.all_parameters[k + 9] = ref_path_x.m_b[traj_i + 1];
+            forces_params.all_parameters[k + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
+            forces_params.all_parameters[k + 11] = ref_path_x.m_d[traj_i + 1];
+            forces_params.all_parameters[k + 12] = ref_path_y.m_a[traj_i + 1];        // spline coefficients
+            forces_params.all_parameters[k + 13] = ref_path_y.m_b[traj_i + 1];
+            forces_params.all_parameters[k + 14] = ref_path_y.m_c[traj_i + 1];        // spline coefficients
+            forces_params.all_parameters[k + 15] = ref_path_y.m_d[traj_i + 1];
 
             forces_params.all_parameters[k + 16] = ss[traj_i];       // s1
             forces_params.all_parameters[k + 17] = ss[traj_i + 1];       //s2
@@ -707,6 +715,16 @@ void MPCC::Reset(geometry_msgs::PoseWithCovarianceStamped::Request  &req, geomet
 
     if(plan_){
         reset_solver();
+	// only needed for Carla
+        for(int j=0;j<10;j++){
+            publishZeroJointVelocity();
+            ros::Duration(0.1).sleep();
+        }
+        reset_carla_pub_.publish(msg);
+        current_state_(0)=0;
+        current_state_(1)=0;
+        current_state_(2)=0;
+        current_state_(3)=0;
         ros::Duration(1.0).sleep();
         plotRoad();
         publishSplineTrajectory();

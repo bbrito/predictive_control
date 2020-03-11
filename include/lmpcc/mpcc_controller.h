@@ -192,7 +192,7 @@ public:
     ros::Publisher marker_pub_;
     ros::Subscriber  obstacles_state_sub_;
 
-    ros::Publisher  joint_state_pub_;
+    ros::Publisher  joint_state_pub_,reset_carla_pub_;
 
     // publish trajectory
     ros::Publisher traj_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_,brake_pub_, spline_traj_pub_, contour_error_pub_, feedback_pub_;

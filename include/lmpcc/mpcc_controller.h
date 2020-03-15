@@ -79,7 +79,7 @@
 //reset msgs
 #include <std_srvs/Empty.h>
 #include <robot_localization/SetPose.h>
-
+#include <geometry_msgs/PoseWithCovarianceStamped>
 #include <geometry_msgs/PoseWithCovariance.h>
 
 #include <carla_msgs/CarlaEgoVehicleControl.h>

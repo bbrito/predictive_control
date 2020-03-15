@@ -9,7 +9,7 @@ predictive_configuration::predictive_configuration()
 
 predictive_configuration::~predictive_configuration()
 {
-  free_allocated_memory();
+
 }
 
 // read predicitve configuration paramter from paramter server
@@ -166,25 +166,6 @@ bool predictive_configuration::initialize() //const std::string& node_handle_nam
 
   initialize_success_ = true;
 
-  if (activate_debug_output_)
-  {
-    print_configuration_parameter();
-  }
-
   ROS_WARN(" PREDICTIVE PARAMETER INITIALIZED!!");
   return true;
-}
-
-// clear allocated data from vector
-void predictive_configuration::free_allocated_memory()
-{
-  vel_min_limit_.clear();
-  vel_max_limit_.clear();
-
-  ref_x_.clear();
-  ref_y_.clear();
-  ref_theta_.clear();
-
-  contour_weight_factors_.clear();
-  control_weight_factors_.clear();
 }

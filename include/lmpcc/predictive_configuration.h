@@ -99,11 +99,6 @@ public:
 
 private:
 
-    /**
-     * @brief free_allocated_memory: remove all allocated data just for memory management
-     */
-    void free_allocated_memory();
-
 
 };
 

@@ -87,6 +87,7 @@ include_directories(include
     ${EIGEN_INCLUDE_DIRS}
     ${orocos_kdl_INCLUDE_DIRS}
     include/${PROJECT_NAME}
+    FORCESNLPsolver/include
     )
 
 

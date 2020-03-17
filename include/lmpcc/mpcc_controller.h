@@ -75,7 +75,7 @@
 #include <lmpcc/Clothoid.h>
 
 #include <lmpcc/Control.h>
-
+#include <lmpcc/LMPCCReset.h>
 //reset msgs
 #include <std_srvs/Empty.h>
 #include <robot_localization/SetPose.h>
@@ -96,6 +96,11 @@ class MPCC
      */
 
 public:
+
+    //DYnamic reconfigure server
+    boost::shared_ptr<dynamic_reconfigure::Server<lmpcc::PredictiveControllerConfig> > reconfigure_server_;
+    boost::recursive_mutex reconfig_mutex_;
+    void reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level);
 
     /**
      * @brief MPCC: Default constructor, allocate memory
@@ -171,7 +176,6 @@ public:
         return eigen_vector;
     }
 
-    void plotRoad(void);
     /** public data member */
     //Service clients
     ros::ServiceClient reset_simulation_client_, reset_ekf_client_;
@@ -194,7 +198,7 @@ public:
     ros::Publisher marker_pub_;
     ros::Subscriber  obstacles_state_sub_;
 
-    ros::Publisher  joint_state_pub_,reset_carla_pub_;
+    ros::Publisher  joint_state_pub_;
 
     // publish trajectory
     ros::Publisher traj_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_,brake_pub_, spline_traj_pub_, contour_error_pub_, feedback_pub_;
@@ -271,6 +275,7 @@ private:
     double velocity_weight_;
     double waypoints_size_;
     double last_waypoints_size_;
+    double Wx_,Wy_,Wv_,Ww_;
 
     //TRajectory execution variables
     double next_point_dist, goal_dist, prev_point_dist;
@@ -292,7 +297,7 @@ private:
     Eigen::VectorXd last_velocity_;
 
     // Type of variable used to publish joint velocity
-    carla_msgs::CarlaEgoVehicleControl controlled_velocity_;
+    geometry_msgs::Twist controlled_velocity_;
 
     // predictive configuration
     boost::shared_ptr<predictive_configuration> controller_config_;
@@ -360,11 +365,10 @@ private:
 
     bool transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose);
 
-    bool ResetCallBack(geometry_msgs::PoseWithCovarianceStamped::Request  &req, geometry_msgs::PoseWithCovarianceStamped::Response &res);
+    bool ResetCallBack(lmpcc::LMPCCReset::Request  &req, lmpcc::LMPCCReset::Response &res);
 
     void VReCallBack(const std_msgs::Float64::ConstPtr& msg);
 
-    void reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level);
 };
 
 #endif

@@ -100,7 +100,7 @@ bool MPCC::initialize()
 
 
         /******************************** Service Servers **********************************************************/
-        reset_server_ = nh.advertiseService(controller_config_->reset_topic_, &MPCC::ResetCallBack);
+        reset_server_ = nh.advertiseService(controller_config_->reset_topic_, &MPCC::ResetCallBack,this);
 
         /******************************** Publishers **********************************************************/
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
@@ -109,7 +109,7 @@ bool MPCC::initialize()
         brake_pub_ = nh.advertise<std_msgs::Float64>("break",1);
         contour_error_pub_ = nh.advertise<std_msgs::Float64MultiArray>("contour_error",1);
 
-        controlled_velocity_pub_ = nh.advertise<carla_msgs::CarlaEgoVehicleControl>(controller_config_->cmd_,1);
+        controlled_velocity_pub_ = nh.advertise<geometry_msgs::Twist>(controller_config_->cmd_,1);
         joint_state_pub_ = nh.advertise<sensor_msgs::JointState>("/joint_states",1);
         robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
@@ -118,14 +118,8 @@ bool MPCC::initialize()
         //Road publisher
         marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("road", 10);
 
-
         // Timer used for unsynchronous mode
         timer_ = nh.createTimer(ros::Duration(1/clock_frequency_), &MPCC::runNode, this);
-
-        // Control variables
-        controlled_velocity_.steer = 0;
-        controlled_velocity_.throttle = 0;
-        controlled_velocity_.brake = 0;
 
         //Initialize trajectory variables
         next_point_dist = 0;
@@ -357,68 +351,29 @@ void MPCC::ControlLoop()
         forces_params.xinit[0] = current_state_(0);
         forces_params.xinit[1] = current_state_(1);
         forces_params.xinit[2] = current_state_(2);
-        forces_params.xinit[3] = current_state_(3);
-        forces_params.xinit[4] = 0.0;
-        forces_params.xinit[5] = 0.0;
-
-        //ROS_WARN_STREAM("ss.size():" << ss.size() << " traj_i: " << traj_i);
-        if (forces_params.xinit[4] > ss[traj_i + 1]) {
-
-            if (traj_i + 1 == ss.size()) {
-                goal_reached_ = true;
-                ROS_ERROR_STREAM("GOAL REACHED: "<< ss.size());
-            } else {
-                traj_i++;
-                //ROS_ERROR_STREAM("SWITCH SPLINE " << acadoVariables.x[4]);
-            }
-        }
-
-        double smin = forces_params.x0[FORCES_TOTAL_V + 4];
-
-        traj_i = spline_closest_point(traj_i, ss, smin, window_size_,
-                                        n_search_points_);
-        forces_params.xinit[4] = smin;
 
         for (N_iter = 0; N_iter < FORCES_N; N_iter++) {
             int k = N_iter*FORCES_NPAR;
 
-            forces_params.all_parameters[k + 0] = ref_path_x.m_a[traj_i];        // spline coefficients
-            forces_params.all_parameters[k + 1] = ref_path_x.m_b[traj_i];
-            forces_params.all_parameters[k + 2] = ref_path_x.m_c[traj_i];        // spline coefficients
-            forces_params.all_parameters[k + 3] = ref_path_x.m_d[traj_i];
-            forces_params.all_parameters[k + 4] = ref_path_y.m_a[traj_i];        // spline coefficients
-            forces_params.all_parameters[k + 5] = ref_path_y.m_b[traj_i];
-            forces_params.all_parameters[k + 6] = ref_path_y.m_c[traj_i];        // spline coefficients
-            forces_params.all_parameters[k + 7] = ref_path_y.m_d[traj_i];
+            forces_params.all_parameters[k + 0] = Wx_;        // spline coefficients
+            forces_params.all_parameters[k + 1] = Wy_;
+            forces_params.all_parameters[k + 2] = Wv_;        // spline coefficients
+            forces_params.all_parameters[k + 3] = Ww_;
+            forces_params.all_parameters[k + 4] = traj_ref_.poses[N_iter].pose.position.x;        // spline coefficients
+            forces_params.all_parameters[k + 5] = traj_ref_.poses[N_iter].pose.position.y;
+            forces_params.all_parameters[k + 6] = 0.8;        // spline coefficients
 
-            forces_params.all_parameters[k + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
-            forces_params.all_parameters[k + 9] = ref_path_x.m_b[traj_i + 1];
-            forces_params.all_parameters[k + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
-            forces_params.all_parameters[k + 11] = ref_path_x.m_d[traj_i + 1];
-            forces_params.all_parameters[k + 12] = ref_path_y.m_a[traj_i + 1];        // spline coefficients
-            forces_params.all_parameters[k + 13] = ref_path_y.m_b[traj_i + 1];
-            forces_params.all_parameters[k + 14] = ref_path_y.m_c[traj_i + 1];        // spline coefficients
-            forces_params.all_parameters[k + 15] = ref_path_y.m_d[traj_i + 1];
-
-            forces_params.all_parameters[k + 16] = ss[traj_i];       // s1
-            forces_params.all_parameters[k + 17] = ss[traj_i + 1];       //s2
-            forces_params.all_parameters[k + 18] = ss[traj_i + 1] + 0.02;       // d
             //obstacle_distance1 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
             //obstacle_distance2 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
 
-            forces_params.all_parameters[k + 19] = cost_contour_weight_factors_(0);
-            forces_params.all_parameters[k + 20] = cost_contour_weight_factors_(1);     // weight lag error
-            forces_params.all_parameters[k + 21] = cost_control_weight_factors_(0);    // weight acceleration
-            forces_params.all_parameters[k + 22] = cost_control_weight_factors_(1);   // weight delta
-            forces_params.all_parameters[k + 23] = reference_velocity_;
-            forces_params.all_parameters[k + 24] = slack_weight_;                     //slack weight
-            forces_params.all_parameters[k + 25] = repulsive_weight_;                     //repulsive weight
-            forces_params.all_parameters[k + 38] = velocity_weight_;                     //repulsive weight
 
-            forces_params.all_parameters[k + 26] = r_discs_; //radius of the disks
-            forces_params.all_parameters[k + 27] = x_discs_[0];                        // position of the car discs
-            forces_params.all_parameters[k + 39] = x_discs_[1];                        // position of the car discs
-            forces_params.all_parameters[k + 40] = x_discs_[2];                        // position of the car discs
+            //forces_params.all_parameters[k + 24] = slack_weight_;                     //slack weight
+            //forces_params.all_parameters[k + 25] = repulsive_weight_;                     //repulsive weight
+
+            //forces_params.all_parameters[k + 26] = r_discs_; //radius of the disks
+            //forces_params.all_parameters[k + 27] = x_discs_[0];                        // position of the car discs
+            //forces_params.all_parameters[k + 39] = x_discs_[1];                        // position of the car discs
+            //forces_params.all_parameters[k + 40] = x_discs_[2];                        // position of the car discs
             //forces_params.all_parameters[k + 42] = x_discs_[3];                        // position of the car discs
             //forces_params.all_parameters[k + 43] = x_discs_[4];
 
@@ -464,15 +419,11 @@ void MPCC::ControlLoop()
         ROS_INFO_STREAM("number of iterations for optimality " << forces_info.it2opt);
 
 
-        controlled_velocity_.throttle = forces_output.x01[0]/10.0;// / 1.5; // maximum acceleration 1.5m/s
-        ROS_INFO_STREAM("accel_output " << controlled_velocity_.throttle);
-        if (controlled_velocity_.throttle < 0.0)
-            controlled_velocity_.brake = abs(controlled_velocity_.throttle);
-        else
-            controlled_velocity_.brake = 0.0;
-        //controlled_velocity_.steer = -acadoVariables.u[1]*2.0 ;// / 0.52; // maximum steer
-        controlled_velocity_.steer = -forces_output.x01[1] * 2.0; 
-        ROS_INFO_STREAM("steer_output " << controlled_velocity_.steer);
+        controlled_velocity_.linear.x = forces_output.x01[0];
+        ROS_INFO_STREAM("accel_output " << controlled_velocity_.linear.x);
+
+        controlled_velocity_.angular.z = forces_output.x01[1];
+        ROS_INFO_STREAM("steer_output " << controlled_velocity_.angular.z);
 
         if(debug_){
             //publishPredictedTrajectory();
@@ -483,7 +434,6 @@ void MPCC::ControlLoop()
    
         publishPredictedCollisionSpace();
         //broadcastPathPose();
-        brake_.data = controlled_velocity_.brake;
         //cost_.data = acado_getObjective();
 
         if(exit_code!=1) {
@@ -505,14 +455,6 @@ void MPCC::ControlLoop()
                 forces_params.x0[i+9*FORCES_TOTAL_V] = forces_output.x10[i];
                 forces_params.x0[i+10*FORCES_TOTAL_V] = forces_output.x11[i];
                 forces_params.x0[i+11*FORCES_TOTAL_V] = forces_output.x12[i];
-                forces_params.x0[i+12*FORCES_TOTAL_V] = forces_output.x13[i];
-                forces_params.x0[i+13*FORCES_TOTAL_V] = forces_output.x14[i];
-                forces_params.x0[i+14*FORCES_TOTAL_V] = forces_output.x15[i];
-                forces_params.x0[i+15*FORCES_TOTAL_V] = forces_output.x16[i];
-                forces_params.x0[i+16*FORCES_TOTAL_V] = forces_output.x17[i];
-                forces_params.x0[i+17*FORCES_TOTAL_V] = forces_output.x18[i];
-                forces_params.x0[i+18*FORCES_TOTAL_V] = forces_output.x19[i];
-                forces_params.x0[i+19*FORCES_TOTAL_V] = forces_output.x20[i];
             }
         }
     }
@@ -692,7 +634,6 @@ void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
     Ref_path(X_road, Y_road, Theta_road);
     //ROS_INFO("ConstructRefPath");
     publishSplineTrajectory();
-    plotRoad();
 }
 
 double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
@@ -706,7 +647,7 @@ double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
   return std::atan2(t3, t4);
 }
 
-bool MPCC::ResetCallBack(geometry_msgs::PoseWithCovarianceStamped::Request  &req, geometry_msgs::PoseWithCovarianceStamped::Response &res){
+bool MPCC::ResetCallBack(lmpcc::LMPCCReset::Request  &req, lmpcc::LMPCCReset::Response &res){
 
     plan_=false;
 
@@ -717,14 +658,13 @@ bool MPCC::ResetCallBack(geometry_msgs::PoseWithCovarianceStamped::Request  &req
             publishZeroJointVelocity();
             ros::Duration(0.1).sleep();
         }
-        reset_carla_pub_.publish(msg);
+
         current_state_(0)=0;
         current_state_(1)=0;
         current_state_(2)=0;
         current_state_(3)=0;
         ros::Duration(1.0).sleep();
-        plotRoad();
-        publishSplineTrajectory();
+
         traj_i = 0;
         goal_reached_ = false;
         if (controller_config_->sync_mode_)
@@ -740,19 +680,15 @@ bool MPCC::ResetCallBack(geometry_msgs::PoseWithCovarianceStamped::Request  &req
 void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level){
 
     ROS_INFO("reconfigure callback!");
-    cost_contour_weight_factors_(0) = config.Wcontour;
-    cost_contour_weight_factors_(1) = config.Wlag;
-    cost_control_weight_factors_(0) = config.Ka;
-    cost_control_weight_factors_(1) = config.Kdelta;
-    velocity_weight_ = config.Kv;
+    Wx_ = config.Wx;
+    Wy_ = config.Wy;
+    Wv_ = config.Wv;
+    Ww_ = config.Ww;
 
-    bb_hack_ = config.bb_hack;
     slack_weight_= config.Ws;
     repulsive_weight_ = config.WR;
 
-    reference_velocity_ = config.vRef;
     slack_weight_= config.Ws;
-    repulsive_weight_ = config.WR;
 
     n_iterations_ = config.n_iterations;
     simulation_mode_ = config.simulation_mode;
@@ -771,24 +707,6 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     window_size_ = config.window_size;
     n_search_points_ = config.n_search_points;
 
-    if(right_offset_!=config.right_offset) {
-        right_offset_ = config.right_offset;
-        replan_ = true;
-    }
-    if(left_offset_!=config.left_offset) {
-        left_offset_ = config.left_offset;
-        replan_ = true;
-    }
-
-    if(replan_ && waypoints_size_>0){
-
-        Ref_path(X_road, Y_road, Theta_road);
-        //ROS_INFO("ConstructRefPath");
-        publishSplineTrajectory();
-        plotRoad();
-        replan_ = false;
-    }
-
     debug_ = config.debug;
     if (waypoints_size_ >1) {
         ROS_WARN("Planning...");
@@ -806,14 +724,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
         ROS_INFO("Before reset_solver");
 		reset_solver();
         ROS_INFO("After reset_solver");
-		//acado_initializeSolver( );
-		//ROS_INFO("acado_initializeSolver");
-		//ConstructRefPath();
-		//getWayPointsCallBack( );
-		//ROS_INFO("ConstructRefPath");
-        plotRoad();
-        publishSplineTrajectory();
-        //ROS_INFO("reconfigure callback!");
+
         traj_i = 0;
         goal_reached_ = false;
         timer_.start();
@@ -824,7 +735,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
 }
 
 void MPCC::PlanNetCallBack(const nav_msgs::Path& traj){
-    ROS_INFO_STREAM("New ref trajectory!"_);
+    ROS_INFO_STREAM("New ref trajectory!");
     traj_ref_ = traj;
 }
 
@@ -882,78 +793,11 @@ void MPCC::publishZeroJointVelocity()
     {
        ROS_INFO("Publishing ZERO joint velocity!!");
     }
-    carla_msgs::CarlaEgoVehicleControl pub_msg;
-    if(!simulation_mode_)
-        broadcastTF();
+    geometry_msgs::Twist pub_msg;
+
     controlled_velocity_ = pub_msg;
-    controlled_velocity_.throttle = 0;
-    controlled_velocity_.brake = 1;
-    controlled_velocity_.steer = 0.0;
+
     controlled_velocity_pub_.publish(controlled_velocity_);
-}
-
-void MPCC::plotRoad(void)
-{
-    visualization_msgs::Marker line_strip;
-    visualization_msgs::MarkerArray line_list;
-    line_strip.header.frame_id = controller_config_->target_frame_;
-    line_strip.id = 1;
-
-    line_strip.type = visualization_msgs::Marker::LINE_STRIP;
-
-    // LINE_STRIP/LINE_LIST markers use only the x component of scale, for the line width
-    line_strip.scale.x = 0.5;
-    line_strip.scale.y = 0.5;
-
-    // Line strip is blue
-    line_strip.color.b = 1.0;
-    line_strip.color.a = 1.0;
-
-    geometry_msgs::Pose pose;
-
-    pose.position.x = (controller_config_->road_width_left_+left_offset_+line_strip.scale.x/2.0)*-sin(current_state_(2));
-    pose.position.y = (controller_config_->road_width_left_+left_offset_+line_strip.scale.x/2.0)*cos(current_state_(2));
-
-    geometry_msgs::Point p;
-    p.x = spline_traj_.poses[0].pose.position.x + pose.position.x;
-    p.y = spline_traj_.poses[0].pose.position.y + pose.position.y;
-    p.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
-
-    line_strip.points.push_back(p);
-
-    p.x = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.x+ pose.position.x;
-    p.y = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.y+ pose.position.y;
-    p.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
-
-    line_strip.points.push_back(p);
-
-    line_list.markers.push_back(line_strip);
-
-    line_strip.points.pop_back();
-    line_strip.points.pop_back();
-
-    line_strip.color.b = 1.0;
-    line_strip.color.a = 1.0;
-    line_strip.id = 2;
-    pose.position.x = (-controller_config_->road_width_right_-right_offset_-line_strip.scale.x/2.0)*-sin(current_state_(2));
-    pose.position.y = (-controller_config_->road_width_right_-right_offset_-line_strip.scale.x/2.0)*cos(current_state_(2));
-
-    p.x = spline_traj_.poses[0].pose.position.x+pose.position.x;
-    p.y = spline_traj_.poses[0].pose.position.y+pose.position.y;
-    p.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
-
-    line_strip.points.push_back(p);
-
-    p.x = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.x+pose.position.x;
-    p.y = spline_traj_.poses[spline_traj_.poses.size()-1].pose.position.y+pose.position.y;
-    p.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
-
-    line_strip.points.push_back(p);
-
-    line_list.markers.push_back(line_strip);
-
-    marker_pub_.publish(line_list);
-
 }
 
 void MPCC::publishSplineTrajectory(void)

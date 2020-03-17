@@ -79,7 +79,7 @@
 //reset msgs
 #include <std_srvs/Empty.h>
 #include <robot_localization/SetPose.h>
-#include <geometry_msgs/PoseWithCovarianceStamped>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/PoseWithCovariance.h>
 
 #include <carla_msgs/CarlaEgoVehicleControl.h>
@@ -125,6 +125,8 @@ public:
     void VRefCallBack(const std_msgs::Float64::ConstPtr& msg);
 
     void ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles);
+
+    void PlanNetCallBack(const nav_msgs::Path& traj);
 
     /**
      * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
@@ -198,6 +200,7 @@ public:
     ros::Publisher traj_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_,brake_pub_, spline_traj_pub_, contour_error_pub_, feedback_pub_;
     //Predicted trajectory
     nav_msgs::Path pred_traj_;
+    nav_msgs::Path traj_ref_;
     nav_msgs::Path pred_cmd_;
     nav_msgs::Path spline_traj_,spline_traj2_;
     int traj_i;
@@ -353,11 +356,15 @@ private:
 
     void publishFeedback(int& it, double& time);
     
-    void  reset_solver();
+    void reset_solver();
 
     bool transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose);
 
-    void ResetCallBack(const geometry_msgs::PoseWithCovarianceStamped& msg);
+    bool ResetCallBack(geometry_msgs::PoseWithCovarianceStamped::Request  &req, geometry_msgs::PoseWithCovarianceStamped::Response &res);
+
+    void VReCallBack(const std_msgs::Float64::ConstPtr& msg);
+
+    void reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level);
 };
 
 #endif

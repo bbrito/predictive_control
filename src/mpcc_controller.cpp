@@ -95,10 +95,12 @@ bool MPCC::initialize()
         v_ref_sub_ = nh.subscribe(controller_config_->vref_topic_, 1, &MPCC::VReCallBack, this);
         // Subscriber providing information about reference path
         waypoints_sub_ = nh.subscribe(controller_config_->waypoint_topic_,1, &MPCC::getWayPointsCallBack, this);
+        // PlanNet Subscriber
+        plan_subs_ = nh.subscribe(controller_config_->plannet_topic_, 1, &MPCC::PlanNetCallBack, this);
 
 
         /******************************** Service Servers **********************************************************/
-        reset_server_ = nh.advertiseService(controller_config_->reset_topic_, &MPCC::Reset);
+        reset_server_ = nh.advertiseService(controller_config_->reset_topic_, &MPCC::ResetCallBack);
 
         /******************************** Publishers **********************************************************/
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
@@ -179,8 +181,7 @@ bool MPCC::initialize()
         enable_output_ = false;
         plan_ = false;
         replan_ = false;
-        left_offset_= 0;
-        right_offset_= 0;
+
         debug_ = false;
         n_iterations_ = 100;
         simulation_mode_ = true;
@@ -335,7 +336,7 @@ void  MPCC::reset_solver(){
     for (int i = 0; i < *(&forces_params.xinit + 1) - forces_params.xinit; i++){
         forces_params.xinit[i] = 0.0;
     }
-    int k = 0;
+
     for (int i = 0; i < FORCES_N*FORCES_TOTAL_V; i++){
         forces_params.x0[i] = 0.0;
     }
@@ -350,10 +351,6 @@ void MPCC::ControlLoop()
 {
     int N_iter;
     int exit_code = 0;
-    //float obstacle_distance1, obstacle_distance2;
-    if(event.profile.last_duration.nsec > 1/clock_frequency_*1e9)
-        ROS_ERROR_STREAM("Real-time constraint not satisfied... Cycle time: " << event.profile.last_duration);
-
 
     if (plan_ && (waypoints_size_ > 0)) {
 
@@ -709,7 +706,7 @@ double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
   return std::atan2(t3, t4);
 }
 
-void MPCC::Reset(geometry_msgs::PoseWithCovarianceStamped::Request  &req, geometry_msgs::PoseWithCovarianceStamped::Response &res){
+bool MPCC::ResetCallBack(geometry_msgs::PoseWithCovarianceStamped::Request  &req, geometry_msgs::PoseWithCovarianceStamped::Response &res){
 
     plan_=false;
 
@@ -824,6 +821,11 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     else{
         timer_.stop();
     }
+}
+
+void MPCC::PlanNetCallBack(const nav_msgs::Path& traj){
+    ROS_INFO_STREAM("New ref trajectory!"_);
+    traj_ref_ = traj;
 }
 
 void MPCC::VReCallBack(const std_msgs::Float64::ConstPtr& msg){

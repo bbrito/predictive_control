@@ -70,6 +70,7 @@ public:
     std::string obs_state_topic_;
     std::string waypoint_topic_;
     std::string vref_topic_;
+    std::string plannet_topic_;
 
     // limiting parameter, use to enforce joint to be in limit
     std::vector<std::string> collision_check_obstacles_;

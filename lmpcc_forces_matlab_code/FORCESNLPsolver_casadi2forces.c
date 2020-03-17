@@ -14,8 +14,8 @@ extern "C" {
 /* prototyes for models */
 extern void FORCESNLPsolver_model_1(const FORCESNLPsolver_float **arg, FORCESNLPsolver_float **res);
 extern void FORCESNLPsolver_model_1_sparsity(solver_int32_default i, solver_int32_default *nrow, solver_int32_default *ncol, const solver_int32_default **colind, const solver_int32_default **row);
-extern void FORCESNLPsolver_model_20(const FORCESNLPsolver_float **arg, FORCESNLPsolver_float **res);
-extern void FORCESNLPsolver_model_20_sparsity(solver_int32_default i, solver_int32_default *nrow, solver_int32_default *ncol, const solver_int32_default **colind, const solver_int32_default **row);
+extern void FORCESNLPsolver_model_12(const FORCESNLPsolver_float **arg, FORCESNLPsolver_float **res);
+extern void FORCESNLPsolver_model_12_sparsity(solver_int32_default i, solver_int32_default *nrow, solver_int32_default *ncol, const solver_int32_default **colind, const solver_int32_default **row);
     
 
 /* copies data from sparse matrix into a dense one */
@@ -54,11 +54,11 @@ extern void FORCESNLPsolver_casadi2forces(FORCESNLPsolver_float *x,        /* pr
     
     /* temporary storage for casadi sparse output */
     FORCESNLPsolver_float this_f;
-    FORCESNLPsolver_float nabla_f_sparse[7];
-    FORCESNLPsolver_float h_sparse[2];
-    FORCESNLPsolver_float nabla_h_sparse[8];
-    FORCESNLPsolver_float c_sparse[6];
-    FORCESNLPsolver_float nabla_c_sparse[21];
+    FORCESNLPsolver_float nabla_f_sparse[4];
+    
+    
+    FORCESNLPsolver_float c_sparse[4];
+    FORCESNLPsolver_float nabla_c_sparse[12];
             
     
     /* pointers to row and column info for 
@@ -76,15 +76,11 @@ extern void FORCESNLPsolver_casadi2forces(FORCESNLPsolver_float *x,        /* pr
     out[0] = &this_f;
     out[1] = nabla_f_sparse;
                 
-	 if ((stage >= 0 && stage < 19))
+	 if ((stage >= 0 && stage < 11))
 	 {
 		 /* set inputs */
-		 out[2] = h_sparse;
-		 out[3] = nabla_h_sparse;
-		 out[4] = c_sparse;
-		 out[5] = nabla_c_sparse;
-		 
-
+		 out[2] = c_sparse;
+		 out[3] = nabla_c_sparse;
 		 /* call CasADi */
 		 FORCESNLPsolver_model_1(in, out);
 
@@ -96,50 +92,27 @@ extern void FORCESNLPsolver_casadi2forces(FORCESNLPsolver_float *x,        /* pr
 		 }
 		 if( c )
 		 {
-			 FORCESNLPsolver_model_1_sparsity(6, &nrow, &ncol, &colind, &row);
-			 sparse2fullcopy(nrow, ncol, colind, row, c_sparse, c);
+		 FORCESNLPsolver_model_1_sparsity(4, &nrow, &ncol, &colind, &row);
+		 sparse2fullcopy(nrow, ncol, colind, row, c_sparse, c);
 		 }
 		 if( nabla_c )
 		 {
-			 FORCESNLPsolver_model_1_sparsity(7, &nrow, &ncol, &colind, &row);
-			 sparse2fullcopy(nrow, ncol, colind, row, nabla_c_sparse, nabla_c);
-		 }
-		 if( h )
-		 {
-			 FORCESNLPsolver_model_1_sparsity(4, &nrow, &ncol, &colind, &row);
-			 sparse2fullcopy(nrow, ncol, colind, row, h_sparse, h);
-		 }
-		 if( nabla_h )
-		 {
 			 FORCESNLPsolver_model_1_sparsity(5, &nrow, &ncol, &colind, &row);
-			 sparse2fullcopy(nrow, ncol, colind, row, nabla_h_sparse, nabla_h);
+			 sparse2fullcopy(nrow, ncol, colind, row, nabla_c_sparse, nabla_c);
 		 }
 		 
 	 }
 
-	 if ((stage >= 19 && stage < 20))
+	 if ((stage >= 11 && stage < 12))
 	 {
-		 /* set inputs */
-		 out[2] = h_sparse;
-		 out[3] = nabla_h_sparse;
 		 /* call CasADi */
-		 FORCESNLPsolver_model_20(in, out);
+		 FORCESNLPsolver_model_12(in, out);
 
 		 /* copy to dense */
 		 if( nabla_f )
 		 {
-			 FORCESNLPsolver_model_20_sparsity(3, &nrow, &ncol, &colind, &row);
+			 FORCESNLPsolver_model_12_sparsity(3, &nrow, &ncol, &colind, &row);
 			 sparse2fullcopy(nrow, ncol, colind, row, nabla_f_sparse, nabla_f);
-		 }
-		 if( h )
-		 {
-			 FORCESNLPsolver_model_20_sparsity(4, &nrow, &ncol, &colind, &row);
-			 sparse2fullcopy(nrow, ncol, colind, row, h_sparse, h);
-		 }
-		 if( nabla_h )
-		 {
-			 FORCESNLPsolver_model_20_sparsity(5, &nrow, &ncol, &colind, &row);
-			 sparse2fullcopy(nrow, ncol, colind, row, nabla_h_sparse, nabla_h);
 		 }
 		 
 	 }

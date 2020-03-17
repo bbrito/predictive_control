@@ -1,10 +1,10 @@
 function x_next =  dynamic_scenario( z, p, w  )
 %            inputs               |               states
 %                acc   delta  sv     x      y       psi   v    s    dummy
-    stepSize = 0.1;
+    stepSize = 0.4;
     % ego-vehicle
-    x = zeros(6, 1);
-    x = z(4: 9);
+    x = zeros(4, 1);
+    x = z(4: 7);
     u = zeros(3, 1);
     u = z(1: 3);
     % integrator Runge-Kutta integrator of order 4
@@ -13,19 +13,13 @@ function x_next =  dynamic_scenario( z, p, w  )
 end
 
 function xdot = continuous_dynamics_R ( x, u, L )
-    a = u(1);
-    delta = u(2);
+    v = u(1);
+    w = u(2);
     sv = u(3);
-    psi =  x(3);
-    v = x(4);
-    lr = 1.5;
-    lf = 1.5;
-    ratio = lr/(lr + lf);
-    beta = atan(ratio*tan(delta));
-    xdot = [v * cos(psi + beta);
-            v * sin(psi + beta);
-            (v / lr) * sin(beta);
-            a;
-            v;
+    theta =  x(3);
+
+    xdot = [v * cos(theta);
+            v * sin(theta);
+            w;
             sv];
 end

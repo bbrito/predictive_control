@@ -115,7 +115,7 @@ add_library(predictive_controller
 add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(lmpcc_node src/predictive_control_node.cpp ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_1.c
-        ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_20.c
+        ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_12.c
         ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_casadi2forces.c)
 
 target_link_libraries(lmpcc_node
@@ -125,6 +125,7 @@ target_link_libraries(lmpcc_node
         ${catkin_LIBRARIES}
         tkspline_lib
         ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver/lib/libFORCESNLPsolver.so
+        ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver/lib/libFORCESNLPsolver_withModel.so
         )
 
 add_dependencies(lmpcc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

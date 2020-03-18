@@ -44,7 +44,7 @@ lb_R = [ -2.0,  -1.0, 0, -500,   -500,    -2.0*pi,   0];
 model.lb = lb_R;
 
 % Upper limits for robot
-ub_R = [ +2.0,  +1.0 inf, +500,   500,    +2.0*pi,    inf];
+ub_R = [ +2.0,  +1.0, inf, +500,   500,    +2.0*pi,    inf];
 
 model.ub =ub_R;
 %%

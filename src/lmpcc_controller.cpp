@@ -735,7 +735,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
 }
 
 void MPCC::PlanNetCallBack(const nav_msgs::Path& traj){
-    ROS_INFO_STREAM("New ref trajectory!");
+    //ROS_INFO_STREAM("New ref trajectory!");
     traj_ref_ = traj;
 }
 
@@ -753,7 +753,7 @@ void MPCC::VReCallBack(const std_msgs::Float64::ConstPtr& msg){
 void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {
     last_state_ = current_state_;
-
+    ROS_INFO_STREAM("New state: " << current_state_);
     current_state_(0) =    msg->position.x;
     current_state_(1) =    msg->position.y;
     current_state_(2) =    msg->orientation.z;

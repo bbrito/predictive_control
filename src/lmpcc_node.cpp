@@ -1,6 +1,6 @@
 
 #include <ros/ros.h>
-#include <lmpcc/mpcc_controller.h>
+#include <lmpcc/lmpcc_controller.h>
 
 int main(int argc, char **argv)
 {

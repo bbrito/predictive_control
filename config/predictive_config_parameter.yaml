@@ -45,10 +45,6 @@ global_path:
   n_points_clothoid: 40
   n_points_spline: 40
 
-#Road parameters
-road_width_right: 2.15
-road_width_left: 5.125
-
 # Parameters for collision constraints
 obstacles:
       n_obstacles: 2
@@ -62,20 +58,4 @@ constraints:
            min: [0]
            max: [13.8]
      #orientation_constraints:
-
-acado_config:
-     max_num_iteration: 70
-     kkt_tolerance: 1e-3
-     integrator_tolerance: 1e-3
-     start_time_horizon: 0.0
-     end_time_horizon: 5.0 # 5.0  # control and prediction horizon
-     discretization_intervals: 50
-     sampling_time: 0.05
-     weight_factors:
-           contour_weight_factors:
-                #Wcontour and Wlag
-                [0.1, 0.1]
-           control_weight_factors:
-                # Wa and Wdelta
-                [1.0, 4.0]
                 

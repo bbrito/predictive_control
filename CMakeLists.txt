@@ -77,10 +77,10 @@ catkin_package(
   CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs kdl_conversions kdl_parser nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs lmpcc_msgs
   DEPENDS Boost
   INCLUDE_DIRS include include/${PROJECT_NAME}
-  LIBRARIES  predictive_configuration predictive_controller
+  LIBRARIES  lmpcc_configuration lmpcc_controller
 )
 
-include_directories(include ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver/include)
+include_directories(include ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver/include)
 
 ### BUILD ###
 include_directories(include
@@ -98,29 +98,29 @@ add_library(tkspline_lib
 add_dependencies(tkspline_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(tkspline_lib ${CATKIN_LIBRARIES})
 
-add_library(predictive_configuration src/predictive_configuration.cpp)
-add_dependencies(predictive_configuration ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(predictive_configuration
+add_library(lmpcc_configuration src/lmpcc_configuration.cpp)
+add_dependencies(lmpcc_configuration ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(lmpcc_configuration
     ${catkin_LIBRARIES}
     ${orocos_kdl_LIBRARIES}
     ${CASADI_LIBRARIES}
     )
 
-add_library(predictive_controller
-        src/mpcc_controller.cpp
-        src/predictive_configuration.cpp
+add_library(lmpcc_controller
+        src/lmpcc_controller.cpp
+        src/lmpcc_configuration.cpp
         src/Clothoid.cpp
-        src/predictive_control_node.cpp
+        src/lmpcc_node.cpp
         )
-add_dependencies(predictive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(lmpcc_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(lmpcc_node src/predictive_control_node.cpp ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_1.c
+add_executable(lmpcc_node src/lmpcc_node.cpp ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_1.c
         ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_12.c
         ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver_casadi2forces.c)
 
 target_link_libraries(lmpcc_node
-        predictive_controller
-        predictive_configuration
+        lmpcc_controller
+        lmpcc_configuration
         ${OpenCV_LIBS}
         ${catkin_LIBRARIES}
         tkspline_lib

@@ -43,7 +43,7 @@
 #include <yaml-cpp/yaml.h>
 
 // predicitve includes
-#include <lmpcc/predictive_configuration.h>
+#include <lmpcc/lmpcc_configuration.h>
 #include <lmpcc/control_feedback.h>
 
 // actions, srvs, msgs

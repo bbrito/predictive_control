@@ -1,5 +1,5 @@
 
-#include<lmpcc/predictive_configuration.h>
+#include<lmpcc/lmpcc_configuration.h>
 
 predictive_configuration::predictive_configuration()
 {

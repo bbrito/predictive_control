@@ -1,7 +1,7 @@
 
 //This file containts read parameter from server, callback, call class objects, control all class, objects of all class
 
-#include <lmpcc/mpcc_controller.h>
+#include <lmpcc/lmpcc_controller.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Pose.h>
 #include <FORCESNLPsolver.h>
@@ -11,11 +11,11 @@
 //#include <opencv2/highgui/highgui.hpp>
 
 
-#define FORCES_N 20 // model.N, horizon length
+#define FORCES_N 12 // model.N, horizon length
 #define FORCES_NU 3 //number of control variables
-#define FORCES_NX 6 // differentiable variables
-#define FORCES_TOTAL_V 9 //Total control and differentiable
-#define FORCES_NPAR 340 //Total number of parameters for one horizon step
+#define FORCES_NX 4 // differentiable variables
+#define FORCES_TOTAL_V 7 //Total control and differentiable
+#define FORCES_NPAR 30 //Total number of parameters for one horizon step
 
 
 FORCESNLPsolver_params forces_params; // 50 X 9   [acc   delta  sv     x      y       psi   v    s dummy X 50]

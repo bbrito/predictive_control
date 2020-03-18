@@ -750,28 +750,14 @@ void MPCC::VReCallBack(const std_msgs::Float64::ConstPtr& msg){
 }
 
 // read current position and velocity of the robot
-void MPCC::StateCallBack(const nav_msgs::Odometry::ConstPtr& msg)
+void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {
-   double ysqr, t3, t4;
-   if (controller_config_->activate_debug_output_)
-   {
-//  ROS_INFO("MPCC::StateCallBack");
-   }
-   //ROS_INFO("MPCC::StateCallBack");
-   controller_config_->target_frame_ = msg->header.frame_id;
-   last_state_ = current_state_;
+    last_state_ = current_state_;
 
-   ysqr = msg->pose.pose.orientation.y * msg->pose.pose.orientation.y;
-   t3 = +2.0 * (msg->pose.pose.orientation.w * msg->pose.pose.orientation.z
-                             + msg->pose.pose.orientation.x *msg->pose.pose.orientation.y);
-   t4 = +1.0 - 2.0 * (ysqr + msg->pose.pose.orientation.z * msg->pose.pose.orientation.z);
-
-   current_state_(2) = std::atan2(t3, t4);
-
-   current_state_(0) =    msg->pose.pose.position.x ; // for shifting the current coordinates to the center of mass
-   current_state_(1) =    msg->pose.pose.position.y ;
-
-   current_state_(3) = std::sqrt(std::pow(msg->twist.twist.linear.x,2)+std::pow(msg->twist.twist.linear.y,2));
+    current_state_(0) =    msg->position.x;
+    current_state_(1) =    msg->position.y;
+    current_state_(2) =    msg->orientation.z;
+    current_state_(3) =    msg->position.z;
 }
 
 void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
@@ -861,8 +847,8 @@ void MPCC::publishPredictedCollisionSpace(void)
             ellips1.id = 60+i+k*FORCES_N;
 
             //-1.577
-            ellips1.pose.position.x = forces_params.x0[i * FORCES_TOTAL_V + 3]+(x_discs_[k])*cos(forces_params.x0[i * FORCES_TOTAL_V + 5]);
-            ellips1.pose.position.y = forces_params.x0[i * FORCES_TOTAL_V + 4]+(x_discs_[k])*sin(forces_params.x0[i * FORCES_TOTAL_V + 5]);
+            ellips1.pose.position.x = forces_params.x0[i * FORCES_TOTAL_V + 3];//+(x_discs_[k])*cos(forces_params.x0[i * FORCES_TOTAL_V + 5]);
+            ellips1.pose.position.y = forces_params.x0[i * FORCES_TOTAL_V + 4];//+(x_discs_[k])*sin(forces_params.x0[i * FORCES_TOTAL_V + 5]);
             ellips1.pose.position.z = 0.2;  //z a little bit above ground to draw it above the pointcloud.
             ellips1.pose.orientation.x = 0;
             ellips1.pose.orientation.y = 0;

@@ -125,7 +125,7 @@ public:
      * @brief StateCallBack: Get current state of the robot
      * @param msg: Read data from mobile_robot_state_publisher_node default type:
      */
-    void StateCallBack(const nav_msgs::Odometry::ConstPtr& msg);
+    void StateCallBack(const geometry_msgs::Pose::ConstPtr& msg);
 
     void VRefCallBack(const std_msgs::Float64::ConstPtr& msg);
 

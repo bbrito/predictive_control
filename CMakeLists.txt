@@ -80,15 +80,13 @@ catkin_package(
   LIBRARIES  lmpcc_configuration lmpcc_controller
 )
 
-include_directories(include ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver/include)
-
 ### BUILD ###
 include_directories(include
     ${catkin_INCLUDE_DIRS}
     ${EIGEN_INCLUDE_DIRS}
     ${orocos_kdl_INCLUDE_DIRS}
     include/${PROJECT_NAME}
-    FORCESNLPsolver/include
+    ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver/include
     )
 
 

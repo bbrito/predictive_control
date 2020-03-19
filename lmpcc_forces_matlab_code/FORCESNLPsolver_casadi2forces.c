@@ -57,8 +57,8 @@ extern void FORCESNLPsolver_casadi2forces(FORCESNLPsolver_float *x,        /* pr
     FORCESNLPsolver_float nabla_f_sparse[5];
     
     
-    FORCESNLPsolver_float c_sparse[4];
-    FORCESNLPsolver_float nabla_c_sparse[12];
+    FORCESNLPsolver_float c_sparse[3];
+    FORCESNLPsolver_float nabla_c_sparse[10];
             
     
     /* pointers to row and column info for 

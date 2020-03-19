@@ -22,13 +22,13 @@ FORCESNLPsolver_float CASADI_PREFIX(sq)(FORCESNLPsolver_float x) { return x*x;}
 FORCESNLPsolver_float CASADI_PREFIX(sign)(FORCESNLPsolver_float x) { return x<0 ? -1 : x>0 ? 1 : x;}
 #define sign(x) CASADI_PREFIX(sign)(x)
 
-static const solver_int32_default CASADI_PREFIX(s0)[] = {7, 1, 0, 7, 0, 1, 2, 3, 4, 5, 6};
+static const solver_int32_default CASADI_PREFIX(s0)[] = {6, 1, 0, 6, 0, 1, 2, 3, 4, 5};
 #define s0 CASADI_PREFIX(s0)
 static const solver_int32_default CASADI_PREFIX(s1)[] = {40, 1, 0, 40, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
 #define s1 CASADI_PREFIX(s1)
 static const solver_int32_default CASADI_PREFIX(s2)[] = {1, 1, 0, 1, 0};
 #define s2 CASADI_PREFIX(s2)
-static const solver_int32_default CASADI_PREFIX(s3)[] = {1, 7, 0, 1, 2, 3, 4, 5, 5, 5, 0, 0, 0, 0, 0};
+static const solver_int32_default CASADI_PREFIX(s3)[] = {1, 6, 0, 1, 2, 3, 4, 5, 5, 0, 0, 0, 0, 0};
 #define s3 CASADI_PREFIX(s3)
 /* evaluate_stages */
 solver_int32_default FORCESNLPsolver_model_12(const FORCESNLPsolver_float **arg, FORCESNLPsolver_float **res) 

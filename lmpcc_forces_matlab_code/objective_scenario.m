@@ -3,15 +3,14 @@ function [cost] =  objective_scenario( z, p, i)
 % states and inputs for ego vehicle
 %            inputs               |               states
 %                v   w  sv     x      y       theta      dummy
-x_R = z(4: 7);
-u_R = z(1: 3);
+x_R = z(4: 6);
+u_R = z(1: 2);
 v = u_R(1);
 w = u_R(2);
-sv = u_R(3);
+sv = z(3);
 x = x_R(1);
 y = x_R(2);
 theta = x_R(3);
-dummy = x_R(4);
 
 % Weights
 Wx = p(1);

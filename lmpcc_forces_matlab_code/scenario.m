@@ -24,8 +24,8 @@ rad2deg = @(rad) rad/pi*180; % convert radians into degrees
 
 %% Problem dimensions
 model.N = 12;            % horizon length
-model.nvar = 7;          % number of variables
-model.neq= 4;            % number of equality constraints
+model.nvar = 6;          % number of variables
+model.neq= 3;            % number of equality constraints
 model.nh = 0;            % number of inequality constraint functions
 n_other_param = 40;
 
@@ -40,11 +40,11 @@ model.npar =  n_other_param;          % number of parameters
 % model.ub = [ +2.0,  +1.0,   800, +200,   +200,    +1.5*pi,    inf];
 
 % Lower limits for robot
-lb_R = [ -2.0,  -1.0, 0, -500,   -500,    -pi,   0];
+lb_R = [ -2.0,  -1.0, 0, -500,   -500,    -pi];
 model.lb = lb_R;
 
 % Upper limits for robot
-ub_R = [ +2.0,  +1.0, +inf, +500,   500,    +pi,   +inf];
+ub_R = [ +2.0,  +1.0, +inf, +500,   500,    +pi];
 
 model.ub =ub_R;
 %%
@@ -62,12 +62,12 @@ end
 %model.objective = @(z, p) objective_scenario_try(z, p);
 model.eq = @(z, p) dynamic_scenario(z, p, 0);
 
-model.E = [zeros(4,3), eye(4)];
+model.E = [zeros(3,3), eye(3)];
 
 %% Initial and final conditions
 % Initial condition on vehicle states
 
-model.xinitidx = 4:7; % use this to specify on which variables initial conditions are imposed
+model.xinitidx = 4:6; % use this to specify on which variables initial conditions are imposed
 %model.xfinal = 0; % v final=0 (standstill), heading angle final=0?
 %model.xfinalidx = 6; % use this to specify on which variables final conditions are imposed
 

@@ -22,22 +22,22 @@ FORCESNLPsolver_float CASADI_PREFIX(sq)(FORCESNLPsolver_float x) { return x*x;}
 FORCESNLPsolver_float CASADI_PREFIX(sign)(FORCESNLPsolver_float x) { return x<0 ? -1 : x>0 ? 1 : x;}
 #define sign(x) CASADI_PREFIX(sign)(x)
 
-static const solver_int32_default CASADI_PREFIX(s0)[] = {7, 1, 0, 7, 0, 1, 2, 3, 4, 5, 6};
+static const solver_int32_default CASADI_PREFIX(s0)[] = {6, 1, 0, 6, 0, 1, 2, 3, 4, 5};
 #define s0 CASADI_PREFIX(s0)
 static const solver_int32_default CASADI_PREFIX(s1)[] = {40, 1, 0, 40, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
 #define s1 CASADI_PREFIX(s1)
 static const solver_int32_default CASADI_PREFIX(s2)[] = {1, 1, 0, 1, 0};
 #define s2 CASADI_PREFIX(s2)
-static const solver_int32_default CASADI_PREFIX(s3)[] = {1, 7, 0, 1, 2, 3, 4, 5, 5, 5, 0, 0, 0, 0, 0};
+static const solver_int32_default CASADI_PREFIX(s3)[] = {1, 6, 0, 1, 2, 3, 4, 5, 5, 0, 0, 0, 0, 0};
 #define s3 CASADI_PREFIX(s3)
-static const solver_int32_default CASADI_PREFIX(s4)[] = {4, 1, 0, 4, 0, 1, 2, 3};
+static const solver_int32_default CASADI_PREFIX(s4)[] = {3, 1, 0, 3, 0, 1, 2};
 #define s4 CASADI_PREFIX(s4)
-static const solver_int32_default CASADI_PREFIX(s5)[] = {4, 7, 0, 2, 5, 6, 7, 8, 11, 12, 0, 1, 0, 1, 2, 3, 0, 1, 0, 1, 2, 3};
+static const solver_int32_default CASADI_PREFIX(s5)[] = {3, 6, 0, 2, 5, 5, 6, 7, 10, 0, 1, 0, 1, 2, 0, 1, 0, 1, 2};
 #define s5 CASADI_PREFIX(s5)
 /* evaluate_stages */
 solver_int32_default FORCESNLPsolver_model_1(const FORCESNLPsolver_float **arg, FORCESNLPsolver_float **res) 
 {
-    FORCESNLPsolver_float a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20,a21;
+    FORCESNLPsolver_float a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20;
     a0=arg[0] ? arg[0][3] : 0;
     a1=arg[1] ? arg[1][4] : 0;
     a1=(a0-a1);
@@ -95,34 +95,34 @@ solver_int32_default FORCESNLPsolver_model_1(const FORCESNLPsolver_float **arg, 
     a6=(a6+a14);
     a14=(a3*a10);
     a14=(a8+a14);
-    a11=cos(a14);
-    a9=(a16*a11);
-    a9=(a12*a9);
-    a6=(a6+a9);
-    a9=4.0000000000000002e-01;
-    a17=(a9*a10);
-    a17=(a8+a17);
-    a15=cos(a17);
-    a4=(a16*a15);
-    a6=(a6+a4);
-    a4=6.6666666666666666e-02;
-    a6=(a4*a6);
+    a13=cos(a14);
+    a11=(a16*a13);
+    a11=(a12*a11);
+    a6=(a6+a11);
+    a11=4.0000000000000002e-01;
+    a9=(a11*a10);
+    a9=(a8+a9);
+    a17=cos(a9);
+    a15=(a16*a17);
+    a6=(a6+a15);
+    a15=6.6666666666666666e-02;
+    a6=(a15*a6);
     a0=(a0+a6);
     if (res[2]!=0) res[2][0]=a0;
     a0=sin(a8);
     a6=(a16*a0);
-    a18=sin(a2);
+    a4=sin(a2);
+    a18=(a16*a4);
+    a18=(a12*a18);
+    a6=(a6+a18);
+    a18=sin(a14);
     a19=(a16*a18);
     a19=(a12*a19);
     a6=(a6+a19);
-    a19=sin(a14);
+    a19=sin(a9);
     a20=(a16*a19);
-    a20=(a12*a20);
     a6=(a6+a20);
-    a20=sin(a17);
-    a21=(a16*a20);
-    a6=(a6+a21);
-    a6=(a4*a6);
+    a6=(a15*a6);
     a5=(a5+a6);
     if (res[2]!=0) res[2][1]=a5;
     a5=(a12*a10);
@@ -130,81 +130,71 @@ solver_int32_default FORCESNLPsolver_model_1(const FORCESNLPsolver_float **arg, 
     a6=(a12*a10);
     a5=(a5+a6);
     a5=(a5+a10);
-    a5=(a4*a5);
+    a5=(a15*a5);
     a5=(a8+a5);
     if (res[2]!=0) res[2][2]=a5;
-    a5=(a12*a13);
-    a5=(a13+a5);
-    a10=(a12*a13);
-    a5=(a5+a10);
-    a5=(a5+a13);
-    a5=(a4*a5);
-    a13=arg[0] ? arg[0][6] : 0;
-    a13=(a13+a5);
-    if (res[2]!=0) res[2][3]=a13;
     a1=(a12*a1);
     a7=(a7+a1);
-    a11=(a12*a11);
-    a7=(a7+a11);
-    a7=(a7+a15);
-    a7=(a4*a7);
+    a13=(a12*a13);
+    a7=(a7+a13);
+    a7=(a7+a17);
+    a7=(a15*a7);
     if (res[3]!=0) res[3][0]=a7;
+    a4=(a12*a4);
+    a0=(a0+a4);
     a18=(a12*a18);
     a0=(a0+a18);
-    a19=(a12*a19);
     a0=(a0+a19);
-    a0=(a0+a20);
-    a0=(a4*a0);
+    a0=(a15*a0);
     if (res[3]!=0) res[3][1]=a0;
     a0=sin(a2);
-    a20=(a3*a0);
-    a20=(a16*a20);
-    a20=(a12*a20);
-    a19=sin(a14);
-    a18=(a3*a19);
-    a18=(a16*a18);
-    a18=(a12*a18);
-    a20=(a20+a18);
-    a18=sin(a17);
-    a7=(a9*a18);
+    a19=(a3*a0);
+    a19=(a16*a19);
+    a19=(a12*a19);
+    a18=sin(a14);
+    a4=(a3*a18);
+    a4=(a16*a4);
+    a4=(a12*a4);
+    a19=(a19+a4);
+    a4=sin(a9);
+    a7=(a11*a4);
     a7=(a16*a7);
-    a20=(a20+a7);
-    a20=(a4*a20);
-    a20=(-a20);
-    if (res[3]!=0) res[3][2]=a20;
+    a19=(a19+a7);
+    a19=(a15*a19);
+    a19=(-a19);
+    if (res[3]!=0) res[3][2]=a19;
     a2=cos(a2);
-    a20=(a3*a2);
-    a20=(a16*a20);
-    a20=(a12*a20);
+    a19=(a3*a2);
+    a19=(a16*a19);
+    a19=(a12*a19);
     a14=cos(a14);
     a3=(a3*a14);
     a3=(a16*a3);
     a3=(a12*a3);
-    a20=(a20+a3);
-    a17=cos(a17);
-    a3=(a9*a17);
+    a19=(a19+a3);
+    a9=cos(a9);
+    a3=(a11*a9);
     a3=(a16*a3);
-    a20=(a20+a3);
-    a20=(a4*a20);
-    if (res[3]!=0) res[3][3]=a20;
-    if (res[3]!=0) res[3][4]=a9;
-    if (res[3]!=0) res[3][5]=a9;
-    a9=1.;
-    if (res[3]!=0) res[3][6]=a9;
-    if (res[3]!=0) res[3][7]=a9;
-    a20=sin(a8);
-    a20=(a16*a20);
+    a19=(a19+a3);
+    a19=(a15*a19);
+    if (res[3]!=0) res[3][3]=a19;
+    if (res[3]!=0) res[3][4]=a11;
+    a11=1.;
+    if (res[3]!=0) res[3][5]=a11;
+    if (res[3]!=0) res[3][6]=a11;
+    a19=sin(a8);
+    a19=(a16*a19);
     a0=(a16*a0);
     a0=(a12*a0);
-    a20=(a20+a0);
-    a19=(a16*a19);
-    a19=(a12*a19);
-    a20=(a20+a19);
+    a19=(a19+a0);
     a18=(a16*a18);
-    a20=(a20+a18);
-    a20=(a4*a20);
-    a20=(-a20);
-    if (res[3]!=0) res[3][8]=a20;
+    a18=(a12*a18);
+    a19=(a19+a18);
+    a4=(a16*a4);
+    a19=(a19+a4);
+    a19=(a15*a19);
+    a19=(-a19);
+    if (res[3]!=0) res[3][7]=a19;
     a8=cos(a8);
     a8=(a16*a8);
     a2=(a16*a2);
@@ -213,12 +203,11 @@ solver_int32_default FORCESNLPsolver_model_1(const FORCESNLPsolver_float **arg, 
     a14=(a16*a14);
     a12=(a12*a14);
     a8=(a8+a12);
-    a16=(a16*a17);
+    a16=(a16*a9);
     a8=(a8+a16);
-    a4=(a4*a8);
-    if (res[3]!=0) res[3][9]=a4;
-    if (res[3]!=0) res[3][10]=a9;
-    if (res[3]!=0) res[3][11]=a9;
+    a15=(a15*a8);
+    if (res[3]!=0) res[3][8]=a15;
+    if (res[3]!=0) res[3][9]=a11;
     return 0;
 }
 
@@ -269,7 +258,7 @@ solver_int32_default FORCESNLPsolver_model_1_sparsity(solver_int32_default i, so
 solver_int32_default FORCESNLPsolver_model_1_work(solver_int32_default *sz_iw, solver_int32_default *sz_w) 
 {
     if (sz_iw) *sz_iw = 0;
-    if (sz_w) *sz_w = 22;
+    if (sz_w) *sz_w = 21;
     return 0;
 }
 

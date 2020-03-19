@@ -13,8 +13,8 @@
 
 #define FORCES_N 12 // model.N, horizon length
 #define FORCES_NU 3 //number of control variables
-#define FORCES_NX 4 // differentiable variables
-#define FORCES_TOTAL_V 7 //Total control and differentiable
+#define FORCES_NX 3 // differentiable variables
+#define FORCES_TOTAL_V 6 //Total control and differentiable
 #define FORCES_NPAR 30 //Total number of parameters for one horizon step
 
 

@@ -15,7 +15,7 @@
 #define FORCES_NU 3 //number of control variables
 #define FORCES_NX 3 // differentiable variables
 #define FORCES_TOTAL_V 6 //Total control and differentiable
-#define FORCES_NPAR 7 //Total number of parameters for one horizon step
+#define FORCES_NPAR 30 //Total number of parameters for one horizon step
 
 
 FORCESNLPsolver_params forces_params; // 50 X 9   [acc   delta  sv     x      y       psi   v    s dummy X 50]
@@ -370,29 +370,16 @@ void MPCC::ControlLoop()
             //forces_params.all_parameters[k + 24] = slack_weight_;                     //slack weight
             //forces_params.all_parameters[k + 25] = repulsive_weight_;                     //repulsive weight
 
-            //forces_params.all_parameters[k + 26] = r_discs_; //radius of the disks
-            //forces_params.all_parameters[k + 27] = x_discs_[0];                        // position of the car discs
-            //forces_params.all_parameters[k + 39] = x_discs_[1];                        // position of the car discs
-            //forces_params.all_parameters[k + 40] = x_discs_[2];                        // position of the car discs
-            //forces_params.all_parameters[k + 42] = x_discs_[3];                        // position of the car discs
-            //forces_params.all_parameters[k + 43] = x_discs_[4];
+            forces_params.all_parameters[k + 7] = r_discs_; //radius of the disks
+            forces_params.all_parameters[k + 8] = 0.0;     // position of the car discs
 
-            //forces_params.all_parameters[k + 28] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
-            //forces_params.all_parameters[k + 19] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
-            //ToDo check convertion from quaternion to RPY angle
-            /*
-	        forces_params.all_parameters[k + 30] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
-            forces_params.all_parameters[k + 31] = obstacles_.lmpcc_obstacles[0].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
-            forces_params.all_parameters[k + 32] = obstacles_.lmpcc_obstacles[0].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
-
-
-            forces_params.all_parameters[k + 33] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 2
-            forces_params.all_parameters[k + 34] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 2
-            forces_params.all_parameters[k + 35] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 2
-            forces_params.all_parameters[k + 36] = obstacles_.lmpcc_obstacles[1].major_semiaxis[N_iter];       // major semiaxis of obstacle 2
-            forces_params.all_parameters[k + 37] = obstacles_.lmpcc_obstacles[1].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 2
-            forces_params.all_parameters[k + 41] = right_offset_;
-            forces_params.all_parameters[k + 42] = left_offset_;*/
+            for(int obs_id = 0;obs_id< controller_config_->n_obstacles_;obs_id++){
+                forces_params.all_parameters[k + 9 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
+                forces_params.all_parameters[k + 10 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
+                forces_params.all_parameters[k + 11 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
+                forces_params.all_parameters[k + 12 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
+                forces_params.all_parameters[k + 13 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
+            }
 
         }
 

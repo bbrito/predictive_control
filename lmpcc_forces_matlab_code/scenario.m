@@ -27,7 +27,7 @@ model.N = 12;            % horizon length
 model.nvar = 6;          % number of variables
 model.neq= 3;            % number of equality constraints
 model.nh = 0;            % number of inequality constraint functions
-n_other_param = 40;
+n_other_param = 7;
 
 model.npar =  n_other_param;          % number of parameters
 
@@ -60,7 +60,7 @@ for i=1:model.N
 end
 %% Dynamics, i.e. equality constraints 
 %model.objective = @(z, p) objective_scenario_try(z, p);
-model.eq = @(z, p) dynamic_scenario(z, p, 0);
+model.eq = @(z, p) dynamic_scenario(z, p);
 
 model.E = [zeros(3,3), eye(3)];
 

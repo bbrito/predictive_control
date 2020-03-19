@@ -15,7 +15,7 @@
 #define FORCES_NU 3 //number of control variables
 #define FORCES_NX 3 // differentiable variables
 #define FORCES_TOTAL_V 6 //Total control and differentiable
-#define FORCES_NPAR 30 //Total number of parameters for one horizon step
+#define FORCES_NPAR 7 //Total number of parameters for one horizon step
 
 
 FORCESNLPsolver_params forces_params; // 50 X 9   [acc   delta  sv     x      y       psi   v    s dummy X 50]

@@ -1,4 +1,4 @@
-function [cost] =  objective_scenario( z, p, i)
+function [cost] =  objective_scenario( z, p)
 %% Cost for ego-vehicle    
 % states and inputs for ego vehicle
 %            inputs               |               states

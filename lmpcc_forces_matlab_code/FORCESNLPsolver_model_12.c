@@ -24,7 +24,7 @@ FORCESNLPsolver_float CASADI_PREFIX(sign)(FORCESNLPsolver_float x) { return x<0 
 
 static const solver_int32_default CASADI_PREFIX(s0)[] = {6, 1, 0, 6, 0, 1, 2, 3, 4, 5};
 #define s0 CASADI_PREFIX(s0)
-static const solver_int32_default CASADI_PREFIX(s1)[] = {40, 1, 0, 40, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
+static const solver_int32_default CASADI_PREFIX(s1)[] = {7, 1, 0, 7, 0, 1, 2, 3, 4, 5, 6};
 #define s1 CASADI_PREFIX(s1)
 static const solver_int32_default CASADI_PREFIX(s2)[] = {1, 1, 0, 1, 0};
 #define s2 CASADI_PREFIX(s2)

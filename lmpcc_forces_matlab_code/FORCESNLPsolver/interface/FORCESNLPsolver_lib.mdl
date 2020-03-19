@@ -60,13 +60,13 @@ Model {
       }
     }
   }
-  Created		  "3/19/2020 1:54:54 PM"
+  Created		  "3/19/2020 2:24:27 PM"
   Creator		  "embotech AG"
   UpdateHistory		  "UpdateHistoryNever"
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "embotech AG"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "3/19/2020 1:54:54 PM"
+  LastModifiedDate	  "3/19/2020 2:24:27 PM"
   RTWModifiedTimeStamp	  315310195
   ModelVersionFormat	  "1.%<AutoIncrement:2>"
   ConfigurationManager	  "None"
@@ -806,7 +806,7 @@ Model {
 	"INPUTS:\n"
 	" - x0 - column vector of length 72\n "
 " - xinit - column vector of length 3\n "
-" - all_parameters - column vector of length 480\n "
+" - all_parameters - column vector of length 84\n "
 
 	"\nOUTPUTS:\n"
 	" - x01 - column vector of length 6\n "

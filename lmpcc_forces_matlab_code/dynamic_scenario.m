@@ -1,4 +1,4 @@
-function x_next =  dynamic_scenario( z, p, w  )
+function x_next =  dynamic_scenario( z, p )
 %            inputs               |               states
 %                acc   delta  sv     x      y       psi   v    s    dummy
     stepSize = 0.4;
@@ -10,7 +10,7 @@ function x_next =  dynamic_scenario( z, p, w  )
     x_next = x_R_next;
 end
 
-function xdot = continuous_dynamics_R ( x, u, L )
+function xdot = continuous_dynamics_R ( x, u )
     v = u(1);
     w = u(2);
     theta =  x(3);

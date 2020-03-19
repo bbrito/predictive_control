@@ -27,6 +27,6 @@ v_ref = p(7);
 %% Total cost
 error_x = x - x_ref;
 error_y = y - y_ref;
-cost = Wx*error_x*error_x + Wy*error_y*error_y +Wv*(v-v_ref)*(v-v_ref) +Ww*w*w;
+cost = Wx*error_x*error_x + Wy*error_y*error_y +Ww*w*w + 10*sv*sv + Wv*v*v;
 
 end

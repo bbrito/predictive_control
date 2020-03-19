@@ -86,7 +86,7 @@ include_directories(include
     ${EIGEN_INCLUDE_DIRS}
     ${orocos_kdl_INCLUDE_DIRS}
     include/${PROJECT_NAME}
-    ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver/include
+    ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver/include
     )
 
 
@@ -112,9 +112,9 @@ add_library(lmpcc_controller
         )
 add_dependencies(lmpcc_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(lmpcc_node src/lmpcc_node.cpp ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_1.c
-        ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_12.c
-        ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver_casadi2forces.c)
+add_executable(lmpcc_node src/lmpcc_node.cpp ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_1.c
+        ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_12.c
+        ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_casadi2forces.c)
 
 target_link_libraries(lmpcc_node
         lmpcc_controller
@@ -122,7 +122,7 @@ target_link_libraries(lmpcc_node
         ${OpenCV_LIBS}
         ${catkin_LIBRARIES}
         tkspline_lib
-        ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/lmpcc_forces_matlab_code/FORCESNLPsolver/lib/libFORCESNLPsolver.so
+        ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver/lib/libFORCESNLPsolver.so
         )
 
 add_dependencies(lmpcc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

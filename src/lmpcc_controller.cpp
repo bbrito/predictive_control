@@ -361,7 +361,7 @@ void MPCC::ControlLoop()
             forces_params.all_parameters[k + 3] = Ww_;
             forces_params.all_parameters[k + 4] = traj_ref_.poses[N_iter].pose.position.x;        // spline coefficients
             forces_params.all_parameters[k + 5] = traj_ref_.poses[N_iter].pose.position.y;
-            forces_params.all_parameters[k + 6] = 0.8;        // spline coefficients
+            forces_params.all_parameters[k + 6] = 0.8;        // spline coefficien
 
             //obstacle_distance1 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
             //obstacle_distance2 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
@@ -753,7 +753,7 @@ void MPCC::VReCallBack(const std_msgs::Float64::ConstPtr& msg){
 void MPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {
     last_state_ = current_state_;
-    ROS_INFO_STREAM("New state: " << current_state_);
+    //ROS_INFO_STREAM("New state: " << current_state_);
     current_state_(0) =    msg->position.x;
     current_state_(1) =    msg->position.y;
     current_state_(2) =    msg->orientation.z;

@@ -40,11 +40,11 @@ model.npar =  n_other_param;          % number of parameters
 % model.ub = [ +2.0,  +1.0,   800, +200,   +200,    +1.5*pi,    inf];
 
 % Lower limits for robot
-lb_R = [ -2.0,  -1.0, 0, -500,   -500,    -2.0*pi,   0];
+lb_R = [ -2.0,  -1.0, 0, -500,   -500,    -pi,   0];
 model.lb = lb_R;
 
 % Upper limits for robot
-ub_R = [ +2.0,  +1.0, inf, +500,   500,    +2.0*pi,    inf];
+ub_R = [ +2.0,  +1.0, +inf, +500,   500,    +pi,   +inf];
 
 model.ub =ub_R;
 %%

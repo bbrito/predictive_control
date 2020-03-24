@@ -42,7 +42,7 @@ road_width_left: 5.125
 
 # Parameters for collision constraints
 obstacles:
-      n_obstacles: 2
+      n_obstacles: 6
       sub_ellipse_topic: ellipse_objects_feed
       n_discs: 1
       ego_l: 0.5

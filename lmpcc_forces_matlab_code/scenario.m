@@ -26,8 +26,8 @@ rad2deg = @(rad) rad/pi*180; % convert radians into degrees
 model.N = 12;            % horizon length
 model.nvar = 7;          % number of variables
 model.neq= 4;            % number of equality constraints
-model.nh = 2;            % number of inequality constraint functions
-n_other_param = 40;
+model.nh = 6;            % number of inequality constraint functions
+n_other_param = 58;
 
 model.npar =  n_other_param;          % number of parameters
 
@@ -55,8 +55,8 @@ for i=1:model.N
     model.ineq{i} = @(z,p) inequality_constr_scenario(z, p, i);
 
     %% Upper/lower bounds For road boundaries
-    model.hu{i} = [+inf, +inf];   
-    model.hl{i} = [1, 1];
+    model.hu{i} = [+inf, +inf,+inf, +inf,+inf, +inf];   
+    model.hl{i} = [1, 1,1, 1,1, 1];
 end
 %% Dynamics, i.e. equality constraints 
 %model.objective = @(z, p) objective_scenario_try(z, p);

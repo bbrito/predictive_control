@@ -90,7 +90,14 @@ c_disc_0_obst_1 = deltaPos_disc_0_obstacle_1' * R_obst_1' * ab_1 * R_obst_1 * de
 
 c_disc_0_obst_2 = deltaPos_disc_0_obstacle_2' * R_obst_2' * ab_2 * R_obst_2 * deltaPos_disc_0_obstacle_2;
 
+% Bivariate Gaussian
+%field1 = 1/(2*pi)*det(inv(sigma))*exp(-0.5*(deltaPos_disc_0_obstacle_1)'*inv(sigma)*deltaPos_disc_0_obstacle_1);
+%field2 = 1/(2*pi)*det(inv(sigma))*exp(-0.5*(deltaPos_disc_0_obstacle_2)'*inv(sigma)*deltaPos_disc_0_obstacle_2);
+
 %% Total cost
-cost = Wcontour*error_contour*error_contour + Wlag*error_lag*error_lag +Wv*(v-vref)*(v-vref) +Ww*w*w+sv*sv;%+Wrepulsive*(1/((1-c_disc_0_obst_1)*(1-c_disc_0_obst_1)+.001))+Wrepulsive*(1/((1-c_disc_1_obst_1)*(1-c_disc_1_obst_1)+.001))+Wrepulsive*(1/((1-c_disc_2_obst_1)*(1-c_disc_2_obst_1)+.001))+Wrepulsive*(1/((1-c_disc_0_obst_2)*(1-c_disc_0_obst_2)+.001))+Wrepulsive*(1/((1-c_disc_1_obst_2)*(1-c_disc_1_obst_2)+.001))+Wrepulsive*(1/((1-c_disc_2_obst_2)*(1-c_disc_2_obst_2)+.001));
+%cost = Wcontour*error_contour*error_contour + Wlag*error_lag*error_lag +Wv*(v-vref)*(v-vref) +Ww*w*w+ws*sv*sv+Wrepulsive*(field1 + field2);
+
+%% Total cost
+cost = Wcontour*error_contour*error_contour + Wlag*error_lag*error_lag +Wv*(v-vref)*(v-vref) +Ww*w*w+ws*sv*sv+Wrepulsive*(1/((1-c_disc_0_obst_1)*(1-c_disc_0_obst_1)+.001)+1/((1-c_disc_0_obst_2)*(1-c_disc_0_obst_2)+.001));
 
 end

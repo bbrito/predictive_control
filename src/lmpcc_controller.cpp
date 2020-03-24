@@ -410,8 +410,8 @@ void MPCC::ControlLoop()
             forces_params.all_parameters[k + 27] = x_discs_[0];                        // position of the car discs
 
             for(int obs_id = 0;obs_id< controller_config_->n_obstacles_;obs_id++){
-                forces_params.all_parameters[k + 28 + obs_id*5] = 1000;//obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
-                forces_params.all_parameters[k + 29 + obs_id*5] = 1000;//obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
+                forces_params.all_parameters[k + 28 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
+                forces_params.all_parameters[k + 29 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
                 forces_params.all_parameters[k + 30 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
                 forces_params.all_parameters[k + 31 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
                 forces_params.all_parameters[k + 32 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1

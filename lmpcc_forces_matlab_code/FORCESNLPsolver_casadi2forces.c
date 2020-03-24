@@ -54,9 +54,9 @@ extern void FORCESNLPsolver_casadi2forces(FORCESNLPsolver_float *x,        /* pr
     
     /* temporary storage for casadi sparse output */
     FORCESNLPsolver_float this_f;
-    FORCESNLPsolver_float nabla_f_sparse[6];
-    
-    
+    FORCESNLPsolver_float nabla_f_sparse[7];
+    FORCESNLPsolver_float h_sparse[2];
+    FORCESNLPsolver_float nabla_h_sparse[8];
     FORCESNLPsolver_float c_sparse[4];
     FORCESNLPsolver_float nabla_c_sparse[12];
             
@@ -79,8 +79,12 @@ extern void FORCESNLPsolver_casadi2forces(FORCESNLPsolver_float *x,        /* pr
 	 if ((stage >= 0 && stage < 11))
 	 {
 		 /* set inputs */
-		 out[2] = c_sparse;
-		 out[3] = nabla_c_sparse;
+		 out[2] = h_sparse;
+		 out[3] = nabla_h_sparse;
+		 out[4] = c_sparse;
+		 out[5] = nabla_c_sparse;
+		 
+
 		 /* call CasADi */
 		 FORCESNLPsolver_model_1(in, out);
 
@@ -92,19 +96,32 @@ extern void FORCESNLPsolver_casadi2forces(FORCESNLPsolver_float *x,        /* pr
 		 }
 		 if( c )
 		 {
-		 FORCESNLPsolver_model_1_sparsity(4, &nrow, &ncol, &colind, &row);
-		 sparse2fullcopy(nrow, ncol, colind, row, c_sparse, c);
+			 FORCESNLPsolver_model_1_sparsity(6, &nrow, &ncol, &colind, &row);
+			 sparse2fullcopy(nrow, ncol, colind, row, c_sparse, c);
 		 }
 		 if( nabla_c )
 		 {
-			 FORCESNLPsolver_model_1_sparsity(5, &nrow, &ncol, &colind, &row);
+			 FORCESNLPsolver_model_1_sparsity(7, &nrow, &ncol, &colind, &row);
 			 sparse2fullcopy(nrow, ncol, colind, row, nabla_c_sparse, nabla_c);
+		 }
+		 if( h )
+		 {
+			 FORCESNLPsolver_model_1_sparsity(4, &nrow, &ncol, &colind, &row);
+			 sparse2fullcopy(nrow, ncol, colind, row, h_sparse, h);
+		 }
+		 if( nabla_h )
+		 {
+			 FORCESNLPsolver_model_1_sparsity(5, &nrow, &ncol, &colind, &row);
+			 sparse2fullcopy(nrow, ncol, colind, row, nabla_h_sparse, nabla_h);
 		 }
 		 
 	 }
 
 	 if ((stage >= 11 && stage < 12))
 	 {
+		 /* set inputs */
+		 out[2] = h_sparse;
+		 out[3] = nabla_h_sparse;
 		 /* call CasADi */
 		 FORCESNLPsolver_model_12(in, out);
 
@@ -113,6 +130,16 @@ extern void FORCESNLPsolver_casadi2forces(FORCESNLPsolver_float *x,        /* pr
 		 {
 			 FORCESNLPsolver_model_12_sparsity(3, &nrow, &ncol, &colind, &row);
 			 sparse2fullcopy(nrow, ncol, colind, row, nabla_f_sparse, nabla_f);
+		 }
+		 if( h )
+		 {
+			 FORCESNLPsolver_model_12_sparsity(4, &nrow, &ncol, &colind, &row);
+			 sparse2fullcopy(nrow, ncol, colind, row, h_sparse, h);
+		 }
+		 if( nabla_h )
+		 {
+			 FORCESNLPsolver_model_12_sparsity(5, &nrow, &ncol, &colind, &row);
+			 sparse2fullcopy(nrow, ncol, colind, row, nabla_h_sparse, nabla_h);
 		 }
 		 
 	 }

@@ -13,9 +13,9 @@
 
 #define FORCES_N 12 // model.N, horizon length
 #define FORCES_NU 3 //number of control variables
-#define FORCES_NX 3 // differentiable variables
-#define FORCES_TOTAL_V 6 //Total control and differentiable
-#define FORCES_NPAR 30 //Total number of parameters for one horizon step
+#define FORCES_NX 4 // differentiable variables
+#define FORCES_TOTAL_V 7 //Total control and differentiable
+#define FORCES_NPAR 40 //Total number of parameters for one horizon step
 
 
 FORCESNLPsolver_params forces_params; // 50 X 9   [acc   delta  sv     x      y       psi   v    s dummy X 50]
@@ -148,7 +148,7 @@ bool MPCC::initialize()
 
         ros::NodeHandle nh_predictive("predictive_controller");
 
-        ROS_INFO("Setting up dynamic_reconfigure server for the TwistControlerConfig parameters");
+        ROS_INFO("Setting up dynamic_reconfigure server for the parameters");
         reconfigure_server_.reset(new dynamic_reconfigure::Server<lmpcc::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
         
@@ -164,8 +164,8 @@ bool MPCC::initialize()
                 obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.x = 10000;
                 obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.y = 10000;
                 obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.orientation.z = 0;
-                obstacles_.lmpcc_obstacles[obst_it].major_semiaxis[t] = 0.001;
-                obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis[t] = 0.001;
+                obstacles_.lmpcc_obstacles[obst_it].major_semiaxis[t] = 0.3;
+                obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis[t] = 0.3;
             }
         }
 
@@ -177,7 +177,7 @@ bool MPCC::initialize()
         replan_ = false;
 
         debug_ = false;
-        n_iterations_ = 100;
+
         simulation_mode_ = true;
 
         //Plot variables
@@ -271,8 +271,8 @@ void MPCC::broadcastPathPose(){
     transformStamped.header.frame_id = controller_config_->target_frame_;
     transformStamped.child_frame_id = "path";
 
-    transformStamped.transform.translation.x = ref_path_x(forces_params.x0[7]);
-    transformStamped.transform.translation.y = ref_path_y(forces_params.x0[7]);
+    transformStamped.transform.translation.x = ref_path_x(forces_params.x0[6]);
+    transformStamped.transform.translation.y = ref_path_y(forces_params.x0[6]);
     transformStamped.transform.translation.z = 0.0;
     tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, pred_traj_.poses[1].pose.orientation.z);
     transformStamped.transform.rotation.x = 0;
@@ -351,34 +351,70 @@ void MPCC::ControlLoop()
         forces_params.xinit[0] = current_state_(0);
         forces_params.xinit[1] = current_state_(1);
         forces_params.xinit[2] = current_state_(2);
+        forces_params.x0[FORCES_NU] = current_state_(0);
+        forces_params.x0[FORCES_NU+1] = current_state_(1);
+        forces_params.x0[FORCES_NU+2] = current_state_(2);
+
+        if (forces_params.xinit[3] > ss[traj_i + 1]) {
+
+            if (traj_i + 1 == ss.size()) {
+                goal_reached_ = true;
+                ROS_ERROR_STREAM("GOAL REACHED: "<< ss.size());
+            } else {
+                traj_i++;
+            }
+        }
+
+        double smin = forces_params.x0[FORCES_TOTAL_V + 4];
+
+        traj_i = spline_closest_point(traj_i, ss, smin, window_size_,
+                                        n_search_points_);
+        forces_params.xinit[3] = smin;
 
         for (N_iter = 0; N_iter < FORCES_N; N_iter++) {
             int k = N_iter*FORCES_NPAR;
 
-            forces_params.all_parameters[k + 0] = Wx_;        // spline coefficients
-            forces_params.all_parameters[k + 1] = Wy_;
-            forces_params.all_parameters[k + 2] = Wv_;        // spline coefficients
-            forces_params.all_parameters[k + 3] = Ww_;
-            forces_params.all_parameters[k + 4] = traj_ref_.poses[N_iter].pose.position.x;        // spline coefficients
-            forces_params.all_parameters[k + 5] = traj_ref_.poses[N_iter].pose.position.y;
-            forces_params.all_parameters[k + 6] = 0.8;        // spline coefficien
+            forces_params.all_parameters[k + 0] = ref_path_x.m_a[traj_i];        // spline coefficients
+            forces_params.all_parameters[k + 1] = ref_path_x.m_b[traj_i];
+            forces_params.all_parameters[k + 2] = ref_path_x.m_c[traj_i];        // spline coefficients
+            forces_params.all_parameters[k + 3] = ref_path_x.m_d[traj_i];
+            forces_params.all_parameters[k + 4] = ref_path_y.m_a[traj_i];        // spline coefficients
+            forces_params.all_parameters[k + 5] = ref_path_y.m_b[traj_i];
+            forces_params.all_parameters[k + 6] = ref_path_y.m_c[traj_i];        // spline coefficients
+            forces_params.all_parameters[k + 7] = ref_path_y.m_d[traj_i];
 
+            forces_params.all_parameters[k + 8] = ref_path_x.m_a[traj_i + 1];        // spline coefficients
+            forces_params.all_parameters[k + 9] = ref_path_x.m_b[traj_i + 1];
+            forces_params.all_parameters[k + 10] = ref_path_x.m_c[traj_i + 1];        // spline coefficients
+            forces_params.all_parameters[k + 11] = ref_path_x.m_d[traj_i + 1];
+            forces_params.all_parameters[k + 12] = ref_path_y.m_a[traj_i + 1];        // spline coefficients
+            forces_params.all_parameters[k + 13] = ref_path_y.m_b[traj_i + 1];
+            forces_params.all_parameters[k + 14] = ref_path_y.m_c[traj_i + 1];        // spline coefficients
+            forces_params.all_parameters[k + 15] = ref_path_y.m_d[traj_i + 1];
+
+            forces_params.all_parameters[k + 16] = ss[traj_i];       // s1
+            forces_params.all_parameters[k + 17] = ss[traj_i + 1];       //s2
+            forces_params.all_parameters[k + 18] = ss[traj_i + 1] + 0.02;       // d
             //obstacle_distance1 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
             //obstacle_distance2 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
 
+            forces_params.all_parameters[k + 19] = Wcontour_;
+            forces_params.all_parameters[k + 20] = Wlag_;     // weight lag error
+            forces_params.all_parameters[k + 21] = Kw_;    // weight acceleration
+            forces_params.all_parameters[k + 22] = reference_velocity_;
+            forces_params.all_parameters[k + 23] = slack_weight_;                     //slack weight
+            forces_params.all_parameters[k + 24] = repulsive_weight_;                     //repulsive weight
+            forces_params.all_parameters[k + 25] = velocity_weight_;                     //repulsive weight
 
-            //forces_params.all_parameters[k + 24] = slack_weight_;                     //slack weight
-            //forces_params.all_parameters[k + 25] = repulsive_weight_;                     //repulsive weight
-
-            forces_params.all_parameters[k + 7] = r_discs_; //radius of the disks
-            forces_params.all_parameters[k + 8] = 0.0;     // position of the car discs
+            forces_params.all_parameters[k + 26] = r_discs_; //radius of the disks
+            forces_params.all_parameters[k + 27] = x_discs_[0];                        // position of the car discs
 
             for(int obs_id = 0;obs_id< controller_config_->n_obstacles_;obs_id++){
-                forces_params.all_parameters[k + 9 + obs_id*5] = 1000;//obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
-                forces_params.all_parameters[k + 10 + obs_id*5] = 1000;//obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
-                forces_params.all_parameters[k + 11 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
-                forces_params.all_parameters[k + 12 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
-                forces_params.all_parameters[k + 13 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
+                forces_params.all_parameters[k + 28 + obs_id*5] = 1000;//obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
+                forces_params.all_parameters[k + 29 + obs_id*5] = 1000;//obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
+                forces_params.all_parameters[k + 30 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
+                forces_params.all_parameters[k + 31 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].major_semiaxis[N_iter];       // major semiaxis of obstacle 1
+                forces_params.all_parameters[k + 32 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
             }
 
         }
@@ -399,7 +435,7 @@ void MPCC::ControlLoop()
         ROS_INFO_STREAM("xinit[4] " << forces_params.xinit[4]);
         ROS_INFO_STREAM("xinit[5] " << forces_params.xinit[5]);*/
 
-
+        broadcastPathPose();
         exit_code = FORCESNLPsolver_solve(&forces_params, &forces_output, &forces_info, stdout, extfunc_eval);
         ROS_INFO_STREAM("exit_code before iter " << exit_code);
         ROS_INFO_STREAM("primal objective " << forces_info.pobj);
@@ -423,7 +459,7 @@ void MPCC::ControlLoop()
         //broadcastPathPose();
         //cost_.data = acado_getObjective();
 
-        if(exit_code!=1) {
+        if((exit_code!=1) || (not enable_output_) ) {
             publishZeroJointVelocity();
         }
         else {
@@ -667,17 +703,19 @@ bool MPCC::ResetCallBack(lmpcc::LMPCCReset::Request  &req, lmpcc::LMPCCReset::Re
 void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level){
 
     ROS_INFO("reconfigure callback!");
-    Wx_ = config.Wx;
-    Wy_ = config.Wy;
-    Wv_ = config.Wv;
-    Ww_ = config.Ww;
+    Wcontour_ = config.Wcontour;
+    Wlag_ = config.Wlag;
+
+    Kw_ = config.Kw;
+    velocity_weight_ = config.Kv;
 
     slack_weight_= config.Ws;
     repulsive_weight_ = config.WR;
 
+    reference_velocity_ = config.vRef;
     slack_weight_= config.Ws;
+    repulsive_weight_ = config.WR;
 
-    n_iterations_ = config.n_iterations;
     simulation_mode_ = config.simulation_mode;
     // reset world
     reset_world_ = config.reset_world;
@@ -711,7 +749,12 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
         ROS_INFO("Before reset_solver");
 		reset_solver();
         ROS_INFO("After reset_solver");
+		//ConstructRefPath();
+		//getWayPointsCallBack( );
+		//ROS_INFO("ConstructRefPath");
 
+        publishSplineTrajectory();
+        //ROS_INFO("reconfigure callback!");
         traj_i = 0;
         goal_reached_ = false;
         timer_.start();

@@ -7,10 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /RobotModel1
-        - /MarkerArray1
-        - /Marker1
-        - /Map2
-        - /Path1
+        - /Path2
       Splitter Ratio: 0.5
     Tree Height: 853
   - Class: rviz/Selection
@@ -155,7 +152,7 @@ Visualization Manager:
       Marker Topic: /robot_collision_space
       Name: MarkerArray
       Namespaces:
-        {}
+        trajectory: true
       Queue Size: 100
       Value: true
     - Class: rviz/TF
@@ -177,7 +174,7 @@ Visualization Manager:
       Marker Topic: /goal_marker
       Name: Marker
       Namespaces:
-        goal_marker: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 0.699999988
@@ -229,6 +226,29 @@ Visualization Manager:
       Name: Axes
       Radius: 0.100000001
       Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.300000012
+      Head Length: 0.200000003
+      Length: 0.300000012
+      Line Style: Billboards
+      Line Width: 0.0299999993
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.0299999993
+      Shaft Diameter: 0.100000001
+      Shaft Length: 0.100000001
+      Topic: /spline_traj
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:

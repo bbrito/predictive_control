@@ -214,7 +214,7 @@ public:
     bool plan_;
     bool replan_;
     bool debug_;
-    int n_iterations_;
+
     bool simulation_mode_;
     real_t te_;
 
@@ -270,12 +270,14 @@ private:
 
     double slack_weight_;
     double repulsive_weight_;
+    double Wcontour_;
+    double Wlag_;
+    double Kw_;
     double reference_velocity_;
     double speed_;
     double velocity_weight_;
     double waypoints_size_;
     double last_waypoints_size_;
-    double Wx_,Wy_,Wv_,Ww_;
 
     //TRajectory execution variables
     double next_point_dist, goal_dist, prev_point_dist;

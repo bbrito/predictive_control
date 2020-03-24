@@ -9,6 +9,10 @@
     <arg name="debug_kinematic_cal" default="false"/>
     <arg name="debug_collision_detection" default="false"/>
 
+    <!-- Robot state -->
+    <include file="$(find mobile_robot_state_publisher)/launch/mobile_robot_publisher.launch">
+    </include>
+
     <!-- Obstacles -->
     <rosparam command="load" file="$(find lmpcc_obstacle_feed)/config/lmpcc_obstacle_feed_config.yaml"/>
 
@@ -20,7 +24,7 @@
     <node pkg="lmpcc" type="lmpcc_node" name="lmpcc_node" cwd="node" respawn="false" output="screen"/>
 
     <!-- configured rviz -->
-    <!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find lmpcc)/rviz_config/rviz_config.rviz" / -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find lmpcc)/rviz_config/rviz_config.rviz" />
 
 
 	

@@ -27,7 +27,7 @@ model.N = 12;            % horizon length
 model.nvar = 7;          % number of variables
 model.neq= 4;            % number of equality constraints
 model.nh = 0;            % number of inequality constraint functions
-n_other_param = 30;
+n_other_param = 40;
 
 model.npar =  n_other_param;          % number of parameters
 

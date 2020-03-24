@@ -3,7 +3,7 @@ function x_next =  dynamic_scenario( z, p )
 %                acc   delta  sv     x      y       psi   v    s    dummy
     stepSize = 0.4;
     % ego-vehicle
-    x = z(4: 6);
+    x = z(4: 7);
     u = z(1: 2);
     % integrator Runge-Kutta integrator of order 4
     x_R_next = RK4(x, u, @continuous_dynamics_R, stepSize);
@@ -17,5 +17,6 @@ function xdot = continuous_dynamics_R ( x, u )
 
     xdot = [v * cos(theta);
             v * sin(theta);
-            w];
+            w;
+            v];
 end

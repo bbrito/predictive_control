@@ -281,7 +281,7 @@ private:
     double last_waypoints_size_;
 
     //TRajectory execution variables
-    double next_point_dist, goal_dist, prev_point_dist;
+    double next_point_dist, goal_dist, prev_point_dist,obstacle_distance;
 
     visualization_msgs::Marker ellips1;
 
@@ -362,7 +362,7 @@ private:
 
     void ConstructRefPath();
 
-    void publishFeedback(int& it, double& time);
+    void publishFeedback(int& it, double& time, bool in_collision);
     
     void reset_solver();
 

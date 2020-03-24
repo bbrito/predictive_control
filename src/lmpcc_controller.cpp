@@ -118,7 +118,7 @@ bool MPCC::initialize()
         robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
         pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
         spline_traj_pub_ = nh.advertise<nav_msgs::Path>("spline_traj",1);
-        feedback_pub_ = nh.advertise<lmpcc::control_feedback>("controller_feedback",1);
+        feedback_pub_ = nh.advertise<lmpcc_msgs::lmpcc_feedback>("controller_feedback",1);
         //Road publisher
         marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("road", 10);
 
@@ -347,6 +347,7 @@ void MPCC::ControlLoop()
 {
     int N_iter;
     exit_code_ = 0;
+    obstacle_distance = 100.0;
 
     if (plan_ && (waypoints_size_ > 0)) {
 
@@ -398,7 +399,7 @@ void MPCC::ControlLoop()
             forces_params.all_parameters[k + 16] = ss[traj_i];       // s1
             forces_params.all_parameters[k + 17] = ss[traj_i + 1];       //s2
             forces_params.all_parameters[k + 18] = ss[traj_i + 1] + 0.02;       // d
-            //obstacle_distance1 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
+
             //obstacle_distance2 = sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2));
 
             forces_params.all_parameters[k + 19] = Wcontour_;
@@ -453,9 +454,15 @@ void MPCC::ControlLoop()
 
         if(controller_config_->activate_debug_output_){
             publishPredictedTrajectory();
-            //publishPredictedOutput();
-            //broadcastPathPose();
-            publishFeedback(forces_info.it2opt,forces_info.solvetime);
+            for(int obs_id = 0;obs_id< controller_config_->n_obstacles_;obs_id++){
+                obstacle_distance = std::min(obstacle_distance,sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2)));
+
+                if(obstacle_distance < r_discs_){
+                    publishFeedback(forces_info.it2opt,forces_info.solvetime,true);
+                    return;
+                }
+            }
+            publishFeedback(forces_info.it2opt,forces_info.solvetime,false);
             cost_.data = forces_info.pobj;
         }
 
@@ -901,10 +908,10 @@ void MPCC::publishPredictedCollisionSpace(void)
     brake_pub_.publish(brake_);
 }*/
 
-void MPCC::publishFeedback(int& it, double& time)
+void MPCC::publishFeedback(int& it, double& time , bool in_collision)
 {
 
-    lmpcc::control_feedback feedback_msg;
+    lmpcc_msgs::lmpcc_feedback feedback_msg;
 
     feedback_msg.header.stamp = ros::Time::now();
     feedback_msg.header.frame_id = controller_config_->target_frame_;
@@ -913,11 +920,12 @@ void MPCC::publishFeedback(int& it, double& time)
     feedback_msg.iterations = it;
     feedback_msg.computation_time = time;
     feedback_msg.kkt = exit_code_;
-
+    feedback_msg.collision = in_collision;
     feedback_msg.wC = Wcontour_;       // weight factor on contour error
     feedback_msg.wL = Wlag_;       // weight factor on lag error
     feedback_msg.wV = velocity_weight_;       // weight factor on theta
     feedback_msg.wW = Kw_;
+    feedback_msg.vRef = reference_velocity_;
 
     feedback_msg.reference_path = spline_traj_;
     feedback_msg.prediction_horizon = pred_traj_;
@@ -927,12 +935,42 @@ void MPCC::publishFeedback(int& it, double& time)
     feedback_msg.search_points = n_search_points_;
 
     // obstacles
-    feedback_msg.obstx_0 = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.x;
-    feedback_msg.obsty_0 = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.y;
-    feedback_msg.obstx_1 = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.x;
-    feedback_msg.obsty_1 = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.y;
-    feedback_msg.obstacle_distance1 = sqrt(pow((current_state_(0)-feedback_msg.obstx_0),2)+pow((current_state_(1)-feedback_msg.obsty_0),2));
-    feedback_msg.obstacle_distance2 = sqrt(pow((current_state_(0)-feedback_msg.obstx_1),2)+pow((current_state_(1)-feedback_msg.obsty_1),2));
+    feedback_msg.obstx_0 = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.x ;
+    feedback_msg.obsty_0 = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.y ;
+    feedback_msg.obsth_0 = obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.orientation.z ;
+    feedback_msg.obsta_0 = obstacles_.lmpcc_obstacles[0].major_semiaxis[0] ;
+    feedback_msg.obstb_0 = obstacles_.lmpcc_obstacles[0].minor_semiaxis[0] ;
+
+    feedback_msg.obstx_1 = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.x ;
+    feedback_msg.obsty_1 = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.position.y ;
+    feedback_msg.obsth_1 = obstacles_.lmpcc_obstacles[1].trajectory.poses[0].pose.orientation.z ;
+    feedback_msg.obsta_1 = obstacles_.lmpcc_obstacles[1].major_semiaxis[0] ;
+    feedback_msg.obstb_1 = obstacles_.lmpcc_obstacles[1].minor_semiaxis[0] ;
+
+    feedback_msg.obstx_2 = obstacles_.lmpcc_obstacles[2].trajectory.poses[0].pose.position.x ;
+    feedback_msg.obsty_2 = obstacles_.lmpcc_obstacles[2].trajectory.poses[0].pose.position.y ;
+    feedback_msg.obsth_2 = obstacles_.lmpcc_obstacles[2].trajectory.poses[0].pose.orientation.z ;
+    feedback_msg.obsta_2 = obstacles_.lmpcc_obstacles[2].major_semiaxis[0] ;
+    feedback_msg.obstb_2 = obstacles_.lmpcc_obstacles[2].minor_semiaxis[0] ;
+
+    feedback_msg.obstx_3 = obstacles_.lmpcc_obstacles[3].trajectory.poses[0].pose.position.x ;
+    feedback_msg.obsty_3 = obstacles_.lmpcc_obstacles[3].trajectory.poses[0].pose.position.y ;
+    feedback_msg.obsth_3 = obstacles_.lmpcc_obstacles[3].trajectory.poses[0].pose.orientation.z ;
+    feedback_msg.obsta_3 = obstacles_.lmpcc_obstacles[3].major_semiaxis[0] ;
+    feedback_msg.obstb_3 = obstacles_.lmpcc_obstacles[3].minor_semiaxis[0] ;
+
+    feedback_msg.obstx_4 = obstacles_.lmpcc_obstacles[4].trajectory.poses[0].pose.position.x ;
+    feedback_msg.obsty_4 = obstacles_.lmpcc_obstacles[4].trajectory.poses[0].pose.position.y ;
+    feedback_msg.obsth_4 = obstacles_.lmpcc_obstacles[4].trajectory.poses[0].pose.orientation.z ;
+    feedback_msg.obsta_4 = obstacles_.lmpcc_obstacles[4].major_semiaxis[0] ;
+    feedback_msg.obstb_4 = obstacles_.lmpcc_obstacles[4].minor_semiaxis[0] ;
+
+    feedback_msg.obstx_5 = obstacles_.lmpcc_obstacles[5].trajectory.poses[0].pose.position.x ;
+    feedback_msg.obsty_5 = obstacles_.lmpcc_obstacles[5].trajectory.poses[0].pose.position.y ;
+    feedback_msg.obsth_5 = obstacles_.lmpcc_obstacles[5].trajectory.poses[0].pose.orientation.z ;
+    feedback_msg.obsta_5 = obstacles_.lmpcc_obstacles[5].major_semiaxis[0] ;
+    feedback_msg.obstb_5 = obstacles_.lmpcc_obstacles[5].minor_semiaxis[0] ;
+
 
     // control input
     feedback_msg.computed_control.linear.x = controlled_velocity_.linear.x;

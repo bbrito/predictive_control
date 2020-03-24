@@ -102,6 +102,10 @@ bool MPCC::initialize()
         /******************************** Service Servers **********************************************************/
         reset_server_ = nh.advertiseService(controller_config_->reset_topic_, &MPCC::ResetCallBack,this);
 
+        /******************************** Service Clients **********************************************************/
+        reset_simulation_client_ = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_world");
+        reset_ekf_client_ = nh.serviceClient<robot_localization::SetPose>("/set_pose");
+
         /******************************** Publishers **********************************************************/
         traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
         pred_cmd_pub_ = nh.advertise<nav_msgs::Path>("predicted_cmd",1);
@@ -151,7 +155,7 @@ bool MPCC::initialize()
         ROS_INFO("Setting up dynamic_reconfigure server for the parameters");
         reconfigure_server_.reset(new dynamic_reconfigure::Server<lmpcc::PredictiveControllerConfig>(reconfig_mutex_, nh_predictive));
         reconfigure_server_->setCallback(boost::bind(&MPCC::reconfigureCallback,   this, _1, _2));
-        
+
         // Initialize obstacles variables
         int N = FORCES_N; // hack.. needs to be beter computed
         obstacles_.lmpcc_obstacles.resize(controller_config_->n_obstacles_);
@@ -175,8 +179,6 @@ bool MPCC::initialize()
         enable_output_ = false;
         plan_ = false;
         replan_ = false;
-
-        debug_ = false;
 
         simulation_mode_ = true;
 
@@ -344,7 +346,7 @@ void MPCC::runNode(const ros::TimerEvent &event)
 void MPCC::ControlLoop()
 {
     int N_iter;
-    int exit_code = 0;
+    exit_code_ = 0;
 
     if (plan_ && (waypoints_size_ > 0)) {
 
@@ -360,6 +362,7 @@ void MPCC::ControlLoop()
             if (traj_i + 1 == ss.size()) {
                 goal_reached_ = true;
                 ROS_ERROR_STREAM("GOAL REACHED: "<< ss.size());
+                ResetSimulation();
             } else {
                 traj_i++;
             }
@@ -436,8 +439,8 @@ void MPCC::ControlLoop()
         ROS_INFO_STREAM("xinit[5] " << forces_params.xinit[5]);*/
 
         broadcastPathPose();
-        exit_code = FORCESNLPsolver_solve(&forces_params, &forces_output, &forces_info, stdout, extfunc_eval);
-        ROS_INFO_STREAM("exit_code before iter " << exit_code);
+        exit_code_ = FORCESNLPsolver_solve(&forces_params, &forces_output, &forces_info, stdout, extfunc_eval);
+        ROS_INFO_STREAM("exit_code_ before iter " << exit_code_);
         ROS_INFO_STREAM("primal objective " << forces_info.pobj);
         ROS_INFO_STREAM("number of iterations for optimality " << forces_info.it2opt);
 
@@ -448,18 +451,18 @@ void MPCC::ControlLoop()
         controlled_velocity_.angular.z = forces_output.x01[1];
         ROS_INFO_STREAM("steer_output " << controlled_velocity_.angular.z);
 
-        if(debug_){
-            //publishPredictedTrajectory();
+        if(controller_config_->activate_debug_output_){
+            publishPredictedTrajectory();
             //publishPredictedOutput();
             //broadcastPathPose();
-            //publishFeedback(j,te_);
+            publishFeedback(forces_info.it2opt,forces_info.solvetime);
+            cost_.data = forces_info.pobj;
         }
-   
-        publishPredictedCollisionSpace();
-        //broadcastPathPose();
-        //cost_.data = acado_getObjective();
 
-        if((exit_code!=1) || (not enable_output_) ) {
+        publishPredictedCollisionSpace();
+
+
+        if((exit_code_!=1) || (not enable_output_) ) {
             publishZeroJointVelocity();
         }
         else {
@@ -627,19 +630,19 @@ void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
 	//
 	last_waypoints_size_ = waypoints_size_;
 	if (waypoints.poses.size()==0){
-		
+
 
 		ROS_WARN("Waypoint message is empty");
 		X_road[0] = 0.0;
 		Y_road[0] = 0.0;
 		Theta_road[0] = 0.0; //to do conversion quaternion
-			
+
 		X_road[1] = 300.0;
 		Y_road[1] = 0.0;
 		Theta_road[1] = 0.0; //to do conversion quaternion
-			
+
         waypoints_size_ = 2.0;
-           
+
 	}
     else
 	{
@@ -652,7 +655,7 @@ void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
 		    Theta_road[ref_point_it] = quaternionToangle(waypoints.poses.at(ref_point_it).pose.orientation); //to do conversion quaternion
         }*/
 	}
-	  
+
     //ConstructRefPath();
     Ref_path(X_road, Y_road, Theta_road);
     //ROS_INFO("ConstructRefPath");
@@ -662,7 +665,7 @@ void MPCC::getWayPointsCallBack(nav_msgs::Path waypoints){
 double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
 
   double ysqr, t3, t4;
-  
+
   // Convert from quaternion to RPY
   ysqr = q.y * q.y;
   t3 = +2.0 * (q.w *q.z + q.x *q.y);
@@ -672,32 +675,31 @@ double MPCC::quaternionToangle(geometry_msgs::Quaternion q){
 
 bool MPCC::ResetCallBack(lmpcc::LMPCCReset::Request  &req, lmpcc::LMPCCReset::Response &res){
 
-    plan_=false;
+    // TODO Adapt the reset to read an initial pose and send feedback
 
-    if(plan_){
-        reset_solver();
-	// only needed for Carla
-        for(int j=0;j<10;j++){
-            publishZeroJointVelocity();
-            ros::Duration(0.1).sleep();
-        }
+    ResetSimulation();
+}
 
-        current_state_(0)=0;
-        current_state_(1)=0;
-        current_state_(2)=0;
-        current_state_(3)=0;
-        ros::Duration(1.0).sleep();
+bool MPCC::ResetSimulation(){
+    if (controller_config_->sync_mode_)
+        timer_.stop();
+    reset_solver();
 
-        traj_i = 0;
-        goal_reached_ = false;
-        if (controller_config_->sync_mode_)
-            timer_.start();
-        enable_output_ = true;
-    }
-    else{
-        if (controller_config_->sync_mode_)
-            timer_.stop();
-    }
+    reset_simulation_client_.call(reset_msg_);
+    reset_ekf_client_.call(reset_pose_msg_);
+
+    current_state_(0)=0;
+    current_state_(1)=0;
+    current_state_(2)=0;
+    current_state_(3)=0;
+    ros::Duration(1.0).sleep();
+
+    traj_i = 0;
+    goal_reached_ = false;
+
+    if (controller_config_->sync_mode_)
+        timer_.start();
+    enable_output_ = true;
 }
 
 void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level){
@@ -732,7 +734,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
     window_size_ = config.window_size;
     n_search_points_ = config.n_search_points;
 
-    debug_ = config.debug;
+    controller_config_->activate_debug_output_ = config.debug;
     if (waypoints_size_ >1) {
         ROS_WARN("Planning...");
         plan_ = config.plan;
@@ -741,7 +743,7 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
         ROS_WARN("No waypoints were provided...");
         config.plan = false;
         config.enable_output = false;
-        plan_ = false;        
+        plan_ = false;
         enable_output_ = false;
     }
 
@@ -899,7 +901,7 @@ void MPCC::publishPredictedCollisionSpace(void)
     brake_pub_.publish(brake_);
 }*/
 
-/*void MPCC::publishFeedback(int& it, double& time)
+void MPCC::publishFeedback(int& it, double& time)
 {
 
     lmpcc::control_feedback feedback_msg;
@@ -910,22 +912,15 @@ void MPCC::publishPredictedCollisionSpace(void)
     feedback_msg.cost = cost_.data;
     feedback_msg.iterations = it;
     feedback_msg.computation_time = time;
-    feedback_msg.kkt = acado_getKKT();
+    feedback_msg.kkt = exit_code_;
 
-    feedback_msg.wC = cost_contour_weight_factors_(0);       // weight factor on contour error
-    feedback_msg.wL = cost_contour_weight_factors_(1);       // weight factor on lag error
-    feedback_msg.wV = cost_control_weight_factors_(0);       // weight factor on theta
-    feedback_msg.wW = cost_control_weight_factors_(1);
+    feedback_msg.wC = Wcontour_;       // weight factor on contour error
+    feedback_msg.wL = Wlag_;       // weight factor on lag error
+    feedback_msg.wV = velocity_weight_;       // weight factor on theta
+    feedback_msg.wW = Kw_;
 
-    // Compute contour errors
-    feedback_msg.contour_errors.data.resize(2);
-
-    feedback_msg.contour_errors.data[0] = contour_error_;
-    feedback_msg.contour_errors.data[1] = lag_error_;
-
-    feedback_msg.reference_path = spline_traj2_;
+    feedback_msg.reference_path = spline_traj_;
     feedback_msg.prediction_horizon = pred_traj_;
-    feedback_msg.prediction_horizon.poses[0].pose.position.z = acadoVariables.x[3];
 
     //Search window parameters
     feedback_msg.window = window_size_;
@@ -940,9 +935,9 @@ void MPCC::publishPredictedCollisionSpace(void)
     feedback_msg.obstacle_distance2 = sqrt(pow((current_state_(0)-feedback_msg.obstx_1),2)+pow((current_state_(1)-feedback_msg.obsty_1),2));
 
     // control input
-    feedback_msg.computed_control.linear.x = controlled_velocity_.steer;
-    feedback_msg.computed_control.linear.y = controlled_velocity_.throttle;
-    feedback_msg.computed_control.linear.z = controlled_velocity_.brake;
+    feedback_msg.computed_control.linear.x = controlled_velocity_.linear.x;
+    feedback_msg.computed_control.linear.y = controlled_velocity_.angular.z;
+    feedback_msg.computed_control.linear.z = current_state_(3);
 
     // state information
     feedback_msg.computed_control.angular.x =  current_state_(0);
@@ -950,7 +945,7 @@ void MPCC::publishPredictedCollisionSpace(void)
     feedback_msg.computed_control.angular.z =  current_state_(2);
 
     feedback_pub_.publish(feedback_msg);
-}*/
+}
 
 // Utils
 

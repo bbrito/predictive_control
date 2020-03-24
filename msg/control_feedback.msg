@@ -34,8 +34,6 @@ float64 obsth_1
 float64 obsta_1
 float64 obstb_1
 
-std_msgs/Float64MultiArray contour_errors
-
 geometry_msgs/Twist computed_control
 nav_msgs/Path reference_path
 nav_msgs/Path prediction_horizon

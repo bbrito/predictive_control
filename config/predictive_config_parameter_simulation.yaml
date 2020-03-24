@@ -30,7 +30,7 @@ global_path_frame: map
 
 # Parameters for predefined reference path
 global_path:
-  x: [0,  5, 10, 50]
+  x: [0,  5, 10, 20]
   y: [0,  0, 0, 0]
   theta: [0, 0,  0, 0]
   n_points_clothoid: 20

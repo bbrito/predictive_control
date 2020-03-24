@@ -237,6 +237,7 @@ public:
     //Search window parameters
     double window_size_;
     int n_search_points_;
+    int exit_code_;
     bool goal_reached_;
 
     //reset simulation msg
@@ -370,6 +371,8 @@ private:
     bool ResetCallBack(lmpcc::LMPCCReset::Request  &req, lmpcc::LMPCCReset::Response &res);
 
     void VReCallBack(const std_msgs::Float64::ConstPtr& msg);
+
+    bool ResetSimulation();
 
 };
 

@@ -165,8 +165,8 @@ bool MPCC::initialize()
             obstacles_.lmpcc_obstacles[obst_it].major_semiaxis.resize(N);
             obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis.resize(N);
             for(int t = 0;t<N;t++){
-                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.x = 10000;
-                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.y = 10000;
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.x = 100;
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.y = 100;
                 obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.orientation.z = 0;
                 obstacles_.lmpcc_obstacles[obst_it].major_semiaxis[t] = 0.3;
                 obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis[t] = 0.3;

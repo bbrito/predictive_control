@@ -1,4 +1,4 @@
-function [cost] =  objective_scenario( z, p)
+function [cost] =  objective_scenario( z, p,i)
 %% Cost for ego-vehicle    
 % states and inputs for ego vehicle
 %            inputs               |               states
@@ -97,7 +97,7 @@ c_disc_0_obst_2 = deltaPos_disc_0_obstacle_2' * R_obst_2' * ab_2 * R_obst_2 * de
 %% Total cost
 %cost = Wcontour*error_contour*error_contour + Wlag*error_lag*error_lag +Wv*(v-vref)*(v-vref) +Ww*w*w+ws*sv*sv+Wrepulsive*(field1 + field2);
 
-%% Total cost
-cost = Wcontour*error_contour*error_contour + Wlag*error_lag*error_lag +Wv*(v-vref)*(v-vref) +Ww*w*w+ws*sv*sv+Wrepulsive*(1/((1-c_disc_0_obst_1)*(1-c_disc_0_obst_1)+.001)+1/((1-c_disc_0_obst_2)*(1-c_disc_0_obst_2)+.001));
+%% Total cost (0.9^i)*(
+cost = (0.9^i)*(Wcontour*error_contour*error_contour + Wlag*error_lag*error_lag) +Wv*(v-vref)*(v-vref) +Ww*w*w+ws*sv*sv+Wrepulsive*(1/((1-c_disc_0_obst_1)*(1-c_disc_0_obst_1)+.001)+1/((1-c_disc_0_obst_2)*(1-c_disc_0_obst_2)+.001));
 
 end

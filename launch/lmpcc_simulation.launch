@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- Debug Info -->
+    <arg name="debug" default="false" />
+    <arg unless="$(arg debug)" name="launch_prefix" value="" />
+    <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+    <arg name="debug_config_parameter" default="false"/>
+    <arg name="debug_kinematic_cal" default="false"/>
+    <arg name="debug_collision_detection" default="false"/>
+    <arg name="gui" default="false" />
+
+    <!-- Robot Simulation -->
+    <include file="$(find jackal_gazebo)/launch/jackal_world.launch">
+    <arg name="gui" value="$(arg gui)" />
+    </include>
+
+    <!-- Pedestrian's Simulation -->
+    <include file="$(find pedsim_simulator)/launch/airport_demo.launch">
+    </include>
+
+    <!-- Robot state -->
+    <include file="$(find mobile_robot_state_publisher)/launch/mobile_robot_publisher.launch">
+    </include>
+
+    <!-- Obstacles -->
+    <rosparam command="load" file="$(find lmpcc_obstacle_feed)/config/lmpcc_obstacle_feed_config.yaml"/>
+
+    <node pkg="lmpcc_obstacle_feed" type="lmpcc_obstacle_feed_node" name="lmpcc_obstacle_feed_node" cwd="node" respawn="false" output="screen"/>
+
+    # load Cartesian controller config
+    <rosparam command="load" file="$(find lmpcc)/config/predictive_config_parameter_simulation.yaml"/>
+
+    <node pkg="lmpcc" type="lmpcc_node" name="lmpcc_node" cwd="node" respawn="false" output="screen"/>
+
+    <!-- configured rviz -->
+    <!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find lmpcc)/rviz_config/rviz_config.rviz" / -->
+
+
+	
+</launch>  

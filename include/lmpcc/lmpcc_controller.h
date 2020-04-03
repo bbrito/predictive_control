@@ -280,8 +280,16 @@ private:
     double waypoints_size_;
     double last_waypoints_size_;
 
-    //TRajectory execution variables
-    double next_point_dist, goal_dist, prev_point_dist,obstacle_distance;
+    // Statistic performance variables
+    double total_trials_;
+    double total_success_;
+    double total_timeout_;
+    double time_of_arrival_, start_time_;
+    double n_collisions_;
+    int done_;
+
+            //TRajectory execution variables
+    double next_point_dist, goal_dist, prev_point_dist,obstacle_distance, n_episodes_;
 
     visualization_msgs::Marker ellips1;
 

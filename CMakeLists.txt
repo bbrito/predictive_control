@@ -112,7 +112,7 @@ add_library(lmpcc_controller
 add_dependencies(lmpcc_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(lmpcc_node src/lmpcc_node.cpp ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_1.c
-        ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_12.c
+        ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_model_15.c
         ${CMAKE_SOURCE_DIR}/lmpcc_forces_matlab_code/FORCESNLPsolver_casadi2forces.c)
 
 target_link_libraries(lmpcc_node

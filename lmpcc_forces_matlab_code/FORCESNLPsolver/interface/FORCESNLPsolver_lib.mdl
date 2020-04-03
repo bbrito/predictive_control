@@ -60,13 +60,13 @@ Model {
       }
     }
   }
-  Created		  "3/24/2020 7:29:29 PM"
+  Created		  "4/1/2020 6:02:15 PM"
   Creator		  "embotech AG"
   UpdateHistory		  "UpdateHistoryNever"
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "embotech AG"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "3/24/2020 7:29:29 PM"
+  LastModifiedDate	  "4/1/2020 6:02:15 PM"
   RTWModifiedTimeStamp	  315310195
   ModelVersionFormat	  "1.%<AutoIncrement:2>"
   ConfigurationManager	  "None"
@@ -767,8 +767,8 @@ Model {
       BlockType		      S-Function
       Name		      "FORCESNLPsolver"
       SID		      "1"
-      Ports		      [3, 12]
-      Position		      [170, 99, 650, 204]
+      Ports		      [3, 15]
+      Position		      [170, 99, 650, 255]
       ZOrder		      1
       FunctionName	      "FORCESNLPsolver_simulinkBlock"
 	  SFunctionModules	      "FORCESNLPsolver FORCESNLPsolver_simulinkBlock"
@@ -804,9 +804,9 @@ Model {
 	Help			"FORCESNLPsolver_simulinkBlock provides an easy Simulink interface for simulating your customized solver.  \n"
 	"\nOUTPUTS = FORCESNLPsolver(INPUTS) solves an optimization problem where:\n\n"
 	"INPUTS:\n"
-	" - x0 - column vector of length 84\n "
+	" - x0 - column vector of length 105\n "
 " - xinit - column vector of length 4\n "
-" - all_parameters - column vector of length 696\n "
+" - all_parameters - column vector of length 870\n "
 
 	"\nOUTPUTS:\n"
 	" - x01 - column vector of length 7\n "
@@ -821,6 +821,9 @@ Model {
 " - x10 - column vector of length 7\n "
 " - x11 - column vector of length 7\n "
 " - x12 - column vector of length 7\n "
+" - x13 - column vector of length 7\n "
+" - x14 - column vector of length 7\n "
+" - x15 - column vector of length 7\n "
 
 	"\n For more information, see https://www.embotech.com/FORCES-Pro/How-to-use/Simulink-Interface/Simulink-Block \n "
 
@@ -839,6 +842,9 @@ Model {
 "port_label('output', 10, 'x10') \n "
 "port_label('output', 11, 'x11') \n "
 "port_label('output', 12, 'x12') \n "
+"port_label('output', 13, 'x13') \n "
+"port_label('output', 14, 'x14') \n "
+"port_label('output', 15, 'x15') \n "
 "if( exist('forcesprologo.jpg','file') ), image(imread('forcesprologo.jpg'),'center','on'); elseif( exist(['interface',filesep,'forcesprologo.jpg'],'file') ), image(imread(['interface',filesep,'forcesprologo.jpg']),'center','on'); elseif( exist(['FORCESNLPsolver',filesep,'interface',filesep,'forcesprologo.jpg'],'file') ), image(imread(['FORCESNLPsolver',filesep,'interface',filesep,'forcesprologo.jpg']),'center','on'); end \n "
 
       }

@@ -23,7 +23,7 @@ deg2rad = @(deg) deg/180*pi; % convert degrees into radians
 rad2deg = @(rad) rad/pi*180; % convert radians into degrees
 
 %% Problem dimensions
-model.N = 12;            % horizon length
+model.N = 15;            % horizon length
 model.nvar = 7;          % number of variables
 model.neq= 4;            % number of equality constraints
 model.nh = 6;            % number of inequality constraint functions
@@ -40,17 +40,17 @@ model.npar =  n_other_param;          % number of parameters
 % model.ub = [ +2.0,  +1.0,   800, +200,   +200,    +1.5*pi,    inf];
 
 % Lower limits for robot
-lb_R = [ -2.0,  -1.0, 0, -500,   -500,    -pi, 0];
+lb_R = [ -2.0,  -1.0, 0, -1,   -1.6,    -pi, 0];
 model.lb = lb_R;
 
 % Upper limits for robot
-ub_R = [ +2.0,  +1.0, +inf, +500,   500,    +pi, 5000];
+ub_R = [ +2.0,  +1.0, +inf, +25,   1.6,    +pi, 5000];
 
 model.ub =ub_R;
 %%
 for i=1:model.N
     %% Objective function
-    model.objective{i} = @(z, p) objective_scenario(z, p); 
+    model.objective{i} = @(z, p) objective_scenario(z, p,i); 
 
     model.ineq{i} = @(z,p) inequality_constr_scenario(z, p, i);
 

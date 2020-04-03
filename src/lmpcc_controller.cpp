@@ -11,7 +11,7 @@
 //#include <opencv2/highgui/highgui.hpp>
 
 
-#define FORCES_N 12 // model.N, horizon length
+#define FORCES_N 15 // model.N, horizon length
 #define FORCES_NU 3 //number of control variables
 #define FORCES_NX 4 // differentiable variables
 #define FORCES_TOTAL_V 7 //Total control and differentiable
@@ -85,6 +85,8 @@ bool MPCC::initialize()
         last_state_ = Eigen::Vector4d(0,0,0,0);
 
         waypoints_size_ = 0; // min 2 waypoints
+        n_episodes_ = 0;
+        total_success_ = 0;
 
         /******************************** Subscriber **********************************************************/
         // Subscriber providing information about vehicle state
@@ -129,7 +131,10 @@ bool MPCC::initialize()
         next_point_dist = 0;
         goal_dist = 0;
         prev_point_dist = 0;
+        time_of_arrival_ = 0;
         goal_reached_ = false;
+        n_collisions_ = 0;
+        total_timeout_ = 0;
 
         //ROS_INFO("initialize trajectory variable to plot prediction trajectory");
         spline_traj_.poses.resize(100);
@@ -233,14 +238,14 @@ void MPCC::computeEgoDiscs()
     int n_discs = controller_config_->n_discs_;
     double length = controller_config_->ego_l_;
     double width = controller_config_->ego_w_;
-    double com_to_back = 2.4; // distance center of mass to back of the car
+    double com_to_back = 0; // distance center of mass to back of the car
 
     // Initialize positions of discs
     x_discs_.resize(n_discs);
 
 
     // Compute radius of the discs
-    r_discs_ = width/2;
+    r_discs_ = 0.4 ;//sqrt((pow(width,2)+pow(length,2))/2.0);
     // Loop over discs and assign positions, with respect to center of mass
     for ( int discs_it = 0; discs_it < n_discs; discs_it++){
 
@@ -248,7 +253,7 @@ void MPCC::computeEgoDiscs()
             x_discs_[discs_it] = -com_to_back+length/2;
         }
         else if(discs_it == 0){ // position first disc so it touches the back of the car
-            x_discs_[discs_it] = -com_to_back+r_discs_;
+            x_discs_[discs_it] = 0.0; //-com_to_back+r_discs_
         }
         else if(discs_it == n_discs-1){
             x_discs_[discs_it] = -com_to_back+length-r_discs_;
@@ -348,8 +353,19 @@ void MPCC::ControlLoop()
     int N_iter;
     exit_code_ = 0;
     obstacle_distance = 100.0;
+    time_of_arrival_ = ros::Time::now().toSec() - start_time_;
 
-    if (plan_ && (waypoints_size_ > 0)) {
+    /*
+    if(time_of_arrival_>100.0){
+        n_episodes_ += 1;
+        total_timeout_ +=1;
+        publishFeedback(forces_info.it2opt,forces_info.solvetime,true);
+        ResetSimulation();
+        return;
+    }
+     */
+
+    if (plan_ && (waypoints_size_ > 0) && (n_episodes_<=101)) {
 
         forces_params.xinit[0] = current_state_(0);
         forces_params.xinit[1] = current_state_(1);
@@ -360,13 +376,19 @@ void MPCC::ControlLoop()
 
         if (forces_params.xinit[3] > ss[traj_i + 1]) {
 
+            /*
             if (traj_i + 1 == ss.size()) {
                 goal_reached_ = true;
-                ROS_ERROR_STREAM("GOAL REACHED: "<< ss.size());
+                ROS_ERROR_STREAM("Episode "<< n_episodes_);
+                n_episodes_ += 1;
+                total_success_ +=1;
+                publishFeedback(forces_info.it2opt,forces_info.solvetime,false);
+                done_ = 1;
                 ResetSimulation();
             } else {
                 traj_i++;
             }
+             */
         }
 
         double smin = forces_params.x0[FORCES_TOTAL_V + 4];
@@ -421,6 +443,7 @@ void MPCC::ControlLoop()
                 forces_params.all_parameters[k + 32 + obs_id*5] = obstacles_.lmpcc_obstacles[obs_id].minor_semiaxis[N_iter];       // minor semiaxis of obstacle 1
             }
 
+
         }
 
         /*ROS_INFO_STREAM("x0[0] " << forces_params.x0[0]);
@@ -454,14 +477,22 @@ void MPCC::ControlLoop()
 
         if(controller_config_->activate_debug_output_){
             publishPredictedTrajectory();
+            /*
             for(int obs_id = 0;obs_id< controller_config_->n_obstacles_;obs_id++){
-                obstacle_distance = std::min(obstacle_distance,sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[N_iter].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y),2)));
+                obstacle_distance = std::min(obstacle_distance,sqrt(pow((current_state_(0)-obstacles_.lmpcc_obstacles[obs_id].trajectory.poses[0].pose.position.x),2)+pow((current_state_(1)-obstacles_.lmpcc_obstacles[0].trajectory.poses[0].pose.position.y),2)));
 
-                if(obstacle_distance < r_discs_){
+                if(obstacle_distance < std::max(r_discs_,obstacles_.lmpcc_obstacles[obs_id].major_semiaxis[0])){
+                    done_ = 1;
+                    n_episodes_ += 1;
+                    n_collisions_ += 1;
                     publishFeedback(forces_info.it2opt,forces_info.solvetime,true);
+                    ROS_ERROR_STREAM("Collision distance  "<< obstacle_distance << " is smaller than " << r_discs_);
+                    ROS_ERROR_STREAM("Episode "<< n_episodes_);
+                    ResetSimulation();
                     return;
                 }
             }
+             */
             publishFeedback(forces_info.it2opt,forces_info.solvetime,false);
             cost_.data = forces_info.pobj;
         }
@@ -488,6 +519,9 @@ void MPCC::ControlLoop()
                 forces_params.x0[i+9*FORCES_TOTAL_V] = forces_output.x10[i];
                 forces_params.x0[i+10*FORCES_TOTAL_V] = forces_output.x11[i];
                 forces_params.x0[i+11*FORCES_TOTAL_V] = forces_output.x12[i];
+                forces_params.x0[i+12*FORCES_TOTAL_V] = forces_output.x13[i];
+                forces_params.x0[i+13*FORCES_TOTAL_V] = forces_output.x14[i];
+                forces_params.x0[i+14*FORCES_TOTAL_V] = forces_output.x15[i];
             }
         }
     }
@@ -688,8 +722,14 @@ bool MPCC::ResetCallBack(lmpcc::LMPCCReset::Request  &req, lmpcc::LMPCCReset::Re
 }
 
 bool MPCC::ResetSimulation(){
+    ROS_WARN_STREAM("Resetting LMPCC");
+
     if (controller_config_->sync_mode_)
         timer_.stop();
+
+    for(int j=0;j<5;j++)
+        publishZeroJointVelocity();
+
     reset_solver();
 
     reset_simulation_client_.call(reset_msg_);
@@ -706,7 +746,9 @@ bool MPCC::ResetSimulation(){
 
     if (controller_config_->sync_mode_)
         timer_.start();
+    plan_ = true;
     enable_output_ = true;
+    start_time_ = ros::Time::now().toSec();
 }
 
 void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32_t level){
@@ -743,7 +785,6 @@ void MPCC::reconfigureCallback(lmpcc::PredictiveControllerConfig& config, uint32
 
     controller_config_->activate_debug_output_ = config.debug;
     if (waypoints_size_ >1) {
-        ROS_WARN("Planning...");
         plan_ = config.plan;
         enable_output_ = config.enable_output;
     } else {
@@ -926,6 +967,14 @@ void MPCC::publishFeedback(int& it, double& time , bool in_collision)
     feedback_msg.wV = velocity_weight_;       // weight factor on theta
     feedback_msg.wW = Kw_;
     feedback_msg.vRef = reference_velocity_;
+
+    feedback_msg.total_trials = n_episodes_;
+
+    feedback_msg.total_success = total_success_;
+    feedback_msg.total_timeout = total_timeout_;
+    feedback_msg.time_of_arrival = time_of_arrival_;
+    feedback_msg.total_collisions = n_collisions_;
+
 
     feedback_msg.reference_path = spline_traj_;
     feedback_msg.prediction_horizon = pred_traj_;

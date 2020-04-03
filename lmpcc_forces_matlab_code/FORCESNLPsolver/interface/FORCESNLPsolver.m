@@ -2,9 +2,9 @@
 %
 %   OUTPUT = FORCESNLPsolver(PARAMS) solves a multistage problem
 %   subject to the parameters supplied in the following struct:
-%       PARAMS.x0 - column vector of length 84
+%       PARAMS.x0 - column vector of length 105
 %       PARAMS.xinit - column vector of length 4
-%       PARAMS.all_parameters - column vector of length 696
+%       PARAMS.all_parameters - column vector of length 870
 %
 %   OUTPUT returns the values of the last iteration of the solver where
 %       OUTPUT.x01 - column vector of size 7
@@ -19,6 +19,9 @@
 %       OUTPUT.x10 - column vector of size 7
 %       OUTPUT.x11 - column vector of size 7
 %       OUTPUT.x12 - column vector of size 7
+%       OUTPUT.x13 - column vector of size 7
+%       OUTPUT.x14 - column vector of size 7
+%       OUTPUT.x15 - column vector of size 7
 %
 %   [OUTPUT, EXITFLAG] = FORCESNLPsolver(PARAMS) returns additionally
 %   the integer EXITFLAG indicating the state of the solution with 

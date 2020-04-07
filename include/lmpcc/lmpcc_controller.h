@@ -44,7 +44,6 @@
 
 // predicitve includes
 #include <lmpcc/lmpcc_configuration.h>
-#include <lmpcc/control_feedback.h>
 
 // actions, srvs, msgs
 #include <actionlib/server/simple_action_server.h>

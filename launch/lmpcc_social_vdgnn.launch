@@ -8,6 +8,18 @@
     <arg name="debug_config_parameter" default="false"/>
     <arg name="debug_kinematic_cal" default="false"/>
     <arg name="debug_collision_detection" default="false"/>
+    <arg name="gui" default="false" />
+    <arg name="interaction" default="true"/>
+
+    <!-- Robot Simulation -->
+    <include file="$(find jackal_gazebo)/launch/jackal_world.launch">
+        <arg name="gui" value="$(arg gui)" />
+    </include>
+
+    <!-- Pedestrian's Simulation -->
+    <include file="$(find pedsim_simulator)/launch/airport_demo.launch">
+        <param name="interaction" value="$(arg interaction)" type="bool"/>
+    </include>
 
     <!-- Robot state -->
     <include file="$(find mobile_robot_state_publisher)/launch/mobile_robot_publisher.launch">

@@ -1,0 +1,4 @@
+geometry_msgs/PoseStamped robot_state
+geometry_msgs/PoseStamped[] other_agents_states
+---
+geometry_msgs/Twist control_cmd

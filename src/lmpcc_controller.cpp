@@ -147,8 +147,6 @@ bool MPCC::initialize()
             pred_traj_.poses[i].header.frame_id = controller_config_->target_frame_;
         }
 
-        pred_traj_pub_ = nh.advertise<nav_msgs::Path>("mpc_horizon",1);
-
 
         ROS_INFO("initialize state and control weight factors");
         slack_weight_ = controller_config_->slack_weight_;
@@ -852,7 +850,7 @@ void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obs
         {
             obstacles_.lmpcc_obstacles[obst_it] = received_obstacles.lmpcc_obstacles[obst_it];
         }
-        for (int obst_it = received_obstacles.lmpcc_obstacles.size(); obst_it < received_obstacles.lmpcc_obstacles.size(); obst_it++)
+        for (int obst_it = received_obstacles.lmpcc_obstacles.size(); obst_it < controller_config_->n_obstacles_; obst_it++)
         {
             for(int t = 0;t<FORCES_N;t++){
                 obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.x = 100;
@@ -863,8 +861,9 @@ void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obs
             }
         }
     }
-
-    obstacles_ = received_obstacles;
+    else {
+        obstacles_ = received_obstacles;
+    }
 }
 
 void MPCC::publishZeroJointVelocity()
@@ -896,13 +895,26 @@ void MPCC::publishSplineTrajectory(void)
 
 void MPCC::publishPredictedTrajectory(void)
 {
-    for (int i = 0; i < FORCES_N; i++)
-    {
-        pred_traj_.poses[i].pose.position.x = forces_params.x0[i * FORCES_TOTAL_V + 3]; //x
-        pred_traj_.poses[i].pose.position.y = forces_params.x0[i * FORCES_TOTAL_V + 4]; //y
-        pred_traj_.poses[i].pose.orientation.z = forces_params.x0[i * FORCES_TOTAL_V + 5]; //theta
+    if(enable_output_){
+        for (int i = 0; i < FORCES_N; i++)
+        {
+            pred_traj_.poses[i].pose.position.x = forces_params.x0[i * FORCES_TOTAL_V + 3]; //x
+            pred_traj_.poses[i].pose.position.y = forces_params.x0[i * FORCES_TOTAL_V + 4]; //y
+            pred_traj_.poses[i].pose.orientation.z = forces_params.x0[i * FORCES_TOTAL_V + 5]; //theta
+            pred_traj_.poses[i].pose.orientation.x = forces_params.x0[i * FORCES_TOTAL_V + 0]; //x
+            pred_traj_.poses[i].pose.orientation.y = forces_params.x0[i * FORCES_TOTAL_V + 1]; //y
+        }
     }
-
+    else{
+        for (int i = 0; i < FORCES_N; i++)
+        {
+            pred_traj_.poses[i].pose.position.x = current_state_(0); //x
+            pred_traj_.poses[i].pose.position.y = current_state_(1); //y
+            pred_traj_.poses[i].pose.orientation.z = 0; //theta
+            pred_traj_.poses[i].pose.orientation.x = 0; //x
+            pred_traj_.poses[i].pose.orientation.y = 0; //y
+        }
+    }
     pred_traj_pub_.publish(pred_traj_);
 }
 
@@ -910,11 +922,9 @@ void MPCC::publishPredictedOutput(void)
 {
     for (int i = 0; i < FORCES_N; i++)
     {
-        pred_cmd_.poses[i].pose.position.x = forces_params.x0[i*FORCES_TOTAL_V + 0]; //acc
-       
-		
-        pred_cmd_.poses[i].pose.position.y = forces_params.x0[i*FORCES_TOTAL_V + 1]; //delta
-        pred_cmd_.poses[i].pose.position.z = forces_params.x0[i*FORCES_TOTAL_V+ 2];  //slack
+        pred_cmd_.poses[i].pose.position.x = forces_params.x0[i*FORCES_TOTAL_V + 0]; //linear velocity
+        pred_cmd_.poses[i].pose.position.y = forces_params.x0[i*FORCES_TOTAL_V + 1]; //angular velocity
+        pred_cmd_.poses[i].pose.position.z = forces_params.x0[i*FORCES_TOTAL_V + 2];  //slack
     }
 
     pred_cmd_pub_.publish(pred_cmd_);

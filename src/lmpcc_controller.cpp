@@ -848,6 +848,20 @@ void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obs
     if (received_obstacles.lmpcc_obstacles.size() != controller_config_->n_obstacles_)
     {
         ROS_ERROR_STREAM("Number of obstacles in ObstacleFeed and LMPCC do not match!!!");
+        for (int obst_it = 0; obst_it < received_obstacles.lmpcc_obstacles.size(); obst_it++)
+        {
+            obstacles_.lmpcc_obstacles[obst_it] = received_obstacles.lmpcc_obstacles[obst_it];
+        }
+        for (int obst_it = received_obstacles.lmpcc_obstacles.size(); obst_it < received_obstacles.lmpcc_obstacles.size(); obst_it++)
+        {
+            for(int t = 0;t<FORCES_N;t++){
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.x = 100;
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.position.y = 100;
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[t].pose.orientation.z = 0;
+                obstacles_.lmpcc_obstacles[obst_it].major_semiaxis[t] = 0.3;
+                obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis[t] = 0.3;
+            }
+        }
     }
 
     obstacles_ = received_obstacles;

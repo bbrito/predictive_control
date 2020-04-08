@@ -20,7 +20,7 @@
     <!-- Pedestrian's Simulation -->
     <include file="$(find pedsim_simulator)/launch/airport_demo.launch">
         <param name="interaction" value="$(arg interaction)" type="bool"/>
-        <arg name="scenario" default="corridor_6people"/>
+        <arg name="scenario" default="corridor"/>
     </include>
 
     <!-- Robot state -->
@@ -33,12 +33,6 @@
     <rosparam command="load" file="$(find lmpcc)/config/predictive_config_parameter_simulation.yaml"/>
 
     <node pkg="lmpcc" type="lmpcc_node" name="lmpcc_node" cwd="node" respawn="false" output="screen"/>
-
-    <!-- Record Data -->
-
-    <node pkg="rosbag" type="record" name="rosbag_record_cam"
-       args="record -O /media/bdebrito/ec23196d-a011-419c-9da7-ce0a9c535bcd/lmpcc_bags /controller_feedback /robot_state /robot_collision_space /visualize_ellipses_array /pedsim_visualizer/tracked_persons"
-       if="$(arg record)" />
 
     <!-- configured rviz -->
     <!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find lmpcc)/rviz_config/rviz_config.rviz" / -->

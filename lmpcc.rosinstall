@@ -1,28 +1,32 @@
 - git:
     local-name: jackal_simulator
-    uri: https://github.com/bbrito/jackal_simulator.git
-    version: master
+    uri: git@github.com:bbrito/jackal_simulator.git
+    version: kinetic-devel
 - git:
     local-name: jackal
-    uri: https://github.com/bbrito/jackal-1.git
+    uri: git@github.com:bbrito/jackal-1.git
     version: kinetic-devel
 - git:
     local-name: lmpcc
-    uri: https://github.com/bbrito/lmpcc.git
-    version: carla_forces
+    uri: git@github.com:bbrito/lmpcc.git
+    version: jackal_forces
 - git:
     local-name: mobile_robot_state_publisher
     uri: https://github.com/bbrito/mobile_robot_state_publisher.git
-    version: cadrl
+    version: master
 - git:
     local-name: lmpcc_msgs
-    uri: https://github.com/bbrito/lmpcc_msgs.git
+    uri: git@github.com:bbrito/lmpcc_msgs.git
     version: master
 - git:
     local-name: lmpcc_obstacle_feed
-    uri: https://github.com/bbrito/lmpcc_obstacle_feed.git
-    version: master
+    uri: git@gitlab.tudelft.nl:bdebrito/lmpcc_obstacle_feed.git
+    version: jackal
 - git:
     local-name: static_collision_avoidance
     uri: https://github.com/tud-cor/static_collision_avoidance
     version: master
+- git:
+    local-name: pedsim_ros
+    uri: git@github.com:bbrito/pedsim_ros.git
+    version: four_persons

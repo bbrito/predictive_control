@@ -33,6 +33,13 @@
 
     <node pkg="lmpcc" type="lmpcc_node" name="lmpcc_node" cwd="node" respawn="false" output="screen"/>
 
+    <!-- Dataset saver -->
+    <node name="data_saver" pkg="pedsim_simulator" type="dataset_saver" output="screen">
+        <param name="rate" value="10.0" type="double"/>
+        <param name="path" value="/home/bdebrito/pedsim_ros/datasets/"/>
+        <param name="size" value="360000" type="int"/>
+    </node>
+
     <!-- configured rviz -->
     <!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find lmpcc)/rviz_config/rviz_config.rviz" / -->
 

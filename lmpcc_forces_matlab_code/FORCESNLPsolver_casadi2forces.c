@@ -1,6 +1,6 @@
 /* 
  * CasADi to FORCES Template - missing information to be filled in by createCasadi.m 
- * (C) embotech AG, Zurich, Switzerland, 2013-19. All rights reserved.
+ * (C) embotech AG, Zurich, Switzerland, 2013-2020. All rights reserved.
  *
  * This file is part of the FORCES client, and carries the same license.
  */ 
@@ -71,11 +71,12 @@ extern void FORCESNLPsolver_casadi2forces(FORCESNLPsolver_float *x,        /* pr
     in[1] = p; /* maybe should be made conditional */
     in[2] = l; /* maybe should be made conditional */     
     in[3] = y; /* maybe should be made conditional */
-    
-    /* set outputs for CasADi */
-    out[0] = &this_f;
-    out[1] = nabla_f_sparse;
-                
+
+    	 /* set outputs for CasADi */
+	out[0] = &this_f;
+	out[1] = nabla_f_sparse;
+	
+
 	 if ((stage >= 0 && stage < 14))
 	 {
 		 /* set inputs */

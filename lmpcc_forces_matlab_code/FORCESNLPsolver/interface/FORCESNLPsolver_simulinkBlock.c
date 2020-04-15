@@ -1,7 +1,7 @@
 /*
 FORCESNLPsolver : A fast customized optimization solver.
 
-Copyright (C) 2013-2019 EMBOTECH AG [info@embotech.com]. All rights reserved.
+Copyright (C) 2013-2020 EMBOTECH AG [info@embotech.com]. All rights reserved.
 
 
 This software is intended for simulation and testing purposes only. 
@@ -30,11 +30,11 @@ jurisdiction in case of any dispute.
 
 
 
-/* SYSTEM INCLUDES FOR TIMING ------------------------------------------ */
-
-
 /* include FORCES functions and defs */
 #include "../include/FORCESNLPsolver.h" 
+
+/* SYSTEM INCLUDES FOR TIMING ------------------------------------------ */
+
 
 #if defined(MATLAB_MEX_FILE)
 #include "tmwtypes.h"

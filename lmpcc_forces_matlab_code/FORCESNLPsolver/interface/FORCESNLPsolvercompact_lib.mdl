@@ -60,13 +60,13 @@ Model {
       }
     }
   }
-  Created		  "4/8/2020 10:27:51 AM"
+  Created		  "4/15/2020 12:44:54 PM"
   Creator		  "embotech AG"
   UpdateHistory		  "UpdateHistoryNever"
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "embotech AG"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "4/8/2020 10:27:51 AM"
+  LastModifiedDate	  "4/15/2020 12:44:54 PM"
   RTWModifiedTimeStamp	  315310195
   ModelVersionFormat	  "1.%<AutoIncrement:2>"
   ConfigurationManager	  "None"
@@ -781,7 +781,7 @@ Model {
 	Description		" ---- Simulink block encapsulating your customized solver FORCESNLPsolver ---- \n\n"
 				"FORCESNLPsolver : A fast customized optimization solver.\n"
 "\n"
-"Copyright (C) 2013-2019 EMBOTECH AG [info@embotech.com]. All rights reserved.\n"
+"Copyright (C) 2013-2020 EMBOTECH AG [info@embotech.com]. All rights reserved.\n"
 "\n"
 "\n"
 "This software is intended for simulation and testing purposes only. \n"

@@ -20,7 +20,7 @@
     version: master
 - git:
     local-name: lmpcc_obstacle_feed
-    uri: git@gitlab.tudelft.nl:bdebrito/lmpcc_obstacle_feed.git
+    uri: git@github.com:bbrito/lmpcc_obstacle_feed.git
     version: jackal
 - git:
     local-name: static_collision_avoidance

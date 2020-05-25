@@ -18,9 +18,10 @@
     </include>
 
     <!-- Pedestrian's Simulation -->
-    <include file="$(find pedsim_simulator)/launch/corridor.launch">
+    <include file="$(find pedsim_simulator)/launch/airport_demo.launch">
+        <arg name="scenario" value="corridor_8people"/>
+        <arg name="record_data" value="false"/>
         <param name="interaction" value="$(arg interaction)" type="bool"/>
-        <arg name="scenario" default="corridor_6people"/>
     </include>
 
     <!-- Robot state -->

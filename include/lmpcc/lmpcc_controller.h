@@ -381,6 +381,8 @@ private:
 
     bool ResetSimulation();
 
+    void OrderObstacles(lmpcc_msgs::lmpcc_obstacle_array& ellipses);
+
 };
 
 #endif

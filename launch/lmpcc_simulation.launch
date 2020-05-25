@@ -17,7 +17,8 @@
 
     <!-- Pedestrian's Simulation -->
     <include file="$(find pedsim_simulator)/launch/airport_demo.launch">
-        <arg name="record_data" value="false"/>
+        <arg name="scenario" value="corridor_8people"/>
+        <arg name="record_data" value="true"/>
     </include>
 
     <!-- Robot state -->

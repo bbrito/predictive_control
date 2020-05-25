@@ -843,7 +843,7 @@ void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obs
     //ROS_INFO_STREAM("-- Received # obstacles: " << received_obstacles.lmpcc_obstacles.size());
     //ROS_INFO_STREAM("-- Expected # obstacles: " << controller_config_->n_obstacles_);
 
-    if (received_obstacles.lmpcc_obstacles.size() != controller_config_->n_obstacles_)
+    if (received_obstacles.lmpcc_obstacles.size() < controller_config_->n_obstacles_)
     {
         ROS_ERROR_STREAM("Number of obstacles in ObstacleFeed and LMPCC do not match!!!");
         for (int obst_it = 0; obst_it < received_obstacles.lmpcc_obstacles.size(); obst_it++)
@@ -864,6 +864,56 @@ void MPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obs
     else {
         obstacles_ = received_obstacles;
     }
+
+    // Order obstacles
+    double Xp, Yp, distance;
+    std::vector<double> objectDistances;
+    //ROS_INFO_STREAM("Received: " << obstacles_.lmpcc_obstacles.size());
+    for(int i = 0; i< obstacles_.lmpcc_obstacles.size(); i++) {
+
+        //ROS_INFO_STREAM("transform the pose to base_link in order to calculate the distance to the obstacle");
+        transformPose("odom", "base_link", obstacles_.lmpcc_obstacles[i].pose);
+        //transformTwist(person.header.frame_id, "base_link", local_obstacles.lmpcc_obstacles[i].velocity);
+        //get obstacle coordinates in base_link frame
+        Xp = obstacles_.lmpcc_obstacles[i].pose.position.x;
+        Yp = obstacles_.lmpcc_obstacles[i].pose.position.y;
+
+        //ROS_INFO_STREAM("distance between the Prius and the obstacle");
+        distance = sqrt(pow(Xp, 2) + pow(Yp, 2));
+
+        //ROS_WARN_STREAM("distance to obstacle: " << distance);
+
+        //ROS_INFO_STREAM("transform the pose back to planning_frame for further calculations");
+        transformPose("base_link", controller_config_->target_frame_,
+                      obstacles_.lmpcc_obstacles[i].pose);
+
+        obstacles_.lmpcc_obstacles[i].distance = distance;
+
+    }
+
+    //ROS_INFO_STREAM("order the stored ellipses with the closest one being first");
+    OrderObstacles(obstacles_);
+
+}
+
+bool CompareObstacleDistance(lmpcc_msgs::lmpcc_obstacle const &obst1, lmpcc_msgs::lmpcc_obstacle const &obst2) { return (obst1.distance < obst2.distance); }
+
+
+void MPCC::OrderObstacles(lmpcc_msgs::lmpcc_obstacle_array& ellipses)
+{
+    // Create vector of obstacles
+    if(ellipses.lmpcc_obstacles.size()>0){
+        std::vector<lmpcc_msgs::lmpcc_obstacle> ellipsesVector;
+        ellipsesVector = ellipses.lmpcc_obstacles;
+
+        // Sort vector according to distances
+        std::sort(ellipsesVector.begin(),ellipsesVector.end(), CompareObstacleDistance);
+
+        // Write vector of sorted obstacles to obstacles structure
+        ellipses.lmpcc_obstacles = ellipsesVector;
+    }
+    //ROS_INFO_STREAM(ellipses);
+
 }
 
 void MPCC::publishZeroJointVelocity()

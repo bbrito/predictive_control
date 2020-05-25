@@ -1,0 +1,54 @@
+[INFO] [1589895759.449005, 2175.642000]: **************** Final Results LMPCC NON-COPERATIVE ***********************
+[INFO] [1589895759.449717, 2175.643000]: Number of collisions: 6
+[INFO] [1589895759.450402, 2175.643000]: Number of timeouts: 22
+[INFO] [1589895759.451092, 2175.644000]: Number of successes: 73
+[INFO] [1589895759.451829, 2175.645000]: Number of trials: 101
+
+[INFO] [1589902843.318772, 1953.224000]: **************** Final Results lmpcc + IntNet ***********************
+[INFO] [1589902843.318971, 1953.224000]: Number of collisions: 22
+[INFO] [1589902843.319143, 1953.224000]: Number of timeouts: 7
+[INFO] [1589902843.319340, 1953.224000]: Number of successes: 72
+[INFO] [1589902843.319551, 1953.224000]: Number of trials: 101
+
+[INFO] [1589905201.140693, 2078.893000]: **************** Final Results LMPCC with new limtis on acceleration ***********************
+[INFO] [1589905201.141845, 2078.894000]: Number of collisions: 3
+[INFO] [1589905201.143026, 2078.895000]: Number of timeouts: 14
+[INFO] [1589905201.144127, 2078.896000]: Number of successes: 84
+[INFO] [1589905201.145491, 2078.897000]: Number of trials: 101
+
+[INFO] [1589926954.052889, 1857.714000]: **************** Final Results new prediction ROBOT INTERACTION ON PEDSIMROS ***********************
+[INFO] [1589926954.053102, 1857.714000]: Number of collisions: 6
+[INFO] [1589926954.053360, 1857.715000]: Number of timeouts: 1
+[INFO] [1589926954.053527, 1857.715000]: Number of successes: 94
+[INFO] [1589926954.053674, 1857.715000]: Number of trials: 101
+
+[INFO] [1589966904.217224, 2787.231000]: **************** Final Results LMPCC ROBOT INTERACTION ON PEDSIMROS ***********************
+[INFO] [1589966904.217414, 2787.231000]: Number of collisions: 2
+[INFO] [1589966904.217609, 2787.231000]: Number of timeouts: 0
+[INFO] [1589966904.217818, 2787.231000]: Number of successes: 99
+[INFO] [1589966904.218076, 2787.232000]: Number of trials: 101
+
+[INFO] [1589995677.515612, 1863.725000]: **************** Final Results IntNet-LMPCC ROBOT INTERACTION ON PEDSIMROS and lower limits on acc ***********************
+[INFO] [1589995677.515769, 1863.725000]: Number of collisions: 6
+[INFO] [1589995677.515931, 1863.725000]: Number of timeouts: 1
+[INFO] [1589995677.516108, 1863.725000]: Number of successes: 94
+[INFO] [1589995677.516359, 1863.726000]: Number of trials: 101
+
+[INFO] [1590241885.072300, 1937.319000]: **************** Final Results Social VDGNN ***********************
+[INFO] [1590241885.072486, 1937.319000]: Number of collisions: 2
+[INFO] [1590241885.072633, 1937.319000]: Number of timeouts: 2
+[INFO] [1590241885.072824, 1937.319000]: Number of successes: 97
+[INFO] [1590241885.073157, 1937.320000]: Number of trials: 101
+
+
+[INFO] [1590243775.521852, 1856.919000]: **************** Final Results LMPCC COOPERATIVE NEW TUNNING PARAMS ***********************
+[INFO] [1590243775.522144, 1856.920000]: Number of collisions: 5
+[INFO] [1590243775.522289, 1856.920000]: Number of timeouts: 4
+[INFO] [1590243775.522409, 1856.920000]: Number of successes: 92
+[INFO] [1590243775.522522, 1856.920000]: Number of trials: 101
+
+
+
+
+
+
